@@ -5,7 +5,7 @@
 **Language:** TypeScript, Next.js 16
 **UI Language:** Russian (Ru)
 
-## 🏗 Tech Stack & Architecture (STRICT)
+## Tech Stack & Architecture (STRICT)
 
 1.  **Framework:** Next.js 16 (App Router) + React 19.
 2.  **Styling:** Tailwind CSS v4 (Zero config, CSS-first).
@@ -19,7 +19,7 @@
     - **Security:** Keys in `.env.local` (Server-side only). No `NEXT_PUBLIC_` keys.
 5.  **Architecture:** Feature-Sliced Design (FSD).
 
-## 📜 Documentation Rules (CRITICAL)
+## Documentation Rules (CRITICAL)
 
 **Rule:** Every FSD slice (folder inside `entities`, `features`, `widgets`, `shared`) MUST contain a `README.md` file (Micro-Documentation).
 
@@ -45,7 +45,7 @@
 - Uses: [List other slices used by this module]
 ```
 
-## 📂 Architecture Map
+## Architecture Map
 
 Refer to and **maintain** these guides as you build:
 
@@ -54,7 +54,7 @@ Refer to and **maintain** these guides as you build:
 - **[Widgets & Composition](src/widgets/README.md)** → Dashboard assembly, Grid logic.
 - **[Shared & API](src/shared/README.md)** → Server Actions, UI Kit, Utilities.
 
-## ⚡ Build & Test Commands
+## Build & Test Commands
 
 ```bash
 npm run dev        # Start Next.js dev server
@@ -63,7 +63,7 @@ npm run test       # Run Unit tests (Jest)
 npm run test:e2e   # Run E2E tests (Playwright)
 ```
 
-## 📝 Coding Standards
+## Coding Standards
 
 - **TDD First:** Always write the test file (`__tests__`) _before_ the implementation.
 - **Hydration:** Use `next/dynamic` with `{ ssr: false }` for components dependent on localStorage.
@@ -73,7 +73,7 @@ npm run test:e2e   # Run E2E tests (Playwright)
   - Stores: `use[Entity]Store`.
 - **Drag & Drop:** Use native HTML5 API (no external dnd libs).
 
-## 🚀 Key Features Overview
+## Key Features Overview
 
 - **Expenses:** Managed via `useExpenseStore`. Can be personal or linked to a Project.
 - **AI Categorization:** Done via Server Action. Optimistic updates or "Other" fallback on error.
