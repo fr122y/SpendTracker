@@ -13,10 +13,9 @@ Each entity folder should contain:
 ## Entities
 
 - **expense** - Expense entity with amount, category, date, and optional project link
-- **project** - Project entity for grouping expenses
 - **category** - Expense categories (predefined + custom)
-- **settings** - User settings (salary day, limits)
-- **layout** - Dashboard layout configuration
+- **project** - Project entity for grouping expenses with budget
+- **bucket** - Budget buckets for spending limits per category
 
 ## Rules
 

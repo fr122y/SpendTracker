@@ -13,12 +13,11 @@ Each feature folder should contain:
 
 ## Features
 
-- **add-expense** - Form and logic for adding new expenses
-- **edit-expense** - Inline editing of expenses
-- **delete-expense** - Deletion with confirmation
-- **categorize-expense** - AI-powered categorization via Server Action
-- **filter-expenses** - Date range and category filtering
-- **dashboard-settings** - Widget visibility and layout editing
+- **add-expense** - Form and logic for adding new expenses with AI categorization
+- **manage-categories** - CRUD operations for expense categories
+- **manage-projects** - CRUD operations for projects with budget allocation
+- **manage-buckets** - CRUD operations for budget buckets (spending limits)
+- **layout-editor** - Dashboard layout customization with drag-and-drop
 
 ## Rules
 

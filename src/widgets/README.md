@@ -11,12 +11,15 @@ Each widget folder should contain:
 
 ## Widgets
 
-- **expense-list** - Scrollable list of expenses with filters
-- **expense-summary** - Total spending card
-- **category-chart** - Pie/donut chart by category
-- **monthly-chart** - Bar chart of monthly spending
-- **budget-progress** - Progress bar for budget limits
-- **quick-add** - Floating action button for quick expense entry
+- **calendar** - Interactive calendar displaying daily expense totals
+- **expense-log** - Scrollable list of expenses with filtering
+- **analysis** - Spending analysis with category breakdown
+- **dynamics-chart** - Time-series chart showing expense trends
+- **weekly-budget** - Weekly spending progress against limits
+- **savings** - Savings goals and progress tracking
+- **categories-settings** - Category management CRUD interface
+- **financial-settings** - Financial parameters configuration
+- **projects** - Project budget tracking and management
 
 ## Rules
 
