@@ -5,6 +5,7 @@ Server Actions (`'use server'`) serving as the API layer for the application.
 ## Public API (`index.ts`)
 
 - `categorizeExpenseAction(description, amount, categories)`: AI-powered expense categorization
+- `queryClient`: TanStack Query client instance with default options
 
 ## Actions
 

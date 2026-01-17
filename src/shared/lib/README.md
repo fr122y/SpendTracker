@@ -11,6 +11,17 @@ Utility functions and helpers used across the application.
 - `getCategoryStats(expenses, date)`: Get category statistics for month (sorted by value)
 - `getWeeklyStats(expenses, date, limit)`: Get weekly spending stats with boundaries
 
+### Utilities
+
+- `cn(...classes)`: Class name utility (tailwind-merge + clsx)
+
+### Widget Registry (separate import)
+
+**Note:** Import directly from `@/shared/lib/widget-registry` to avoid circular dependencies.
+
+- `WIDGET_REGISTRY`: Mapping of `WidgetId` to component, title, and icon
+- `WidgetRegistryEntry`: Type for registry entries
+
 ### Types
 
 - `CategoryStat`: Category statistics with name, value, emoji, percent
