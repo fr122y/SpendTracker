@@ -1,16 +1,26 @@
 # Dynamics Chart Widget
 
-Visualizes spending trends over time with line/bar charts.
+Visualizes daily spending trends for the current month with an interactive bar chart.
 
 ## Public API (`index.ts`)
 
-- `DynamicsChartWidget`: Time-series chart showing expense dynamics
+- `DailySpendingChart`: Recharts BarChart showing daily spending amounts
 
 ## State & Data
 
-- **Store:** Reads from `useExpenseStore`
-- **Actions:** Chart type toggle, time range adjustment
+- **Stores:**
+  - `useSessionStore`: viewDate, selectedDate for highlighting
+  - `useExpenseStore`: expenses for aggregation
+
+## Features
+
+- Bar chart with day of month on X-axis, amount on Y-axis
+- Highlighted bar for selected date (blue vs emerald)
+- Click on bar to select that date
+- Custom tooltip with Russian formatting
+- Monthly total in header
+- Responsive sizing
 
 ## Dependencies
 
-- Uses: `@/entities/expense`, `@/shared/lib`
+- Uses: `@/entities/session`, `@/entities/expense`, `@/shared/lib`, `recharts`

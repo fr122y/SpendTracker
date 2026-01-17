@@ -1,3 +1,2 @@
 // Categories Settings widget - Public API
-// TODO: Export CategoriesSettingsWidget component when implemented
-export {}
+export { CategoriesSection } from './ui/categories-section'

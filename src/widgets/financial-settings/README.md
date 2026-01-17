@@ -1,16 +1,23 @@
 # Financial Settings Widget
 
-Configures financial parameters like salary day and spending limits.
+Wrapper widget for financial configuration parameters.
 
 ## Public API (`index.ts`)
 
-- `FinancialSettingsWidget`: Settings form for financial configuration
+- `FinancialSettingsSection`: Wrapper around FinancialSettings entity component
 
 ## State & Data
 
+- Delegates to `FinancialSettings` from `@/entities/settings`
 - **Store:** Uses `useSettingsStore` (Persistence Key: `smartspend-settings`)
-- **Actions:** Update salary day, spending limits, budget parameters
+
+## Features
+
+- Header with section title
+- Salary day configuration
+- Advance day configuration
+- Weekly limit setting
 
 ## Dependencies
 
-- Uses: `@/shared/ui`, `@/shared/lib`
+- Uses: `@/entities/settings`

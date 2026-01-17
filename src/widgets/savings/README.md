@@ -1,16 +1,20 @@
 # Savings Widget
 
-Tracks savings goals and progress towards financial targets.
+Wrapper widget for income allocation bucket management.
 
 ## Public API (`index.ts`)
 
-- `SavingsWidget`: Savings goal progress and projections
+- `SavingsSection`: Wrapper around BucketEditor feature
 
 ## State & Data
 
-- **Store:** Reads from `useExpenseStore`, `useBucketStore`
-- **Actions:** Goal tracking, savings calculation
+- Delegates to `BucketEditor` from `@/features/manage-buckets`
+
+## Features
+
+- Header with section title
+- Bucket percentage allocation editor
 
 ## Dependencies
 
-- Uses: `@/entities/expense`, `@/entities/bucket`, `@/shared/lib`
+- Uses: `@/features/manage-buckets`

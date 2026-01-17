@@ -1,16 +1,27 @@
 # Analysis Widget
 
-Provides spending analysis with category breakdown and insights.
+Provides spending analysis with category breakdown for the current view month.
 
 ## Public API (`index.ts`)
 
-- `AnalysisWidget`: Pie chart and breakdown of expenses by category
+- `AnalysisDashboard`: Visual grid of category boxes showing spending distribution
 
 ## State & Data
 
-- **Store:** Reads from `useExpenseStore`, `useCategoryStore`
-- **Actions:** Time period selection, category drill-down
+- **Stores:**
+  - `useSessionStore`: viewDate for month selection
+  - `useExpenseStore`: expenses list for aggregation
+
+## Features
+
+- Header with month name and total spent
+- Visual category boxes with:
+  - Size proportional to spending percentage
+  - Opacity based on relative spending
+  - Emoji and category name display
+  - Hover tooltip showing exact amount
+- Empty state when no data
 
 ## Dependencies
 
-- Uses: `@/entities/expense`, `@/entities/category`, `@/shared/lib`
+- Uses: `@/entities/session`, `@/entities/expense`, `@/shared/lib`

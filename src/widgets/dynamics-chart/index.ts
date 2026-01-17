@@ -1,3 +1,2 @@
 // Dynamics Chart widget - Public API
-// TODO: Export DynamicsChartWidget component when implemented
-export {}
+export { DailySpendingChart } from './ui/daily-spending-chart'

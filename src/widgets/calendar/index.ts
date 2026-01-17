@@ -1,3 +1,2 @@
 // Calendar widget - Public API
-// TODO: Export CalendarWidget component when implemented
-export {}
+export { Calendar } from './ui/calendar'

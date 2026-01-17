@@ -1,16 +1,20 @@
 # Categories Settings Widget
 
-Manages expense categories with CRUD operations.
+Wrapper widget for expense category management.
 
 ## Public API (`index.ts`)
 
-- `CategoriesSettingsWidget`: Category list with add/edit/delete controls
+- `CategoriesSection`: Wrapper around CategoryManager feature
 
 ## State & Data
 
-- **Store:** Uses `useCategoryStore`
-- **Actions:** Category CRUD operations
+- Delegates to `CategoryManager` from `@/features/manage-categories`
+
+## Features
+
+- Header with section title
+- Category CRUD operations (add, edit, delete)
 
 ## Dependencies
 
-- Uses: `@/entities/category`, `@/features/manage-categories`, `@/shared/ui`
+- Uses: `@/features/manage-categories`

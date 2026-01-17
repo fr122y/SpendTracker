@@ -4,22 +4,25 @@ Composite UI blocks that combine entities and features. Widgets are page section
 
 ## Structure
 
-Each widget folder should contain:
+Each widget folder contains:
 
-- `ui/` - Composite component
+- `ui/` - Composite component(s)
 - `index.ts` - Public API exports
+- `README.md` - Micro-documentation
 
-## Widgets
+## Widgets & Exports
 
-- **calendar** - Interactive calendar displaying daily expense totals
-- **expense-log** - Scrollable list of expenses with filtering
-- **analysis** - Spending analysis with category breakdown
-- **dynamics-chart** - Time-series chart showing expense trends
-- **weekly-budget** - Weekly spending progress against limits
-- **savings** - Savings goals and progress tracking
-- **categories-settings** - Category management CRUD interface
-- **financial-settings** - Financial parameters configuration
-- **projects** - Project budget tracking and management
+| Widget                  | Export                     | Description                                                                                    |
+| ----------------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
+| **calendar**            | `Calendar`                 | Interactive calendar with month navigation, date selection, and expense/salary/advance markers |
+| **expense-log**         | `ExpenseLog`               | Daily expense list with add form, filters project expenses                                     |
+| **analysis**            | `AnalysisDashboard`        | Category breakdown with visual boxes sized by spending percentage                              |
+| **dynamics-chart**      | `DailySpendingChart`       | Recharts bar chart showing daily spending for current month                                    |
+| **weekly-budget**       | `WeeklyBudget`             | Progress bar with spent/remaining amounts and editable limit                                   |
+| **savings**             | `SavingsSection`           | Wrapper for BucketEditor (income allocation)                                                   |
+| **categories-settings** | `CategoriesSection`        | Wrapper for CategoryManager CRUD                                                               |
+| **financial-settings**  | `FinancialSettingsSection` | Wrapper for FinancialSettings form                                                             |
+| **projects**            | `ProjectsSection`          | Project grid with expandable details, expense form, and delete                                 |
 
 ## Rules
 

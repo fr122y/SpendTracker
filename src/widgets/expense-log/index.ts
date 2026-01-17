@@ -1,3 +1,2 @@
 // Expense Log widget - Public API
-// TODO: Export ExpenseLogWidget component when implemented
-export {}
+export { ExpenseLog } from './ui/expense-log'
