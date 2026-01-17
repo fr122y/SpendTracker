@@ -7,58 +7,58 @@ Create `src/shared/types/index.ts`.
 ```typescript
 // Expense entity
 interface Expense {
-  id: string;
-  description: string;
-  amount: number;
-  date: string; // ISO date string
-  category: string; // Name of the category
-  emoji: string;
-  projectId?: string; // Optional
+  id: string
+  description: string
+  amount: number
+  date: string // ISO date string
+  category: string // Name of the category
+  emoji: string
+  projectId?: string // Optional
 }
 
 // Category entity
 interface Category {
-  id: string;
-  name: string;
-  emoji: string;
+  id: string
+  name: string
+  emoji: string
 }
 
 // Project entity
 interface Project {
-  id: string;
-  name: string;
-  budget: number;
-  color: string;
-  createdAt: string;
+  id: string
+  name: string
+  budget: number
+  color: string
+  createdAt: string
 }
 
 // Savings bucket
 interface AllocationBucket {
-  id: string;
-  label: string;
-  percentage: number;
+  id: string
+  label: string
+  percentage: number
 }
 
 // Dashboard Config
 type WidgetId =
-  | "CALENDAR"
-  | "EXPENSE_LOG"
-  | "ANALYSIS"
-  | "DYNAMICS"
-  | "WEEKLY_BUDGET"
-  | "SAVINGS"
-  | "PROJECTS"
-  | "CATEGORIES"
-  | "SETTINGS";
+  | 'CALENDAR'
+  | 'EXPENSE_LOG'
+  | 'ANALYSIS'
+  | 'DYNAMICS'
+  | 'WEEKLY_BUDGET'
+  | 'SAVINGS'
+  | 'PROJECTS'
+  | 'CATEGORIES'
+  | 'SETTINGS'
 
 interface ColumnConfig {
-  id: string;
-  width: number;
-  widgets: WidgetId[];
+  id: string
+  width: number
+  widgets: WidgetId[]
 }
 
 interface LayoutConfig {
-  columns: ColumnConfig[];
+  columns: ColumnConfig[]
 }
 ```
 
@@ -83,11 +83,11 @@ Since we cannot easily test Server Actions in Jest environment directly without 
 
 ```typescript
 // Example test expectation
-it("should return valid JSON category on success", async () => {
+it('should return valid JSON category on success', async () => {
   // Mock OpenAI response
-  const result = await categorizeExpenseAction("Milk", 100, mockCategories);
-  expect(result.category).toBe("Groceries");
-});
+  const result = await categorizeExpenseAction('Milk', 100, mockCategories)
+  expect(result.category).toBe('Groceries')
+})
 ```
 
 ## Step 3.3: Finance Utilities (Selectors)

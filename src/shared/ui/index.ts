@@ -1,3 +1,5 @@
 // Shared UI - Reusable Components
-// TODO: Export UI components when implemented
-export {}
+export { Button, type ButtonProps } from './button'
+export { Input, type InputProps } from './input'
+export { TerminalPanel, type TerminalPanelProps } from './terminal-panel'
+export { ProgressBar, type ProgressBarProps } from './progress-bar'

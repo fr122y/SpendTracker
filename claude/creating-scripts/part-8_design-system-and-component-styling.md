@@ -20,19 +20,16 @@
 Refactor components in `src/shared/ui/` with these specific patterns:
 
 1.  **TerminalPanel (Card):**
-
     - `border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm shadow-lg rounded-md`.
     - Header: Flex row, `border-b border-zinc-800/50 p-3`.
     - Content: `p-4`.
 
 2.  **Form Elements (Input/Select):**
-
     - `bg-zinc-900 border border-zinc-700 rounded`.
     - Focus: `ring-1 ring-blue-500 outline-none`.
     - Placeholder: `text-zinc-600`.
 
 3.  **Button:**
-
     - Base: `font-bold uppercase text-xs tracking-wider px-4 py-2 rounded transition-all`.
     - Primary: `bg-blue-600 hover:bg-blue-500 text-white`.
     - Ghost: `bg-transparent hover:bg-zinc-800 text-zinc-400 hover:text-white`.

@@ -1,3 +1,11 @@
 // Shared Library - Utilities
-// TODO: Export utility functions when implemented
-export {}
+export {
+  getMonthlyExpenses,
+  getDailyExpenses,
+  getCategoryStats,
+  getWeeklyStats,
+  type CategoryStat,
+  type WeeklyStat,
+} from './finance-selectors'
+
+export { cn } from './cn'

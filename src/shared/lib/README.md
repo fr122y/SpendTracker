@@ -4,25 +4,35 @@ Utility functions and helpers used across the application.
 
 ## Public API (`index.ts`)
 
-- `formatCurrency`: Format numbers as Russian ruble currency
-- `formatDate`: Date formatting utilities
-- `generateId`: UUID generation for entities
-- `cn`: Classname utility (tailwind-merge compatible)
+### Finance Selectors
 
-## Utilities
+- `getMonthlyExpenses(expenses, date)`: Filter expenses by month
+- `getDailyExpenses(expenses, date)`: Filter expenses by specific date
+- `getCategoryStats(expenses, date)`: Get category statistics for month (sorted by value)
+- `getWeeklyStats(expenses, date, limit)`: Get weekly spending stats with boundaries
 
-### Date Utilities
+### Types
 
-- `formatDate(date: Date): string`
-- `getWeekDates(date: Date): Date[]`
-- `getMonthDates(date: Date): Date[]`
+- `CategoryStat`: Category statistics with name, value, emoji, percent
+- `WeeklyStat`: Weekly stats with spent, limit, start, end
 
-### Currency Utilities
+## Usage Examples
 
-- `formatCurrency(amount: number): string`
-- `parseCurrency(value: string): number`
+```typescript
+import {
+  getMonthlyExpenses,
+  getCategoryStats,
+  getWeeklyStats,
+} from '@/shared/lib'
 
-### General Utilities
+// Get monthly expenses
+const monthly = getMonthlyExpenses(expenses, new Date())
 
-- `generateId(): string`
-- `cn(...classes): string`
+// Get category breakdown
+const stats = getCategoryStats(expenses, new Date())
+// Returns: [{ name: "Продукты", value: 5000, emoji: "🛒", percent: 45.5 }, ...]
+
+// Get weekly budget status
+const weekly = getWeeklyStats(expenses, new Date(), 10000)
+// Returns: { spent: 7500, limit: 10000, start: "2024-01-15", end: "2024-01-21" }
+```
