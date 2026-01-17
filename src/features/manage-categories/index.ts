@@ -1,3 +1,2 @@
 // Manage Categories feature - Public API
-// TODO: Export CategoryForm, useManageCategories when implemented
-export {}
+export { CategoryManager } from './ui/category-manager'

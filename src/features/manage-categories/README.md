@@ -4,14 +4,20 @@ CRUD operations for expense categories.
 
 ## Public API (`index.ts`)
 
-- `CategoryForm`: Form for creating/editing categories
-- `useManageCategories`: Hook with mutations for category CRUD
+- `CategoryManager`: Component for listing, adding, and deleting categories
 
 ## State & Data
 
-- **Mutation:** Uses TanStack Query mutations for CRUD operations
-- **Actions:** Create, update, delete categories
+- **Store:** Uses `useCategoryStore` for category management
+- **Actions:** Add category, delete category, validate unique names
+
+## Features
+
+- Lists all categories with emoji and name
+- Delete button for each category
+- Form to add new category (name + emoji)
+- Validation: Prevents duplicate category names
 
 ## Dependencies
 
-- Uses: `@/entities/category`, `@/shared/api`, `@/shared/ui`
+- Uses: `@/entities/category`, `@/shared/ui`

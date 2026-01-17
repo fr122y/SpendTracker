@@ -4,18 +4,19 @@ Handles expense creation with AI-powered categorization.
 
 ## Public API (`index.ts`)
 
-- `AddExpenseForm`: Form component for adding new expenses
-- `useAddExpense`: Hook with TanStack Query mutation for expense creation
+- `ExpenseForm`: Form component for adding new expenses with AI categorization
 
 ## State & Data
 
 - **Mutation:** Uses TanStack Query `useMutation` to call Server Action
-- **Actions:** Submit expense, AI categorization, optimistic update
+- **Actions:** Submit expense, AI categorization, fallback to "Другое" on error
 
-## Server Actions
+## Logic Flow
 
-- `createExpense`: Creates expense and triggers AI categorization
-- Fallback: Assigns "Other" category on AI failure
+1. User enters description and amount
+2. On Submit: Calls `categorizeExpenseAction` via mutation
+3. On Success: Receives `{ category, emoji }` from server, calls `addExpense` store action
+4. On Error: Falls back to "Другое" category and saves
 
 ## Dependencies
 

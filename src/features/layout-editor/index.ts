@@ -1,3 +1,4 @@
 // Layout Editor feature - Public API
-// TODO: Export LayoutEditor, useLayoutEditor when implemented
-export {}
+export { useLayoutStore } from './model/layout-store'
+export { ColumnResizer } from './ui/column-resizer'
+export { WidgetPlaceholder } from './ui/widget-placeholder'

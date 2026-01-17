@@ -1,3 +1,2 @@
 // Add Expense feature - Public API
-// TODO: Export AddExpenseForm, useAddExpense when implemented
-export {}
+export { ExpenseForm } from './ui/expense-form'

@@ -1,3 +1,3 @@
 // Manage Projects feature - Public API
-// TODO: Export ProjectForm, useManageProjects when implemented
-export {}
+export { CreateProjectForm } from './ui/create-project-form'
+export { ProjectExpenseForm } from './ui/project-expense-form'

@@ -4,14 +4,22 @@ CRUD operations for expense projects with budget allocation.
 
 ## Public API (`index.ts`)
 
-- `ProjectForm`: Form for creating/editing projects
-- `useManageProjects`: Hook with mutations for project CRUD
+- `CreateProjectForm`: Form for creating new projects with name and budget
+- `ProjectExpenseForm`: Form for adding expenses to a specific project
 
 ## State & Data
 
-- **Mutation:** Uses TanStack Query mutations for CRUD operations
-- **Actions:** Create, update, delete projects, set budget
+- **Store:** Uses `useProjectStore` for project management
+- **Mutation:** Uses TanStack Query for AI categorization of project expenses
+- **Actions:** Create project (auto-assigns color), add project expense
+
+## Features
+
+- Create project with name and budget limit
+- Auto-generated color from predefined palette
+- Add expenses linked to projects with AI categorization
+- Fallback to "Другое" category on AI failure
 
 ## Dependencies
 
-- Uses: `@/entities/project`, `@/shared/api`, `@/shared/ui`
+- Uses: `@/entities/project`, `@/entities/expense`, `@/entities/category`, `@/shared/api`, `@/shared/ui`

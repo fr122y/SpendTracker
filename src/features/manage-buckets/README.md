@@ -1,17 +1,25 @@
 # Manage Buckets Feature
 
-CRUD operations for budget buckets (spending limits).
+CRUD operations for allocation buckets (savings, investments, etc.).
 
 ## Public API (`index.ts`)
 
-- `BucketForm`: Form for creating/editing budget buckets
-- `useManageBuckets`: Hook with mutations for bucket CRUD
+- `BucketEditor`: Component for editing allocation bucket percentages
 
 ## State & Data
 
-- **Mutation:** Uses TanStack Query mutations for CRUD operations
-- **Actions:** Create, update, delete buckets, set limits
+- **Store:** Uses `useBucketStore` (Persistence Key: `smartspend-buckets`)
+- **Actions:** Update bucket percentages, add/remove buckets
+
+## Features
+
+- Edit allocation percentages for each bucket
+- Edit bucket labels
+- Add new buckets
+- Delete existing buckets
+- Validates total doesn't exceed 100%
+- Shows remaining percentage for "Operations"
 
 ## Dependencies
 
-- Uses: `@/entities/bucket`, `@/shared/api`, `@/shared/ui`
+- Uses: `@/entities/bucket`, `@/shared/ui`
