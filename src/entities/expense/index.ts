@@ -1,3 +1,4 @@
 // Expense entity - Public API
-// TODO: Export useExpenseStore, Expense type, ExpenseCard when implemented
-export {}
+export { useExpenseStore } from './model/store'
+export { ExpenseCard } from './ui/expense-card'
+export { ExpenseList } from './ui/expense-list'

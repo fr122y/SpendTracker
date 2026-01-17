@@ -1,32 +1,22 @@
 # Expense Entity
 
-Core business entity representing a financial expense.
+Manages individual expense records with CRUD operations and persistent storage.
 
 ## Public API (`index.ts`)
 
 - `useExpenseStore`: Zustand store for expense state management
-- `Expense`: TypeScript type for expense object
-- `ExpenseCard`: UI component displaying single expense
+- `ExpenseCard`: Presentational component displaying a single expense
+- `ExpenseList`: Component rendering sorted list of expenses (descending by date)
 
 ## State & Data
 
 - **Store:** `useExpenseStore` (Persistence Key: `smartspend-expenses`)
-- **Actions:** `addExpense`, `removeExpense`, `updateExpense`, `getByDate`, `getByCategory`, `getByProject`
-
-## Type Definition
-
-```typescript
-interface Expense {
-  id: string
-  amount: number
-  description: string
-  categoryId: string
-  projectId?: string
-  date: string
-  createdAt: string
-}
-```
+- **Actions:**
+  - `addExpense(expense)`: Add new expense
+  - `deleteExpense(id)`: Remove expense by ID
+  - `updateExpense(id, data)`: Partial update of expense
 
 ## Dependencies
 
-- Uses: `@/shared/types`, `@/shared/lib`
+- Uses: `@/shared/types` (Expense type)
+- Uses: `lucide-react` (Trash2 icon)

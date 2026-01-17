@@ -1,29 +1,26 @@
 # Category Entity
 
-Business entity representing an expense category.
+Manages expense categories with persistent storage and default Russian categories.
 
 ## Public API (`index.ts`)
 
 - `useCategoryStore`: Zustand store for category state management
-- `Category`: TypeScript type for category object
-- `CategoryBadge`: UI component displaying category with color
+- `CategoryBadge`: Pill/badge component displaying emoji + name
 
 ## State & Data
 
 - **Store:** `useCategoryStore` (Persistence Key: `smartspend-categories`)
-- **Actions:** `addCategory`, `removeCategory`, `updateCategory`, `getById`
-
-## Type Definition
-
-```typescript
-interface Category {
-  id: string
-  name: string
-  color: string
-  icon?: string
-}
-```
+- **Default Categories:** Initialized with 6 Russian categories if storage is empty
+  - Продукты (Groceries)
+  - Транспорт (Transport)
+  - Еда (Food)
+  - Здоровье (Health)
+  - Развлечения (Fun)
+  - Другое (Other)
+- **Actions:**
+  - `addCategory(category)`: Add new category
+  - `deleteCategory(id)`: Remove category by ID
 
 ## Dependencies
 
-- Uses: `@/shared/types`, `@/shared/lib`
+- Uses: `@/shared/types` (Category type)

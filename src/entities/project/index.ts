@@ -1,3 +1,3 @@
 // Project entity - Public API
-// TODO: Export useProjectStore, Project type, ProjectCard when implemented
-export {}
+export { useProjectStore } from './model/store'
+export { ProjectCard } from './ui/project-card'

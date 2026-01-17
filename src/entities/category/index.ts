@@ -1,3 +1,3 @@
 // Category entity - Public API
-// TODO: Export useCategoryStore, Category type, CategoryBadge when implemented
-export {}
+export { useCategoryStore } from './model/store'
+export { CategoryBadge } from './ui/category-badge'

@@ -9,17 +9,23 @@ Each entity folder should contain:
 - `model/` - Zustand store, types, and selectors
 - `ui/` - Presentational components for the entity
 - `index.ts` - Public API exports
+- `README.md` - Micro-documentation
 
 ## Entities
 
-- **expense** - Expense entity with amount, category, date, and optional project link
-- **category** - Expense categories (predefined + custom)
-- **project** - Project entity for grouping expenses with budget
-- **bucket** - Budget buckets for spending limits per category
+| Entity       | Store              | Persistence Key         | Description                                               |
+| ------------ | ------------------ | ----------------------- | --------------------------------------------------------- |
+| **expense**  | `useExpenseStore`  | `smartspend-expenses`   | Expense records with amount, category, date, project link |
+| **category** | `useCategoryStore` | `smartspend-categories` | Expense categories (6 Russian defaults)                   |
+| **project**  | `useProjectStore`  | `smartspend-projects`   | Projects for grouping expenses with budget                |
+| **bucket**   | `useBucketStore`   | `smartspend-buckets`    | Allocation buckets (Savings 20%, Investments 10%)         |
+| **settings** | `useSettingsStore` | `smartspend-settings`   | Financial settings (weekly limit, salary/advance days)    |
+| **session**  | `useSessionStore`  | _none_                  | Ephemeral dashboard state (selected date, view date)      |
 
 ## Rules
 
 1. Entities MUST NOT depend on features or widgets
-2. Each entity has its own Zustand store with `persist` middleware
+2. Each entity has its own Zustand store (with `persist` middleware where applicable)
 3. Store naming: `use[Entity]Store`
 4. Persistence keys: `smartspend-[entity]`
+5. Session entity has no persistence (resets on reload)

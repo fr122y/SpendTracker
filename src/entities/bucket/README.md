@@ -1,30 +1,20 @@
 # Bucket Entity
 
-Business entity representing a budget bucket (spending limit category).
+Manages allocation buckets for savings and investment percentages.
 
 ## Public API (`index.ts`)
 
 - `useBucketStore`: Zustand store for bucket state management
-- `Bucket`: TypeScript type for bucket object
-- `BucketCard`: UI component displaying bucket with limit progress
 
 ## State & Data
 
 - **Store:** `useBucketStore` (Persistence Key: `smartspend-buckets`)
-- **Actions:** `addBucket`, `removeBucket`, `updateBucket`, `getById`
-
-## Type Definition
-
-```typescript
-interface Bucket {
-  id: string
-  name: string
-  limit: number
-  period: 'daily' | 'weekly' | 'monthly'
-  categoryIds: string[]
-}
-```
+- **Default Buckets:**
+  - Накопления (Savings): 20%
+  - Инвестиции (Investments): 10%
+- **Actions:**
+  - `updateBuckets(buckets)`: Full replace of buckets array
 
 ## Dependencies
 
-- Uses: `@/shared/types`, `@/shared/lib`
+- Uses: `@/shared/types` (AllocationBucket type)

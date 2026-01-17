@@ -1,31 +1,20 @@
 # Project Entity
 
-Business entity representing a spending project with budget allocation.
+Manages spending projects with budget allocation and progress tracking.
 
 ## Public API (`index.ts`)
 
 - `useProjectStore`: Zustand store for project state management
-- `Project`: TypeScript type for project object
-- `ProjectCard`: UI component displaying project with budget progress
+- `ProjectCard`: Component displaying project name, budget, and spend progress
 
 ## State & Data
 
 - **Store:** `useProjectStore` (Persistence Key: `smartspend-projects`)
-- **Actions:** `addProject`, `removeProject`, `updateProject`, `getById`
-
-## Type Definition
-
-```typescript
-interface Project {
-  id: string
-  name: string
-  budget: number
-  startDate: string
-  endDate?: string
-  isActive: boolean
-}
-```
+- **Actions:**
+  - `addProject(project)`: Add new project with auto-generated random color
+  - `deleteProject(id)`: Remove project by ID
 
 ## Dependencies
 
-- Uses: `@/shared/types`, `@/shared/lib`
+- Uses: `@/shared/types` (Project type)
+- Uses: `@/shared/ui` (ProgressBar component)
