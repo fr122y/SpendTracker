@@ -22,19 +22,21 @@ test.describe('SmartSpend Tracker', () => {
     })
 
     test('should render month navigation controls', async ({ page }) => {
-      // Previous month button
+      const header = page.getByRole('banner')
+
+      // Previous month button (in header)
       await expect(
-        page.getByRole('button', { name: 'Предыдущий месяц' })
+        header.getByRole('button', { name: 'Предыдущий месяц' })
       ).toBeVisible()
 
-      // Next month button
+      // Next month button (in header)
       await expect(
-        page.getByRole('button', { name: 'Следующий месяц' })
+        header.getByRole('button', { name: 'Следующий месяц' })
       ).toBeVisible()
 
       // Edit mode button
       await expect(
-        page.getByRole('button', { name: /Редактировать/ })
+        header.getByRole('button', { name: /Редактировать/ })
       ).toBeVisible()
     })
 
@@ -42,10 +44,12 @@ test.describe('SmartSpend Tracker', () => {
       // Expense form should be visible (part of EXPENSE_LOG widget)
       await expect(page.getByPlaceholder('Описание расхода')).toBeVisible()
       await expect(page.getByPlaceholder('Сумма')).toBeVisible()
-      await expect(page.getByRole('button', { name: 'Добавить' })).toBeVisible()
+      await expect(
+        page.getByRole('button', { name: 'Добавить', exact: true })
+      ).toBeVisible()
 
-      // Weekly budget widget should be visible
-      await expect(page.getByText('Недельный бюджет')).toBeVisible()
+      // Weekly budget widget should be visible (widget heading)
+      await expect(page.getByText('Бюджет на неделю')).toBeVisible()
     })
   })
 
@@ -55,7 +59,10 @@ test.describe('SmartSpend Tracker', () => {
       // Fill in expense form
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       await descriptionInput.fill('Тестовый расход на продукты')
       await amountInput.fill('500')
@@ -70,13 +77,16 @@ test.describe('SmartSpend Tracker', () => {
       })
 
       // Verify the amount is displayed
-      await expect(page.getByText('500')).toBeVisible()
+      await expect(page.getByText('500 ₽').first()).toBeVisible()
     })
 
     test('should clear form after successful submission', async ({ page }) => {
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       await descriptionInput.fill('Кофе')
       await amountInput.fill('250')
@@ -93,7 +103,10 @@ test.describe('SmartSpend Tracker', () => {
     test('should update daily total after adding expense', async ({ page }) => {
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       // Add first expense
       await descriptionInput.fill('Обед')
@@ -108,7 +121,7 @@ test.describe('SmartSpend Tracker', () => {
       await expect(page.getByText('Ужин')).toBeVisible({ timeout: 10000 })
 
       // Total should show 700 (300 + 400)
-      await expect(page.getByText('700')).toBeVisible()
+      await expect(page.getByText('700 ₽').first()).toBeVisible()
     })
   })
 
@@ -120,7 +133,10 @@ test.describe('SmartSpend Tracker', () => {
       // Add an expense
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       await descriptionInput.fill('Тест анализа')
       await amountInput.fill('1000')
@@ -133,8 +149,8 @@ test.describe('SmartSpend Tracker', () => {
 
       // Analysis widget should show the category (Другое by default)
       // The percentage should be 100% since it's the only expense
-      await expect(page.getByText('Другое')).toBeVisible()
-      await expect(page.getByText('100%')).toBeVisible()
+      await expect(page.getByText('Другое').first()).toBeVisible()
+      await expect(page.getByText('100%').first()).toBeVisible()
     })
 
     test('should update analysis totals when expenses are added', async ({
@@ -142,7 +158,10 @@ test.describe('SmartSpend Tracker', () => {
     }) => {
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       // Add expense
       await descriptionInput.fill('Расход для анализа')
@@ -155,8 +174,8 @@ test.describe('SmartSpend Tracker', () => {
       })
 
       // Analysis widget should show the total amount
-      // Look for the formatted amount in the analysis section
-      await expect(page.getByText(/2[\s\u00A0]?500/)).toBeVisible()
+      // Look for the formatted amount in the analysis section (use first match)
+      await expect(page.getByText(/2[\s\u00A0]?500/).first()).toBeVisible()
     })
   })
 
@@ -166,7 +185,10 @@ test.describe('SmartSpend Tracker', () => {
       // Add an expense
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       await descriptionInput.fill('Постоянный расход')
       await amountInput.fill('1500')
@@ -184,13 +206,16 @@ test.describe('SmartSpend Tracker', () => {
       await expect(page.getByText('Постоянный расход')).toBeVisible({
         timeout: 10000,
       })
-      await expect(page.getByText('1 500')).toBeVisible()
+      await expect(page.getByText('1 500').first()).toBeVisible()
     })
 
     test('should persist multiple expenses after reload', async ({ page }) => {
       const descriptionInput = page.getByPlaceholder('Описание расхода')
       const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', { name: 'Добавить' })
+      const submitButton = page.getByRole('button', {
+        name: 'Добавить',
+        exact: true,
+      })
 
       // Add first expense
       await descriptionInput.fill('Первый расход')
@@ -221,19 +246,21 @@ test.describe('SmartSpend Tracker', () => {
     test('should persist layout configuration after reload', async ({
       page,
     }) => {
+      const header = page.getByRole('banner')
+
       // Enter edit mode
-      const editButton = page.getByRole('button', { name: /Редактировать/ })
+      const editButton = header.getByRole('button', { name: /Редактировать/ })
       await editButton.click()
 
       // Verify we're in edit mode (button text changes to "Готово")
-      await expect(page.getByRole('button', { name: /Готово/ })).toBeVisible()
+      await expect(header.getByRole('button', { name: /Готово/ })).toBeVisible()
 
       // Exit edit mode
-      await page.getByRole('button', { name: /Готово/ }).click()
+      await header.getByRole('button', { name: /Готово/ }).click()
 
       // Verify we're out of edit mode
       await expect(
-        page.getByRole('button', { name: /Редактировать/ })
+        header.getByRole('button', { name: /Редактировать/ })
       ).toBeVisible()
     })
   })
@@ -241,7 +268,8 @@ test.describe('SmartSpend Tracker', () => {
   // Navigation Tests
   test.describe('Month Navigation', () => {
     test('should navigate to previous month', async ({ page }) => {
-      const prevButton = page.getByRole('button', {
+      const header = page.getByRole('banner')
+      const prevButton = header.getByRole('button', {
         name: 'Предыдущий месяц',
       })
 
@@ -258,7 +286,8 @@ test.describe('SmartSpend Tracker', () => {
     })
 
     test('should navigate to next month', async ({ page }) => {
-      const nextButton = page.getByRole('button', { name: 'Следующий месяц' })
+      const header = page.getByRole('banner')
+      const nextButton = header.getByRole('button', { name: 'Следующий месяц' })
 
       // Get current month text
       const monthText = page.locator('span.capitalize')
@@ -276,32 +305,37 @@ test.describe('SmartSpend Tracker', () => {
   // Edit Mode Tests
   test.describe('Edit Mode', () => {
     test('should toggle edit mode', async ({ page }) => {
-      const editButton = page.getByRole('button', { name: /Редактировать/ })
+      const header = page.getByRole('banner')
+      const editButton = header.getByRole('button', { name: /Редактировать/ })
 
       // Click to enter edit mode
       await editButton.click()
 
       // Button should now show "Готово"
-      await expect(page.getByRole('button', { name: /Готово/ })).toBeVisible()
+      await expect(header.getByRole('button', { name: /Готово/ })).toBeVisible()
 
       // Click again to exit edit mode
-      await page.getByRole('button', { name: /Готово/ }).click()
+      await header.getByRole('button', { name: /Готово/ }).click()
 
       // Button should show "Редактировать" again
       await expect(
-        page.getByRole('button', { name: /Редактировать/ })
+        header.getByRole('button', { name: /Редактировать/ })
       ).toBeVisible()
     })
 
     test('should show widget titles in edit mode', async ({ page }) => {
+      const header = page.getByRole('banner')
+
       // Enter edit mode
-      await page.getByRole('button', { name: /Редактировать/ }).click()
+      await header.getByRole('button', { name: /Редактировать/ }).click()
 
       // Widget titles should be visible
-      await expect(page.getByText('Календарь')).toBeVisible()
-      await expect(page.getByText('Журнал расходов')).toBeVisible()
-      await expect(page.getByText('Анализ')).toBeVisible()
-      await expect(page.getByText('Динамика')).toBeVisible()
+      await expect(page.getByText('Календарь', { exact: true })).toBeVisible()
+      await expect(
+        page.getByText('Журнал расходов', { exact: true })
+      ).toBeVisible()
+      await expect(page.getByText('Анализ', { exact: true })).toBeVisible()
+      await expect(page.getByText('Динамика', { exact: true })).toBeVisible()
     })
   })
 })
