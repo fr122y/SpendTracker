@@ -1,10 +1,5 @@
-import dynamic from 'next/dynamic'
-
-const Dashboard = dynamic(
-  () => import('@/_pages/dashboard').then((mod) => mod.Dashboard),
-  { ssr: false }
-)
+import { DashboardDynamic } from '@/_pages/dashboard'
 
 export default function Home() {
-  return <Dashboard />
+  return <DashboardDynamic />
 }
