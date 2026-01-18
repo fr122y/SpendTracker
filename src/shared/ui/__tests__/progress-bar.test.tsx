@@ -16,22 +16,15 @@ describe('ProgressBar', () => {
     expect(screen.getByText('Progress')).toBeInTheDocument()
   })
 
-  it('shows green color for low percentage (0-50%)', () => {
-    render(<ProgressBar value={30} max={100} data-testid="progress" />)
-    const bar = screen.getByTestId('progress')
-    const indicator = bar.querySelector('[class*="bg-emerald"]')
-    expect(indicator).toBeInTheDocument()
-  })
-
-  it('shows yellow color for medium percentage (50-80%)', () => {
+  it('shows blue color when within budget', () => {
     render(<ProgressBar value={70} max={100} data-testid="progress" />)
     const bar = screen.getByTestId('progress')
-    const indicator = bar.querySelector('[class*="bg-yellow"]')
+    const indicator = bar.querySelector('[class*="bg-blue"]')
     expect(indicator).toBeInTheDocument()
   })
 
-  it('shows red color for high percentage (80-100%)', () => {
-    render(<ProgressBar value={90} max={100} data-testid="progress" />)
+  it('shows red color when over budget', () => {
+    render(<ProgressBar value={150} max={100} data-testid="progress" />)
     const bar = screen.getByTestId('progress')
     const indicator = bar.querySelector('[class*="bg-red"]')
     expect(indicator).toBeInTheDocument()

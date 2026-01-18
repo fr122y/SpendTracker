@@ -66,6 +66,6 @@ describe('TerminalPanel', () => {
       </TerminalPanel>
     )
     const panel = screen.getByTestId('panel')
-    expect(panel).toHaveClass('bg-zinc-900/80')
+    expect(panel).toHaveClass('bg-zinc-900/30')
   })
 })

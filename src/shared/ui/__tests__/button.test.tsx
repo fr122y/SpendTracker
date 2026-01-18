@@ -25,7 +25,7 @@ describe('Button', () => {
   it('applies primary variant styles by default', () => {
     render(<Button>Primary</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-emerald-600')
+    expect(button).toHaveClass('bg-blue-600')
   })
 
   it('applies ghost variant styles', () => {
@@ -37,7 +37,7 @@ describe('Button', () => {
   it('applies danger variant styles', () => {
     render(<Button variant="danger">Danger</Button>)
     const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-red-600')
+    expect(button).toHaveClass('text-red-400')
   })
 
   it('is disabled when disabled prop is passed', () => {

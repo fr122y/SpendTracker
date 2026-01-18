@@ -27,18 +27,18 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
       <div
         ref={ref}
         className={cn(
-          'relative flex flex-col rounded-lg overflow-hidden',
-          'bg-zinc-900/80 backdrop-blur-sm border border-zinc-800',
-          'shadow-lg shadow-black/20',
+          'relative flex flex-col rounded-md overflow-hidden',
+          'border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm shadow-lg',
+          isEditMode && 'border-2 border-blue-500/50 border-dashed',
           className
         )}
         {...props}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center justify-between p-3 border-b border-zinc-800/50">
           <div className="flex items-center gap-2">
-            {icon && <span className="text-emerald-500">{icon}</span>}
-            <h2 className="text-sm font-semibold text-zinc-200 uppercase tracking-wider">
+            {icon && <span className="text-blue-500">{icon}</span>}
+            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
               {title}
             </h2>
           </div>
@@ -46,8 +46,8 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
           {isEditMode && onDelete && (
             <button
               onClick={onDelete}
-              className="p-1 rounded hover:bg-red-600/20 text-zinc-500 hover:text-red-500 transition-colors"
-              aria-label="Delete widget"
+              className="p-1 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors"
+              aria-label="Удалить виджет"
             >
               <X className="h-4 w-4" />
             </button>
@@ -55,7 +55,11 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-4 overflow-auto">{children}</div>
+        <div
+          className={cn('flex-1 p-4 overflow-auto', isEditMode && 'grayscale')}
+        >
+          {children}
+        </div>
       </div>
     )
   }

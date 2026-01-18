@@ -11,15 +11,9 @@ export interface ProgressBarProps extends HTMLAttributes<HTMLDivElement> {
 
 export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(
   ({ className, value, max, label, showPercentage = false, ...props }, ref) => {
+    const isOverBudget = value > max
     const percentage = Math.min((value / max) * 100, 100)
     const displayPercentage = Math.round((value / max) * 100)
-
-    // Color based on percentage
-    const getColor = () => {
-      if (percentage < 50) return 'bg-emerald-500'
-      if (percentage < 80) return 'bg-yellow-500'
-      return 'bg-red-500'
-    }
 
     return (
       <div ref={ref} className={cn('w-full', className)} {...props}>
@@ -27,7 +21,12 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(
           <div className="flex justify-between items-center mb-1.5">
             {label && <span className="text-sm text-zinc-400">{label}</span>}
             {showPercentage && (
-              <span className="text-sm font-medium text-zinc-300">
+              <span
+                className={cn(
+                  'text-sm font-mono font-medium',
+                  isOverBudget ? 'text-red-500' : 'text-zinc-300'
+                )}
+              >
                 {displayPercentage}%
               </span>
             )}
@@ -43,8 +42,8 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(
         >
           <div
             className={cn(
-              'h-full rounded-full transition-all duration-300',
-              getColor()
+              'h-full transition-all duration-500 ease-out',
+              isOverBudget ? 'bg-red-500' : 'bg-blue-500'
             )}
             style={{ width: `${percentage}%` }}
           />
