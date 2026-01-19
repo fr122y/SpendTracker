@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { atom, action, wrap, withLocalStorage } from '@reatom/core'
+import { useSyncExternalStore } from 'react'
 
 import type { Project } from '@/shared/types'
 
@@ -18,36 +18,75 @@ function getRandomColor(): string {
   return COLORS[Math.floor(Math.random() * COLORS.length)]
 }
 
+// Atoms with persistence
+export const projectsAtom = atom<Project[]>([], 'projectsAtom').extend(
+  withLocalStorage('smartspend-projects')
+)
+
+// Actions
+export const addProject = action(
+  (project: Omit<Project, 'color' | 'createdAt'>) => {
+    const current = projectsAtom()
+    projectsAtom.set([
+      ...current,
+      {
+        ...project,
+        color: getRandomColor(),
+        createdAt: new Date().toISOString(),
+      },
+    ])
+  },
+  'addProject'
+)
+
+export const deleteProject = action((id: string) => {
+  const current = projectsAtom()
+  projectsAtom.set(current.filter((p) => p.id !== id))
+}, 'deleteProject')
+
+// Store state type
 interface ProjectState {
   projects: Project[]
   addProject: (project: Omit<Project, 'color' | 'createdAt'>) => void
   deleteProject: (id: string) => void
 }
 
-export const useProjectStore = create<ProjectState>()(
-  persist(
-    (set) => ({
-      projects: [],
+// Action wrappers (stable references)
+const actionAddProject = (project: Omit<Project, 'color' | 'createdAt'>) =>
+  wrap(addProject)(project)
+const actionDeleteProject = (id: string) => wrap(deleteProject)(id)
 
-      addProject: (project) =>
-        set((state) => ({
-          projects: [
-            ...state.projects,
-            {
-              ...project,
-              color: getRandomColor(),
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        })),
+// Cached state for useSyncExternalStore
+let cachedState: ProjectState | null = null
+let cachedProjects: Project[] | undefined
 
-      deleteProject: (id) =>
-        set((state) => ({
-          projects: state.projects.filter((p) => p.id !== id),
-        })),
-    }),
-    {
-      name: 'smartspend-projects',
+const getState = (): ProjectState => {
+  const projects = projectsAtom()
+
+  if (cachedState === null || cachedProjects !== projects) {
+    cachedProjects = projects
+    cachedState = {
+      projects,
+      addProject: actionAddProject,
+      deleteProject: actionDeleteProject,
     }
-  )
-)
+  }
+
+  return cachedState
+}
+
+const subscribe = (callback: () => void) => {
+  return projectsAtom.subscribe(callback)
+}
+
+// Adapter Hook (Matches old Zustand API with selector support)
+export function useProjectStore(): ProjectState
+export function useProjectStore<T>(selector: (state: ProjectState) => T): T
+export function useProjectStore<T>(selector?: (state: ProjectState) => T) {
+  const state = useSyncExternalStore(subscribe, getState, getState)
+
+  if (selector) {
+    return selector(state)
+  }
+  return state
+}

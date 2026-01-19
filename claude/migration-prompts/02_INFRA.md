@@ -1,6 +1,6 @@
 # Phase 2: Create Reatom Infrastructure
 
-**Context:** Refer to `00_RULES.md` for architecture standards.
+**Context:** Refer to `./00_RULES.md` for architecture standards.
 
 ## Objective
 

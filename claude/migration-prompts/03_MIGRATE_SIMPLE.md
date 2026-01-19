@@ -35,11 +35,6 @@ Migrate 5 standard stores from Zustand to Reatom while keeping the public API (h
 2. **Refactor:**
    - Define atoms for each setting.
    - Apply persistence:
-     ```ts
-     export const weeklyLimitAtom = atom(10000, 'weeklyLimitAtom').pipe(
-       createPersist('smartspend-settings-weeklyLimit') // Note: Append suffix if needed, or persist object
-     )
-     ```
      _Note: If the original Zustand store persisted the whole object under one key, try to match that structure or migrate to granular atoms if cleaner._
 3. **Export Adapter Hook.**
 

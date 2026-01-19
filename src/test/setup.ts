@@ -1,5 +1,34 @@
 import '@testing-library/jest-dom'
 
+// Polyfill Request/Response for @reatom/core v1000 web modules
+if (typeof globalThis.Request === 'undefined') {
+  globalThis.Request = class Request {
+    url: string
+    constructor(input: string) {
+      this.url = input
+    }
+  } as unknown as typeof Request
+}
+
+if (typeof globalThis.Response === 'undefined') {
+  globalThis.Response = class Response {} as unknown as typeof Response
+}
+
+if (typeof globalThis.BroadcastChannel === 'undefined') {
+  globalThis.BroadcastChannel = class BroadcastChannel {
+    name: string
+    constructor(name: string) {
+      this.name = name
+    }
+    postMessage() {}
+    close() {}
+    addEventListener() {}
+    removeEventListener() {}
+    onmessage = null
+    onmessageerror = null
+  } as unknown as typeof BroadcastChannel
+}
+
 // Mock localStorage
 const localStorageMock = (() => {
   let store: Record<string, string> = {}

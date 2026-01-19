@@ -1,9 +1,9 @@
-# Phase 4: Migrate Complex Stores
+# Phase 4: Migrate Complex Stores (Reatom v4)
 
 **Context:**
 
 - These stores contain complex logic (nested updates, array manipulation).
-- Strict adherence to `00_RULES.md` regarding **Persistence Keys** is mandatory to prevent data loss.
+- **Reatom v4 Specifics:** Use the "Signal-like" API. Atoms are callable functions for reading/writing. `ctx` is implicit.
 
 ## Objective
 
@@ -20,17 +20,22 @@ Migrate the core business logic stores while preserving exact behavior.
    - Read the file. Note existing types (e.g., `Expense` interface).
    - Look for actions like `addExpense`, `deleteExpense`, `updateExpense`.
 
-2. **Refactor to Reatom:**
+2. **Refactor to Reatom v4:**
    - **Atom:** Create `expensesAtom` initialized with an empty array `[]`.
-   - **Persistence:** Apply `createPersist('smartspend-expenses')` to this atom.
+   - **Persistence:** Apply `createPersist('smartspend-expenses')` to this atom (using `.pipe` or `.extend`).
    - **Actions:** Re-implement the logic using immutable patterns.
-     - _Add:_ `[...current, new]`
-     - _Delete:_ `current.filter(...)`
-     - _Update:_ `current.map(...)`
+     - **Read:** Call `expensesAtom()` (e.g., `const current = expensesAtom()`).
+     - **Write:** Call `expensesAtom(newValue)`.
+     - _Example:_
+       ```ts
+       export const addExpense = action((newExpense: Expense) => {
+         expensesAtom([...expensesAtom(), newExpense])
+       }, 'addExpense')
+       ```
 
 3. **Adapter Hook:**
    - Export `useExpenseStore`.
-   - Map the new actions to the old API names.
+   - Map the new actions to the old API names using `useAction`.
 
 ---
 
@@ -49,17 +54,19 @@ Migrate the core business logic stores while preserving exact behavior.
    - **UI Atom:** Create `isEditModeAtom` (boolean).
      - **Do NOT persist** this (unless it was persisted in Zustand).
 
-3. **Refactor - Complex Actions:**
+3. **Refactor - Complex Actions (v4 Style):**
    - **Move Widget:** Implement logic to remove a widget ID from one column and add to another.
-     - Use `ctx.get(layoutConfigAtom)` to read.
-     - Perform deep clone/update.
-     - Write back to `layoutConfigAtom`.
-   - **Resize/Reorder:** Port the logic identically.
+     - **Read:** `const config = layoutConfigAtom()`
+     - **Logic:** Perform deep clone/update on `config`.
+     - **Write:** `layoutConfigAtom(newConfig)`
+   - **Resize/Reorder:** Port the logic identically using the getter/setter pattern.
 
 4. **Adapter Hook:**
    - Combine both atoms into one returned object to match the original `useLayoutStore` return type.
+   - `const [config] = useAtom(layoutConfigAtom)`
+   - `const [isEdit] = useAtom(isEditModeAtom)`
 
 ## Verification
 
 1. **Critical:** Check the "Expense Log" or main list view. Add an item, refresh page. It must remain.
-2. **Critical:** Enter "Edit Mode" in layout (if available). Move a widget. Refresh. The widget should stay in the new position, but Edit Mode should likely be off (or on, depending on original logic).
+2. **Critical:** Enter "Edit Mode" in layout (if available). Move a widget. Refresh. The widget should stay in the new position.

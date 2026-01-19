@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { atom, action, wrap, withLocalStorage } from '@reatom/core'
+import { useSyncExternalStore } from 'react'
 
 import type { Category } from '@/shared/types'
 
@@ -12,29 +12,64 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '6', name: 'Другое', emoji: '📝' },
 ]
 
+// Atoms with persistence
+export const categoriesAtom = atom(DEFAULT_CATEGORIES, 'categoriesAtom').extend(
+  withLocalStorage('smartspend-categories')
+)
+
+// Actions
+export const addCategory = action((category: Category) => {
+  const current = categoriesAtom()
+  categoriesAtom.set([...current, category])
+}, 'addCategory')
+
+export const deleteCategory = action((id: string) => {
+  const current = categoriesAtom()
+  categoriesAtom.set(current.filter((c) => c.id !== id))
+}, 'deleteCategory')
+
+// Store state type
 interface CategoryState {
   categories: Category[]
   addCategory: (category: Category) => void
   deleteCategory: (id: string) => void
 }
 
-export const useCategoryStore = create<CategoryState>()(
-  persist(
-    (set) => ({
-      categories: DEFAULT_CATEGORIES,
+// Action wrappers (stable references)
+const actionAddCategory = (category: Category) => wrap(addCategory)(category)
+const actionDeleteCategory = (id: string) => wrap(deleteCategory)(id)
 
-      addCategory: (category) =>
-        set((state) => ({
-          categories: [...state.categories, category],
-        })),
+// Cached state for useSyncExternalStore
+let cachedState: CategoryState | null = null
+let cachedCategories: Category[] | undefined
 
-      deleteCategory: (id) =>
-        set((state) => ({
-          categories: state.categories.filter((c) => c.id !== id),
-        })),
-    }),
-    {
-      name: 'smartspend-categories',
+const getState = (): CategoryState => {
+  const categories = categoriesAtom()
+
+  if (cachedState === null || cachedCategories !== categories) {
+    cachedCategories = categories
+    cachedState = {
+      categories,
+      addCategory: actionAddCategory,
+      deleteCategory: actionDeleteCategory,
     }
-  )
-)
+  }
+
+  return cachedState
+}
+
+const subscribe = (callback: () => void) => {
+  return categoriesAtom.subscribe(callback)
+}
+
+// Adapter Hook (Matches old Zustand API with selector support)
+export function useCategoryStore(): CategoryState
+export function useCategoryStore<T>(selector: (state: CategoryState) => T): T
+export function useCategoryStore<T>(selector?: (state: CategoryState) => T) {
+  const state = useSyncExternalStore(subscribe, getState, getState)
+
+  if (selector) {
+    return selector(state)
+  }
+  return state
+}
