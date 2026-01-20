@@ -14,6 +14,8 @@ import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { getMonthlyExpenses } from '@/shared/lib'
 
+import type { Expense } from '@/shared/types'
+
 const MONTH_NAMES = [
   'Январь',
   'Февраль',
@@ -36,7 +38,7 @@ interface DailyData {
 }
 
 function getDailySpendingData(
-  expenses: ReturnType<typeof useExpenseStore.getState>['expenses'],
+  expenses: Expense[],
   viewDate: Date
 ): DailyData[] {
   const year = viewDate.getFullYear()

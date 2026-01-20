@@ -1,8 +1,33 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { atom, action, wrap, withLocalStorage } from '@reatom/core'
+import { useSyncExternalStore } from 'react'
 
 import type { Expense } from '@/shared/types'
 
+// Atoms with persistence
+export const expensesAtom = atom<Expense[]>([], 'expensesAtom').extend(
+  withLocalStorage('smartspend-expenses')
+)
+
+// Actions
+export const addExpense = action((expense: Expense) => {
+  const current = expensesAtom() ?? []
+  expensesAtom.set([...current, expense])
+}, 'addExpense')
+
+export const deleteExpense = action((id: string) => {
+  const current = expensesAtom() ?? []
+  expensesAtom.set(current.filter((e) => e.id !== id))
+}, 'deleteExpense')
+
+export const updateExpense = action(
+  (id: string, data: Partial<Omit<Expense, 'id'>>) => {
+    const current = expensesAtom() ?? []
+    expensesAtom.set(current.map((e) => (e.id === id ? { ...e, ...data } : e)))
+  },
+  'updateExpense'
+)
+
+// Store state type
 interface ExpenseState {
   expenses: Expense[]
   addExpense: (expense: Expense) => void
@@ -10,30 +35,46 @@ interface ExpenseState {
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
 }
 
-export const useExpenseStore = create<ExpenseState>()(
-  persist(
-    (set) => ({
-      expenses: [],
+// Action wrappers (stable references)
+const actionAddExpense = (expense: Expense) => wrap(addExpense)(expense)
+const actionDeleteExpense = (id: string) => wrap(deleteExpense)(id)
+const actionUpdateExpense = (id: string, data: Partial<Omit<Expense, 'id'>>) =>
+  wrap(updateExpense)(id, data)
 
-      addExpense: (expense) =>
-        set((state) => ({
-          expenses: [...state.expenses, expense],
-        })),
+// Cached state for useSyncExternalStore
+let cachedState: ExpenseState | null = null
+let cachedExpenses: Expense[] | undefined
+const EMPTY_EXPENSES: Expense[] = []
 
-      deleteExpense: (id) =>
-        set((state) => ({
-          expenses: state.expenses.filter((e) => e.id !== id),
-        })),
+const getState = (): ExpenseState => {
+  // Fallback to stable empty array during hydration when localStorage hasn't loaded yet
+  const expenses = expensesAtom() ?? EMPTY_EXPENSES
 
-      updateExpense: (id, data) =>
-        set((state) => ({
-          expenses: state.expenses.map((e) =>
-            e.id === id ? { ...e, ...data } : e
-          ),
-        })),
-    }),
-    {
-      name: 'smartspend-expenses',
+  if (cachedState === null || cachedExpenses !== expenses) {
+    cachedExpenses = expenses
+    cachedState = {
+      expenses,
+      addExpense: actionAddExpense,
+      deleteExpense: actionDeleteExpense,
+      updateExpense: actionUpdateExpense,
     }
-  )
-)
+  }
+
+  return cachedState
+}
+
+const subscribe = (callback: () => void) => {
+  return expensesAtom.subscribe(callback)
+}
+
+// Adapter Hook (Matches old Zustand API with selector support)
+export function useExpenseStore(): ExpenseState
+export function useExpenseStore<T>(selector: (state: ExpenseState) => T): T
+export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
+  const state = useSyncExternalStore(subscribe, getState, getState)
+
+  if (selector) {
+    return selector(state)
+  }
+  return state
+}
