@@ -10,7 +10,7 @@
 1.  **Framework:** Next.js 16 (App Router) + React 19.
 2.  **Styling:** Tailwind CSS v4 (Zero config, CSS-first).
 3.  **State Management:**
-    - **Zustand** (with `persist` middleware) for Client State. **Context API is FORBIDDEN** for global state.
+    - **Reatom v4** (with `@reatom/react` & localStorage persistence) for Client State. **Context API is FORBIDDEN** for global state.
     - **TanStack Query v5** for Async/Server State.
     - **No `useEffect`** for storage synchronization.
 4.  **Backend/AI:**
@@ -37,7 +37,7 @@
 
 ## State & Data
 
-- **Store:** [Zustand Store Name] (Persistence Key: `smartspend-...`)
+- **Store:** [Reatom Store Name] (Persistence Key: `smartspend-...`)
 - **Actions:** [List main actions]
 
 ## Dependencies
@@ -49,7 +49,7 @@
 
 Refer to and **maintain** these guides as you build:
 
-- **[Entities & State Rules](src/entities/README.md)** → Business logic, Zustand stores definition.
+- **[Entities & State Rules](src/entities/README.md)** → Business logic, Reatom stores definition.
 - **[Features & Mutations](src/features/README.md)** → User interactions, Async forms, Fallback logic.
 - **[Widgets & Composition](src/widgets/README.md)** → Dashboard assembly, Grid logic.
 - **[Shared & API](src/shared/README.md)** → Server Actions, UI Kit, Utilities.

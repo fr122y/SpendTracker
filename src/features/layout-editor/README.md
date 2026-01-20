@@ -4,7 +4,7 @@ Dashboard layout customization with drag-and-drop grid editing.
 
 ## Public API (`index.ts`)
 
-- `useLayoutStore`: Zustand store for layout configuration
+- `useLayoutStore`: Reatom store hook for layout configuration
 - `ColumnResizer`: Draggable handle for resizing columns
 - `WidgetPlaceholder`: Drop zone wrapper for widgets
 

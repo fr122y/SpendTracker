@@ -34,5 +34,5 @@ export default function RootLayout({ children }) {
 
 ## Notes
 
-- Zustand stores do NOT require React Context providers
+- Reatom stores use implicit context via `@reatom/react` and do NOT require manual providers
 - This component is a client component (`'use client'`)

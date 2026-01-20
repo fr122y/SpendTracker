@@ -4,7 +4,7 @@ Manages spending projects with budget allocation and progress tracking.
 
 ## Public API (`index.ts`)
 
-- `useProjectStore`: Zustand store for project state management
+- `useProjectStore`: Reatom store hook for project state management
 - `ProjectCard`: Component displaying project name, budget, and spend progress
 
 ## State & Data

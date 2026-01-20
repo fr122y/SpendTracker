@@ -4,7 +4,7 @@ Manages expense categories with persistent storage and default Russian categorie
 
 ## Public API (`index.ts`)
 
-- `useCategoryStore`: Zustand store for category state management
+- `useCategoryStore`: Reatom store hook for category state management
 - `CategoryBadge`: Pill/badge component displaying emoji + name
 
 ## State & Data

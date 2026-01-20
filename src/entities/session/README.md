@@ -4,7 +4,7 @@ Manages ephemeral dashboard session state (not persisted, resets on reload).
 
 ## Public API (`index.ts`)
 
-- `useSessionStore`: Zustand store for session state management
+- `useSessionStore`: Reatom store hook for session state management
 
 ## State & Data
 

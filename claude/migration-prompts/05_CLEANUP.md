@@ -1,4 +1,4 @@
-# Phase 5: Cleanup, Tests & Documentation
+# Phase 5: Cleanup, Tests & Documentation (Reatom v4) - COMPLETED
 
 **Context:**
 
@@ -17,7 +17,7 @@ Finalize the migration by updating tests, documentation, and removing the old li
 
 1. **CLAUDE.md:**
    - Locate the "State Management" section.
-   - Replace "Zustand" with "**Reatom v3** (with `@reatom/npm-react` & `@reatom/persist-web-storage`)".
+   - Replace "Zustand" with "**Reatom v4** (with `@reatom/npm-react` & `@reatom/persist-web-storage`)".
 
 2. **Entity Documentation:**
    - If internal READMEs describe how to add new stores, update them to show the `atom` + `action` pattern instead of `createStore`.
@@ -32,21 +32,28 @@ Finalize the migration by updating tests, documentation, and removing the old li
    - Look for usage of `.getState()`, `.setState()`, or `.subscribe()`. These methods do not exist on the new Reatom hooks.
 
 2. **Refactor Strategy:**
-   - **If testing the Hook:** The hook API is compatible, so `renderHook(() => useStore())` might still work if you mocked the internal state correctly.
-   - **If testing logic (Preferred):** Switch to testing Atoms directly using a Test Context.
+   - **If testing the Hook:** The hook API is compatible (`useAtom`, `useAction`), so `renderHook(() => useStore())` might still work if you mocked the internal state correctly.
+   - **If testing logic (Preferred):** Switch to testing Atoms directly using a **Test Context**.
+     _Note: Even though Reatom v4 uses "implicit context" in components, Unit Tests require an **explicit context** (`createCtx`) to run in isolation._
 
      ```ts
      // OLD (Zustand)
      // store.setState({ count: 1 })
      // store.getState().increment()
 
-     // NEW (Reatom)
+     // NEW (Reatom v4)
      import { createCtx } from '@reatom/core'
      import { countAtom, increment } from './store'
 
      const ctx = createCtx()
-     countAtom(ctx, 1) // Set initial state
-     increment(ctx) // Run action
+
+     // 1. Setup Initial State (Explicit Context write)
+     countAtom(ctx, 1)
+
+     // 2. Run Action (Pass ctx explicitly to bind the implicit calls inside)
+     increment(ctx)
+
+     // 3. Assert (Explicit Context read)
      expect(ctx.get(countAtom)).toBe(2)
      ```
 

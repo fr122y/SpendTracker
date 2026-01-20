@@ -4,7 +4,7 @@ Manages allocation buckets for savings and investment percentages.
 
 ## Public API (`index.ts`)
 
-- `useBucketStore`: Zustand store for bucket state management
+- `useBucketStore`: Reatom store hook for bucket state management
 
 ## State & Data
 

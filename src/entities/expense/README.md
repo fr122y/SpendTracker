@@ -4,7 +4,7 @@ Manages individual expense records with CRUD operations and persistent storage.
 
 ## Public API (`index.ts`)
 
-- `useExpenseStore`: Zustand store for expense state management
+- `useExpenseStore`: Reatom store hook for expense state management
 - `ExpenseCard`: Presentational component displaying a single expense
 - `ExpenseList`: Component rendering sorted list of expenses (descending by date)
 

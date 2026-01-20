@@ -4,7 +4,7 @@ Manages user financial settings with persistent storage.
 
 ## Public API (`index.ts`)
 
-- `useSettingsStore`: Zustand store for settings state management
+- `useSettingsStore`: Reatom store hook for settings state management
 - `FinancialSettings`: Form component for editing financial settings
 
 ## State & Data
