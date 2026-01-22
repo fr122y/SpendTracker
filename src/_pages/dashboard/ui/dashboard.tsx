@@ -22,7 +22,7 @@ function Header() {
   })
 
   return (
-    <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-6 py-4">
+    <header className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 px-4 py-4">
       <h1 className="font-mono text-xl font-bold text-emerald-400">
         SmartSpend Terminal
       </h1>

@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
@@ -130,7 +132,36 @@ export function Calendar() {
   const { viewDate, selectedDate, setSelectedDate, nextMonth, prevMonth } =
     useSessionStore()
   const expenses = useExpenseStore((state) => state.expenses)
-  const { salaryDay, advanceDay } = useSettingsStore()
+  const { salaryDay, advanceDay, setSalaryDay, setAdvanceDay } =
+    useSettingsStore()
+
+  const [editingField, setEditingField] = useState<'salary' | 'advance' | null>(
+    null
+  )
+  const [editValue, setEditValue] = useState('')
+
+  const handleStartEdit = (field: 'salary' | 'advance') => {
+    setEditingField(field)
+    setEditValue(String(field === 'salary' ? salaryDay : advanceDay))
+  }
+
+  const handleSaveEdit = () => {
+    const value = Math.min(31, Math.max(1, parseInt(editValue) || 1))
+    if (editingField === 'salary') {
+      setSalaryDay(value)
+    } else if (editingField === 'advance') {
+      setAdvanceDay(value)
+    }
+    setEditingField(null)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveEdit()
+    } else if (e.key === 'Escape') {
+      setEditingField(null)
+    }
+  }
 
   // Create set of dates with expenses
   const expenseDates = new Set(expenses.map((e) => e.date))
@@ -147,7 +178,7 @@ export function Calendar() {
   const year = viewDate.getFullYear()
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 p-6">
       {/* Month Navigation */}
       <div className="flex items-center justify-between">
         <button
@@ -194,7 +225,7 @@ export function Calendar() {
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-2">
         {WEEKDAY_HEADERS.map((day) => (
           <div
             key={day}
@@ -206,13 +237,13 @@ export function Calendar() {
       </div>
 
       {/* Calendar Days */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-2">
         {days.map((day, index) => (
           <button
             key={index}
             onClick={() => setSelectedDate(day.date)}
             className={cn(
-              'relative flex h-10 items-center justify-center rounded text-sm transition-colors',
+              'relative flex h-12 items-center justify-center rounded text-sm transition-colors',
               !day.isCurrentMonth && 'text-zinc-600',
               day.isCurrentMonth && 'text-zinc-300',
               day.isToday && !day.isSelected && 'bg-zinc-700 text-zinc-100',
@@ -245,14 +276,52 @@ export function Calendar() {
           <span className="h-2 w-2 rounded-full bg-green-500" />
           <span>Расход</span>
         </div>
-        <div className="flex items-center gap-1">
+        <button
+          onClick={() => handleStartEdit('salary')}
+          className="flex items-center gap-1 rounded px-1 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        >
           <span className="h-2 w-2 rounded-full bg-emerald-400" />
-          <span>Зарплата</span>
-        </div>
-        <div className="flex items-center gap-1">
+          {editingField === 'salary' ? (
+            <input
+              type="number"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleSaveEdit}
+              onKeyDown={handleKeyDown}
+              min={1}
+              max={31}
+              autoFocus
+              className="w-12 rounded bg-zinc-800 px-1 text-zinc-100 outline-none ring-1 ring-emerald-400"
+            />
+          ) : (
+            <span>
+              Зарплата: <span className="text-emerald-400">{salaryDay}</span>
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => handleStartEdit('advance')}
+          className="flex items-center gap-1 rounded px-1 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+        >
           <span className="h-2 w-2 rounded-full bg-amber-400" />
-          <span>Аванс</span>
-        </div>
+          {editingField === 'advance' ? (
+            <input
+              type="number"
+              value={editValue}
+              onChange={(e) => setEditValue(e.target.value)}
+              onBlur={handleSaveEdit}
+              onKeyDown={handleKeyDown}
+              min={1}
+              max={31}
+              autoFocus
+              className="w-12 rounded bg-zinc-800 px-1 text-zinc-100 outline-none ring-1 ring-amber-400"
+            />
+          ) : (
+            <span>
+              Аванс: <span className="text-amber-400">{advanceDay}</span>
+            </span>
+          )}
+        </button>
       </div>
     </div>
   )
