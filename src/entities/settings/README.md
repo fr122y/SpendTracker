@@ -19,6 +19,22 @@ Manages user financial settings with persistent storage.
   - `setSalaryDay(day)`: Update salary day
   - `setAdvanceDay(day)`: Update advance day
 
+## Test Coverage
+
+Comprehensive test suite located at `__tests__/store.test.ts` covering:
+
+- **Initial State**: Verifies default values and action method availability
+- **Action Testing**: All three actions (setWeeklyLimit, setSalaryDay, setAdvanceDay) with:
+  - Normal value updates
+  - Boundary conditions (0, 1, 31, large numbers)
+  - Edge cases (negative values, decimals)
+  - Multiple sequential updates
+- **Multiple Actions Interaction**: Tests concurrent and sequential updates
+- **Selector Support**: Validates custom selectors and reactivity
+- **Store Stability**: Ensures stable action references and proper memoization
+- **Direct Atom Access**: Tests direct atom reading and synchronization
+- **Subscription & Reactivity**: Verifies re-renders on state changes
+
 ## Dependencies
 
 - Uses: `@/shared/ui` (Input component)
