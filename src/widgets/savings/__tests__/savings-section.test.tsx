@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react'
 
+import { BucketEditor } from '@/features/manage-buckets'
+
 import { SavingsSection } from '../ui/savings-section'
 
 // Mock BucketEditor component
@@ -8,6 +10,8 @@ jest.mock('@/features/manage-buckets', () => ({
     <div data-testid="bucket-editor">Bucket Editor Component</div>
   )),
 }))
+
+const MockedBucketEditor = jest.mocked(BucketEditor)
 
 describe('SavingsSection', () => {
   beforeEach(() => {
@@ -30,7 +34,12 @@ describe('SavingsSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<SavingsSection />)
 
-      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-4', 'p-6')
+      expect(container.firstChild).toHaveClass(
+        'flex',
+        'flex-col',
+        'gap-4',
+        'p-6'
+      )
     })
 
     it('applies correct header styling', () => {
@@ -101,21 +110,17 @@ describe('SavingsSection', () => {
 
   describe('integration with BucketEditor', () => {
     it('imports and renders BucketEditor from manage-buckets feature', () => {
-      const { BucketEditor } = require('@/features/manage-buckets')
-
       render(<SavingsSection />)
 
-      expect(BucketEditor).toHaveBeenCalled()
-      expect(BucketEditor).toHaveBeenCalledTimes(1)
+      expect(MockedBucketEditor).toHaveBeenCalled()
+      expect(MockedBucketEditor).toHaveBeenCalledTimes(1)
     })
 
     it('renders BucketEditor without props', () => {
-      const { BucketEditor } = require('@/features/manage-buckets')
-
       render(<SavingsSection />)
 
-      // BucketEditor is called with empty props and optional second arg
-      expect(BucketEditor).toHaveBeenCalledWith({}, expect.anything())
+      // BucketEditor is called with empty props (second arg is undefined in React 19)
+      expect(MockedBucketEditor.mock.calls[0][0]).toEqual({})
     })
   })
 
@@ -205,8 +210,7 @@ describe('SavingsSection', () => {
     })
 
     it('maintains structure with different BucketEditor content', () => {
-      const { BucketEditor } = require('@/features/manage-buckets')
-      BucketEditor.mockImplementation(() => (
+      MockedBucketEditor.mockImplementation(() => (
         <div data-testid="bucket-editor">
           <div>Custom Content</div>
           <div>More Content</div>
@@ -233,13 +237,11 @@ describe('SavingsSection', () => {
     })
 
     it('maintains mock call count across renders', () => {
-      const { BucketEditor } = require('@/features/manage-buckets')
+      render(<SavingsSection />)
+      expect(MockedBucketEditor).toHaveBeenCalledTimes(1)
 
       render(<SavingsSection />)
-      expect(BucketEditor).toHaveBeenCalledTimes(1)
-
-      render(<SavingsSection />)
-      expect(BucketEditor).toHaveBeenCalledTimes(2)
+      expect(MockedBucketEditor).toHaveBeenCalledTimes(2)
     })
   })
 

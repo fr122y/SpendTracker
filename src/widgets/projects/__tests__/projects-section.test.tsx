@@ -89,20 +89,31 @@ jest.mock('@/entities/project', () => ({
 
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (
-    selector: (state: { expenses: Expense[]; deleteExpense: jest.Mock }) => unknown
+    selector: (state: {
+      expenses: Expense[]
+      deleteExpense: jest.Mock
+    }) => unknown
   ) =>
     selector({
       expenses: mockExpenses,
       deleteExpense: mockDeleteExpense,
     }),
   ExpenseList: jest.fn(
-    ({ expenses, onDelete }: { expenses: Expense[]; onDelete: (id: string) => void }) => (
+    ({
+      expenses,
+      onDelete,
+    }: {
+      expenses: Expense[]
+      onDelete: (id: string) => void
+    }) => (
       <div data-testid="expense-list">
         <div data-testid="expense-count">{expenses.length}</div>
         {expenses.map((expense) => (
           <div key={expense.id} data-testid={`expense-${expense.id}`}>
             <span>{expense.description}</span>
-            <button onClick={() => onDelete(expense.id)}>Delete {expense.id}</button>
+            <button onClick={() => onDelete(expense.id)}>
+              Delete {expense.id}
+            </button>
           </div>
         ))}
       </div>
@@ -220,7 +231,12 @@ describe('ProjectsSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<ProjectsSection />)
 
-      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-4', 'p-6')
+      expect(container.firstChild).toHaveClass(
+        'flex',
+        'flex-col',
+        'gap-4',
+        'p-6'
+      )
     })
 
     it('renders all projects as cards', () => {
@@ -233,7 +249,9 @@ describe('ProjectsSection', () => {
     it('does not show create form initially', () => {
       render(<ProjectsSection />)
 
-      expect(screen.queryByTestId('create-project-form')).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('create-project-form')
+      ).not.toBeInTheDocument()
     })
   })
 
@@ -243,7 +261,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       expect(
-        screen.getByText('Нет проектов. Создайте первый проект для отслеживания бюджета.')
+        screen.getByText(
+          'Нет проектов. Создайте первый проект для отслеживания бюджета.'
+        )
       ).toBeInTheDocument()
     })
 
@@ -291,7 +311,9 @@ describe('ProjectsSection', () => {
 
       // Hide form
       fireEvent.click(screen.getByText('Отмена'))
-      expect(screen.queryByTestId('create-project-form')).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('create-project-form')
+      ).not.toBeInTheDocument()
     })
 
     it('toggles form visibility multiple times', () => {
@@ -305,7 +327,9 @@ describe('ProjectsSection', () => {
 
       // Toggle off
       fireEvent.click(screen.getByText('Отмена'))
-      expect(screen.queryByTestId('create-project-form')).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('create-project-form')
+      ).not.toBeInTheDocument()
 
       // Toggle on again
       fireEvent.click(screen.getByText('Создать проект'))
@@ -329,7 +353,9 @@ describe('ProjectsSection', () => {
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      expect(screen.getByTestId('project-expense-form-project-1')).toBeInTheDocument()
+      expect(
+        screen.getByTestId('project-expense-form-project-1')
+      ).toBeInTheDocument()
     })
 
     it('shows "Добавить расход" header when expanded', () => {
@@ -372,12 +398,18 @@ describe('ProjectsSection', () => {
 
       // Expand project 1
       fireEvent.click(project1Card)
-      expect(screen.getByTestId('project-expense-form-project-1')).toBeInTheDocument()
+      expect(
+        screen.getByTestId('project-expense-form-project-1')
+      ).toBeInTheDocument()
 
       // Expand project 2
       fireEvent.click(project2Card)
-      expect(screen.queryByTestId('project-expense-form-project-1')).not.toBeInTheDocument()
-      expect(screen.getByTestId('project-expense-form-project-2')).toBeInTheDocument()
+      expect(
+        screen.queryByTestId('project-expense-form-project-1')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByTestId('project-expense-form-project-2')
+      ).toBeInTheDocument()
     })
   })
 
@@ -386,7 +418,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       const project1Card = screen.getByTestId('project-card-project-1')
-      const spentElement = project1Card.querySelector('[data-testid="project-spent"]')
+      const spentElement = project1Card.querySelector(
+        '[data-testid="project-spent"]'
+      )
 
       // project-1 has expenses: 15000 + 5000 = 20000
       expect(spentElement).toHaveTextContent('20000')
@@ -396,7 +430,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       const project2Card = screen.getByTestId('project-card-project-2')
-      const spentElement = project2Card.querySelector('[data-testid="project-spent"]')
+      const spentElement = project2Card.querySelector(
+        '[data-testid="project-spent"]'
+      )
 
       // project-2 has expense: 20000
       expect(spentElement).toHaveTextContent('20000')
@@ -416,7 +452,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       const project3Card = screen.getByTestId('project-card-project-3')
-      const spentElement = project3Card.querySelector('[data-testid="project-spent"]')
+      const spentElement = project3Card.querySelector(
+        '[data-testid="project-spent"]'
+      )
 
       expect(spentElement).toHaveTextContent('0')
     })
@@ -444,7 +482,7 @@ describe('ProjectsSection', () => {
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      const expenseList = screen.getByTestId('expense-list')
+      screen.getByTestId('expense-list')
       const expenseCount = screen.getByTestId('expense-count')
 
       // project-1 has 2 expenses (expense-1 and expense-2)
@@ -612,7 +650,9 @@ describe('ProjectsSection', () => {
       fireEvent.click(projectCard)
 
       // The expanded project should take full width
-      const expandedWrapper = projectCard.closest('div[class*="transition-all"]')
+      const expandedWrapper = projectCard.closest(
+        'div[class*="transition-all"]'
+      )
       expect(expandedWrapper).toHaveClass('col-span-1', 'sm:col-span-2')
     })
 
@@ -720,7 +760,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       expect(screen.getByTestId('project-card-project-1')).toBeInTheDocument()
-      expect(screen.queryByTestId('project-card-project-2')).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('project-card-project-2')
+      ).not.toBeInTheDocument()
     })
 
     it('handles many projects', () => {
@@ -735,7 +777,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       mockProjects.forEach((project) => {
-        expect(screen.getByTestId(`project-card-${project.id}`)).toBeInTheDocument()
+        expect(
+          screen.getByTestId(`project-card-${project.id}`)
+        ).toBeInTheDocument()
       })
     })
 
@@ -753,7 +797,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-large')
-      const budgetElement = projectCard.querySelector('[data-testid="project-budget"]')
+      const budgetElement = projectCard.querySelector(
+        '[data-testid="project-budget"]'
+      )
       expect(budgetElement).toHaveTextContent('9999999')
     })
 
@@ -773,7 +819,9 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
-      const spentElement = projectCard.querySelector('[data-testid="project-spent"]')
+      const spentElement = projectCard.querySelector(
+        '[data-testid="project-spent"]'
+      )
       expect(spentElement).toHaveTextContent('5000000')
     })
 
@@ -854,14 +902,16 @@ describe('ProjectsSection', () => {
       render(<ProjectsSection />)
 
       expect(
-        screen.getByText('Нет проектов. Создайте первый проект для отслеживания бюджета.')
+        screen.getByText(
+          'Нет проектов. Создайте первый проект для отслеживания бюджета.'
+        )
       ).toBeInTheDocument()
     })
   })
 
   describe('button variants', () => {
     it('uses ghost variant for create/cancel button', () => {
-      const { container } = render(<ProjectsSection />)
+      render(<ProjectsSection />)
 
       const createButton = screen.getByText('Создать проект')
       expect(createButton).toHaveAttribute('data-variant', 'ghost')
@@ -892,8 +942,12 @@ describe('ProjectsSection', () => {
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      expect(screen.getByTestId('project-expense-form-project-1')).toBeInTheDocument()
-      expect(screen.getByText('Project Expense Form for project-1')).toBeInTheDocument()
+      expect(
+        screen.getByTestId('project-expense-form-project-1')
+      ).toBeInTheDocument()
+      expect(
+        screen.getByText('Project Expense Form for project-1')
+      ).toBeInTheDocument()
     })
 
     it('renders ProjectCard for each project', () => {

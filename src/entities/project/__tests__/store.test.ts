@@ -1,14 +1,14 @@
 import { wrap } from '@reatom/core'
 import { act, renderHook, waitFor } from '@testing-library/react'
 
-import type { Project } from '@/shared/types'
-
 import {
   useProjectStore,
   projectsAtom,
   addProject,
   deleteProject,
 } from '../model/store'
+
+import type { Project } from '@/shared/types'
 
 describe('useProjectStore', () => {
   beforeEach(() => {
@@ -209,7 +209,8 @@ describe('useProjectStore', () => {
     it('should handle project with long name', async () => {
       const { result } = renderHook(() => useProjectStore())
 
-      const longName = 'Очень длинное название проекта для тестирования возможностей системы'
+      const longName =
+        'Очень длинное название проекта для тестирования возможностей системы'
 
       act(() => {
         result.current.addProject({
@@ -386,7 +387,9 @@ describe('useProjectStore', () => {
 
       await waitFor(() => {
         expect(result.current.projects).toHaveLength(2)
-        expect(result.current.projects.find((p) => p.id === 'project-2')).toBeUndefined()
+        expect(
+          result.current.projects.find((p) => p.id === 'project-2')
+        ).toBeUndefined()
       })
     })
 

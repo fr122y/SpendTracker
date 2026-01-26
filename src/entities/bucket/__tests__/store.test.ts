@@ -1,13 +1,9 @@
 import { wrap } from '@reatom/core'
 import { act, renderHook, waitFor } from '@testing-library/react'
 
-import type { AllocationBucket } from '@/shared/types'
+import { useBucketStore, bucketsAtom, updateBuckets } from '../model/store'
 
-import {
-  useBucketStore,
-  bucketsAtom,
-  updateBuckets,
-} from '../model/store'
+import type { AllocationBucket } from '@/shared/types'
 
 describe('useBucketStore', () => {
   const DEFAULT_BUCKETS: AllocationBucket[] = [

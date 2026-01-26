@@ -55,7 +55,10 @@ const mockDeleteExpense = jest.fn()
 // Mock stores
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (
-    selector?: (state: { expenses: Expense[]; deleteExpense: (id: string) => void }) => unknown
+    selector?: (state: {
+      expenses: Expense[]
+      deleteExpense: (id: string) => void
+    }) => unknown
   ) => {
     const state = {
       expenses: mockExpenses,
@@ -64,7 +67,13 @@ jest.mock('@/entities/expense', () => ({
     return selector ? selector(state) : state
   },
   ExpenseList: jest.fn(
-    ({ expenses, onDelete }: { expenses: Expense[]; onDelete: (id: string) => void }) => (
+    ({
+      expenses,
+      onDelete,
+    }: {
+      expenses: Expense[]
+      onDelete: (id: string) => void
+    }) => (
       <div data-testid="expense-list">
         <div data-testid="expense-count">{expenses.length}</div>
         <button onClick={() => onDelete('test-id')}>Delete Test</button>
@@ -82,7 +91,9 @@ jest.mock('@/entities/session', () => ({
 
 // Mock ExpenseForm component
 jest.mock('@/features/add-expense', () => ({
-  ExpenseForm: jest.fn(() => <div data-testid="expense-form">Expense Form</div>),
+  ExpenseForm: jest.fn(() => (
+    <div data-testid="expense-form">Expense Form</div>
+  )),
 }))
 
 // Mock shared lib functions
@@ -174,7 +185,12 @@ describe('ExpenseLog', () => {
     it('applies correct container styling', () => {
       const { container } = render(<ExpenseLog />)
 
-      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-4', 'p-6')
+      expect(container.firstChild).toHaveClass(
+        'flex',
+        'flex-col',
+        'gap-4',
+        'p-6'
+      )
     })
   })
 
@@ -460,14 +476,14 @@ describe('ExpenseLog', () => {
 
   describe('header styling', () => {
     it('applies correct text styling to header', () => {
-      const { container } = render(<ExpenseLog />)
+      render(<ExpenseLog />)
 
       const header = screen.getByText(/Операции за/)
       expect(header).toHaveClass('text-lg', 'font-medium', 'text-zinc-100')
     })
 
     it('applies correct styling to total amount', () => {
-      const { container } = render(<ExpenseLog />)
+      render(<ExpenseLog />)
 
       const total = screen.getByText(/800 ₽/)
       expect(total).toHaveClass('text-lg', 'font-semibold', 'text-emerald-400')
@@ -496,7 +512,9 @@ describe('ExpenseLog', () => {
 
         const { unmount } = render(<ExpenseLog />)
 
-        expect(screen.getByText(new RegExp(`15 ${name} 2026`))).toBeInTheDocument()
+        expect(
+          screen.getByText(new RegExp(`15 ${name} 2026`))
+        ).toBeInTheDocument()
 
         unmount()
       })

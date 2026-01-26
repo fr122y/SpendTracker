@@ -2,8 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { AnalysisDashboard } from '../ui/analysis-dashboard'
 
-import type { Expense } from '@/shared/types'
 import type { CategoryStat } from '@/shared/lib'
+import type { Expense } from '@/shared/types'
 
 // Mock data
 let mockExpenses: Expense[] = [
@@ -45,9 +45,7 @@ let mockViewDate = new Date(2026, 0, 15) // Jan 15, 2026
 
 // Mock stores
 jest.mock('@/entities/expense', () => ({
-  useExpenseStore: (
-    selector?: (state: { expenses: Expense[] }) => unknown
-  ) => {
+  useExpenseStore: (selector?: (state: { expenses: Expense[] }) => unknown) => {
     const state = { expenses: mockExpenses }
     return selector ? selector(state) : state
   },
@@ -62,49 +60,51 @@ jest.mock('@/entities/session', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
-  getCategoryStats: jest.fn((expenses: Expense[], date: Date): CategoryStat[] => {
-    const year = date.getFullYear()
-    const month = date.getMonth()
+  getCategoryStats: jest.fn(
+    (expenses: Expense[], date: Date): CategoryStat[] => {
+      const year = date.getFullYear()
+      const month = date.getMonth()
 
-    // Filter expenses for the month
-    const monthlyExpenses = expenses.filter((expense) => {
-      const expenseDate = new Date(expense.date)
-      return (
-        expenseDate.getFullYear() === year && expenseDate.getMonth() === month
-      )
-    })
-
-    if (monthlyExpenses.length === 0) return []
-
-    // Calculate total
-    const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0)
-
-    // Group by category and calculate percentages
-    const categoryMap = new Map<string, { value: number; emoji: string }>()
-    for (const expense of monthlyExpenses) {
-      const existing = categoryMap.get(expense.category)
-      if (existing) {
-        existing.value += expense.amount
-      } else {
-        categoryMap.set(expense.category, {
-          value: expense.amount,
-          emoji: expense.emoji,
-        })
-      }
-    }
-
-    // Convert to stats and sort by value descending
-    const stats: CategoryStat[] = Array.from(categoryMap.entries()).map(
-      ([name, data]) => ({
-        name,
-        value: data.value,
-        emoji: data.emoji,
-        percent: total > 0 ? (data.value / total) * 100 : 0,
+      // Filter expenses for the month
+      const monthlyExpenses = expenses.filter((expense) => {
+        const expenseDate = new Date(expense.date)
+        return (
+          expenseDate.getFullYear() === year && expenseDate.getMonth() === month
+        )
       })
-    )
 
-    return stats.sort((a, b) => b.value - a.value)
-  }),
+      if (monthlyExpenses.length === 0) return []
+
+      // Calculate total
+      const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0)
+
+      // Group by category and calculate percentages
+      const categoryMap = new Map<string, { value: number; emoji: string }>()
+      for (const expense of monthlyExpenses) {
+        const existing = categoryMap.get(expense.category)
+        if (existing) {
+          existing.value += expense.amount
+        } else {
+          categoryMap.set(expense.category, {
+            value: expense.amount,
+            emoji: expense.emoji,
+          })
+        }
+      }
+
+      // Convert to stats and sort by value descending
+      const stats: CategoryStat[] = Array.from(categoryMap.entries()).map(
+        ([name, data]) => ({
+          name,
+          value: data.value,
+          emoji: data.emoji,
+          percent: total > 0 ? (data.value / total) * 100 : 0,
+        })
+      )
+
+      return stats.sort((a, b) => b.value - a.value)
+    }
+  ),
   cn: jest.fn((...args: unknown[]) => {
     return args
       .flat()
@@ -170,7 +170,12 @@ describe('AnalysisDashboard', () => {
     it('applies correct container styling', () => {
       const { container } = render(<AnalysisDashboard />)
 
-      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-4', 'p-6')
+      expect(container.firstChild).toHaveClass(
+        'flex',
+        'flex-col',
+        'gap-4',
+        'p-6'
+      )
     })
   })
 
@@ -394,10 +399,15 @@ describe('AnalysisDashboard', () => {
 
     it('applies correct empty state styling', () => {
       mockExpenses = []
-      const { container } = render(<AnalysisDashboard />)
+      render(<AnalysisDashboard />)
 
       const emptyMessage = screen.getByText('Нет данных за этот месяц')
-      expect(emptyMessage).toHaveClass('py-8', 'text-center', 'text-sm', 'text-zinc-500')
+      expect(emptyMessage).toHaveClass(
+        'py-8',
+        'text-center',
+        'text-sm',
+        'text-zinc-500'
+      )
     })
   })
 
@@ -464,7 +474,7 @@ describe('AnalysisDashboard', () => {
 
   describe('category box visual properties', () => {
     it('renders category boxes with appropriate styling', () => {
-      const { container } = render(<AnalysisDashboard />)
+      render(<AnalysisDashboard />)
 
       const categoryBox = screen.getByText('Продукты').parentElement
       expect(categoryBox).toHaveClass(
@@ -484,7 +494,12 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       const categoryName = screen.getByText('Продукты')
-      expect(categoryName).toHaveClass('mt-1', 'text-xs', 'font-medium', 'text-white')
+      expect(categoryName).toHaveClass(
+        'mt-1',
+        'text-xs',
+        'font-medium',
+        'text-white'
+      )
     })
 
     it('renders percentages with correct styling', () => {
@@ -495,7 +510,7 @@ describe('AnalysisDashboard', () => {
     })
 
     it('renders emojis with correct styling', () => {
-      const { container } = render(<AnalysisDashboard />)
+      render(<AnalysisDashboard />)
 
       const emoji = screen.getByText('🛒')
       expect(emoji).toHaveClass('text-2xl')
@@ -541,7 +556,7 @@ describe('AnalysisDashboard', () => {
     })
 
     it('applies flexbox layout to header', () => {
-      const { container } = render(<AnalysisDashboard />)
+      render(<AnalysisDashboard />)
 
       const header = screen.getByText(/Анализ за/).parentElement
       expect(header).toHaveClass('flex', 'items-center', 'justify-between')

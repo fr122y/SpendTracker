@@ -18,9 +18,7 @@ jest.mock('@/entities/session', () => ({
 let mockExpenses: Expense[] = []
 
 jest.mock('@/entities/expense', () => ({
-  useExpenseStore: (
-    selector?: (state: { expenses: Expense[] }) => unknown
-  ) => {
+  useExpenseStore: (selector?: (state: { expenses: Expense[] }) => unknown) => {
     const state = { expenses: mockExpenses }
     return selector ? selector(state) : state
   },
@@ -45,8 +43,6 @@ jest.mock('@/shared/lib', () => {
 })
 
 // Mock recharts to avoid rendering issues in tests
-let mockBarClickHandler: ((data: unknown) => void) | null = null
-
 jest.mock('recharts', () => {
   const OriginalModule = jest.requireActual('recharts')
   return {
@@ -54,19 +50,35 @@ jest.mock('recharts', () => {
     ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
       <div data-testid="responsive-container">{children}</div>
     ),
-    BarChart: ({ children, data }: { children: React.ReactNode; data: unknown[] }) => (
+    BarChart: ({
+      children,
+      data,
+    }: {
+      children: React.ReactNode
+      data: unknown[]
+    }) => (
       <div data-testid="bar-chart" data-items={data.length}>
         {children}
       </div>
     ),
-    Bar: ({ dataKey, onClick, children }: { dataKey: string; onClick: (data: unknown) => void; children?: React.ReactNode }) => {
-      mockBarClickHandler = onClick
-      return (
-        <div data-testid={`bar-${dataKey}`} onClick={() => onClick({ day: 15, amount: 5000, date: new Date(2026, 0, 15) })}>
-          {children}
-        </div>
-      )
-    },
+    Bar: ({
+      dataKey,
+      onClick,
+      children,
+    }: {
+      dataKey: string
+      onClick: (data: unknown) => void
+      children?: React.ReactNode
+    }) => (
+      <div
+        data-testid={`bar-${dataKey}`}
+        onClick={() =>
+          onClick({ day: 15, amount: 5000, date: new Date(2026, 0, 15) })
+        }
+      >
+        {children}
+      </div>
+    ),
     XAxis: () => <div data-testid="x-axis">XAxis</div>,
     YAxis: () => <div data-testid="y-axis">YAxis</div>,
     Tooltip: () => <div data-testid="tooltip">Tooltip</div>,
@@ -80,21 +92,24 @@ describe('DailySpendingChart', () => {
     mockExpenses = []
     mockViewDate = new Date(2026, 0, 15)
     mockSelectedDate = new Date(2026, 0, 22)
-    mockBarClickHandler = null
 
     // Set up the session store mock implementation
-    mockUseSessionStore.mockImplementation((selector?: (state: {
-      viewDate: Date
-      selectedDate: Date
-      setSelectedDate: (date: Date) => void
-    }) => unknown) => {
-      const state = {
-        viewDate: mockViewDate,
-        selectedDate: mockSelectedDate,
-        setSelectedDate: mockSetSelectedDate,
+    mockUseSessionStore.mockImplementation(
+      (
+        selector?: (state: {
+          viewDate: Date
+          selectedDate: Date
+          setSelectedDate: (date: Date) => void
+        }) => unknown
+      ) => {
+        const state = {
+          viewDate: mockViewDate,
+          selectedDate: mockSelectedDate,
+          setSelectedDate: mockSetSelectedDate,
+        }
+        return selector ? selector(state) : state
       }
-      return selector ? selector(state) : state
-    })
+    )
   })
 
   describe('rendering', () => {
@@ -273,9 +288,7 @@ describe('DailySpendingChart', () => {
       fireEvent.click(bar)
 
       // Check that setSelectedDate was called with a Date object
-      expect(mockSetSelectedDate).toHaveBeenCalledWith(
-        expect.any(Date)
-      )
+      expect(mockSetSelectedDate).toHaveBeenCalledWith(expect.any(Date))
     })
   })
 

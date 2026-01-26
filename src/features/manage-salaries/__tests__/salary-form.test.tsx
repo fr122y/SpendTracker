@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { SalaryForm } from '../ui/salary-form'
@@ -17,12 +17,14 @@ const defaultStoreState = {
 let mockStoreState = { ...defaultStoreState }
 
 jest.mock('@/entities/settings', () => ({
-  useSettingsStore: jest.fn((selector?: (state: typeof mockStoreState) => unknown) => {
-    if (selector) {
-      return selector(mockStoreState)
+  useSettingsStore: jest.fn(
+    (selector?: (state: typeof mockStoreState) => unknown) => {
+      if (selector) {
+        return selector(mockStoreState)
+      }
+      return mockStoreState
     }
-    return mockStoreState
-  }),
+  ),
 }))
 
 describe('SalaryForm', () => {

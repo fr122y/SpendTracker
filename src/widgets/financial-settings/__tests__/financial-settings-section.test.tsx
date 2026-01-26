@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react'
 
+import { FinancialSettings } from '@/entities/settings'
+
 import { FinancialSettingsSection } from '../ui/financial-settings-section'
 
 // Mock FinancialSettings from entities
@@ -8,6 +10,8 @@ jest.mock('@/entities/settings', () => ({
     <div data-testid="financial-settings">Financial Settings Component</div>
   )),
 }))
+
+const MockedFinancialSettings = jest.mocked(FinancialSettings)
 
 describe('FinancialSettingsSection', () => {
   beforeEach(() => {
@@ -30,7 +34,12 @@ describe('FinancialSettingsSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<FinancialSettingsSection />)
 
-      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-4', 'p-6')
+      expect(container.firstChild).toHaveClass(
+        'flex',
+        'flex-col',
+        'gap-4',
+        'p-6'
+      )
     })
 
     it('applies correct header styling', () => {
@@ -101,21 +110,17 @@ describe('FinancialSettingsSection', () => {
 
   describe('integration with FinancialSettings', () => {
     it('imports and renders FinancialSettings from settings entity', () => {
-      const { FinancialSettings } = require('@/entities/settings')
-
       render(<FinancialSettingsSection />)
 
-      expect(FinancialSettings).toHaveBeenCalled()
-      expect(FinancialSettings).toHaveBeenCalledTimes(1)
+      expect(MockedFinancialSettings).toHaveBeenCalled()
+      expect(MockedFinancialSettings).toHaveBeenCalledTimes(1)
     })
 
     it('renders FinancialSettings without props', () => {
-      const { FinancialSettings } = require('@/entities/settings')
-
       render(<FinancialSettingsSection />)
 
-      // FinancialSettings is called with empty props and optional second arg
-      expect(FinancialSettings).toHaveBeenCalledWith({}, expect.anything())
+      // FinancialSettings is called with empty props (second arg is undefined in React 19)
+      expect(MockedFinancialSettings.mock.calls[0][0]).toEqual({})
     })
   })
 
@@ -205,8 +210,7 @@ describe('FinancialSettingsSection', () => {
     })
 
     it('maintains structure with different FinancialSettings content', () => {
-      const { FinancialSettings } = require('@/entities/settings')
-      FinancialSettings.mockImplementation(() => (
+      MockedFinancialSettings.mockImplementation(() => (
         <div data-testid="financial-settings">
           <div>Custom Content</div>
           <div>More Content</div>
@@ -233,13 +237,11 @@ describe('FinancialSettingsSection', () => {
     })
 
     it('maintains mock call count across renders', () => {
-      const { FinancialSettings } = require('@/entities/settings')
+      render(<FinancialSettingsSection />)
+      expect(MockedFinancialSettings).toHaveBeenCalledTimes(1)
 
       render(<FinancialSettingsSection />)
-      expect(FinancialSettings).toHaveBeenCalledTimes(1)
-
-      render(<FinancialSettingsSection />)
-      expect(FinancialSettings).toHaveBeenCalledTimes(2)
+      expect(MockedFinancialSettings).toHaveBeenCalledTimes(2)
     })
   })
 

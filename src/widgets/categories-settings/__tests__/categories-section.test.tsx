@@ -30,7 +30,12 @@ describe('CategoriesSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<CategoriesSection />)
 
-      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-4', 'p-6')
+      expect(container.firstChild).toHaveClass(
+        'flex',
+        'flex-col',
+        'gap-4',
+        'p-6'
+      )
     })
 
     it('applies correct header styling', () => {
