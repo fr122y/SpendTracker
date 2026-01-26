@@ -143,14 +143,14 @@ function DashboardGrid() {
   }
 
   return (
-    <div data-grid-container className="flex h-full p-4">
+    <div data-grid-container className="flex h-full overflow-hidden p-4">
       {layoutConfig.columns.map((column, columnIndex) => (
         <div
           key={column.id}
-          className="flex"
+          className="flex h-full overflow-hidden"
           style={{ width: `${column.width}%` }}
         >
-          <div className="flex flex-1 flex-col gap-4">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
             {column.widgets.map((widgetId, index) => {
               const widget = WIDGET_REGISTRY[widgetId]
               if (!widget) return null
@@ -259,7 +259,7 @@ export function Dashboard() {
   return (
     <div className="flex h-screen flex-col">
       <Header />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-hidden">
         <DashboardGrid />
       </main>
     </div>
