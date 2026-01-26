@@ -4,10 +4,10 @@ import { ChevronLeft, ChevronRight, Edit3 } from 'lucide-react'
 import { useState } from 'react'
 
 import { useSessionStore } from '@/entities/session'
-import { useLayoutStore } from '@/features/layout-editor'
+import { ColumnResizer, useLayoutStore } from '@/features/layout-editor'
 import { cn } from '@/shared/lib'
 import { WIDGET_REGISTRY } from '@/shared/lib/widget-registry'
-import { Button } from '@/shared/ui'
+import { Button, TerminalPanel } from '@/shared/ui'
 
 import type { WidgetId } from '@/shared/types'
 
@@ -60,8 +60,21 @@ function Header() {
 
 // Dashboard Grid Component
 function DashboardGrid() {
-  const { layoutConfig, isEditMode, moveWidget, moveWidgetInColumn } =
-    useLayoutStore()
+  const {
+    layoutConfig,
+    isEditMode,
+    moveWidget,
+    moveWidgetInColumn,
+    resizeColumn,
+  } = useLayoutStore()
+
+  const handleColumnResize = (columnId: string, deltaPercent: number) => {
+    const column = layoutConfig.columns.find((c) => c.id === columnId)
+    if (column) {
+      const newWidth = column.width + deltaPercent
+      resizeColumn(columnId, newWidth)
+    }
+  }
 
   const [draggedWidget, setDraggedWidget] = useState<{
     widgetId: WidgetId
@@ -130,75 +143,110 @@ function DashboardGrid() {
   }
 
   return (
-    <div className="flex h-full gap-4 p-4">
-      {layoutConfig.columns.map((column) => (
+    <div data-grid-container className="flex h-full p-4">
+      {layoutConfig.columns.map((column, columnIndex) => (
         <div
           key={column.id}
-          className="flex flex-col gap-4"
+          className="flex"
           style={{ width: `${column.width}%` }}
         >
-          {column.widgets.map((widgetId, index) => {
-            const widget = WIDGET_REGISTRY[widgetId]
-            if (!widget) return null
+          <div className="flex flex-1 flex-col gap-4">
+            {column.widgets.map((widgetId, index) => {
+              const widget = WIDGET_REGISTRY[widgetId]
+              if (!widget) return null
 
-            const Component = widget.component
-            const Icon = widget.icon
-            const isDragging =
-              draggedWidget?.widgetId === widgetId &&
-              draggedWidget?.fromColumnId === column.id
-            const isDropTarget =
-              dropTarget?.columnId === column.id && dropTarget?.index === index
-
-            return (
-              <div
-                key={widgetId}
-                draggable={isEditMode}
-                onDragStart={(e) =>
-                  handleDragStart(e, widgetId, column.id, index)
-                }
-                onDragOver={(e) => handleDragOver(e, column.id, index)}
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, column.id, index)}
-                onDragEnd={handleDragEnd}
-                className={cn(
-                  'rounded-lg border border-zinc-800 bg-zinc-900/50 transition-all',
-                  isEditMode && 'cursor-grab ring-1 ring-zinc-700',
-                  isDragging && 'opacity-50',
-                  isDropTarget && 'ring-2 ring-emerald-500'
-                )}
-              >
-                {isEditMode && (
-                  <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
-                    <Icon className="h-4 w-4 text-zinc-500" />
-                    <span className="text-xs font-medium text-zinc-400">
-                      {widget.title}
-                    </span>
-                  </div>
-                )}
-                <div
-                  className={cn(isEditMode && 'pointer-events-none opacity-60')}
-                >
-                  <Component />
-                </div>
-              </div>
-            )
-          })}
-
-          {/* Drop zone at end of column */}
-          {isEditMode && draggedWidget && (
-            <div
-              onDragOver={(e) =>
-                handleDragOver(e, column.id, column.widgets.length)
-              }
-              onDragLeave={handleDragLeave}
-              onDrop={(e) => handleDrop(e, column.id, column.widgets.length)}
-              className={cn(
-                'min-h-[100px] rounded-lg border-2 border-dashed border-zinc-700 transition-colors',
+              const Component = widget.component
+              const Icon = widget.icon
+              const isDragging =
+                draggedWidget?.widgetId === widgetId &&
+                draggedWidget?.fromColumnId === column.id
+              const isDropTarget =
                 dropTarget?.columnId === column.id &&
-                  dropTarget?.index === column.widgets.length &&
-                  'border-emerald-500 bg-emerald-500/10'
-              )}
-            />
+                dropTarget?.index === index
+
+              return (
+                <div
+                  key={widgetId}
+                  draggable={isEditMode}
+                  onDragStart={(e) =>
+                    handleDragStart(e, widgetId, column.id, index)
+                  }
+                  onDragOver={(e) => handleDragOver(e, column.id, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) => handleDrop(e, column.id, index)}
+                  onDragEnd={handleDragEnd}
+                  className={cn(
+                    'relative transition-all',
+                    isEditMode && 'cursor-grab active:cursor-grabbing',
+                    isDragging && 'opacity-50',
+                    isDropTarget && 'ring-2 ring-emerald-500 rounded-lg'
+                  )}
+                >
+                  {/* Drag handle from WidgetPlaceholder */}
+                  {isEditMode && (
+                    <div
+                      aria-label="Перетащить виджет"
+                      className="absolute top-2 right-2 z-10 p-1.5 bg-zinc-700/80 rounded-md hover:bg-zinc-600 cursor-grab"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="text-zinc-300"
+                      >
+                        <circle cx="9" cy="5" r="1" />
+                        <circle cx="9" cy="12" r="1" />
+                        <circle cx="9" cy="19" r="1" />
+                        <circle cx="15" cy="5" r="1" />
+                        <circle cx="15" cy="12" r="1" />
+                        <circle cx="15" cy="19" r="1" />
+                      </svg>
+                    </div>
+                  )}
+                  <TerminalPanel
+                    title={widget.title}
+                    icon={<Icon className="h-4 w-4" />}
+                    isEditMode={isEditMode}
+                  >
+                    <Component />
+                  </TerminalPanel>
+                </div>
+              )
+            })}
+
+            {/* Drop zone at end of column */}
+            {isEditMode && draggedWidget && (
+              <div
+                onDragOver={(e) =>
+                  handleDragOver(e, column.id, column.widgets.length)
+                }
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, column.id, column.widgets.length)}
+                className={cn(
+                  'min-h-[100px] rounded-lg border-2 border-dashed border-zinc-700 transition-colors',
+                  dropTarget?.columnId === column.id &&
+                    dropTarget?.index === column.widgets.length &&
+                    'border-emerald-500 bg-emerald-500/10'
+                )}
+              />
+            )}
+          </div>
+
+          {/* Column Resizer - between columns, not after the last one */}
+          {columnIndex < layoutConfig.columns.length - 1 && (
+            <div className="mx-2">
+              <ColumnResizer
+                columnId={column.id}
+                onResize={handleColumnResize}
+                isEditMode={isEditMode}
+              />
+            </div>
           )}
         </div>
       ))}

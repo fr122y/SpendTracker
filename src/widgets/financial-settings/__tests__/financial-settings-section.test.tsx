@@ -120,7 +120,8 @@ describe('FinancialSettingsSection', () => {
       render(<FinancialSettingsSection />)
 
       // FinancialSettings is called with empty props (second arg is undefined in React 19)
-      expect(MockedFinancialSettings.mock.calls[0][0]).toEqual({})
+      const firstCall = MockedFinancialSettings.mock.calls[0] as unknown[]
+      expect(firstCall[0]).toEqual({})
     })
   })
 

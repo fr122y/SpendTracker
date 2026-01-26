@@ -120,7 +120,8 @@ describe('SavingsSection', () => {
       render(<SavingsSection />)
 
       // BucketEditor is called with empty props (second arg is undefined in React 19)
-      expect(MockedBucketEditor.mock.calls[0][0]).toEqual({})
+      const firstCall = MockedBucketEditor.mock.calls[0] as unknown[]
+      expect(firstCall[0]).toEqual({})
     })
   })
 
