@@ -170,12 +170,7 @@ describe('AnalysisDashboard', () => {
     it('applies correct container styling', () => {
       const { container } = render(<AnalysisDashboard />)
 
-      expect(container.firstChild).toHaveClass(
-        'flex',
-        'flex-col',
-        'gap-4',
-        'p-6'
-      )
+      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-3')
     })
   })
 
@@ -403,7 +398,7 @@ describe('AnalysisDashboard', () => {
 
       const emptyMessage = screen.getByText('Нет данных за этот месяц')
       expect(emptyMessage).toHaveClass(
-        'py-8',
+        'py-6',
         'text-center',
         'text-sm',
         'text-zinc-500'
@@ -495,8 +490,8 @@ describe('AnalysisDashboard', () => {
 
       const categoryName = screen.getByText('Продукты')
       expect(categoryName).toHaveClass(
-        'mt-1',
-        'text-xs',
+        'mt-0.5',
+        'text-[10px]',
         'font-medium',
         'text-white'
       )
@@ -506,14 +501,14 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       const percentage = screen.getByText('45%')
-      expect(percentage).toHaveClass('text-xs', 'text-white/80')
+      expect(percentage).toHaveClass('text-[10px]', 'text-white/80')
     })
 
     it('renders emojis with correct styling', () => {
       render(<AnalysisDashboard />)
 
       const emoji = screen.getByText('🛒')
-      expect(emoji).toHaveClass('text-2xl')
+      expect(emoji).toHaveClass('text-xl')
     })
   })
 
@@ -528,7 +523,7 @@ describe('AnalysisDashboard', () => {
         'flex-wrap',
         'items-center',
         'justify-center',
-        'gap-4'
+        'gap-2'
       )
     })
 
@@ -545,21 +540,25 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       const header = screen.getByText(/Анализ за/)
-      expect(header).toHaveClass('text-lg', 'font-medium', 'text-zinc-100')
+      expect(header).toHaveClass('text-base', 'font-medium', 'text-zinc-100')
     })
 
     it('applies correct styling to total amount', () => {
       render(<AnalysisDashboard />)
 
       const total = screen.getByText(/11 000 ₽/)
-      expect(total).toHaveClass('text-lg', 'font-semibold', 'text-emerald-400')
+      expect(total).toHaveClass(
+        'text-base',
+        'font-semibold',
+        'text-emerald-400'
+      )
     })
 
     it('applies flexbox layout to header', () => {
       render(<AnalysisDashboard />)
 
       const header = screen.getByText(/Анализ за/).parentElement
-      expect(header).toHaveClass('flex', 'items-center', 'justify-between')
+      expect(header).toHaveClass('flex', 'flex-col')
     })
   })
 

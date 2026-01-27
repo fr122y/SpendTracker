@@ -185,12 +185,7 @@ describe('ExpenseLog', () => {
     it('applies correct container styling', () => {
       const { container } = render(<ExpenseLog />)
 
-      expect(container.firstChild).toHaveClass(
-        'flex',
-        'flex-col',
-        'gap-4',
-        'p-6'
-      )
+      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-3')
     })
   })
 
@@ -407,7 +402,7 @@ describe('ExpenseLog', () => {
     it('applies max-height and overflow styles to expense list container', () => {
       const { container } = render(<ExpenseLog />)
 
-      const scrollContainer = container.querySelector('.max-h-\\[400px\\]')
+      const scrollContainer = container.querySelector('.max-h-\\[300px\\]')
       expect(scrollContainer).toBeInTheDocument()
       expect(scrollContainer).toHaveClass('overflow-y-auto')
     })
@@ -479,14 +474,18 @@ describe('ExpenseLog', () => {
       render(<ExpenseLog />)
 
       const header = screen.getByText(/Операции за/)
-      expect(header).toHaveClass('text-lg', 'font-medium', 'text-zinc-100')
+      expect(header).toHaveClass('text-base', 'font-medium', 'text-zinc-100')
     })
 
     it('applies correct styling to total amount', () => {
       render(<ExpenseLog />)
 
       const total = screen.getByText(/800 ₽/)
-      expect(total).toHaveClass('text-lg', 'font-semibold', 'text-emerald-400')
+      expect(total).toHaveClass(
+        'text-base',
+        'font-semibold',
+        'text-emerald-400'
+      )
     })
   })
 

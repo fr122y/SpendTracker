@@ -231,12 +231,7 @@ describe('ProjectsSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<ProjectsSection />)
 
-      expect(container.firstChild).toHaveClass(
-        'flex',
-        'flex-col',
-        'gap-4',
-        'p-6'
-      )
+      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-3')
     })
 
     it('renders all projects as cards', () => {
@@ -640,7 +635,7 @@ describe('ProjectsSection', () => {
 
       const grid = container.querySelector('.grid')
       expect(grid).toBeInTheDocument()
-      expect(grid).toHaveClass('grid-cols-1', 'gap-4', 'sm:grid-cols-2')
+      expect(grid).toHaveClass('grid-cols-1', 'gap-3', 'lg:grid-cols-2')
     })
 
     it('expands project to full width when expanded', () => {
@@ -653,7 +648,7 @@ describe('ProjectsSection', () => {
       const expandedWrapper = projectCard.closest(
         'div[class*="transition-all"]'
       )
-      expect(expandedWrapper).toHaveClass('col-span-1', 'sm:col-span-2')
+      expect(expandedWrapper).toHaveClass('col-span-1', 'lg:col-span-2')
     })
 
     it('applies hover effect to project cards', () => {
@@ -680,13 +675,13 @@ describe('ProjectsSection', () => {
       )
       expect(expandedContent).toBeInTheDocument()
       expect(expandedContent).toHaveClass(
-        'mt-4',
-        'space-y-4',
+        'mt-3',
+        'space-y-3',
         'rounded-lg',
         'border',
         'border-zinc-800',
         'bg-zinc-900/30',
-        'p-4'
+        'p-3'
       )
     })
 
@@ -696,9 +691,9 @@ describe('ProjectsSection', () => {
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      const scrollContainer = container.querySelector('.max-h-\\[300px\\]')
+      const scrollContainer = container.querySelector('.max-h-\\[200px\\]')
       expect(scrollContainer).toBeInTheDocument()
-      expect(scrollContainer).toHaveClass('max-h-[300px]', 'overflow-y-auto')
+      expect(scrollContainer).toHaveClass('max-h-[200px]', 'overflow-y-auto')
     })
   })
 

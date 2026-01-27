@@ -4,8 +4,8 @@ import { FinancialSettings } from '@/entities/settings'
 
 export function FinancialSettingsSection() {
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <h2 className="text-lg font-medium text-zinc-100">
+    <div className="flex flex-col gap-3 sm:gap-4">
+      <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
         Финансовые настройки
       </h2>
       <FinancialSettings />

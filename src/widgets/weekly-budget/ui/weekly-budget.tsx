@@ -48,11 +48,13 @@ export function WeeklyBudget() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-zinc-100">Бюджет на неделю</h2>
-        <span className="text-sm text-zinc-500">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
+          Бюджет на неделю
+        </h2>
+        <span className="text-xs text-zinc-500 sm:text-sm">
           {formatWeekDate(stats.start)} - {formatWeekDate(stats.end)}
         </span>
       </div>
@@ -60,7 +62,7 @@ export function WeeklyBudget() {
       {/* Progress Bar */}
       <div className="space-y-2">
         <ProgressBar value={stats.spent} max={weeklyLimit} showPercentage />
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
           <span className="text-zinc-400">
             Потрачено:{' '}
             <span
@@ -87,15 +89,15 @@ export function WeeklyBudget() {
       </div>
 
       {/* Limit Editor */}
-      <div className="flex items-center gap-3">
-        <label className="text-sm text-zinc-400">Лимит:</label>
+      <div className="flex items-center gap-2 sm:gap-3">
+        <label className="text-xs text-zinc-400 sm:text-sm">Лимит:</label>
         <MathInput
           value={String(weeklyLimit)}
           onValueChange={handleLimitChange}
           min={0}
-          className="w-32"
+          className="w-24 sm:w-32"
         />
-        <span className="text-sm text-zinc-500">₽</span>
+        <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
       </div>
     </div>
   )

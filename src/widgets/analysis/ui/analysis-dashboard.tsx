@@ -30,9 +30,8 @@ interface CategoryBoxProps {
 function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
-  // Calculate size based on percentage (min 80px, max 160px)
+  // Calculate size based on percentage (min 60px/80px, max 120px/160px for mobile/desktop)
   const sizeScale = maxPercent > 0 ? stat.percent / maxPercent : 0
-  const size = Math.max(80, Math.min(160, 80 + sizeScale * 80))
 
   // Calculate opacity based on percentage (min 0.4, max 1)
   const opacity = Math.max(0.4, Math.min(1, 0.4 + sizeScale * 0.6))
@@ -42,20 +41,26 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
       className="relative"
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
+      onTouchStart={() => setShowTooltip(true)}
+      onTouchEnd={() => setShowTooltip(false)}
     >
       <div
         className={cn(
-          'flex cursor-default flex-col items-center justify-center rounded-lg bg-emerald-600 transition-transform hover:scale-105'
+          'flex cursor-default flex-col items-center justify-center rounded-lg bg-emerald-600 transition-transform hover:scale-105',
+          'h-16 w-16 sm:h-20 sm:w-20 md:h-auto md:w-auto'
         )}
         style={{
-          width: `${size}px`,
-          height: `${size}px`,
+          // Only apply dynamic size on larger screens
+          minWidth: sizeScale > 0.5 ? `${60 + sizeScale * 40}px` : undefined,
+          minHeight: sizeScale > 0.5 ? `${60 + sizeScale * 40}px` : undefined,
           opacity,
         }}
       >
-        <span className="text-2xl">{stat.emoji}</span>
-        <span className="mt-1 text-xs font-medium text-white">{stat.name}</span>
-        <span className="text-xs text-white/80">
+        <span className="text-xl sm:text-2xl">{stat.emoji}</span>
+        <span className="mt-0.5 text-[10px] font-medium text-white sm:mt-1 sm:text-xs">
+          {stat.name}
+        </span>
+        <span className="text-[10px] text-white/80 sm:text-xs">
           {stat.percent.toFixed(0)}%
         </span>
       </div>
@@ -84,26 +89,26 @@ export function AnalysisDashboard() {
   const year = viewDate.getFullYear()
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-zinc-100">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           Анализ за {monthName} {year}
         </h2>
-        <span className="text-lg font-semibold text-emerald-400">
+        <span className="text-base font-semibold text-emerald-400 sm:text-lg">
           {totalSpent.toLocaleString('ru-RU')} ₽
         </span>
       </div>
 
       {/* Category Grid */}
       {stats.length > 0 ? (
-        <div className="flex flex-wrap items-center justify-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
           {stats.map((stat) => (
             <CategoryBox key={stat.name} stat={stat} maxPercent={maxPercent} />
           ))}
         </div>
       ) : (
-        <p className="py-8 text-center text-sm text-zinc-500">
+        <p className="py-6 text-center text-sm text-zinc-500 sm:py-8">
           Нет данных за этот месяц
         </p>
       )}

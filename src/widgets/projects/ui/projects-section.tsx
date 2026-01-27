@@ -51,13 +51,16 @@ export function ProjectsSection() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-zinc-100">Проекты</h2>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
+          Проекты
+        </h2>
         <Button
           variant="ghost"
           onClick={() => setShowCreateForm((prev) => !prev)}
+          className="w-full sm:w-auto"
         >
           {showCreateForm ? 'Отмена' : 'Создать проект'}
         </Button>
@@ -65,14 +68,14 @@ export function ProjectsSection() {
 
       {/* Create Form */}
       {showCreateForm && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4">
           <CreateProjectForm />
         </div>
       )}
 
       {/* Projects Grid */}
       {projects.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
           {projects.map((project) => {
             const isExpanded = expandedProjectId === project.id
             const projectExpenses = getProjectExpenses(project.id)
@@ -82,7 +85,7 @@ export function ProjectsSection() {
                 key={project.id}
                 className={cn(
                   'transition-all',
-                  isExpanded && 'col-span-1 sm:col-span-2'
+                  isExpanded && 'col-span-1 lg:col-span-2'
                 )}
               >
                 {/* Project Card Wrapper */}
@@ -98,7 +101,7 @@ export function ProjectsSection() {
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="mt-4 space-y-4 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+                  <div className="mt-3 space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 sm:mt-4 sm:space-y-4 sm:p-4">
                     {/* Delete Button */}
                     <div className="flex justify-end">
                       <Button
@@ -107,6 +110,7 @@ export function ProjectsSection() {
                           e.stopPropagation()
                           handleDeleteProject(project.id)
                         }}
+                        className="w-full sm:w-auto"
                       >
                         Удалить проект
                       </Button>
@@ -114,7 +118,7 @@ export function ProjectsSection() {
 
                     {/* Project Expense Form */}
                     <div>
-                      <h3 className="mb-2 text-sm font-medium text-zinc-400">
+                      <h3 className="mb-2 text-xs font-medium text-zinc-400 sm:text-sm">
                         Добавить расход
                       </h3>
                       <ProjectExpenseForm projectId={project.id} />
@@ -122,10 +126,10 @@ export function ProjectsSection() {
 
                     {/* Project Expense List */}
                     <div>
-                      <h3 className="mb-2 text-sm font-medium text-zinc-400">
+                      <h3 className="mb-2 text-xs font-medium text-zinc-400 sm:text-sm">
                         Расходы проекта
                       </h3>
-                      <div className="max-h-[300px] overflow-y-auto">
+                      <div className="max-h-[200px] overflow-y-auto sm:max-h-[300px]">
                         <ExpenseList
                           expenses={projectExpenses}
                           onDelete={deleteExpense}

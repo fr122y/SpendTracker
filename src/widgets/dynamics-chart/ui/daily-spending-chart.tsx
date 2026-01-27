@@ -107,19 +107,19 @@ export function DailySpendingChart() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-zinc-100">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           Динамика за {monthName} {year}
         </h2>
-        <span className="text-lg font-semibold text-emerald-400">
+        <span className="text-base font-semibold text-emerald-400 sm:text-lg">
           {totalMonthly.toLocaleString('ru-RU')} ₽
         </span>
       </div>
 
       {/* Chart */}
-      <div className="h-64">
+      <div className="h-48 sm:h-64">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

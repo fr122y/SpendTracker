@@ -46,13 +46,13 @@ export function ExpenseLog() {
   const formattedDate = formatDateRussian(selectedDate)
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium text-zinc-100">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           Операции за {formattedDate}
         </h2>
-        <span className="text-lg font-semibold text-emerald-400">
+        <span className="text-base font-semibold text-emerald-400 sm:text-lg">
           {dailyTotal.toLocaleString('ru-RU')} ₽
         </span>
       </div>
@@ -61,7 +61,7 @@ export function ExpenseLog() {
       <ExpenseForm />
 
       {/* Expense List */}
-      <div className="max-h-[400px] overflow-y-auto">
+      <div className="max-h-[300px] overflow-y-auto sm:max-h-[400px]">
         {dailyExpenses.length > 0 ? (
           <ExpenseList
             expenses={dailyExpenses}

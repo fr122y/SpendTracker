@@ -30,12 +30,7 @@ describe('CategoriesSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<CategoriesSection />)
 
-      expect(container.firstChild).toHaveClass(
-        'flex',
-        'flex-col',
-        'gap-4',
-        'p-6'
-      )
+      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-3')
     })
 
     it('applies correct header styling', () => {
@@ -43,7 +38,7 @@ describe('CategoriesSection', () => {
 
       const heading = screen.getByText('Управление категориями')
       expect(heading.tagName).toBe('H2')
-      expect(heading).toHaveClass('text-lg', 'font-medium', 'text-zinc-100')
+      expect(heading).toHaveClass('text-base', 'font-medium', 'text-zinc-100')
     })
   })
 
@@ -77,16 +72,10 @@ describe('CategoriesSection', () => {
       expect(container.firstChild).toHaveClass('flex-col')
     })
 
-    it('applies gap between elements', () => {
+    it('applies responsive gap between elements', () => {
       const { container } = render(<CategoriesSection />)
 
-      expect(container.firstChild).toHaveClass('gap-4')
-    })
-
-    it('applies padding to container', () => {
-      const { container } = render(<CategoriesSection />)
-
-      expect(container.firstChild).toHaveClass('p-6')
+      expect(container.firstChild).toHaveClass('gap-3')
     })
   })
 
@@ -160,15 +149,14 @@ describe('CategoriesSection', () => {
       const root = container.firstChild as HTMLElement
       expect(root.className).toContain('flex')
       expect(root.className).toContain('flex-col')
-      expect(root.className).toContain('gap-4')
-      expect(root.className).toContain('p-6')
+      expect(root.className).toContain('gap-3')
     })
 
     it('applies all required heading classes', () => {
       render(<CategoriesSection />)
 
       const heading = screen.getByText('Управление категориями')
-      expect(heading.className).toContain('text-lg')
+      expect(heading.className).toContain('text-base')
       expect(heading.className).toContain('font-medium')
       expect(heading.className).toContain('text-zinc-100')
     })

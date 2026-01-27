@@ -34,19 +34,14 @@ describe('FinancialSettingsSection', () => {
     it('applies correct container styling', () => {
       const { container } = render(<FinancialSettingsSection />)
 
-      expect(container.firstChild).toHaveClass(
-        'flex',
-        'flex-col',
-        'gap-4',
-        'p-6'
-      )
+      expect(container.firstChild).toHaveClass('flex', 'flex-col', 'gap-3')
     })
 
     it('applies correct header styling', () => {
       render(<FinancialSettingsSection />)
 
       const header = screen.getByText('Финансовые настройки')
-      expect(header).toHaveClass('text-lg', 'font-medium', 'text-zinc-100')
+      expect(header).toHaveClass('text-base', 'font-medium', 'text-zinc-100')
     })
 
     it('renders header as h2 element', () => {
@@ -139,21 +134,15 @@ describe('FinancialSettingsSection', () => {
 
       const heading = container.querySelector('h2')
       expect(heading).toBeInTheDocument()
-      expect(heading).toHaveClass('text-lg', 'font-medium', 'text-zinc-100')
+      expect(heading).toHaveClass('text-base', 'font-medium', 'text-zinc-100')
     })
   })
 
   describe('styling consistency', () => {
-    it('uses gap-4 for spacing between elements', () => {
+    it('uses responsive gap for spacing between elements', () => {
       const { container } = render(<FinancialSettingsSection />)
 
-      expect(container.firstChild).toHaveClass('gap-4')
-    })
-
-    it('uses p-6 for container padding', () => {
-      const { container } = render(<FinancialSettingsSection />)
-
-      expect(container.firstChild).toHaveClass('p-6')
+      expect(container.firstChild).toHaveClass('gap-3')
     })
 
     it('uses flex-col for vertical layout', () => {
@@ -176,11 +165,11 @@ describe('FinancialSettingsSection', () => {
       expect(header).toHaveClass('font-medium')
     })
 
-    it('uses lg text size for title', () => {
+    it('uses responsive text size for title', () => {
       render(<FinancialSettingsSection />)
 
       const header = screen.getByText('Финансовые настройки')
-      expect(header).toHaveClass('text-lg')
+      expect(header).toHaveClass('text-base')
     })
   })
 

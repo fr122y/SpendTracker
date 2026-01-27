@@ -185,12 +185,12 @@ export function Calendar() {
   const year = viewDate.getFullYear()
 
   return (
-    <div className="flex flex-col gap-4 p-6">
+    <div className="flex flex-col gap-3 sm:gap-4">
       {/* Month Navigation */}
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 sm:min-h-0 sm:min-w-0"
           aria-label="Предыдущий месяц"
         >
           <svg
@@ -207,12 +207,12 @@ export function Calendar() {
             />
           </svg>
         </button>
-        <h2 className="text-lg font-medium text-zinc-100">
+        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           {monthName} {year}
         </h2>
         <button
           onClick={nextMonth}
-          className="rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 sm:min-h-0 sm:min-w-0"
           aria-label="Следующий месяц"
         >
           <svg
@@ -232,12 +232,12 @@ export function Calendar() {
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {WEEKDAY_HEADERS.map((day, index) => (
           <div
             key={day}
             className={cn(
-              'py-2 text-center text-xs font-medium',
+              'py-1 text-center text-xs font-medium sm:py-2',
               index >= 5 ? 'text-red-400' : 'text-zinc-500'
             )}
           >
@@ -247,13 +247,13 @@ export function Calendar() {
       </div>
 
       {/* Calendar Days */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {days.map((day, index) => (
           <button
             key={index}
             onClick={() => setSelectedDate(day.date)}
             className={cn(
-              'relative flex h-12 items-center justify-center rounded text-sm transition-colors',
+              'relative flex min-h-[44px] items-center justify-center rounded text-xs transition-colors sm:h-12 sm:text-sm',
               /* ⚡ Auto-fix: Added background highlight for salary/advance days (Principle: Contrast) */
               day.isSalaryDay &&
                 day.isCurrentMonth &&
@@ -279,14 +279,14 @@ export function Calendar() {
             {day.day}
             {/* Expense indicator dot */}
             {day.hasExpense && (
-              <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
+              <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-green-400 shadow-sm shadow-green-400/50 sm:bottom-1 sm:h-1.5 sm:w-1.5" />
             )}
           </button>
         ))}
       </div>
 
       {/* ⚡ Auto-fix: Enhanced legend visibility with larger indicators and better spacing (Principle: Contrast + Repetition) */}
-      <div className="flex flex-wrap gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
+      <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 text-xs text-zinc-400 sm:gap-4 sm:p-3 sm:text-sm">
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
           <span>Расход</span>
