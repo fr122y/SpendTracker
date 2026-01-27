@@ -2,7 +2,7 @@
 
 ## 1. Core Objective
 
-Migrate existing state management from **Zustand** to **Reatom v3**.
+Migrate existing state management from **Zustand** to **Reatom v4**.
 **CRITICAL CONSTRAINT:** maintain full backward compatibility for React components. Do not modify components during the store migration phase.
 
 ## 2. Tech Stack & Dependencies

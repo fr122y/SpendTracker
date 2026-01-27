@@ -21,7 +21,7 @@ Before any complex feature implementation, you conduct thorough research to veri
 3. Flag any libraries where version-specific syntax is critical:
    - Next.js 16 (App Router patterns)
    - React 19 (new hooks, useActionState)
-   - @reatom/core (v3 atoms & actions syntax)
+   - @reatom/core (v4 atoms & actions syntax)
    - @reatom/npm-react (useAtom, useAction)
    - Tailwind CSS v4 (CSS-first configuration)
 
@@ -82,7 +82,7 @@ Always structure your research output as:
 For this SmartSpend Tracker project, always verify against:
 
 - Next.js 16 App Router (NOT Pages Router patterns)
-- Reatom v3 (Atoms/Actions, NOT Monolithic Stores)
+- Reatom v4 (Atoms/Actions, NOT Monolithic Stores)
 - Reatom Context usage (Always pass `ctx` in logic)
 - Feature-Sliced Design architecture compliance
 
