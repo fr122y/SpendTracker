@@ -5,3 +5,7 @@ export { Select, type SelectProps, type SelectOption } from './select'
 export { TerminalPanel, type TerminalPanelProps } from './terminal-panel'
 export { ProgressBar, type ProgressBarProps } from './progress-bar'
 export { MathInput, type MathInputProps } from './math-input'
+export {
+  ResponsiveContainer,
+  type ResponsiveContainerProps,
+} from './responsive-container'
