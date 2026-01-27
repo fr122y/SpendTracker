@@ -6,9 +6,11 @@ import {
   weeklyLimitAtom,
   salaryDayAtom,
   advanceDayAtom,
+  salaryAtom,
   setWeeklyLimit,
   setSalaryDay,
   setAdvanceDay,
+  setSalary,
 } from '../model/store'
 
 describe('useSettingsStore', () => {
@@ -17,6 +19,7 @@ describe('useSettingsStore', () => {
     wrap(setWeeklyLimit)(10000)
     wrap(setSalaryDay)(10)
     wrap(setAdvanceDay)(25)
+    wrap(setSalary)(0)
   })
 
   describe('Initial State', () => {
@@ -38,12 +41,19 @@ describe('useSettingsStore', () => {
       expect(result.current.advanceDay).toBe(25)
     })
 
+    it('should have default salary of 0', () => {
+      const { result } = renderHook(() => useSettingsStore())
+
+      expect(result.current.salary).toBe(0)
+    })
+
     it('should provide all action methods in state', () => {
       const { result } = renderHook(() => useSettingsStore())
 
       expect(typeof result.current.setWeeklyLimit).toBe('function')
       expect(typeof result.current.setSalaryDay).toBe('function')
       expect(typeof result.current.setAdvanceDay).toBe('function')
+      expect(typeof result.current.setSalary).toBe('function')
     })
   })
 
@@ -229,6 +239,64 @@ describe('useSettingsStore', () => {
     })
   })
 
+  describe('setSalary Action', () => {
+    it('should update salary to a new value', async () => {
+      const { result } = renderHook(() => useSettingsStore())
+
+      act(() => {
+        result.current.setSalary(100000)
+      })
+
+      await waitFor(() => {
+        expect(result.current.salary).toBe(100000)
+      })
+    })
+
+    it('should update salary to zero', async () => {
+      const { result } = renderHook(() => useSettingsStore())
+
+      act(() => {
+        result.current.setSalary(50000)
+      })
+
+      await waitFor(() => {
+        expect(result.current.salary).toBe(50000)
+      })
+
+      act(() => {
+        result.current.setSalary(0)
+      })
+
+      await waitFor(() => {
+        expect(result.current.salary).toBe(0)
+      })
+    })
+
+    it('should handle large salary values', async () => {
+      const { result } = renderHook(() => useSettingsStore())
+
+      act(() => {
+        result.current.setSalary(1000000)
+      })
+
+      await waitFor(() => {
+        expect(result.current.salary).toBe(1000000)
+      })
+    })
+
+    it('should handle decimal salary values', async () => {
+      const { result } = renderHook(() => useSettingsStore())
+
+      act(() => {
+        result.current.setSalary(75000.5)
+      })
+
+      await waitFor(() => {
+        expect(result.current.salary).toBe(75000.5)
+      })
+    })
+  })
+
   describe('Multiple Actions Interaction', () => {
     it('should handle updating all settings in sequence', async () => {
       const { result } = renderHook(() => useSettingsStore())
@@ -389,6 +457,7 @@ describe('useSettingsStore', () => {
       expect(weeklyLimitAtom()).toBe(10000)
       expect(salaryDayAtom()).toBe(10)
       expect(advanceDayAtom()).toBe(25)
+      expect(salaryAtom()).toBe(0)
     })
 
     it('should update atom value via action', () => {
@@ -400,6 +469,9 @@ describe('useSettingsStore', () => {
 
       wrap(setAdvanceDay)(18)
       expect(advanceDayAtom()).toBe(18)
+
+      wrap(setSalary)(150000)
+      expect(salaryAtom()).toBe(150000)
     })
 
     it('should synchronize hook and atom values', async () => {

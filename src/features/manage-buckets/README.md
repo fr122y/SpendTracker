@@ -9,17 +9,20 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 ## State & Data
 
 - **Store:** Uses `useBucketStore` (Persistence Key: `smartspend-buckets`)
-- **Actions:** Update bucket percentages, add/remove buckets
+- **Store:** Uses `useSettingsStore` for salary (Persistence Key: `smartspend-settings-salary`)
+- **Actions:** Update bucket percentages, add/remove buckets, set salary
 
 ## Features
 
+- Input monthly salary/income
 - Edit allocation percentages for each bucket
 - Edit bucket labels
 - Add new buckets
 - Delete existing buckets
 - Validates total doesn't exceed 100%
 - Shows remaining percentage for "Operations"
+- Displays calculated amounts (salary × percentage) when salary is set
 
 ## Dependencies
 
-- Uses: `@/entities/bucket`, `@/shared/ui`
+- Uses: `@/entities/bucket`, `@/entities/settings`, `@/shared/ui`

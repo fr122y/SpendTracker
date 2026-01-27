@@ -3,20 +3,32 @@
 import { useState, useEffect } from 'react'
 
 import { useBucketStore } from '@/entities/bucket'
+import { useSettingsStore } from '@/entities/settings'
 import { Button, Input } from '@/shared/ui'
 
 import type { AllocationBucket } from '@/shared/types'
 
+function formatAmount(amount: number): string {
+  return new Intl.NumberFormat('ru-RU').format(Math.round(amount))
+}
+
 export function BucketEditor() {
   const buckets = useBucketStore((state) => state.buckets)
   const updateBuckets = useBucketStore((state) => state.updateBuckets)
+  const salary = useSettingsStore((state) => state.salary)
+  const setSalary = useSettingsStore((state) => state.setSalary)
 
   const [localBuckets, setLocalBuckets] = useState<AllocationBucket[]>(buckets)
+  const [localSalary, setLocalSalary] = useState(salary)
   const [error, setError] = useState('')
 
   useEffect(() => {
     setLocalBuckets(buckets)
   }, [buckets])
+
+  useEffect(() => {
+    setLocalSalary(salary)
+  }, [salary])
 
   const totalPercentage = localBuckets.reduce(
     (sum, bucket) => sum + bucket.percentage,
@@ -76,8 +88,39 @@ export function BucketEditor() {
     setError('')
   }
 
+  const handleSalaryChange = (value: string) => {
+    const newSalary = Math.max(0, Number(value) || 0)
+    setLocalSalary(newSalary)
+  }
+
+  const handleSalaryBlur = () => {
+    setSalary(localSalary)
+  }
+
+  const calculateAmount = (percentage: number) => {
+    return (localSalary * percentage) / 100
+  }
+
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-2">
+        <label htmlFor="salary-input" className="text-sm text-zinc-400">
+          Месячный доход
+        </label>
+        <div className="flex items-center gap-2">
+          <Input
+            id="salary-input"
+            type="number"
+            value={localSalary || ''}
+            onChange={(e) => handleSalaryChange(e.target.value)}
+            onBlur={handleSalaryBlur}
+            placeholder="Введите сумму"
+            min={0}
+          />
+          <span className="text-zinc-400">₽</span>
+        </div>
+      </div>
+
       <ul className="flex flex-col gap-3">
         {localBuckets.map((bucket) => (
           <li
@@ -105,6 +148,11 @@ export function BucketEditor() {
               />
               <span className="text-zinc-400">%</span>
             </div>
+            {localSalary > 0 && (
+              <span className="w-28 text-right text-zinc-300">
+                {formatAmount(calculateAmount(bucket.percentage))} ₽
+              </span>
+            )}
             <Button
               variant="danger"
               onClick={() => handleDeleteBucket(bucket.id)}
@@ -123,6 +171,11 @@ export function BucketEditor() {
           <span className="text-sm text-zinc-400">Распределено</span>
           <span className="text-lg font-medium text-zinc-200">
             {totalPercentage}%
+            {localSalary > 0 && (
+              <span className="ml-2 text-sm text-zinc-400">
+                ({formatAmount(calculateAmount(totalPercentage))} ₽)
+              </span>
+            )}
           </span>
         </div>
         <div className="flex flex-col text-right">
@@ -133,6 +186,11 @@ export function BucketEditor() {
             }`}
           >
             {operationsPercentage}%
+            {localSalary > 0 && (
+              <span className="ml-2 text-sm text-zinc-400">
+                ({formatAmount(calculateAmount(operationsPercentage))} ₽)
+              </span>
+            )}
           </span>
         </div>
       </div>

@@ -8,6 +8,8 @@ const mockBuckets = [
 ]
 
 const mockUpdateBuckets = jest.fn()
+const mockSetSalary = jest.fn()
+let mockSalary = 0
 
 jest.mock('@/entities/bucket', () => ({
   useBucketStore: (
@@ -22,9 +24,20 @@ jest.mock('@/entities/bucket', () => ({
     }),
 }))
 
+jest.mock('@/entities/settings', () => ({
+  useSettingsStore: (
+    selector: (state: { salary: number; setSalary: jest.Mock }) => unknown
+  ) =>
+    selector({
+      salary: mockSalary,
+      setSalary: mockSetSalary,
+    }),
+}))
+
 describe('BucketEditor', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockSalary = 0
   })
 
   it('renders list of buckets with labels and percentages', () => {
@@ -123,5 +136,50 @@ describe('BucketEditor', () => {
     render(<BucketEditor />)
 
     expect(screen.getByText(/30%/)).toBeInTheDocument() // Total of buckets
+  })
+
+  it('renders salary input field', () => {
+    render(<BucketEditor />)
+
+    expect(screen.getByLabelText(/доход/i)).toBeInTheDocument()
+  })
+
+  it('updates salary on input change', async () => {
+    render(<BucketEditor />)
+
+    const salaryInput = screen.getByLabelText(/доход/i)
+    fireEvent.change(salaryInput, { target: { value: '100000' } })
+    fireEvent.blur(salaryInput)
+
+    await waitFor(() => {
+      expect(mockSetSalary).toHaveBeenCalledWith(100000)
+    })
+  })
+
+  it('shows calculated amounts when salary is set', () => {
+    mockSalary = 100000
+    render(<BucketEditor />)
+
+    // 20% of 100000 = 20000, 10% of 100000 = 10000
+    expect(screen.getByText(/20\s?000/)).toBeInTheDocument()
+    expect(screen.getByText(/10\s?000/)).toBeInTheDocument()
+  })
+
+  it('shows calculated amount for operations remainder', () => {
+    mockSalary = 100000
+    render(<BucketEditor />)
+
+    // Operations = 70% of 100000 = 70000
+    expect(screen.getByText(/70\s?000/)).toBeInTheDocument()
+  })
+
+  it('does not show calculated amounts when salary is zero', () => {
+    mockSalary = 0
+    render(<BucketEditor />)
+
+    // Should not show calculated amounts in bucket rows
+    // The only ₽ should be in the salary input label
+    const rubleElements = screen.getAllByText(/₽/)
+    expect(rubleElements).toHaveLength(1) // Only the salary input suffix
   })
 })
