@@ -33,6 +33,7 @@ interface CalendarDay {
   hasExpense: boolean
   isSalaryDay: boolean
   isAdvanceDay: boolean
+  isWeekend: boolean
 }
 
 function getCalendarDays(
@@ -67,6 +68,7 @@ function getCalendarDays(
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
     const day = prevMonthDays - i
     const date = new Date(year, month - 1, day)
+    const dayOfWeek = date.getDay()
     days.push({
       date,
       day,
@@ -76,12 +78,14 @@ function getCalendarDays(
       hasExpense: expenseDates.has(formatDate(date)),
       isSalaryDay: day === salaryDay,
       isAdvanceDay: day === advanceDay,
+      isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     })
   }
 
   // Add days from current month
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day)
+    const dayOfWeek = date.getDay()
     days.push({
       date,
       day,
@@ -91,6 +95,7 @@ function getCalendarDays(
       hasExpense: expenseDates.has(formatDate(date)),
       isSalaryDay: day === salaryDay,
       isAdvanceDay: day === advanceDay,
+      isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     })
   }
 
@@ -98,6 +103,7 @@ function getCalendarDays(
   const remainingDays = 42 - days.length
   for (let day = 1; day <= remainingDays; day++) {
     const date = new Date(year, month + 1, day)
+    const dayOfWeek = date.getDay()
     days.push({
       date,
       day,
@@ -107,6 +113,7 @@ function getCalendarDays(
       hasExpense: expenseDates.has(formatDate(date)),
       isSalaryDay: day === salaryDay,
       isAdvanceDay: day === advanceDay,
+      isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     })
   }
 
@@ -226,10 +233,13 @@ export function Calendar() {
 
       {/* Weekday Headers */}
       <div className="grid grid-cols-7 gap-2">
-        {WEEKDAY_HEADERS.map((day) => (
+        {WEEKDAY_HEADERS.map((day, index) => (
           <div
             key={day}
-            className="py-2 text-center text-xs font-medium text-zinc-500"
+            className={cn(
+              'py-2 text-center text-xs font-medium',
+              index >= 5 ? 'text-red-400' : 'text-zinc-500'
+            )}
           >
             {day}
           </div>
@@ -244,8 +254,10 @@ export function Calendar() {
             onClick={() => setSelectedDate(day.date)}
             className={cn(
               'relative flex h-12 items-center justify-center rounded text-sm transition-colors',
-              !day.isCurrentMonth && 'text-zinc-600',
-              day.isCurrentMonth && 'text-zinc-300',
+              !day.isCurrentMonth && !day.isWeekend && 'text-zinc-600',
+              !day.isCurrentMonth && day.isWeekend && 'text-red-900',
+              day.isCurrentMonth && !day.isWeekend && 'text-zinc-300',
+              day.isCurrentMonth && day.isWeekend && 'text-red-400',
               day.isToday && !day.isSelected && 'bg-zinc-700 text-zinc-100',
               day.isSelected && 'bg-blue-600 text-white',
               !day.isSelected &&

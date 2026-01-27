@@ -74,6 +74,26 @@ describe('Calendar', () => {
       expect(screen.getByText(/Аванс:/)).toBeInTheDocument()
     })
 
+    it('highlights weekend headers with red color', () => {
+      render(<Calendar />)
+
+      const saturday = screen.getByText('Сб')
+      const sunday = screen.getByText('Вс')
+
+      expect(saturday).toHaveClass('text-red-400')
+      expect(sunday).toHaveClass('text-red-400')
+    })
+
+    it('does not highlight weekday headers with red color', () => {
+      render(<Calendar />)
+
+      const monday = screen.getByText('Пн')
+      const friday = screen.getByText('Пт')
+
+      expect(monday).not.toHaveClass('text-red-400')
+      expect(friday).not.toHaveClass('text-red-400')
+    })
+
     it('displays current salary day value in legend', () => {
       render(<Calendar />)
 
