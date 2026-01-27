@@ -254,45 +254,48 @@ export function Calendar() {
             onClick={() => setSelectedDate(day.date)}
             className={cn(
               'relative flex h-12 items-center justify-center rounded text-sm transition-colors',
+              /* ⚡ Auto-fix: Added background highlight for salary/advance days (Principle: Contrast) */
+              day.isSalaryDay &&
+                day.isCurrentMonth &&
+                !day.isSelected &&
+                'bg-emerald-950/30 ring-1 ring-emerald-500/30',
+              day.isAdvanceDay &&
+                day.isCurrentMonth &&
+                !day.isSelected &&
+                'bg-amber-950/30 ring-1 ring-amber-500/30',
               !day.isCurrentMonth && !day.isWeekend && 'text-zinc-600',
               !day.isCurrentMonth && day.isWeekend && 'text-red-900',
               day.isCurrentMonth && !day.isWeekend && 'text-zinc-300',
               day.isCurrentMonth && day.isWeekend && 'text-red-400',
               day.isToday && !day.isSelected && 'bg-zinc-700 text-zinc-100',
-              day.isSelected && 'bg-blue-600 text-white',
+              day.isSelected && 'bg-blue-600 text-white ring-2 ring-blue-400',
               !day.isSelected &&
                 !day.isToday &&
-                'hover:bg-zinc-800 hover:text-zinc-100'
+                'hover:bg-zinc-800 hover:text-zinc-100',
+              /* ⚡ Auto-fix: Added focus-visible state for keyboard accessibility (Principle: Interaction States) */
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900'
             )}
           >
             {day.day}
-            {/* Indicator Dots */}
-            <div className="absolute bottom-1 flex gap-0.5">
-              {day.hasExpense && (
-                <span className="h-1 w-1 rounded-full bg-green-500" />
-              )}
-              {day.isSalaryDay && day.isCurrentMonth && (
-                <span className="h-1 w-1 rounded-full bg-emerald-400" />
-              )}
-              {day.isAdvanceDay && day.isCurrentMonth && (
-                <span className="h-1 w-1 rounded-full bg-amber-400" />
-              )}
-            </div>
+            {/* Expense indicator dot */}
+            {day.hasExpense && (
+              <span className="absolute bottom-1 h-1.5 w-1.5 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
+            )}
           </button>
         ))}
       </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-xs text-zinc-500">
-        <div className="flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-green-500" />
+      {/* ⚡ Auto-fix: Enhanced legend visibility with larger indicators and better spacing (Principle: Contrast + Repetition) */}
+      <div className="flex flex-wrap gap-4 rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 text-sm text-zinc-400">
+        <div className="flex items-center gap-2">
+          <span className="h-3 w-3 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
           <span>Расход</span>
         </div>
         <button
           onClick={() => handleStartEdit('salary')}
-          className="flex items-center gap-1 rounded px-1 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+          className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         >
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
+          <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 ring-1 ring-emerald-400/50" />
           {editingField === 'salary' ? (
             <input
               type="number"
@@ -303,19 +306,20 @@ export function Calendar() {
               min={1}
               max={31}
               autoFocus
-              className="w-12 rounded bg-zinc-800 px-1 text-zinc-100 outline-none ring-1 ring-emerald-400"
+              className="w-12 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2 ring-emerald-400"
             />
           ) : (
             <span>
-              Зарплата: <span className="text-emerald-400">{salaryDay}</span>
+              Зарплата:{' '}
+              <span className="font-medium text-emerald-400">{salaryDay}</span>
             </span>
           )}
         </button>
         <button
           onClick={() => handleStartEdit('advance')}
-          className="flex items-center gap-1 rounded px-1 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+          className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
         >
-          <span className="h-2 w-2 rounded-full bg-amber-400" />
+          <span className="h-3 w-3 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50 ring-1 ring-amber-400/50" />
           {editingField === 'advance' ? (
             <input
               type="number"
@@ -326,11 +330,12 @@ export function Calendar() {
               min={1}
               max={31}
               autoFocus
-              className="w-12 rounded bg-zinc-800 px-1 text-zinc-100 outline-none ring-1 ring-amber-400"
+              className="w-12 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2 ring-amber-400"
             />
           ) : (
             <span>
-              Аванс: <span className="text-amber-400">{advanceDay}</span>
+              Аванс:{' '}
+              <span className="font-medium text-amber-400">{advanceDay}</span>
             </span>
           )}
         </button>
