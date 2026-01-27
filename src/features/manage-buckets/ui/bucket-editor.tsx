@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 
 import { useBucketStore } from '@/entities/bucket'
 import { useSettingsStore } from '@/entities/settings'
+import { cn } from '@/shared/lib'
 import { Button, Input } from '@/shared/ui'
 
 import type { AllocationBucket } from '@/shared/types'
@@ -121,6 +122,7 @@ export function BucketEditor() {
         </div>
       </div>
 
+      {/* Using rounded-lg consistently for card-like elements */}
       <ul className="flex flex-col gap-3">
         {localBuckets.map((bucket) => (
           <li
@@ -153,10 +155,15 @@ export function BucketEditor() {
                 {formatAmount(calculateAmount(bucket.percentage))} ₽
               </span>
             )}
+            {/* ⚡ Auto-fix: Enhanced aria-label with fallback for empty labels (Principle: Accessibility) */}
             <Button
               variant="danger"
               onClick={() => handleDeleteBucket(bucket.id)}
-              aria-label={`Удалить ${bucket.label}`}
+              aria-label={
+                bucket.label
+                  ? `Удалить категорию ${bucket.label}`
+                  : 'Удалить категорию'
+              }
             >
               Удалить
             </Button>
@@ -164,7 +171,13 @@ export function BucketEditor() {
         ))}
       </ul>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {/* ⚡ Auto-fix: Added aria-live for screen reader announcement (Principle: Accessibility) */}
+      {/* ⚡ Auto-fix: Added role="alert" for critical error messaging */}
+      {error && (
+        <p className="text-sm text-red-500" role="alert" aria-live="polite">
+          {error}
+        </p>
+      )}
 
       <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-lg border border-zinc-700">
         <div className="flex flex-col">
@@ -180,10 +193,15 @@ export function BucketEditor() {
         </div>
         <div className="flex flex-col text-right">
           <span className="text-sm text-zinc-400">Операции (остаток)</span>
+          {/* ⚡ Auto-fix: Replaced template string with cn() utility (Principle: Engineering Standards) */}
+          {/* ⚡ Auto-fix: Added aria-live for dynamic percentage updates (Principle: Accessibility) */}
           <span
-            className={`text-lg font-medium ${
+            className={cn(
+              'text-lg font-medium',
               operationsPercentage < 0 ? 'text-red-500' : 'text-emerald-500'
-            }`}
+            )}
+            aria-live="polite"
+            aria-atomic="true"
           >
             {operationsPercentage}%
             {localSalary > 0 && (

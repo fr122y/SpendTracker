@@ -21,15 +21,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
+        {/* ⚡ Auto-fix: Added hover: state for desktop feedback (Principle: Interaction States) */}
+        {/* ⚡ Auto-fix: Changed focus to focus-visible for better keyboard UX */}
+        {/* ⚡ Auto-fix: Added transition for smooth state changes */}
+        {/* ⚡ Auto-fix: Changed rounded to rounded-md for consistency (Principle: Repetition) */}
         <input
           ref={ref}
           id={inputId}
           className={cn(
-            'w-full px-3 py-2 text-sm rounded',
+            'w-full px-3 py-2 text-sm rounded-md transition-colors',
             'bg-zinc-900 border border-zinc-700 text-zinc-100 placeholder-zinc-600',
-            'focus:outline-none focus:ring-1 focus:ring-blue-500',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            error && 'border-red-500 focus:ring-red-500',
+            'hover:border-zinc-600',
+            'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:border-blue-500',
+            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-zinc-700',
+            error &&
+              'border-red-500 focus-visible:ring-red-500 hover:border-red-400',
             className
           )}
           {...props}

@@ -19,13 +19,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
+    /* ⚡ Auto-fix: Added active: states for click feedback (Principle: Interaction States) */
+    /* ⚡ Auto-fix: Added focus-visible instead of focus for better keyboard UX */
+    /* ⚡ Auto-fix: Added min-h-11 for 44px touch target compliance (Principle: Touch Targets) */
+    /* ⚡ Auto-fix: Changed rounded to rounded-md for consistency (Principle: Repetition) */
     const baseStyles =
-      'inline-flex items-center justify-center gap-2 font-mono font-bold uppercase text-xs tracking-wider px-4 py-2 rounded transition-all focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed'
+      'inline-flex items-center justify-center gap-2 font-mono font-bold uppercase text-xs tracking-wider px-4 py-2 min-h-11 rounded-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:opacity-50 disabled:cursor-not-allowed'
 
     const variants = {
-      primary: 'bg-blue-600 hover:bg-blue-500 text-white',
-      ghost: 'bg-transparent hover:bg-zinc-800 text-zinc-400 hover:text-white',
-      danger: 'text-red-400 hover:bg-red-500/10',
+      primary: 'bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white',
+      ghost:
+        'bg-transparent hover:bg-zinc-800 active:bg-zinc-700 text-zinc-400 hover:text-white',
+      danger: 'text-red-400 hover:bg-red-500/10 active:bg-red-500/20',
     }
 
     return (
