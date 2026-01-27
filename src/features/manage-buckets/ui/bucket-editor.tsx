@@ -22,13 +22,21 @@ export function BucketEditor() {
   const [localBuckets, setLocalBuckets] = useState<AllocationBucket[]>(buckets)
   const [localSalary, setLocalSalary] = useState(salary)
   const [error, setError] = useState('')
+  // Track raw input values while typing expressions (e.g., "50+10")
+  const [inputValues, setInputValues] = useState<Record<string, string>>({})
+  const [salaryInputValue, setSalaryInputValue] = useState(
+    salary ? String(salary) : ''
+  )
 
   useEffect(() => {
     setLocalBuckets(buckets)
+    // Reset input values when buckets change externally
+    setInputValues({})
   }, [buckets])
 
   useEffect(() => {
     setLocalSalary(salary)
+    setSalaryInputValue(salary ? String(salary) : '')
   }, [salary])
 
   const totalPercentage = localBuckets.reduce(
@@ -42,16 +50,20 @@ export function BucketEditor() {
     value: string,
     evaluated: number | null
   ) => {
-    const newPercentage =
-      evaluated !== null ? evaluated : Math.max(0, Number(value) || 0)
-    const newBuckets = localBuckets.map((bucket) =>
-      bucket.id === id ? { ...bucket, percentage: newPercentage } : bucket
-    )
-    setLocalBuckets(newBuckets)
-    setError('')
-
-    // If evaluated, also validate and save
     if (evaluated !== null) {
+      // Expression was evaluated (on blur/Enter) - update with result
+      const newBuckets = localBuckets.map((bucket) =>
+        bucket.id === id ? { ...bucket, percentage: evaluated } : bucket
+      )
+      setLocalBuckets(newBuckets)
+      // Clear the raw input value since we have a final result
+      setInputValues((prev) => {
+        const next = { ...prev }
+        delete next[id]
+        return next
+      })
+      setError('')
+
       const newTotal = newBuckets.reduce(
         (sum, bucket) => sum + bucket.percentage,
         0
@@ -61,21 +73,16 @@ export function BucketEditor() {
         return
       }
       updateBuckets(newBuckets)
+    } else {
+      // Still typing - just track the raw input value
+      setInputValues((prev) => ({ ...prev, [id]: value }))
+      setError('')
     }
   }
 
   const handlePercentageBlur = () => {
-    const newTotal = localBuckets.reduce(
-      (sum, bucket) => sum + bucket.percentage,
-      0
-    )
-
-    if (newTotal > 100) {
-      setError('Общая сумма превышает 100%')
-      return
-    }
-
-    updateBuckets(localBuckets)
+    // Validation and saving is handled in handlePercentageChange when evaluated !== null
+    // This handler is kept for any additional blur logic if needed in the future
   }
 
   const handleLabelChange = (id: string, value: string) => {
@@ -111,9 +118,10 @@ export function BucketEditor() {
     if (evaluated !== null) {
       setLocalSalary(evaluated)
       setSalary(evaluated)
+      setSalaryInputValue(String(evaluated))
     } else {
-      const newSalary = Math.max(0, Number(value) || 0)
-      setLocalSalary(newSalary)
+      // Still typing - just track the raw input value
+      setSalaryInputValue(value)
     }
   }
 
@@ -130,7 +138,7 @@ export function BucketEditor() {
         <div className="flex items-center gap-2">
           <MathInput
             id="salary-input"
-            value={localSalary ? String(localSalary) : ''}
+            value={salaryInputValue}
             onValueChange={handleSalaryChange}
             placeholder="Введите сумму (напр. 100000+20000)"
             min={0}
@@ -156,7 +164,11 @@ export function BucketEditor() {
             </div>
             <div className="w-24 flex items-center gap-2">
               <MathInput
-                value={String(bucket.percentage)}
+                value={
+                  inputValues[bucket.id] !== undefined
+                    ? inputValues[bucket.id]
+                    : String(bucket.percentage)
+                }
                 onValueChange={(value, evaluated) =>
                   handlePercentageChange(bucket.id, value, evaluated)
                 }
