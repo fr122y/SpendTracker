@@ -78,7 +78,7 @@ describe('CreateProjectForm', () => {
 
     await waitFor(() => {
       expect(nameInput).toHaveValue('')
-      expect(budgetInput).toHaveValue(null)
+      expect(budgetInput).toHaveValue('')
     })
   })
 

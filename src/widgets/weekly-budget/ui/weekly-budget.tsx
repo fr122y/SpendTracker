@@ -4,7 +4,7 @@ import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
 import { getWeeklyStats, cn } from '@/shared/lib'
-import { ProgressBar, Input } from '@/shared/ui'
+import { ProgressBar, MathInput } from '@/shared/ui'
 
 export function WeeklyBudget() {
   const { weeklyLimit, setWeeklyLimit } = useSettingsStore()
@@ -36,10 +36,14 @@ export function WeeklyBudget() {
     return `${day} ${months[date.getMonth()]}`
   }
 
-  const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value, 10)
-    if (!isNaN(value) && value >= 0) {
-      setWeeklyLimit(value)
+  const handleLimitChange = (value: string, evaluated: number | null) => {
+    if (evaluated !== null) {
+      setWeeklyLimit(evaluated)
+    } else {
+      const parsed = parseInt(value, 10)
+      if (!isNaN(parsed) && parsed >= 0) {
+        setWeeklyLimit(parsed)
+      }
     }
   }
 
@@ -85,12 +89,10 @@ export function WeeklyBudget() {
       {/* Limit Editor */}
       <div className="flex items-center gap-3">
         <label className="text-sm text-zinc-400">Лимит:</label>
-        <Input
-          type="number"
-          value={weeklyLimit}
-          onChange={handleLimitChange}
+        <MathInput
+          value={String(weeklyLimit)}
+          onValueChange={handleLimitChange}
           min={0}
-          step={1000}
           className="w-32"
         />
         <span className="text-sm text-zinc-500">₽</span>

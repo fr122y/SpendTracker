@@ -6,6 +6,7 @@ Reusable "dumb" UI components without business logic.
 
 - `Button`: Styled button with variants (primary, ghost, danger)
 - `Input`: Form input with label and error support
+- `MathInput`: Input that evaluates math expressions (e.g., "500+50" → "550")
 - `Select`: Dropdown select with options
 - `TerminalPanel`: Container for widgets with header and edit mode
 - `ProgressBar`: Visual indicator with over-budget detection
@@ -80,6 +81,50 @@ Reusable "dumb" UI components without business logic.
 - `bg-zinc-900 border border-zinc-700 rounded`
 - Focus: `ring-1 ring-blue-500 outline-none`
 - Placeholder: `text-zinc-600`
+
+### MathInput
+
+Input component that evaluates mathematical expressions on blur or Enter key.
+
+```tsx
+const [amount, setAmount] = useState('')
+
+<MathInput
+  value={amount}
+  onValueChange={(value, evaluated) => {
+    // While typing: evaluated is null
+    // On blur/Enter: evaluated contains the result (or null if invalid)
+    setAmount(evaluated !== null ? String(evaluated) : value)
+  }}
+  placeholder="Сумма (можно ввести выражение, напр. 500+50)"
+  min={0}
+  max={100000}
+/>
+```
+
+**Props:**
+
+- `value`: Current string value (can be number or expression like "500+50")
+- `onValueChange(value, evaluated)`: Called on change
+  - While typing: `evaluated` is `null`, `value` is raw input
+  - On blur/Enter with valid expression: `evaluated` contains result
+- `min`: Optional minimum value (clamped after evaluation)
+- `max`: Optional maximum value (clamped after evaluation)
+- All standard Input props except `type` and `onChange`
+
+**Behavior:**
+
+1. User types `500+50` in input
+2. On Tab/Enter, expression evaluates to `550`
+3. Input value updates to show `550`
+4. `onValueChange` called with `("550", 550)`
+
+**Supported Expressions:**
+
+- Basic: `5+3`, `10-3`, `4*5`, `100/4`
+- Precedence: `2+3*4` → `14`
+- Parentheses: `(2+3)*4` → `20`
+- Decimals: `10.5+0.5` or `10,5+0,5` → `11`
 
 ### Select
 

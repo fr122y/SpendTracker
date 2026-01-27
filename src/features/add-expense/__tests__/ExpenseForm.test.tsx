@@ -138,7 +138,7 @@ describe('ExpenseForm', () => {
 
     await waitFor(() => {
       expect(descriptionInput).toHaveValue('')
-      expect(amountInput).toHaveValue(null)
+      expect(amountInput).toHaveValue('')
     })
   })
 

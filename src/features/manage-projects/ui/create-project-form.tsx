@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { useProjectStore } from '@/entities/project'
-import { Button, Input } from '@/shared/ui'
+import { Button, Input, MathInput } from '@/shared/ui'
 
 export function CreateProjectForm() {
   const [name, setName] = useState('')
@@ -35,13 +35,11 @@ export function CreateProjectForm() {
         value={name}
         onChange={(e) => setName(e.target.value)}
       />
-      <Input
-        type="number"
-        placeholder="Бюджет"
+      <MathInput
+        placeholder="Бюджет (можно ввести выражение, напр. 50000+5000)"
         value={budget}
-        onChange={(e) => setBudget(e.target.value)}
+        onValueChange={(value) => setBudget(value)}
         min={0}
-        step={1}
       />
       <Button type="submit" disabled={!isFormValid}>
         Создать проект

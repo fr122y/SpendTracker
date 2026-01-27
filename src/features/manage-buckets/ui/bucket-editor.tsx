@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useBucketStore } from '@/entities/bucket'
 import { useSettingsStore } from '@/entities/settings'
 import { cn } from '@/shared/lib'
-import { Button, Input } from '@/shared/ui'
+import { Button, Input, MathInput } from '@/shared/ui'
 
 import type { AllocationBucket } from '@/shared/types'
 
@@ -37,13 +37,31 @@ export function BucketEditor() {
   )
   const operationsPercentage = 100 - totalPercentage
 
-  const handlePercentageChange = (id: string, value: string) => {
-    const newPercentage = Math.max(0, Number(value) || 0)
+  const handlePercentageChange = (
+    id: string,
+    value: string,
+    evaluated: number | null
+  ) => {
+    const newPercentage =
+      evaluated !== null ? evaluated : Math.max(0, Number(value) || 0)
     const newBuckets = localBuckets.map((bucket) =>
       bucket.id === id ? { ...bucket, percentage: newPercentage } : bucket
     )
     setLocalBuckets(newBuckets)
     setError('')
+
+    // If evaluated, also validate and save
+    if (evaluated !== null) {
+      const newTotal = newBuckets.reduce(
+        (sum, bucket) => sum + bucket.percentage,
+        0
+      )
+      if (newTotal > 100) {
+        setError('Общая сумма превышает 100%')
+        return
+      }
+      updateBuckets(newBuckets)
+    }
   }
 
   const handlePercentageBlur = () => {
@@ -89,13 +107,14 @@ export function BucketEditor() {
     setError('')
   }
 
-  const handleSalaryChange = (value: string) => {
-    const newSalary = Math.max(0, Number(value) || 0)
-    setLocalSalary(newSalary)
-  }
-
-  const handleSalaryBlur = () => {
-    setSalary(localSalary)
+  const handleSalaryChange = (value: string, evaluated: number | null) => {
+    if (evaluated !== null) {
+      setLocalSalary(evaluated)
+      setSalary(evaluated)
+    } else {
+      const newSalary = Math.max(0, Number(value) || 0)
+      setLocalSalary(newSalary)
+    }
   }
 
   const calculateAmount = (percentage: number) => {
@@ -109,13 +128,11 @@ export function BucketEditor() {
           Месячный доход
         </label>
         <div className="flex items-center gap-2">
-          <Input
+          <MathInput
             id="salary-input"
-            type="number"
-            value={localSalary || ''}
-            onChange={(e) => handleSalaryChange(e.target.value)}
-            onBlur={handleSalaryBlur}
-            placeholder="Введите сумму"
+            value={localSalary ? String(localSalary) : ''}
+            onValueChange={handleSalaryChange}
+            placeholder="Введите сумму (напр. 100000+20000)"
             min={0}
           />
           <span className="text-zinc-400">₽</span>
@@ -138,11 +155,10 @@ export function BucketEditor() {
               />
             </div>
             <div className="w-24 flex items-center gap-2">
-              <Input
-                type="number"
-                value={bucket.percentage}
-                onChange={(e) =>
-                  handlePercentageChange(bucket.id, e.target.value)
+              <MathInput
+                value={String(bucket.percentage)}
+                onValueChange={(value, evaluated) =>
+                  handlePercentageChange(bucket.id, value, evaluated)
                 }
                 onBlur={handlePercentageBlur}
                 min={0}

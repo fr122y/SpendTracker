@@ -8,7 +8,7 @@ import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { categorizeExpenseAction } from '@/shared/api'
 import { formatDate } from '@/shared/lib'
-import { Button, Input } from '@/shared/ui'
+import { Button, Input, MathInput } from '@/shared/ui'
 
 const FALLBACK_RESULT = {
   category: 'Другое',
@@ -79,13 +79,11 @@ export function ExpenseForm() {
         onChange={(e) => setDescription(e.target.value)}
         disabled={mutation.isPending}
       />
-      <Input
-        type="number"
-        placeholder="Сумма"
+      <MathInput
+        placeholder="Сумма (можно ввести выражение, напр. 500+50)"
         value={amount}
-        onChange={(e) => setAmount(e.target.value)}
+        onValueChange={(value) => setAmount(value)}
         min={0}
-        step={1}
         disabled={mutation.isPending}
       />
       <Button
