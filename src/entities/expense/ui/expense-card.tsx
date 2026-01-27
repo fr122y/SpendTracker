@@ -1,15 +1,56 @@
 'use client'
 
 import { Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+
+import { MathInput } from '@/shared/ui/math-input'
 
 import type { Expense } from '@/shared/types'
 
 interface ExpenseCardProps {
   expense: Expense
   onDelete: (id: string) => void
+  onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
 }
 
-export function ExpenseCard({ expense, onDelete }: ExpenseCardProps) {
+export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(String(expense.amount))
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      inputRef.current.select()
+    }
+  }, [isEditing])
+
+  const handleAmountClick = () => {
+    if (onEdit) {
+      setEditValue(String(expense.amount))
+      setIsEditing(true)
+    }
+  }
+
+  const handleValueChange = (value: string, evaluated: number | null) => {
+    if (evaluated !== null) {
+      // Evaluation complete (blur/Enter) - save and exit edit mode
+      if (evaluated !== expense.amount && evaluated > 0) {
+        onEdit?.(expense.id, { amount: evaluated })
+      }
+      setIsEditing(false)
+    } else {
+      // Still typing
+      setEditValue(value)
+    }
+  }
+
+  const handleBlur = () => {
+    // MathInput handles evaluation on blur, but we need to exit edit mode
+    // if the value is unchanged or invalid
+    setIsEditing(false)
+  }
+
   return (
     <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
       <div className="flex items-center gap-3">
@@ -22,9 +63,26 @@ export function ExpenseCard({ expense, onDelete }: ExpenseCardProps) {
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-sm font-semibold text-emerald-400">
-          {expense.amount} ₽
-        </span>
+        {isEditing ? (
+          <MathInput
+            ref={inputRef}
+            value={editValue}
+            onValueChange={handleValueChange}
+            onBlur={handleBlur}
+            min={0}
+            className="w-20 text-right text-sm font-semibold"
+            aria-label="edit amount"
+          />
+        ) : (
+          <button
+            onClick={handleAmountClick}
+            className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+            aria-label="edit amount"
+            disabled={!onEdit}
+          >
+            {expense.amount} ₽
+          </button>
+        )}
         <button
           onClick={() => onDelete(expense.id)}
           aria-label="delete"

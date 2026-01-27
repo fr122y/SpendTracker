@@ -5,7 +5,7 @@ Manages individual expense records with CRUD operations and persistent storage.
 ## Public API (`index.ts`)
 
 - `useExpenseStore`: Reatom store hook for expense state management
-- `ExpenseCard`: Presentational component displaying a single expense
+- `ExpenseCard`: Presentational component displaying a single expense with inline amount editing (supports math expressions via MathInput)
 - `ExpenseList`: Component rendering sorted list of expenses (descending by date)
 
 ## State & Data
@@ -19,4 +19,5 @@ Manages individual expense records with CRUD operations and persistent storage.
 ## Dependencies
 
 - Uses: `@/shared/types` (Expense type)
+- Uses: `@/shared/ui/math-input` (MathInput component for inline editing)
 - Uses: `lucide-react` (Trash2 icon)

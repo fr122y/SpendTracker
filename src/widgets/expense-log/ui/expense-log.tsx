@@ -30,6 +30,7 @@ export function ExpenseLog() {
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const expenses = useExpenseStore((state) => state.expenses)
   const deleteExpense = useExpenseStore((state) => state.deleteExpense)
+  const updateExpense = useExpenseStore((state) => state.updateExpense)
 
   // Get expenses for the selected date, excluding project expenses
   const dailyExpenses = getDailyExpenses(expenses, selectedDate).filter(
@@ -62,7 +63,11 @@ export function ExpenseLog() {
       {/* Expense List */}
       <div className="max-h-[400px] overflow-y-auto">
         {dailyExpenses.length > 0 ? (
-          <ExpenseList expenses={dailyExpenses} onDelete={deleteExpense} />
+          <ExpenseList
+            expenses={dailyExpenses}
+            onDelete={deleteExpense}
+            onEdit={updateExpense}
+          />
         ) : (
           <p className="py-4 text-center text-sm text-zinc-500">
             Нет операций за этот день

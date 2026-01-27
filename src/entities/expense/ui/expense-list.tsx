@@ -7,9 +7,10 @@ import type { Expense } from '@/shared/types'
 interface ExpenseListProps {
   expenses: Expense[]
   onDelete: (id: string) => void
+  onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
 }
 
-export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
+export function ExpenseList({ expenses, onDelete, onEdit }: ExpenseListProps) {
   if (expenses.length === 0) {
     return <div className="py-8 text-center text-zinc-500">Нет расходов</div>
   }
@@ -21,7 +22,12 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
   return (
     <div className="flex flex-col gap-2">
       {sortedExpenses.map((expense) => (
-        <ExpenseCard key={expense.id} expense={expense} onDelete={onDelete} />
+        <ExpenseCard
+          key={expense.id}
+          expense={expense}
+          onDelete={onDelete}
+          onEdit={onEdit}
+        />
       ))}
     </div>
   )

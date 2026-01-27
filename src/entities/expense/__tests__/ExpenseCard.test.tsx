@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { ExpenseCard } from '../ui/expense-card'
 
@@ -48,5 +49,92 @@ describe('ExpenseCard', () => {
   it('delete button has accessible label', () => {
     render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
     expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+  })
+
+  describe('editing amount', () => {
+    it('enters edit mode when amount is clicked and onEdit is provided', async () => {
+      const onEdit = jest.fn()
+      render(
+        <ExpenseCard
+          expense={mockExpense}
+          onDelete={jest.fn()}
+          onEdit={onEdit}
+        />
+      )
+
+      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      await userEvent.click(amountButton)
+
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(screen.getByRole('textbox')).toHaveValue('250')
+    })
+
+    it('does not enter edit mode when onEdit is not provided', async () => {
+      render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
+
+      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      expect(amountButton).toBeDisabled()
+    })
+
+    it('calls onEdit with new amount on blur', async () => {
+      const onEdit = jest.fn()
+      render(
+        <ExpenseCard
+          expense={mockExpense}
+          onDelete={jest.fn()}
+          onEdit={onEdit}
+        />
+      )
+
+      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      await userEvent.click(amountButton)
+
+      const input = screen.getByRole('textbox')
+      await userEvent.clear(input)
+      await userEvent.type(input, '300')
+      fireEvent.blur(input)
+
+      expect(onEdit).toHaveBeenCalledWith('1', { amount: 300 })
+    })
+
+    it('calls onEdit with evaluated math expression', async () => {
+      const onEdit = jest.fn()
+      render(
+        <ExpenseCard
+          expense={mockExpense}
+          onDelete={jest.fn()}
+          onEdit={onEdit}
+        />
+      )
+
+      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      await userEvent.click(amountButton)
+
+      const input = screen.getByRole('textbox')
+      await userEvent.clear(input)
+      await userEvent.type(input, '200+100')
+      fireEvent.blur(input)
+
+      expect(onEdit).toHaveBeenCalledWith('1', { amount: 300 })
+    })
+
+    it('does not call onEdit when value is unchanged', async () => {
+      const onEdit = jest.fn()
+      render(
+        <ExpenseCard
+          expense={mockExpense}
+          onDelete={jest.fn()}
+          onEdit={onEdit}
+        />
+      )
+
+      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      await userEvent.click(amountButton)
+
+      const input = screen.getByRole('textbox')
+      fireEvent.blur(input)
+
+      expect(onEdit).not.toHaveBeenCalled()
+    })
   })
 })
