@@ -29,6 +29,12 @@ jest.mock('@/entities/category', () => ({
   ) => selector({ categories: mockCategories }),
 }))
 
+const mockSelectedDate = new Date('2025-01-15')
+jest.mock('@/entities/session', () => ({
+  useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
+    selector({ selectedDate: mockSelectedDate }),
+}))
+
 const mockedCategorizeAction = categorizeExpenseAction as jest.MockedFunction<
   typeof categorizeExpenseAction
 >
@@ -107,6 +113,7 @@ describe('ExpenseForm', () => {
         expect.objectContaining({
           description: 'Молоко',
           amount: 100,
+          date: '2025-01-15',
           category: 'Продукты',
           emoji: '🛒',
         })

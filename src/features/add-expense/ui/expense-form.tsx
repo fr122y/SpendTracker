@@ -5,7 +5,9 @@ import { useState } from 'react'
 
 import { useCategoryStore } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
+import { useSessionStore } from '@/entities/session'
 import { categorizeExpenseAction } from '@/shared/api'
+import { formatDate } from '@/shared/lib'
 import { Button, Input } from '@/shared/ui'
 
 const FALLBACK_RESULT = {
@@ -19,6 +21,7 @@ export function ExpenseForm() {
 
   const addExpense = useExpenseStore((state) => state.addExpense)
   const categories = useCategoryStore((state) => state.categories)
+  const selectedDate = useSessionStore((state) => state.selectedDate)
 
   const mutation = useMutation({
     mutationFn: async ({
@@ -35,7 +38,7 @@ export function ExpenseForm() {
         id: crypto.randomUUID(),
         description,
         amount: Number(amount),
-        date: new Date().toISOString().split('T')[0],
+        date: formatDate(selectedDate),
         category: result.category,
         emoji: result.emoji,
       })
@@ -47,7 +50,7 @@ export function ExpenseForm() {
         id: crypto.randomUUID(),
         description,
         amount: Number(amount),
-        date: new Date().toISOString().split('T')[0],
+        date: formatDate(selectedDate),
         category: FALLBACK_RESULT.category,
         emoji: FALLBACK_RESULT.emoji,
       })

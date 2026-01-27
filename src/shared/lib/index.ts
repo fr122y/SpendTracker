@@ -4,6 +4,7 @@ export {
   getDailyExpenses,
   getCategoryStats,
   getWeeklyStats,
+  formatDate,
   type CategoryStat,
   type WeeklyStat,
 } from './finance-selectors'

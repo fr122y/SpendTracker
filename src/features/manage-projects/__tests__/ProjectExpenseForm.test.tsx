@@ -28,6 +28,12 @@ jest.mock('@/entities/category', () => ({
   ) => selector({ categories: mockCategories }),
 }))
 
+const mockSelectedDate = new Date('2025-01-15')
+jest.mock('@/entities/session', () => ({
+  useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
+    selector({ selectedDate: mockSelectedDate }),
+}))
+
 const mockedCategorizeAction = categorizeExpenseAction as jest.MockedFunction<
   typeof categorizeExpenseAction
 >
@@ -64,7 +70,7 @@ describe('ProjectExpenseForm', () => {
     ).toBeInTheDocument()
   })
 
-  it('adds expense with projectId on submit', async () => {
+  it('adds expense with projectId and selected date on submit', async () => {
     mockedCategorizeAction.mockResolvedValueOnce({
       category: 'Продукты',
       emoji: '🛒',
@@ -87,6 +93,7 @@ describe('ProjectExpenseForm', () => {
         expect.objectContaining({
           description: 'Материалы',
           amount: 5000,
+          date: '2025-01-15',
           projectId: projectId,
         })
       )
