@@ -130,9 +130,12 @@ export function BucketEditor() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       <div className="flex flex-col gap-2">
-        <label htmlFor="salary-input" className="text-sm text-zinc-400">
+        <label
+          htmlFor="salary-input"
+          className="text-xs text-zinc-400 sm:text-sm"
+        >
           Месячный доход
         </label>
         <div className="flex items-center gap-2">
@@ -140,7 +143,7 @@ export function BucketEditor() {
             id="salary-input"
             value={salaryInputValue}
             onValueChange={handleSalaryChange}
-            placeholder="Введите сумму (напр. 100000+20000)"
+            placeholder="Введите сумму"
             min={0}
           />
           <span className="text-zinc-400">₽</span>
@@ -148,11 +151,11 @@ export function BucketEditor() {
       </div>
 
       {/* Using rounded-lg consistently for card-like elements */}
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-2 sm:gap-3">
         {localBuckets.map((bucket) => (
           <li
             key={bucket.id}
-            className="flex items-center gap-4 p-3 bg-zinc-800/50 rounded-lg"
+            className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:gap-4 sm:p-3"
           >
             <div className="flex-1">
               <Input
@@ -162,27 +165,29 @@ export function BucketEditor() {
                 placeholder="Название"
               />
             </div>
-            <div className="w-24 flex items-center gap-2">
-              <MathInput
-                value={
-                  inputValues[bucket.id] !== undefined
-                    ? inputValues[bucket.id]
-                    : String(bucket.percentage)
-                }
-                onValueChange={(value, evaluated) =>
-                  handlePercentageChange(bucket.id, value, evaluated)
-                }
-                onBlur={handlePercentageBlur}
-                min={0}
-                max={100}
-              />
-              <span className="text-zinc-400">%</span>
+            <div className="flex items-center justify-between gap-2 sm:justify-start">
+              <div className="flex w-20 items-center gap-1 sm:w-24 sm:gap-2">
+                <MathInput
+                  value={
+                    inputValues[bucket.id] !== undefined
+                      ? inputValues[bucket.id]
+                      : String(bucket.percentage)
+                  }
+                  onValueChange={(value, evaluated) =>
+                    handlePercentageChange(bucket.id, value, evaluated)
+                  }
+                  onBlur={handlePercentageBlur}
+                  min={0}
+                  max={100}
+                />
+                <span className="text-zinc-400">%</span>
+              </div>
+              {localSalary > 0 && (
+                <span className="text-right text-sm text-zinc-300 sm:w-28 sm:text-base">
+                  {formatAmount(calculateAmount(bucket.percentage))} ₽
+                </span>
+              )}
             </div>
-            {localSalary > 0 && (
-              <span className="w-28 text-right text-zinc-300">
-                {formatAmount(calculateAmount(bucket.percentage))} ₽
-              </span>
-            )}
             {/* ⚡ Auto-fix: Enhanced aria-label with fallback for empty labels (Principle: Accessibility) */}
             <Button
               variant="danger"
@@ -192,6 +197,7 @@ export function BucketEditor() {
                   ? `Удалить категорию ${bucket.label}`
                   : 'Удалить категорию'
               }
+              className="w-full sm:w-auto"
             >
               Удалить
             </Button>
@@ -207,25 +213,27 @@ export function BucketEditor() {
         </p>
       )}
 
-      <div className="flex items-center justify-between p-4 bg-zinc-900 rounded-lg border border-zinc-700">
+      <div className="flex flex-col gap-3 rounded-lg border border-zinc-700 bg-zinc-900 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-0 sm:p-4">
         <div className="flex flex-col">
-          <span className="text-sm text-zinc-400">Распределено</span>
-          <span className="text-lg font-medium text-zinc-200">
+          <span className="text-xs text-zinc-400 sm:text-sm">Распределено</span>
+          <span className="text-base font-medium text-zinc-200 sm:text-lg">
             {totalPercentage}%
             {localSalary > 0 && (
-              <span className="ml-2 text-sm text-zinc-400">
+              <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
                 ({formatAmount(calculateAmount(totalPercentage))} ₽)
               </span>
             )}
           </span>
         </div>
-        <div className="flex flex-col text-right">
-          <span className="text-sm text-zinc-400">Операции (остаток)</span>
+        <div className="flex flex-col sm:text-right">
+          <span className="text-xs text-zinc-400 sm:text-sm">
+            Операции (остаток)
+          </span>
           {/* ⚡ Auto-fix: Replaced template string with cn() utility (Principle: Engineering Standards) */}
           {/* ⚡ Auto-fix: Added aria-live for dynamic percentage updates (Principle: Accessibility) */}
           <span
             className={cn(
-              'text-lg font-medium',
+              'text-base font-medium sm:text-lg',
               operationsPercentage < 0 ? 'text-red-500' : 'text-emerald-500'
             )}
             aria-live="polite"
@@ -233,7 +241,7 @@ export function BucketEditor() {
           >
             {operationsPercentage}%
             {localSalary > 0 && (
-              <span className="ml-2 text-sm text-zinc-400">
+              <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
                 ({formatAmount(calculateAmount(operationsPercentage))} ₽)
               </span>
             )}

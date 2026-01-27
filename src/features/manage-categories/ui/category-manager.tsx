@@ -42,12 +42,12 @@ export function CategoryManager() {
   const isFormValid = name.trim() && emoji.trim()
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 sm:gap-6">
       <ul className="flex flex-col gap-2">
         {categories.map((category) => (
           <li
             key={category.id}
-            className="flex items-center justify-between p-3 bg-zinc-800/50 rounded-lg"
+            className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
           >
             <div className="flex items-center gap-3">
               <span className="text-xl">{category.emoji}</span>
@@ -57,6 +57,7 @@ export function CategoryManager() {
               variant="danger"
               onClick={() => deleteCategory(category.id)}
               aria-label={`Удалить ${category.name}`}
+              className="w-full sm:w-auto"
             >
               Удалить
             </Button>
@@ -64,8 +65,8 @@ export function CategoryManager() {
         ))}
       </ul>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="flex gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
           <div className="flex-1">
             <Input
               placeholder="Название категории"
@@ -77,7 +78,7 @@ export function CategoryManager() {
               error={error}
             />
           </div>
-          <div className="w-24">
+          <div className="w-full sm:w-24">
             <Input
               placeholder="Эмодзи"
               value={emoji}
