@@ -635,7 +635,12 @@ describe('ProjectsSection', () => {
 
       const grid = container.querySelector('.grid')
       expect(grid).toBeInTheDocument()
-      expect(grid).toHaveClass('grid-cols-1', 'gap-3', 'lg:grid-cols-2')
+      expect(grid).toHaveClass(
+        'grid-cols-1',
+        'gap-3',
+        'sm:grid-cols-2',
+        'lg:grid-cols-3'
+      )
     })
 
     it('expands project to full width when expanded', () => {
@@ -648,7 +653,11 @@ describe('ProjectsSection', () => {
       const expandedWrapper = projectCard.closest(
         'div[class*="transition-all"]'
       )
-      expect(expandedWrapper).toHaveClass('col-span-1', 'lg:col-span-2')
+      expect(expandedWrapper).toHaveClass(
+        'col-span-1',
+        'sm:col-span-2',
+        'lg:col-span-3'
+      )
     })
 
     it('applies hover effect to project cards', () => {

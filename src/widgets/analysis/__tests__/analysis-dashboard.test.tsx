@@ -267,8 +267,9 @@ describe('AnalysisDashboard', () => {
     it('renders categories in sorted order by value', () => {
       const { container } = render(<AnalysisDashboard />)
 
+      // The category name has responsive classes: text-[10px] sm:text-xs, but contains font-medium and text-white
       const categories = Array.from(
-        container.querySelectorAll('.text-xs.font-medium.text-white')
+        container.querySelectorAll('.font-medium.text-white')
       )
       const categoryNames = categories.map((el) => el.textContent)
 

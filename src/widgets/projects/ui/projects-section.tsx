@@ -75,7 +75,7 @@ export function ProjectsSection() {
 
       {/* Projects Grid */}
       {projects.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {projects.map((project) => {
             const isExpanded = expandedProjectId === project.id
             const projectExpenses = getProjectExpenses(project.id)
@@ -85,7 +85,7 @@ export function ProjectsSection() {
                 key={project.id}
                 className={cn(
                   'transition-all',
-                  isExpanded && 'col-span-1 lg:col-span-2'
+                  isExpanded && 'col-span-1 sm:col-span-2 lg:col-span-3'
                 )}
               >
                 {/* Project Card Wrapper */}

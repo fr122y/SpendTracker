@@ -52,7 +52,7 @@ export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+    <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 sm:p-3">
       <div className="flex items-center gap-3">
         <span className="text-2xl">{expense.emoji}</span>
         <div className="flex flex-col">
@@ -86,7 +86,7 @@ export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
         <button
           onClick={() => onDelete(expense.id)}
           aria-label="delete"
-          className="rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400"
+          className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400 sm:min-h-0 sm:min-w-0 sm:p-1"
         >
           <Trash2 className="h-4 w-4" />
         </button>
