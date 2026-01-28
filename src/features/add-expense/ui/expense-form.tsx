@@ -72,7 +72,7 @@ export function ExpenseForm() {
   const isFormValid = description.trim() && amount && Number(amount) > 0
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
       <Input
         placeholder="Описание расхода"
         value={description}
@@ -85,11 +85,13 @@ export function ExpenseForm() {
         onValueChange={(value) => setAmount(value)}
         min={0}
         disabled={mutation.isPending}
+        className="text-base sm:text-sm"
       />
       <Button
         type="submit"
         disabled={!isFormValid || mutation.isPending}
         isLoading={mutation.isPending}
+        className="w-full sm:w-auto"
       >
         Добавить
       </Button>

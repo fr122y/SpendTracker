@@ -87,7 +87,11 @@ export function CategoryManager() {
             />
           </div>
         </div>
-        <Button type="submit" disabled={!isFormValid}>
+        <Button
+          type="submit"
+          disabled={!isFormValid}
+          className="w-full sm:w-auto"
+        >
           Добавить категорию
         </Button>
       </form>

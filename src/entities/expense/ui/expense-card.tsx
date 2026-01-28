@@ -70,13 +70,13 @@ export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
             onValueChange={handleValueChange}
             onBlur={handleBlur}
             min={0}
-            className="w-20 text-right text-sm font-semibold"
+            className="w-24 sm:w-20 text-right text-base sm:text-sm font-semibold min-h-11"
             aria-label="edit amount"
           />
         ) : (
           <button
             onClick={handleAmountClick}
-            className="text-sm font-semibold text-emerald-400 hover:text-emerald-300 transition-colors cursor-pointer"
+            className="text-base sm:text-sm font-semibold text-emerald-400 hover:text-emerald-300 active:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 transition-colors cursor-pointer min-h-11 px-2 rounded-md"
             aria-label="edit amount"
             disabled={!onEdit}
           >
