@@ -75,12 +75,14 @@ export function ExpenseForm() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
       <Input
         placeholder="Описание расхода"
+        aria-label="Описание расхода"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         disabled={mutation.isPending}
       />
       <MathInput
         placeholder="Сумма (можно ввести выражение, напр. 500+50)"
+        aria-label="Сумма расхода"
         value={amount}
         onValueChange={(value) => setAmount(value)}
         min={0}

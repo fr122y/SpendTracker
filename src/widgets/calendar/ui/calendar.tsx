@@ -190,7 +190,7 @@ export function Calendar() {
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 sm:min-h-0 sm:min-w-0"
+          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-h-0 sm:min-w-0"
           aria-label="Предыдущий месяц"
         >
           <svg
@@ -212,7 +212,7 @@ export function Calendar() {
         </h2>
         <button
           onClick={nextMonth}
-          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 sm:min-h-0 sm:min-w-0"
+          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-h-0 sm:min-w-0"
           aria-label="Следующий месяц"
         >
           <svg
@@ -264,7 +264,7 @@ export function Calendar() {
                 !day.isSelected &&
                 'bg-amber-950/30 ring-1 ring-amber-500/30',
               !day.isCurrentMonth && !day.isWeekend && 'text-zinc-600',
-              !day.isCurrentMonth && day.isWeekend && 'text-red-900',
+              !day.isCurrentMonth && day.isWeekend && 'text-red-700',
               day.isCurrentMonth && !day.isWeekend && 'text-zinc-300',
               day.isCurrentMonth && day.isWeekend && 'text-red-400',
               day.isToday && !day.isSelected && 'bg-zinc-700 text-zinc-100',
@@ -306,6 +306,7 @@ export function Calendar() {
               min={1}
               max={31}
               autoFocus
+              aria-label="День зарплаты"
               className="w-12 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2 ring-emerald-400"
             />
           ) : (
@@ -330,6 +331,7 @@ export function Calendar() {
               min={1}
               max={31}
               autoFocus
+              aria-label="День аванса"
               className="w-12 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2 ring-amber-400"
             />
           ) : (
