@@ -232,7 +232,7 @@ export function Calendar() {
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+      <div className="grid grid-cols-7 gap-2 sm:gap-3">
         {WEEKDAY_HEADERS.map((day, index) => (
           <div
             key={day}
@@ -247,13 +247,13 @@ export function Calendar() {
       </div>
 
       {/* Calendar Days */}
-      <div className="grid grid-cols-7 gap-1 sm:gap-2">
+      <div className="grid grid-cols-7 gap-2 sm:gap-3">
         {days.map((day, index) => (
           <button
             key={index}
             onClick={() => setSelectedDate(day.date)}
             className={cn(
-              'relative flex min-h-[44px] items-center justify-center rounded text-xs transition-colors sm:h-12 sm:text-sm',
+              'relative flex min-h-[48px] items-center justify-center rounded text-sm transition-colors sm:h-14 sm:text-base',
               /* ⚡ Auto-fix: Added background highlight for salary/advance days (Principle: Contrast) */
               day.isSalaryDay &&
                 day.isCurrentMonth &&

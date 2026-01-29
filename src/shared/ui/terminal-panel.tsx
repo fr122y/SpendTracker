@@ -35,10 +35,10 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
         {...props}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-zinc-800/50">
+        <div className="flex items-center justify-between p-4 sm:p-5 lg:p-6 border-b border-zinc-800/50">
           <div className="flex items-center gap-2">
             {icon && <span className="text-blue-500">{icon}</span>}
-            <h2 className="text-xs font-bold text-zinc-200 uppercase tracking-wider">
+            <h2 className="text-sm font-bold text-zinc-200 uppercase tracking-wider">
               {title}
             </h2>
           </div>
@@ -57,7 +57,7 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
         {/* Content */}
         <div
           className={cn(
-            'flex-1 p-3 sm:p-4 lg:p-6 overflow-auto',
+            'flex-1 p-4 sm:p-5 lg:p-6 overflow-auto',
             isEditMode && 'grayscale'
           )}
         >

@@ -402,7 +402,7 @@ describe('ExpenseLog', () => {
     it('applies max-height and overflow styles to expense list container', () => {
       const { container } = render(<ExpenseLog />)
 
-      const scrollContainer = container.querySelector('.max-h-\\[300px\\]')
+      const scrollContainer = container.querySelector('.max-h-\\[400px\\]')
       expect(scrollContainer).toBeInTheDocument()
       expect(scrollContainer).toHaveClass('overflow-y-auto')
     })

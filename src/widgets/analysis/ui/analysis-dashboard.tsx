@@ -47,7 +47,7 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
       <div
         className={cn(
           'flex cursor-default flex-col items-center justify-center rounded-lg bg-emerald-600 transition-transform hover:scale-105',
-          'h-16 w-16 sm:h-20 sm:w-20 md:h-auto md:w-auto'
+          'h-20 w-20 sm:h-24 sm:w-24 md:h-auto md:w-auto'
         )}
         style={{
           // Only apply dynamic size on larger screens
@@ -56,11 +56,11 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
           opacity,
         }}
       >
-        <span className="text-xl sm:text-2xl">{stat.emoji}</span>
-        <span className="mt-0.5 text-[10px] font-medium text-white sm:mt-1 sm:text-xs">
+        <span className="text-2xl sm:text-3xl">{stat.emoji}</span>
+        <span className="mt-1 text-xs font-medium text-white sm:mt-1 sm:text-sm">
           {stat.name}
         </span>
-        <span className="text-[10px] text-white/80 sm:text-xs">
+        <span className="text-xs text-white/80 sm:text-sm">
           {stat.percent.toFixed(0)}%
         </span>
       </div>

@@ -181,7 +181,7 @@ function DashboardGrid() {
     return (
       <div
         data-grid-container
-        className="flex h-full flex-col gap-3 overflow-y-auto p-3"
+        className="flex h-full flex-col gap-4 overflow-y-auto p-4"
       >
         {allWidgets.map(({ widgetId }) => {
           const widget = WIDGET_REGISTRY[widgetId]

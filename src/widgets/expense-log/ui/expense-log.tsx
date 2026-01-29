@@ -61,7 +61,7 @@ export function ExpenseLog() {
       <ExpenseForm />
 
       {/* Expense List */}
-      <div className="max-h-[300px] overflow-y-auto sm:max-h-[400px]">
+      <div className="max-h-[400px] overflow-y-auto sm:max-h-[500px] lg:max-h-[600px]">
         {dailyExpenses.length > 0 ? (
           <ExpenseList
             expenses={dailyExpenses}

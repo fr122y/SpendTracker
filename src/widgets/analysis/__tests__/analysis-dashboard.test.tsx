@@ -491,8 +491,8 @@ describe('AnalysisDashboard', () => {
 
       const categoryName = screen.getByText('Продукты')
       expect(categoryName).toHaveClass(
-        'mt-0.5',
-        'text-[10px]',
+        'mt-1',
+        'text-xs',
         'font-medium',
         'text-white'
       )
@@ -502,14 +502,14 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       const percentage = screen.getByText('45%')
-      expect(percentage).toHaveClass('text-[10px]', 'text-white/80')
+      expect(percentage).toHaveClass('text-xs', 'text-white/80')
     })
 
     it('renders emojis with correct styling', () => {
       render(<AnalysisDashboard />)
 
       const emoji = screen.getByText('🛒')
-      expect(emoji).toHaveClass('text-xl')
+      expect(emoji).toHaveClass('text-2xl')
     })
   })
 
