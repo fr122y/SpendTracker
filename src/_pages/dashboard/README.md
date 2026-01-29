@@ -1,34 +1,38 @@
 # Dashboard Page
 
-Main application page that composes all dashboard widgets into a unified view.
+Main application page that composes dashboard widgets into a unified view.
 
 ## Public API (`index.ts`)
 
 - `Dashboard`: Main page component that renders the expense tracking dashboard
 
-## Components
+## Architecture
 
-### Header
+This is a **pure composition component** following FSD architecture principles. The page only composes two widgets:
 
-- **Purpose:** Application header with month navigation and edit mode toggle
-- **Store:** `useSessionStore` (viewDate, nextMonth, prevMonth), `useLayoutStore` (isEditMode, toggleEditMode)
-- **UI:** "SmartSpend Terminal" title, month navigation arrows, edit layout button
+1. **`DashboardHeader`** - Application header with branding, month navigation, and edit mode toggle
+2. **`DashboardGrid`** - Responsive widget grid with drag-and-drop support on desktop
 
-### DashboardGrid
+## Structure
 
-- **Purpose:** Renders widgets in configurable columns with drag-and-drop support
-- **Store:** `useLayoutStore` (layoutConfig, moveWidget, moveWidgetInColumn, isEditMode)
-- **Features:** HTML5 Drag & Drop for widget reordering when in edit mode
-
-## State & Data
-
-- **Store:** Uses `useLayoutStore` for grid configuration
-- **Store:** Uses `useSessionStore` for date navigation
-- **Actions:** Layout customization, month navigation, edit mode toggle
+```tsx
+<div className="flex h-screen flex-col">
+  <DashboardHeader />
+  <main className="flex-1 overflow-hidden">
+    <DashboardGrid />
+  </main>
+</div>
+```
 
 ## Dependencies
 
-- Uses: `@/widgets/calendar`, `@/widgets/expense-log`, `@/widgets/analysis`, `@/widgets/dynamics-chart`, `@/widgets/weekly-budget`, `@/widgets/savings`, `@/widgets/categories-settings`, `@/widgets/financial-settings`, `@/widgets/projects`
-- Uses: `@/shared/lib` (WIDGET_REGISTRY, cn)
-- Uses: `@/entities/session` (useSessionStore)
-- Uses: `@/features/layout-editor` (useLayoutStore)
+- Uses: `@/widgets/dashboard-header` - Page header with navigation
+- Uses: `@/widgets/dashboard-grid` - Widget grid layout
+
+## Notes
+
+This page follows FSD best practices by:
+
+- Only composing widgets (no business logic)
+- Being minimal (~16 lines) - just layout composition
+- Delegating all functionality to widget layer components
