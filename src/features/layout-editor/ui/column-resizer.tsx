@@ -44,7 +44,7 @@ export function ColumnResizer({
       draggable
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      className="w-2 h-full cursor-col-resize bg-transparent hover:bg-emerald-500/50 transition-colors flex-shrink-0"
+      className="w-4 h-full cursor-col-resize bg-transparent hover:bg-emerald-500/50 active:bg-emerald-500/70 transition-colors flex-shrink-0"
     />
   )
 }

@@ -89,15 +89,16 @@ export function ProjectsSection() {
                 )}
               >
                 {/* Project Card Wrapper */}
-                <div
-                  className="cursor-pointer transition-transform hover:scale-[1.01]"
+                <button
+                  type="button"
+                  className="w-full text-left min-h-11 cursor-pointer transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 rounded-lg"
                   onClick={() => toggleExpanded(project.id)}
                 >
                   <ProjectCard
                     project={project}
                     spent={getProjectSpent(project.id)}
                   />
-                </div>
+                </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (

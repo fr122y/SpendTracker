@@ -1,6 +1,7 @@
 import { Inter, JetBrains_Mono } from 'next/font/google'
 
 import { Providers } from '@/providers'
+import { MobileNav } from '@/widgets/mobile-nav'
 
 import type { Metadata } from 'next'
 
@@ -31,7 +32,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} bg-zinc-950 text-zinc-200 antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          {/* Mobile navigation at root level */}
+          <MobileNav />
+        </Providers>
       </body>
     </html>
   )

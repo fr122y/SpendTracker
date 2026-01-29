@@ -46,7 +46,7 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
           {isEditMode && onDelete && (
             <button
               onClick={onDelete}
-              className="p-1 rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900"
               aria-label="Удалить виджет"
             >
               <X className="h-4 w-4" />

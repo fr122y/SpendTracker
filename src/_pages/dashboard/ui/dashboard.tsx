@@ -307,9 +307,11 @@ function DashboardGrid() {
                 >
                   {/* Drag handle - desktop only */}
                   {isEditMode && (
-                    <div
+                    <button
+                      type="button"
                       aria-label="Перетащить виджет"
-                      className="absolute right-2 top-2 z-10 cursor-grab rounded-md bg-zinc-700/80 p-1.5 hover:bg-zinc-600"
+                      className="absolute right-2 top-2 z-10 min-h-11 min-w-11 flex items-center justify-center cursor-grab rounded-md bg-zinc-700/80 p-2 hover:bg-zinc-600 active:bg-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
+                      onPointerDown={(e) => e.stopPropagation()}
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -322,6 +324,7 @@ function DashboardGrid() {
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         className="text-zinc-300"
+                        aria-hidden="true"
                       >
                         <circle cx="9" cy="5" r="1" />
                         <circle cx="9" cy="12" r="1" />
@@ -330,7 +333,7 @@ function DashboardGrid() {
                         <circle cx="15" cy="12" r="1" />
                         <circle cx="15" cy="19" r="1" />
                       </svg>
-                    </div>
+                    </button>
                   )}
                   <TerminalPanel
                     title={widget.title}

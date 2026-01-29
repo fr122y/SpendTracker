@@ -43,3 +43,31 @@
     font-family: var(--font-mono);
   }
 }
+
+/* Responsive Typography Utilities */
+@layer utilities {
+  /* Responsive XL: 18px -> 20px -> 24px */
+  .text-responsive-xl {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+
+  /* Responsive LG: 16px -> 18px -> 20px */
+  .text-responsive-lg {
+    @apply text-base sm:text-lg lg:text-xl;
+  }
+
+  /* Responsive Base: 14px -> 16px */
+  .text-responsive-base {
+    @apply text-sm sm:text-base;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
