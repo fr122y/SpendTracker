@@ -5,6 +5,8 @@ import { useState } from 'react'
 
 import { useSessionStore } from '@/entities/session'
 import { ColumnResizer, useLayoutStore } from '@/features/layout-editor'
+import { MobileWidgetList } from '@/features/mobile-widget-list'
+import { MobileWidgetModal } from '@/features/mobile-widget-modal'
 import { cn, useViewport, isTabletOrSmaller, isMobile } from '@/shared/lib'
 import { WIDGET_REGISTRY } from '@/shared/lib/widget-registry'
 import { Button, TerminalPanel } from '@/shared/ui'
@@ -171,37 +173,31 @@ function DashboardGrid() {
     setDropTarget(null)
   }
 
-  // Flatten all widgets for mobile view
+  // State for mobile widget modal
+  const [activeWidget, setActiveWidget] = useState<WidgetId | null>(null)
+
+  // Flatten all widgets for mobile/tablet view
   const allWidgets = layoutConfig.columns.flatMap((column) =>
     column.widgets.map((widgetId) => ({ widgetId, columnId: column.id }))
   )
 
-  // Mobile layout: Single column with all widgets stacked
+  // Get all widget IDs for mobile list
+  const allWidgetIds = allWidgets.map(({ widgetId }) => widgetId)
+
+  // Mobile layout: Widget list with full-screen modal
   if (mobile) {
     return (
-      <div
-        data-grid-container
-        className="flex h-full flex-col gap-4 overflow-y-auto p-4"
-      >
-        {allWidgets.map(({ widgetId }) => {
-          const widget = WIDGET_REGISTRY[widgetId]
-          if (!widget) return null
-
-          const Component = widget.component
-          const Icon = widget.icon
-
-          return (
-            <TerminalPanel
-              key={widgetId}
-              title={widget.title}
-              icon={<Icon className="h-4 w-4" />}
-              isEditMode={false}
-            >
-              <Component />
-            </TerminalPanel>
-          )
-        })}
-      </div>
+      <>
+        <div data-grid-container className="h-full overflow-y-auto bg-zinc-950">
+          <MobileWidgetList widgets={allWidgetIds} onSelect={setActiveWidget} />
+        </div>
+        {activeWidget && (
+          <MobileWidgetModal
+            widgetId={activeWidget}
+            onClose={() => setActiveWidget(null)}
+          />
+        )}
+      </>
     )
   }
 
