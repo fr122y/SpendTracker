@@ -1,5 +1,7 @@
 # Mobile Widget Modal
 
+**DEPRECATED:** This component is no longer used. Replaced by `MobileWidgetAccordion` for inline expandable widgets.
+
 Full-screen modal for displaying widget content on mobile devices. Provides immersive, focused interaction with individual widgets.
 
 ## Public API (`index.ts`)

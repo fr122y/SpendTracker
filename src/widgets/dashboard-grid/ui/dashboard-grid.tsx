@@ -4,8 +4,7 @@ import { GripVertical } from 'lucide-react'
 import { useState, useMemo } from 'react'
 
 import { ColumnResizer, useLayoutStore } from '@/features/layout-editor'
-import { MobileWidgetList } from '@/features/mobile-widget-list'
-import { MobileWidgetModal } from '@/features/mobile-widget-modal'
+import { MobileWidgetAccordion } from '@/features/mobile-widget-accordion'
 import { cn, useViewport, isTabletOrSmaller, isMobile } from '@/shared/lib'
 import { WIDGET_REGISTRY } from '@/shared/lib/widget-registry'
 import { TerminalPanel } from '@/shared/ui'
@@ -120,8 +119,22 @@ export function DashboardGrid() {
     setDropTarget(null)
   }
 
-  // State for mobile widget modal
-  const [activeWidget, setActiveWidget] = useState<WidgetId | null>(null)
+  // State for mobile widget accordion (supports multiple expanded widgets)
+  const [expandedWidgets, setExpandedWidgets] = useState<Set<WidgetId>>(
+    new Set()
+  )
+
+  const handleToggleWidget = (widgetId: WidgetId, shouldExpand: boolean) => {
+    setExpandedWidgets((prev) => {
+      const next = new Set(prev)
+      if (shouldExpand) {
+        next.add(widgetId)
+      } else {
+        next.delete(widgetId)
+      }
+      return next
+    })
+  }
 
   // Flatten all widgets for mobile/tablet view (memoized for performance)
   const allWidgets = useMemo(
@@ -138,20 +151,16 @@ export function DashboardGrid() {
     [allWidgets]
   )
 
-  // Mobile layout: Widget list with full-screen modal
+  // Mobile layout: Accordion-based expandable widgets
   if (mobile) {
     return (
-      <>
-        <div data-grid-container className="h-full overflow-y-auto bg-zinc-950">
-          <MobileWidgetList widgets={allWidgetIds} onSelect={setActiveWidget} />
-        </div>
-        {activeWidget && (
-          <MobileWidgetModal
-            widgetId={activeWidget}
-            onClose={() => setActiveWidget(null)}
-          />
-        )}
-      </>
+      <div data-grid-container className="h-full overflow-y-auto bg-zinc-950">
+        <MobileWidgetAccordion
+          widgets={allWidgetIds}
+          expandedWidgets={expandedWidgets}
+          onToggle={handleToggleWidget}
+        />
+      </div>
     )
   }
 

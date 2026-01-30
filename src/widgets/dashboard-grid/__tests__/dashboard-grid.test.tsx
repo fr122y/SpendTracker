@@ -29,35 +29,26 @@ jest.mock('@/features/layout-editor', () => ({
   ),
 }))
 
-jest.mock('@/features/mobile-widget-list', () => ({
-  MobileWidgetList: ({
+jest.mock('@/features/mobile-widget-accordion', () => ({
+  MobileWidgetAccordion: ({
     widgets,
-    onSelect,
+    expandedWidgets,
+    onToggle,
   }: {
     widgets: string[]
-    onSelect: (id: string) => void
+    expandedWidgets: Set<string>
+    onToggle: (id: string, shouldExpand: boolean) => void
   }) => (
     <div data-testid="mobile-widget-list">
       {widgets.map((id: string) => (
-        <button key={id} onClick={() => onSelect(id)}>
+        <button
+          key={id}
+          onClick={() => onToggle(id, !expandedWidgets.has(id))}
+          aria-expanded={expandedWidgets.has(id)}
+        >
           {id}
         </button>
       ))}
-    </div>
-  ),
-}))
-
-jest.mock('@/features/mobile-widget-modal', () => ({
-  MobileWidgetModal: ({
-    widgetId,
-    onClose,
-  }: {
-    widgetId: string
-    onClose: () => void
-  }) => (
-    <div data-testid="mobile-widget-modal">
-      <span>Modal: {widgetId}</span>
-      <button onClick={onClose}>Close</button>
     </div>
   ),
 }))
@@ -217,7 +208,7 @@ describe('DashboardGrid', () => {
       expect(screen.getByTestId('mobile-widget-list')).toBeInTheDocument()
     })
 
-    it('shows all widget IDs in list', () => {
+    it('shows all widget IDs in accordion list', () => {
       render(<DashboardGrid />)
 
       expect(screen.getByText('CALENDAR')).toBeInTheDocument()
@@ -225,28 +216,34 @@ describe('DashboardGrid', () => {
       expect(screen.getByText('ANALYSIS')).toBeInTheDocument()
     })
 
-    it('opens modal when selecting a widget', () => {
+    it('toggles widget expansion when clicking accordion button', () => {
       render(<DashboardGrid />)
 
       const calendarButton = screen.getByText('CALENDAR')
+
+      // Initially not expanded
+      expect(calendarButton).toHaveAttribute('aria-expanded', 'false')
+
+      // Click to expand
       fireEvent.click(calendarButton)
 
-      expect(screen.getByTestId('mobile-widget-modal')).toBeInTheDocument()
-      expect(screen.getByText('Modal: CALENDAR')).toBeInTheDocument()
+      // Should toggle expansion state
+      expect(calendarButton).toHaveAttribute('aria-expanded', 'true')
     })
 
-    it('closes modal when clicking close button', () => {
+    it('allows multiple widgets to be expanded simultaneously', () => {
       render(<DashboardGrid />)
 
       const calendarButton = screen.getByText('CALENDAR')
+      const expenseLogButton = screen.getByText('EXPENSE_LOG')
+
+      // Expand both widgets
       fireEvent.click(calendarButton)
+      fireEvent.click(expenseLogButton)
 
-      const closeButton = screen.getByText('Close')
-      fireEvent.click(closeButton)
-
-      expect(
-        screen.queryByTestId('mobile-widget-modal')
-      ).not.toBeInTheDocument()
+      // Both should be expanded
+      expect(calendarButton).toHaveAttribute('aria-expanded', 'true')
+      expect(expenseLogButton).toHaveAttribute('aria-expanded', 'true')
     })
 
     it('does not show desktop grid on mobile', () => {

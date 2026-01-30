@@ -1,5 +1,7 @@
 # Mobile Widget List
 
+**DEPRECATED:** This component is no longer used. Replaced by `MobileWidgetAccordion` for inline expandable widgets.
+
 Renders a compact list of widget headers for mobile navigation. Tapping a widget opens it in a full-screen modal.
 
 ## Public API (`index.ts`)
