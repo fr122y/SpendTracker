@@ -21,10 +21,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {label}
           </label>
         )}
-        {/* ⚡ Auto-fix: Added hover: state for desktop feedback (Principle: Interaction States) */}
-        {/* ⚡ Auto-fix: Changed focus to focus-visible for better keyboard UX */}
-        {/* ⚡ Auto-fix: Added transition for smooth state changes */}
-        {/* ⚡ Auto-fix: Changed rounded to rounded-md for consistency (Principle: Repetition) */}
+        {/* ⚡ Auto-fix: Removed text-ellipsis overflow-hidden - inputs should allow horizontal text scroll while typing (Principle: Engineering UX) */}
+        {/* Input fields need to show full content as user types - truncation prevents visibility of long bucket names */}
         <input
           ref={ref}
           id={inputId}

@@ -1,5 +1,6 @@
 'use client'
 
+import { Trash2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 import { useBucketStore } from '@/entities/bucket'
@@ -150,14 +151,18 @@ export function BucketEditor() {
         </div>
       </div>
 
-      {/* Using rounded-lg consistently for card-like elements */}
-      <ul className="flex flex-col gap-2 sm:gap-3">
+      {/* ⚡ Responsive Grid Fix: Gradual breakpoint transition prevents layout jump (Principle: Engineering + Alignment) */}
+      {/* Mobile (<640px): Single column stack */}
+      {/* Small tablet (sm 640px+): 2-column [name + controls], controls use minmax to prevent overflow */}
+      {/* Tablet (md 768px+): Full 3-column layout with explicit column constraints */}
+      <ul className="flex flex-col gap-2">
         {localBuckets.map((bucket) => (
           <li
             key={bucket.id}
-            className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:gap-4 sm:p-3"
+            className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2"
           >
-            <div className="flex-1">
+            {/* Name input - always full width */}
+            <div className="min-w-0">
               <Input
                 value={bucket.label}
                 onChange={(e) => handleLabelChange(bucket.id, e.target.value)}
@@ -165,8 +170,9 @@ export function BucketEditor() {
                 placeholder="Название"
               />
             </div>
-            <div className="flex items-center justify-between gap-2 sm:justify-start">
-              <div className="flex w-20 items-center gap-1 sm:w-24 sm:gap-2">
+            {/* Controls row - percentage, amount, delete */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
                 <MathInput
                   value={
                     inputValues[bucket.id] !== undefined
@@ -179,28 +185,31 @@ export function BucketEditor() {
                   onBlur={handlePercentageBlur}
                   min={0}
                   max={100}
+                  className="w-20"
                 />
-                <span className="text-zinc-400">%</span>
+                <span className="shrink-0 text-zinc-400">%</span>
               </div>
-              {localSalary > 0 && (
-                <span className="text-right text-sm text-zinc-300 sm:w-28 sm:text-base">
-                  {formatAmount(calculateAmount(bucket.percentage))} ₽
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {localSalary > 0 && (
+                  <span className="shrink-0 text-right text-sm text-zinc-300">
+                    {formatAmount(calculateAmount(bucket.percentage))} ₽
+                  </span>
+                )}
+                <Button
+                  variant="danger"
+                  onClick={() => handleDeleteBucket(bucket.id)}
+                  aria-label={
+                    bucket.label
+                      ? `Удалить категорию ${bucket.label}`
+                      : 'Удалить категорию'
+                  }
+                  className="shrink-0"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span className="hidden lg:inline">Удалить</span>
+                </Button>
+              </div>
             </div>
-            {/* ⚡ Auto-fix: Enhanced aria-label with fallback for empty labels (Principle: Accessibility) */}
-            <Button
-              variant="danger"
-              onClick={() => handleDeleteBucket(bucket.id)}
-              aria-label={
-                bucket.label
-                  ? `Удалить категорию ${bucket.label}`
-                  : 'Удалить категорию'
-              }
-              className="w-full sm:w-auto"
-            >
-              Удалить
-            </Button>
           </li>
         ))}
       </ul>
