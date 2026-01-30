@@ -18,6 +18,7 @@ Manages allocation buckets for savings and investment percentages.
 ## Testing
 
 Comprehensive test suite located at `__tests__/store.test.ts` covering:
+
 - Initial state and default buckets
 - `updateBuckets` action with various scenarios (empty arrays, edge cases, unicode)
 - Selector support for derived values

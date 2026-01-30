@@ -1,8 +1,17 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { categorizeExpenseAction } from '@/shared/api'
 
+import {
+  mockCategories,
+  mockSelectedDate,
+  createTestWrapper,
+  testExpenseData,
+  mockCategoryResponses,
+  getFormElements,
+  fillAndSubmitForm,
+  createDelayedResolver,
+} from '../../test-utils/expense-form-helpers'
 import { ExpenseForm } from '../ui/expense-form'
 
 // Mock the server action
@@ -12,11 +21,6 @@ jest.mock('@/shared/api', () => ({
 
 // Mock the stores
 const mockAddExpense = jest.fn()
-const mockCategories = [
-  { id: '1', name: 'Продукты', emoji: '🛒' },
-  { id: '2', name: 'Транспорт', emoji: '🚕' },
-  { id: '6', name: 'Другое', emoji: '📝' },
-]
 
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
@@ -29,7 +33,6 @@ jest.mock('@/entities/category', () => ({
   ) => selector({ categories: mockCategories }),
 }))
 
-const mockSelectedDate = new Date('2025-01-15')
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: mockSelectedDate }),
@@ -39,18 +42,7 @@ const mockedCategorizeAction = categorizeExpenseAction as jest.MockedFunction<
   typeof categorizeExpenseAction
 >
 
-function TestWrapper({ children }: { children: React.ReactNode }) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: {
-        retry: false,
-      },
-    },
-  })
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  )
-}
+const TestWrapper = createTestWrapper()
 
 describe('ExpenseForm', () => {
   beforeEach(() => {
@@ -60,81 +52,63 @@ describe('ExpenseForm', () => {
   it('renders form with description and amount inputs', () => {
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    expect(screen.getByPlaceholderText(/описание/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/сумма/i)).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /добавить/i })
-    ).toBeInTheDocument()
+    const { descriptionInput, amountInput, submitButton } =
+      getFormElements(screen)
+    expect(descriptionInput).toBeInTheDocument()
+    expect(amountInput).toBeInTheDocument()
+    expect(submitButton).toBeInTheDocument()
   })
 
   it('should trigger mutation on submit with correct parameters', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce({
-      category: 'Продукты',
-      emoji: '🛒',
-    })
+    mockedCategorizeAction.mockResolvedValueOnce(
+      mockCategoryResponses.groceries
+    )
 
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Молоко' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '100' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
 
     await waitFor(() => {
       expect(mockedCategorizeAction).toHaveBeenCalledWith(
-        'Молоко',
-        100,
+        testExpenseData.simple.description,
+        testExpenseData.simple.amount,
         mockCategories
       )
     })
   })
 
   it('should add expense to store on successful categorization', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce({
-      category: 'Продукты',
-      emoji: '🛒',
-    })
+    mockedCategorizeAction.mockResolvedValueOnce(
+      mockCategoryResponses.groceries
+    )
 
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Молоко' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '100' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
 
     await waitFor(() => {
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: 'Молоко',
-          amount: 100,
+          description: testExpenseData.simple.description,
+          amount: testExpenseData.simple.amount,
           date: '2025-01-15',
-          category: 'Продукты',
-          emoji: '🛒',
+          category: mockCategoryResponses.groceries.category,
+          emoji: mockCategoryResponses.groceries.emoji,
         })
       )
     })
   })
 
   it('should reset form after successful submission', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce({
-      category: 'Продукты',
-      emoji: '🛒',
-    })
+    mockedCategorizeAction.mockResolvedValueOnce(
+      mockCategoryResponses.groceries
+    )
 
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    const descriptionInput = screen.getByPlaceholderText(/описание/i)
-    const amountInput = screen.getByPlaceholderText(/сумма/i)
+    const { descriptionInput, amountInput } = getFormElements(screen)
 
-    fireEvent.change(descriptionInput, { target: { value: 'Молоко' } })
-    fireEvent.change(amountInput, { target: { value: '100' } })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
 
     await waitFor(() => {
       expect(descriptionInput).toHaveValue('')
@@ -147,21 +121,15 @@ describe('ExpenseForm', () => {
 
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Что-то' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '500' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.fallback)
 
     await waitFor(() => {
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: 'Что-то',
-          amount: 500,
-          category: 'Другое',
-          emoji: '📝',
+          description: testExpenseData.fallback.description,
+          amount: testExpenseData.fallback.amount,
+          category: mockCategoryResponses.other.category,
+          emoji: mockCategoryResponses.other.emoji,
         })
       )
     })
@@ -170,45 +138,38 @@ describe('ExpenseForm', () => {
   it('should disable submit button when form is empty', () => {
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    const submitButton = screen.getByRole('button', { name: /добавить/i })
+    const { submitButton } = getFormElements(screen)
     expect(submitButton).toBeDisabled()
   })
 
   it('should disable submit button when only description is filled', () => {
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Молоко' },
+    const { descriptionInput, submitButton } = getFormElements(screen)
+    fireEvent.change(descriptionInput, {
+      target: { value: testExpenseData.simple.description },
     })
 
-    const submitButton = screen.getByRole('button', { name: /добавить/i })
     expect(submitButton).toBeDisabled()
   })
 
   it('should show loading state during mutation', async () => {
-    let resolvePromise: (value: { category: string; emoji: string }) => void
-    mockedCategorizeAction.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolvePromise = resolve
-        })
-    )
+    const { promise, resolve } = createDelayedResolver<{
+      category: string
+      emoji: string
+    }>()
+    mockedCategorizeAction.mockImplementation(() => promise)
 
     render(<ExpenseForm />, { wrapper: TestWrapper })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Молоко' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '100' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
+      const { submitButton } = getFormElements(screen)
+      expect(submitButton).toBeDisabled()
     })
 
     // Cleanup: resolve the promise to avoid warnings
-    resolvePromise!({ category: 'Продукты', emoji: '🛒' })
+    resolve(mockCategoryResponses.groceries)
   })
 })

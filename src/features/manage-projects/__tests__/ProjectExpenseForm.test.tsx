@@ -1,8 +1,16 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { categorizeExpenseAction } from '@/shared/api'
 
+import {
+  mockCategories,
+  mockSelectedDate,
+  createTestWrapper,
+  testExpenseData,
+  mockCategoryResponses,
+  getFormElements,
+  fillAndSubmitForm,
+} from '../../test-utils/expense-form-helpers'
 import { ProjectExpenseForm } from '../ui/project-expense-form'
 
 // Mock the server action
@@ -12,10 +20,6 @@ jest.mock('@/shared/api', () => ({
 
 // Mock the stores
 const mockAddExpense = jest.fn()
-const mockCategories = [
-  { id: '1', name: 'Продукты', emoji: '🛒' },
-  { id: '6', name: 'Другое', emoji: '📝' },
-]
 
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
@@ -28,7 +32,6 @@ jest.mock('@/entities/category', () => ({
   ) => selector({ categories: mockCategories }),
 }))
 
-const mockSelectedDate = new Date('2025-01-15')
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: mockSelectedDate }),
@@ -38,18 +41,7 @@ const mockedCategorizeAction = categorizeExpenseAction as jest.MockedFunction<
   typeof categorizeExpenseAction
 >
 
-function TestWrapper({ children }: { children: React.ReactNode }) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      mutations: {
-        retry: false,
-      },
-    },
-  })
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  )
-}
+const TestWrapper = createTestWrapper()
 
 describe('ProjectExpenseForm', () => {
   const projectId = 'project-1'
@@ -63,36 +55,29 @@ describe('ProjectExpenseForm', () => {
       wrapper: TestWrapper,
     })
 
-    expect(screen.getByPlaceholderText(/описание/i)).toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/сумма/i)).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: /добавить/i })
-    ).toBeInTheDocument()
+    const { descriptionInput, amountInput, submitButton } =
+      getFormElements(screen)
+    expect(descriptionInput).toBeInTheDocument()
+    expect(amountInput).toBeInTheDocument()
+    expect(submitButton).toBeInTheDocument()
   })
 
   it('adds expense with projectId and selected date on submit', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce({
-      category: 'Продукты',
-      emoji: '🛒',
-    })
+    mockedCategorizeAction.mockResolvedValueOnce(
+      mockCategoryResponses.groceries
+    )
 
     render(<ProjectExpenseForm projectId={projectId} />, {
       wrapper: TestWrapper,
     })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Материалы' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '5000' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.project)
 
     await waitFor(() => {
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: 'Материалы',
-          amount: 5000,
+          description: testExpenseData.project.description,
+          amount: testExpenseData.project.amount,
           date: '2025-01-15',
           projectId: projectId,
         })
@@ -101,48 +86,37 @@ describe('ProjectExpenseForm', () => {
   })
 
   it('calls AI categorization with project context', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce({
-      category: 'Продукты',
-      emoji: '🛒',
-    })
+    mockedCategorizeAction.mockResolvedValueOnce(
+      mockCategoryResponses.groceries
+    )
 
     render(<ProjectExpenseForm projectId={projectId} />, {
       wrapper: TestWrapper,
     })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Материалы' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '5000' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.project)
 
     await waitFor(() => {
       expect(mockedCategorizeAction).toHaveBeenCalledWith(
-        'Материалы',
-        5000,
+        testExpenseData.project.description,
+        testExpenseData.project.amount,
         mockCategories
       )
     })
   })
 
   it('resets form after submission', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce({
-      category: 'Продукты',
-      emoji: '🛒',
-    })
+    mockedCategorizeAction.mockResolvedValueOnce(
+      mockCategoryResponses.groceries
+    )
 
     render(<ProjectExpenseForm projectId={projectId} />, {
       wrapper: TestWrapper,
     })
 
-    const descriptionInput = screen.getByPlaceholderText(/описание/i)
-    const amountInput = screen.getByPlaceholderText(/сумма/i)
+    const { descriptionInput, amountInput } = getFormElements(screen)
 
-    fireEvent.change(descriptionInput, { target: { value: 'Материалы' } })
-    fireEvent.change(amountInput, { target: { value: '5000' } })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.project)
 
     await waitFor(() => {
       expect(descriptionInput).toHaveValue('')
@@ -157,19 +131,13 @@ describe('ProjectExpenseForm', () => {
       wrapper: TestWrapper,
     })
 
-    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
-      target: { value: 'Материалы' },
-    })
-    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
-      target: { value: '5000' },
-    })
-    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    fillAndSubmitForm(screen, fireEvent, testExpenseData.project)
 
     await waitFor(() => {
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
-          category: 'Другое',
-          emoji: '📝',
+          category: mockCategoryResponses.other.category,
+          emoji: mockCategoryResponses.other.emoji,
           projectId: projectId,
         })
       )
@@ -181,7 +149,7 @@ describe('ProjectExpenseForm', () => {
       wrapper: TestWrapper,
     })
 
-    const submitButton = screen.getByRole('button', { name: /добавить/i })
+    const { submitButton } = getFormElements(screen)
     expect(submitButton).toBeDisabled()
   })
 })

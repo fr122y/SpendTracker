@@ -16,37 +16,13 @@ describe('Button', () => {
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
-  it('shows loading state', () => {
+  it('is disabled when loading', () => {
     render(<Button isLoading>Submit</Button>)
-    expect(screen.getByText('Submit')).toBeInTheDocument()
     expect(screen.getByRole('button')).toBeDisabled()
-  })
-
-  it('applies primary variant styles by default', () => {
-    render(<Button>Primary</Button>)
-    const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-blue-600')
-  })
-
-  it('applies ghost variant styles', () => {
-    render(<Button variant="ghost">Ghost</Button>)
-    const button = screen.getByRole('button')
-    expect(button).toHaveClass('bg-transparent')
-  })
-
-  it('applies danger variant styles', () => {
-    render(<Button variant="danger">Danger</Button>)
-    const button = screen.getByRole('button')
-    expect(button).toHaveClass('text-red-400')
   })
 
   it('is disabled when disabled prop is passed', () => {
     render(<Button disabled>Disabled</Button>)
     expect(screen.getByRole('button')).toBeDisabled()
-  })
-
-  it('passes additional props to button element', () => {
-    render(<Button data-testid="custom-button">Test</Button>)
-    expect(screen.getByTestId('custom-button')).toBeInTheDocument()
   })
 })

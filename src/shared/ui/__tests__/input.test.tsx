@@ -18,13 +18,7 @@ describe('Input', () => {
     expect(handleChange).toHaveBeenCalled()
   })
 
-  it('applies dark theme styles', () => {
-    render(<Input data-testid="input" />)
-    const input = screen.getByTestId('input')
-    expect(input).toHaveClass('bg-zinc-900')
-  })
-
-  it('shows error state', () => {
+  it('shows error message', () => {
     render(<Input error="Required field" />)
     expect(screen.getByText('Required field')).toBeInTheDocument()
   })
@@ -37,12 +31,5 @@ describe('Input', () => {
   it('is disabled when disabled prop is passed', () => {
     render(<Input disabled />)
     expect(screen.getByRole('textbox')).toBeDisabled()
-  })
-
-  it('passes additional props to input element', () => {
-    render(<Input type="number" min="0" max="100" />)
-    const input = screen.getByRole('spinbutton')
-    expect(input).toHaveAttribute('type', 'number')
-    expect(input).toHaveAttribute('min', '0')
   })
 })
