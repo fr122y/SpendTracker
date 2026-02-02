@@ -8,20 +8,20 @@ const mockCategories = [
   { id: '6', name: 'Другое', emoji: '📝' },
 ]
 
-const mockAddCategory = jest.fn()
+const mockAddCategoryIfUnique = jest.fn()
 const mockDeleteCategory = jest.fn()
 
 jest.mock('@/entities/category', () => ({
   useCategoryStore: (
     selector: (state: {
       categories: typeof mockCategories
-      addCategory: jest.Mock
+      addCategoryIfUnique: jest.Mock
       deleteCategory: jest.Mock
     }) => unknown
   ) =>
     selector({
       categories: mockCategories,
-      addCategory: mockAddCategory,
+      addCategoryIfUnique: mockAddCategoryIfUnique,
       deleteCategory: mockDeleteCategory,
     }),
 }))
@@ -29,6 +29,7 @@ jest.mock('@/entities/category', () => ({
 describe('CategoryManager', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockAddCategoryIfUnique.mockReturnValue(true)
   })
 
   it('renders list of existing categories', () => {
@@ -85,7 +86,7 @@ describe('CategoryManager', () => {
     fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
 
     await waitFor(() => {
-      expect(mockAddCategory).toHaveBeenCalledWith(
+      expect(mockAddCategoryIfUnique).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Одежда',
           emoji: '👕',
@@ -111,6 +112,8 @@ describe('CategoryManager', () => {
   })
 
   it('shows validation error for duplicate category name', async () => {
+    mockAddCategoryIfUnique.mockReturnValue(false)
+
     render(<CategoryManager />)
 
     fireEvent.change(screen.getByPlaceholderText(/название/i), {
@@ -124,7 +127,7 @@ describe('CategoryManager', () => {
     await waitFor(() => {
       expect(screen.getByText(/категория.*существует/i)).toBeInTheDocument()
     })
-    expect(mockAddCategory).not.toHaveBeenCalled()
+    expect(mockAddCategoryIfUnique).toHaveBeenCalled()
   })
 
   it('disables add button when form is empty', () => {

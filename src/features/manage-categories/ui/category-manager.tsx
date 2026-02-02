@@ -11,7 +11,9 @@ export function CategoryManager() {
   const [error, setError] = useState('')
 
   const categories = useCategoryStore((state) => state.categories)
-  const addCategory = useCategoryStore((state) => state.addCategory)
+  const addCategoryIfUnique = useCategoryStore(
+    (state) => state.addCategoryIfUnique
+  )
   const deleteCategory = useCategoryStore((state) => state.deleteCategory)
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -20,20 +22,16 @@ export function CategoryManager() {
 
     if (!name.trim() || !emoji.trim()) return
 
-    const isDuplicate = categories.some(
-      (cat) => cat.name.toLowerCase() === name.trim().toLowerCase()
-    )
-
-    if (isDuplicate) {
-      setError('Категория с таким названием уже существует')
-      return
-    }
-
-    addCategory({
+    const success = addCategoryIfUnique({
       id: crypto.randomUUID(),
       name: name.trim(),
       emoji: emoji.trim(),
     })
+
+    if (!success) {
+      setError('Категория с таким названием уже существует')
+      return
+    }
 
     setName('')
     setEmoji('')

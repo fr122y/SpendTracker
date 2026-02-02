@@ -2,8 +2,8 @@
 
 import { ChevronDown, ChevronUp } from 'lucide-react'
 
+import { WIDGET_REGISTRY } from '@/features/widget-registry'
 import { cn } from '@/shared/lib'
-import { WIDGET_REGISTRY } from '@/shared/lib/widget-registry'
 
 import type { WidgetId } from '@/shared/types'
 

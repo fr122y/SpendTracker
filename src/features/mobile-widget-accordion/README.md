@@ -72,7 +72,7 @@ The inner wrapper uses `overflow-hidden` to hide content during collapse.
 
 ## Dependencies
 
-- Uses: `@/shared/lib/widget-registry` (widget metadata)
+- Uses: `@/features/widget-registry` (widget metadata)
 - Uses: `@/shared/types` (WidgetId type)
 - Uses: `lucide-react` (ChevronDown, ChevronUp icons)
 

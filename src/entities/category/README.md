@@ -19,7 +19,12 @@ Manages expense categories with persistent storage and default Russian categorie
   - Другое (Other)
 - **Actions:**
   - `addCategory(category)`: Add new category
+  - `addCategoryIfUnique(category)`: Add category with duplicate validation, returns boolean
   - `deleteCategory(id)`: Remove category by ID
+
+## Validation
+
+- `isCategoryNameDuplicate(name, categories)`: Pure function to check for duplicate names (case-insensitive, whitespace-trimmed)
 
 ## Dependencies
 

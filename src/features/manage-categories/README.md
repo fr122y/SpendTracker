@@ -9,7 +9,8 @@ CRUD operations for expense categories.
 ## State & Data
 
 - **Store:** Uses `useCategoryStore` for category management
-- **Actions:** Add category, delete category, validate unique names
+- **Actions:** Delegates to entity layer for add/delete operations
+- **Validation:** Duplicate name validation is handled by the entity layer (`addCategoryIfUnique`)
 
 ## Features
 

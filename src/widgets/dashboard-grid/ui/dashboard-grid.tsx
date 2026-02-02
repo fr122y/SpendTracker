@@ -5,8 +5,8 @@ import { useState, useMemo } from 'react'
 
 import { ColumnResizer, useLayoutStore } from '@/features/layout-editor'
 import { MobileWidgetAccordion } from '@/features/mobile-widget-accordion'
+import { WIDGET_REGISTRY } from '@/features/widget-registry'
 import { cn, useViewport, isTabletOrSmaller, isMobile } from '@/shared/lib'
-import { WIDGET_REGISTRY } from '@/shared/lib/widget-registry'
 import { TerminalPanel } from '@/shared/ui'
 
 import type { WidgetId } from '@/shared/types'

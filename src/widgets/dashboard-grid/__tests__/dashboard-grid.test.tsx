@@ -66,7 +66,7 @@ jest.mock('@/shared/lib', () => ({
 }))
 
 // Mock WIDGET_REGISTRY
-jest.mock('@/shared/lib/widget-registry', () => ({
+jest.mock('@/features/widget-registry', () => ({
   WIDGET_REGISTRY: {
     CALENDAR: {
       component: () => <div>Calendar Widget</div>,

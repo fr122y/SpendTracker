@@ -6,7 +6,7 @@ import { MobileWidgetAccordion } from '../ui/mobile-widget-accordion'
 import type { WidgetId } from '@/shared/types'
 
 // Mock widget registry
-jest.mock('@/shared/lib/widget-registry', () => ({
+jest.mock('@/features/widget-registry', () => ({
   WIDGET_REGISTRY: {
     CALENDAR: {
       title: 'Календарь',

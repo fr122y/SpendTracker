@@ -23,5 +23,5 @@ Full-screen modal for displaying widget content on mobile devices. Provides imme
 
 ## Dependencies
 
-- Uses: `@/shared/lib/widget-registry` for widget component and metadata
+- Uses: `@/features/widget-registry` for widget component and metadata
 - Uses: `@/shared/types` for WidgetId type

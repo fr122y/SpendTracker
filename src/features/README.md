@@ -18,6 +18,7 @@ Each feature folder should contain:
 - **manage-projects** - CRUD operations for projects with budget allocation
 - **manage-buckets** - CRUD operations for budget buckets (spending limits)
 - **layout-editor** - Dashboard layout customization with drag-and-drop
+- **widget-registry** - Central registry mapping widget IDs to component metadata
 
 ## Rules
 

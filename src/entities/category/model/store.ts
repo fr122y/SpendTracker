@@ -12,6 +12,15 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '6', name: 'Другое', emoji: '📝' },
 ]
 
+// Pure validation function
+export function isCategoryNameDuplicate(
+  name: string,
+  categories: Category[]
+): boolean {
+  const normalized = name.trim().toLowerCase()
+  return categories.some((cat) => cat.name.toLowerCase() === normalized)
+}
+
 // Atoms with persistence
 export const categoriesAtom = atom(DEFAULT_CATEGORIES, 'categoriesAtom').extend(
   withLocalStorage('smartspend-categories')
@@ -28,15 +37,29 @@ export const deleteCategory = action((id: string) => {
   categoriesAtom.set(current.filter((c) => c.id !== id))
 }, 'deleteCategory')
 
+export const addCategoryIfUnique = action((category: Category) => {
+  const current = categoriesAtom()
+
+  if (isCategoryNameDuplicate(category.name, current)) {
+    return false // Duplicate found
+  }
+
+  categoriesAtom.set([...current, category])
+  return true // Success
+}, 'addCategoryIfUnique')
+
 // Store state type
 interface CategoryState {
   categories: Category[]
   addCategory: (category: Category) => void
+  addCategoryIfUnique: (category: Category) => boolean
   deleteCategory: (id: string) => void
 }
 
 // Action wrappers (stable references)
 const actionAddCategory = (category: Category) => wrap(addCategory)(category)
+const actionAddCategoryIfUnique = (category: Category) =>
+  wrap(addCategoryIfUnique)(category)
 const actionDeleteCategory = (id: string) => wrap(deleteCategory)(id)
 
 // Cached state for useSyncExternalStore
@@ -51,6 +74,7 @@ const getState = (): CategoryState => {
     cachedState = {
       categories,
       addCategory: actionAddCategory,
+      addCategoryIfUnique: actionAddCategoryIfUnique,
       deleteCategory: actionDeleteCategory,
     }
   }

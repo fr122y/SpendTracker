@@ -16,12 +16,11 @@ Utility functions and helpers used across the application.
 - `cn(...classes)`: Class name utility (tailwind-merge + clsx)
 - `evaluateMathExpression(expr)`: Safe math expression evaluator
 
-### Widget Registry (separate import)
+### Widget Registry (moved to features layer)
 
-**Note:** Import directly from `@/shared/lib/widget-registry` to avoid circular dependencies.
+**Note:** Widget registry has been moved to `@/features/widget-registry` to fix FSD layer violations.
 
-- `WIDGET_REGISTRY`: Mapping of `WidgetId` to component, title, and icon
-- `WidgetRegistryEntry`: Type for registry entries
+- Import from `@/features/widget-registry` instead of shared layer
 
 ### Types
 

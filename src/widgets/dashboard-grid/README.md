@@ -45,6 +45,6 @@ Responsive dashboard grid that renders widgets based on viewport size with drag-
 ## Dependencies
 
 - Uses: `@/features/layout-editor`, `@/features/mobile-widget-list`, `@/features/mobile-widget-modal`
-- Uses: `@/shared/lib` (hooks, utilities), `@/shared/lib/widget-registry`, `@/shared/ui`
+- Uses: `@/shared/lib` (hooks, utilities), `@/features/widget-registry`, `@/shared/ui`
 - Uses: `lucide-react` (GripVertical icon)
 - Uses: `react` (useState, useMemo)

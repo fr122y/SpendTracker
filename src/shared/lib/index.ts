@@ -22,7 +22,7 @@ export {
   type Viewport,
 } from './hooks'
 
-// Note: WIDGET_REGISTRY is not exported here to avoid circular dependencies
-// Import it directly from '@/shared/lib/widget-registry' where needed
+// Note: WIDGET_REGISTRY has been moved to @/features/widget-registry
+// Import it directly from '@/features/widget-registry' where needed
 
 export { evaluateMathExpression } from './math-eval'

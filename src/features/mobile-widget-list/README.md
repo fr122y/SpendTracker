@@ -15,5 +15,5 @@ Renders a compact list of widget headers for mobile navigation. Tapping a widget
 
 ## Dependencies
 
-- Uses: `@/shared/lib/widget-registry` for widget metadata (icons, titles)
+- Uses: `@/features/widget-registry` for widget metadata (icons, titles)
 - Uses: `@/shared/types` for WidgetId type

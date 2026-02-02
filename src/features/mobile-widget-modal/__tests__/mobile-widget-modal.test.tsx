@@ -6,7 +6,7 @@ import { MobileWidgetModal } from '../ui/mobile-widget-modal'
 import type { WidgetId } from '@/shared/types'
 
 // Mock widget registry with test components
-jest.mock('@/shared/lib/widget-registry', () => ({
+jest.mock('@/features/widget-registry', () => ({
   WIDGET_REGISTRY: {
     CALENDAR: {
       component: () => (
