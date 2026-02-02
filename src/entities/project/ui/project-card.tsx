@@ -10,8 +10,9 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, spent }: ProjectCardProps) {
+  // Enhanced contrast with border-zinc-700, shadow-md for depth, card-lift for hover micro-interaction
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+    <div className="rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-4 card-lift">
       <div className="mb-3 flex items-center gap-2">
         <div
           className="h-3 w-3 rounded-full"

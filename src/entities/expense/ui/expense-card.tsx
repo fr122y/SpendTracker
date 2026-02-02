@@ -51,8 +51,9 @@ export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
     setIsEditing(false)
   }
 
+  // Enhanced contrast with border-zinc-700 and bg-zinc-900/70, shadow-md for depth, hover states for feedback
   return (
-    <div className="flex items-center justify-between rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 sm:p-3">
+    <div className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-2 sm:p-3 transition-all duration-200 ease-out hover:bg-zinc-800/80 hover:border-zinc-600 hover:-translate-y-0.5 hover:shadow-lg">
       <div className="flex items-center gap-3">
         <span className="text-2xl">{expense.emoji}</span>
         <div className="flex flex-col">

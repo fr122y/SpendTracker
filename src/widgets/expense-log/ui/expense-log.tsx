@@ -1,9 +1,12 @@
 'use client'
 
+import { Wallet } from 'lucide-react'
+
 import { useExpenseStore, ExpenseList } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { ExpenseForm } from '@/features/add-expense'
 import { getDailyExpenses } from '@/shared/lib'
+import { EmptyState } from '@/shared/ui'
 
 function formatDateRussian(date: Date): string {
   const day = date.getDate()
@@ -69,9 +72,11 @@ export function ExpenseLog() {
             onEdit={updateExpense}
           />
         ) : (
-          <p className="py-4 text-center text-sm text-zinc-500">
-            Нет операций за этот день
-          </p>
+          <EmptyState
+            icon={Wallet}
+            title="Нет операций за этот день"
+            description="Добавьте операцию используя форму выше"
+          />
         )}
       </div>
     </div>

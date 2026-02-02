@@ -105,6 +105,25 @@ jest.mock('@/shared/lib', () => ({
     const dateStr = `${year}-${month}-${day}`
     return expenses.filter((expense) => expense.date === dateStr)
   }),
+  cn: jest.fn((...args: unknown[]) => {
+    return args
+      .flat()
+      .filter((x) => typeof x === 'string')
+      .join(' ')
+  }),
+}))
+
+// Mock EmptyState component
+jest.mock('@/shared/ui', () => ({
+  ...jest.requireActual('@/shared/ui'),
+  EmptyState: jest.fn(
+    ({ title, description }: { title: string; description?: string }) => (
+      <div data-testid="empty-state">
+        <p>{title}</p>
+        {description && <p>{description}</p>}
+      </div>
+    )
+  ),
 }))
 
 describe('ExpenseLog', () => {

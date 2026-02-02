@@ -1,11 +1,13 @@
 'use client'
 
+import { PieChart } from 'lucide-react'
 import { useState } from 'react'
 
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { getCategoryStats, type CategoryStat } from '@/shared/lib'
 import { cn } from '@/shared/lib'
+import { EmptyState } from '@/shared/ui'
 
 const MONTH_NAMES = [
   'Январь',
@@ -108,9 +110,11 @@ export function AnalysisDashboard() {
           ))}
         </div>
       ) : (
-        <p className="py-6 text-center text-sm text-zinc-500 sm:py-8">
-          Нет данных за этот месяц
-        </p>
+        <EmptyState
+          icon={PieChart}
+          title="Нет данных за этот месяц"
+          description="Добавьте операции для анализа расходов"
+        />
       )}
     </div>
   )

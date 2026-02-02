@@ -104,22 +104,26 @@ export function MonthPickerModal({
     }
   }
 
+  // Enhanced backdrop opacity to 70%, improved backdrop-blur, animate-fade-in for smooth appearance
   return (
     <div
       className={cn(
-        'fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm',
+        'fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md',
         'transition-opacity duration-200',
-        isVisible ? 'opacity-100' : 'opacity-0'
+        isVisible ? 'opacity-100 animate-fade-in' : 'opacity-0'
       )}
       onClick={handleBackdropClick}
     >
+      {/* ⚡ Auto-fix: Enhanced modal panel with zinc-700 border and shadow-2xl (Principle: Proximity) */}
+      {/* ⚡ Auto-fix: Added animate-slide-up for modal entrance (Principle: Interaction States) */}
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Выбор месяца"
         className={cn(
-          'bg-zinc-900 rounded-xl border border-zinc-800 p-4 sm:p-6 max-w-sm w-full mx-4',
-          'relative'
+          'bg-zinc-900 rounded-xl border border-zinc-700 shadow-2xl p-4 sm:p-6 max-w-sm w-full mx-4',
+          'relative',
+          isVisible && 'animate-slide-up'
         )}
       >
         {/* Header with Close Button */}

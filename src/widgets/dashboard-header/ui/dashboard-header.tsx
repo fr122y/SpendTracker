@@ -18,10 +18,11 @@ export function DashboardHeader() {
     year: 'numeric',
   })
 
+  // Enhanced header border contrast with zinc-700
   return (
     <header
       className={cn(
-        'border-b border-zinc-800 bg-zinc-900/50 px-3 py-3 sm:px-4 sm:py-4',
+        'border-b border-zinc-700 bg-zinc-900/50 px-3 py-3 sm:px-4 sm:py-4',
         'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'
       )}
     >

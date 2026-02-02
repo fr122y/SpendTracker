@@ -9,3 +9,4 @@ export {
   ResponsiveContainer,
   type ResponsiveContainerProps,
 } from './responsive-container'
+export { EmptyState, type EmptyStateProps } from './empty-state'

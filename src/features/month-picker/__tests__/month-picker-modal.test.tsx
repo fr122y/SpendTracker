@@ -155,12 +155,13 @@ describe('MonthPickerModal', () => {
       )
 
       const overlay = screen.getByRole('dialog').parentElement
+      // Enhanced backdrop opacity (70%) and blur (md) for better focus
       expect(overlay).toHaveClass(
         'fixed',
         'inset-0',
         'z-50',
-        'bg-black/50',
-        'backdrop-blur-sm'
+        'bg-black/70',
+        'backdrop-blur-md'
       )
     })
 
@@ -175,11 +176,13 @@ describe('MonthPickerModal', () => {
       )
 
       const contentBox = screen.getByRole('dialog')
+      // Enhanced contrast with border-zinc-700 and shadow-2xl
       expect(contentBox).toHaveClass(
         'bg-zinc-900',
         'rounded-xl',
         'border',
-        'border-zinc-800',
+        'border-zinc-700',
+        'shadow-2xl',
         'max-w-sm',
         'w-full'
       )

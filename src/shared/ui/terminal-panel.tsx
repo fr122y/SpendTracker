@@ -23,19 +23,22 @@ export const TerminalPanel = forwardRef<HTMLDivElement, TerminalPanelProps>(
     },
     ref
   ) => {
+    // Enhanced contrast with border-zinc-700, animate-fade-in for smooth panel appearance
     return (
       <div
         ref={ref}
         className={cn(
           'relative flex flex-col rounded-md overflow-hidden',
-          'border border-zinc-800 bg-zinc-900/30 backdrop-blur-sm shadow-lg',
+          'border border-zinc-700 bg-zinc-900/30 backdrop-blur-sm shadow-lg',
+          'animate-fade-in',
           isEditMode && 'border-2 border-blue-500/50 border-dashed',
           className
         )}
         {...props}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 lg:p-6 border-b border-zinc-800/50">
+        {/* ⚡ Auto-fix: Enhanced header border contrast (Principle: Contrast) */}
+        <div className="flex items-center justify-between p-4 sm:p-5 lg:p-6 border-b border-zinc-700/50">
           <div className="flex items-center gap-2">
             {icon && <span className="text-blue-500">{icon}</span>}
             <h2 className="text-sm font-bold text-zinc-200 uppercase tracking-wider">

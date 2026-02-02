@@ -138,7 +138,7 @@ jest.mock('@/shared/lib', () => ({
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
 }))
 
-// Mock Button component
+// Mock Button and EmptyState components
 jest.mock('@/shared/ui', () => ({
   Button: jest.fn(
     ({
@@ -153,6 +153,14 @@ jest.mock('@/shared/ui', () => ({
       <button onClick={onClick} data-variant={variant}>
         {children}
       </button>
+    )
+  ),
+  EmptyState: jest.fn(
+    ({ title, description }: { title: string; description?: string }) => (
+      <div data-testid="empty-state">
+        <p>{title}</p>
+        {description && <p>{description}</p>}
+      </div>
     )
   ),
 }))
@@ -255,10 +263,10 @@ describe('ProjectsSection', () => {
       mockProjects = []
       render(<ProjectsSection />)
 
+      // EmptyState component renders title and description separately
+      expect(screen.getByText('Нет проектов')).toBeInTheDocument()
       expect(
-        screen.getByText(
-          'Нет проектов. Создайте первый проект для отслеживания бюджета.'
-        )
+        screen.getByText('Создайте первый проект для отслеживания бюджета')
       ).toBeInTheDocument()
     })
 
@@ -679,8 +687,9 @@ describe('ProjectsSection', () => {
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
+      // Enhanced contrast: border-zinc-700 instead of border-zinc-800
       const expandedContent = container.querySelector(
-        '.rounded-lg.border.border-zinc-800'
+        '.rounded-lg.border.border-zinc-700'
       )
       expect(expandedContent).toBeInTheDocument()
       expect(expandedContent).toHaveClass(
@@ -688,7 +697,7 @@ describe('ProjectsSection', () => {
         'space-y-3',
         'rounded-lg',
         'border',
-        'border-zinc-800',
+        'border-zinc-700',
         'bg-zinc-900/30',
         'p-3'
       )
@@ -905,10 +914,10 @@ describe('ProjectsSection', () => {
       mockProjects = []
       render(<ProjectsSection />)
 
+      // EmptyState component renders title and description separately
+      expect(screen.getByText('Нет проектов')).toBeInTheDocument()
       expect(
-        screen.getByText(
-          'Нет проектов. Создайте первый проект для отслеживания бюджета.'
-        )
+        screen.getByText('Создайте первый проект для отслеживания бюджета')
       ).toBeInTheDocument()
     })
   })

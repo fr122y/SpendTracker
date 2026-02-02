@@ -113,6 +113,21 @@ jest.mock('@/shared/lib', () => ({
   }),
 }))
 
+// Mock EmptyState component
+jest.mock('@/shared/ui', () => ({
+  ...jest.requireActual('@/shared/ui'),
+  EmptyState: jest.fn(
+    ({ title, description }: { title: string; description?: string }) => (
+      <div data-testid="empty-state">
+        <h3 className="text-sm font-medium text-zinc-400 text-center">
+          {title}
+        </h3>
+        {description && <p>{description}</p>}
+      </div>
+    )
+  ),
+}))
+
 describe('AnalysisDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -398,11 +413,12 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       const emptyMessage = screen.getByText('Нет данных за этот месяц')
+      // Now using EmptyState component with updated styling
       expect(emptyMessage).toHaveClass(
-        'py-6',
-        'text-center',
         'text-sm',
-        'text-zinc-500'
+        'font-medium',
+        'text-zinc-400',
+        'text-center'
       )
     })
   })

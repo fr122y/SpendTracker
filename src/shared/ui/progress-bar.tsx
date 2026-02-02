@@ -33,17 +33,22 @@ export const ProgressBar = forwardRef<HTMLDivElement, ProgressBarProps>(
           </div>
         )}
 
+        {/* ⚡ Auto-fix: Increased height to h-2.5 for better visibility (Principle: Contrast) */}
+        {/* ⚡ Auto-fix: Added shadow-inner to track for depth (Principle: Proximity) */}
         <div
           role="progressbar"
           aria-valuenow={value}
           aria-valuemin={0}
           aria-valuemax={max}
-          className="h-2 bg-zinc-800 rounded-full overflow-hidden"
+          className="h-2.5 bg-zinc-800 shadow-inner shadow-black/30 rounded-full overflow-hidden"
         >
+          {/* ⚡ Auto-fix: Added gradient and glow for visual depth (Principle: Proximity) */}
           <div
             className={cn(
               'h-full transition-all duration-500 ease-out',
-              isOverBudget ? 'bg-red-500' : 'bg-blue-500'
+              isOverBudget
+                ? 'bg-gradient-to-r from-red-600 to-red-500 shadow-sm shadow-red-500/50'
+                : 'bg-gradient-to-r from-blue-600 to-blue-500 shadow-sm shadow-blue-500/50'
             )}
             style={{ width: `${percentage}%` }}
           />

@@ -1,5 +1,6 @@
 'use client'
 
+import { FolderKanban } from 'lucide-react'
 import { useState } from 'react'
 
 import { useExpenseStore, ExpenseList } from '@/entities/expense'
@@ -9,7 +10,7 @@ import {
   ProjectExpenseForm,
 } from '@/features/manage-projects'
 import { cn } from '@/shared/lib'
-import { Button } from '@/shared/ui'
+import { Button, EmptyState } from '@/shared/ui'
 
 export function ProjectsSection() {
   const [showCreateForm, setShowCreateForm] = useState(false)
@@ -67,8 +68,9 @@ export function ProjectsSection() {
       </div>
 
       {/* Create Form */}
+      {/* ⚡ Auto-fix: Enhanced contrast and depth (Principle: Contrast) */}
       {showCreateForm && (
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4">
+        <div className="rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-3 sm:p-4 animate-fade-in">
           <CreateProjectForm />
         </div>
       )}
@@ -101,8 +103,9 @@ export function ProjectsSection() {
                 </button>
 
                 {/* Expanded Content */}
+                {/* ⚡ Auto-fix: Enhanced contrast with zinc-700 border (Principle: Contrast) */}
                 {isExpanded && (
-                  <div className="mt-3 space-y-3 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 sm:mt-4 sm:space-y-4 sm:p-4">
+                  <div className="mt-3 space-y-3 rounded-lg border border-zinc-700 bg-zinc-900/30 p-3 sm:mt-4 sm:space-y-4 sm:p-4 animate-slide-up">
                     {/* Delete Button */}
                     <div className="flex justify-end">
                       <Button
@@ -144,9 +147,11 @@ export function ProjectsSection() {
           })}
         </div>
       ) : (
-        <p className="py-8 text-center text-sm text-zinc-500">
-          Нет проектов. Создайте первый проект для отслеживания бюджета.
-        </p>
+        <EmptyState
+          icon={FolderKanban}
+          title="Нет проектов"
+          description="Создайте первый проект для отслеживания бюджета"
+        />
       )}
     </div>
   )

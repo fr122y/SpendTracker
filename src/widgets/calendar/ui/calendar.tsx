@@ -298,7 +298,8 @@ export function Calendar() {
       </div>
 
       {/* ⚡ Auto-fix: Enhanced legend visibility with larger indicators and better spacing (Principle: Contrast + Repetition) */}
-      <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-800 bg-zinc-900/50 p-2 text-xs text-zinc-400 sm:gap-4 sm:p-3 sm:text-sm">
+      {/* ⚡ Auto-fix: Enhanced border contrast with zinc-700 (Principle: Contrast) */}
+      <div className="flex flex-wrap gap-2 rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-2 text-xs text-zinc-400 sm:gap-4 sm:p-3 sm:text-sm">
         <div className="flex items-center gap-2">
           <span className="h-3 w-3 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
           <span>Расход</span>
