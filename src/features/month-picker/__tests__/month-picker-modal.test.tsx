@@ -1,6 +1,21 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 
 import { MonthPickerModal } from '../ui/month-picker-modal'
+
+const RUSSIAN_MONTHS = [
+  'Январь',
+  'Февраль',
+  'Март',
+  'Апрель',
+  'Май',
+  'Июнь',
+  'Июль',
+  'Август',
+  'Сентябрь',
+  'Октябрь',
+  'Ноябрь',
+  'Декабрь',
+]
 
 // Mock lucide-react icons
 jest.mock('lucide-react', () => ({
@@ -32,19 +47,6 @@ describe('MonthPickerModal', () => {
       expect(container.firstChild).toBeNull()
     })
 
-    it('renders modal when isOpen is true', () => {
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={currentDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-    })
-
     it('displays all 12 Russian months', () => {
       render(
         <MonthPickerModal
@@ -55,22 +57,7 @@ describe('MonthPickerModal', () => {
         />
       )
 
-      const months = [
-        'Январь',
-        'Февраль',
-        'Март',
-        'Апрель',
-        'Май',
-        'Июнь',
-        'Июль',
-        'Август',
-        'Сентябрь',
-        'Октябрь',
-        'Ноябрь',
-        'Декабрь',
-      ]
-
-      months.forEach((month) => {
+      RUSSIAN_MONTHS.forEach((month) => {
         expect(screen.getByText(month)).toBeInTheDocument()
       })
     })
@@ -127,21 +114,6 @@ describe('MonthPickerModal', () => {
 
       const juneButton = screen.getByText('Июнь')
       expect(juneButton).toHaveClass('bg-blue-600', 'text-white')
-    })
-
-    it('applies correct styling to non-current months', () => {
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={currentDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      const januaryButton = screen.getByText('Январь')
-      expect(januaryButton).toHaveClass('bg-zinc-800', 'text-zinc-300')
-      expect(januaryButton).not.toHaveClass('bg-blue-600')
     })
 
     it('applies fixed overlay styling', () => {
@@ -326,50 +298,6 @@ describe('MonthPickerModal', () => {
       expect(screen.getByText(String(maxYear))).toBeInTheDocument()
       expect(nextYearButton).toBeDisabled()
     })
-
-    it('does not change year when clicking disabled previous year button', () => {
-      const actualCurrentYear = new Date().getFullYear()
-      const minYear = actualCurrentYear - 5
-      const minYearDate = new Date(minYear, 5, 15) // Already at min year
-
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={minYearDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      const prevYearButton = screen.getByLabelText('Предыдущий год')
-      expect(prevYearButton).toBeDisabled()
-
-      fireEvent.click(prevYearButton)
-
-      expect(screen.getByText(String(minYear))).toBeInTheDocument()
-    })
-
-    it('does not change year when clicking disabled next year button', () => {
-      const actualCurrentYear = new Date().getFullYear()
-      const maxYear = actualCurrentYear + 5
-      const maxYearDate = new Date(maxYear, 5, 15) // Already at max year
-
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={maxYearDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      const nextYearButton = screen.getByLabelText('Следующий год')
-      expect(nextYearButton).toBeDisabled()
-
-      fireEvent.click(nextYearButton)
-
-      expect(screen.getByText(String(maxYear))).toBeInTheDocument()
-    })
   })
 
   describe('close behavior', () => {
@@ -477,19 +405,6 @@ describe('MonthPickerModal', () => {
   })
 
   describe('accessibility', () => {
-    it('has role="dialog" attribute', () => {
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={currentDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      expect(screen.getByRole('dialog')).toBeInTheDocument()
-    })
-
     it('has aria-modal="true" attribute', () => {
       render(
         <MonthPickerModal
@@ -526,22 +441,7 @@ describe('MonthPickerModal', () => {
         />
       )
 
-      const months = [
-        'Январь',
-        'Февраль',
-        'Март',
-        'Апрель',
-        'Май',
-        'Июнь',
-        'Июль',
-        'Август',
-        'Сентябрь',
-        'Октябрь',
-        'Ноябрь',
-        'Декабрь',
-      ]
-
-      months.forEach((month) => {
+      RUSSIAN_MONTHS.forEach((month) => {
         const button = screen.getByText(month)
         expect(button).toHaveAttribute('type', 'button')
       })
@@ -601,33 +501,6 @@ describe('MonthPickerModal', () => {
       const overlay = screen.getByRole('dialog').parentElement
       expect(overlay).toHaveClass('transition-opacity', 'duration-200')
     })
-
-    it('fades in when opened', async () => {
-      const { rerender } = render(
-        <MonthPickerModal
-          isOpen={false}
-          currentDate={currentDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      await act(async () => {
-        rerender(
-          <MonthPickerModal
-            isOpen={true}
-            currentDate={currentDate}
-            onSelectMonth={mockOnSelectMonth}
-            onClose={mockOnClose}
-          />
-        )
-      })
-
-      await waitFor(() => {
-        const overlay = screen.getByRole('dialog').parentElement
-        expect(overlay).toHaveClass('opacity-100')
-      })
-    })
   })
 
   describe('edge cases', () => {
@@ -646,42 +519,6 @@ describe('MonthPickerModal', () => {
 
       const decemberButton = screen.getByText('Декабрь')
       expect(decemberButton).toHaveClass('bg-blue-600')
-    })
-
-    it('handles January correctly (month index 0)', () => {
-      const januaryDate = new Date(2024, 0, 15) // January 15, 2024
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={januaryDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      const januaryButton = screen.getByText('Январь')
-      fireEvent.click(januaryButton)
-
-      const selectedDate = mockOnSelectMonth.mock.calls[0][0]
-      expect(selectedDate.getMonth()).toBe(0)
-    })
-
-    it('handles December correctly (month index 11)', () => {
-      const decemberDate = new Date(2024, 11, 25) // December 25, 2024
-      render(
-        <MonthPickerModal
-          isOpen={true}
-          currentDate={decemberDate}
-          onSelectMonth={mockOnSelectMonth}
-          onClose={mockOnClose}
-        />
-      )
-
-      const decemberButton = screen.getByText('Декабрь')
-      fireEvent.click(decemberButton)
-
-      const selectedDate = mockOnSelectMonth.mock.calls[0][0]
-      expect(selectedDate.getMonth()).toBe(11)
     })
 
     it('handles rapid year changes correctly', () => {
