@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
+import { MonthPickerModal } from '@/features/month-picker'
 import { cn } from '@/shared/lib'
 
 const WEEKDAY_HEADERS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
@@ -136,8 +137,14 @@ const MONTH_NAMES = [
 ]
 
 export function Calendar() {
-  const { viewDate, selectedDate, setSelectedDate, nextMonth, prevMonth } =
-    useSessionStore()
+  const {
+    viewDate,
+    selectedDate,
+    setSelectedDate,
+    setViewDate,
+    nextMonth,
+    prevMonth,
+  } = useSessionStore()
   const expenses = useExpenseStore((state) => state.expenses)
   const { salaryDay, advanceDay, setSalaryDay, setAdvanceDay } =
     useSettingsStore()
@@ -146,6 +153,7 @@ export function Calendar() {
     null
   )
   const [editValue, setEditValue] = useState('')
+  const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
 
   const handleStartEdit = (field: 'salary' | 'advance') => {
     setEditingField(field)
@@ -207,9 +215,13 @@ export function Calendar() {
             />
           </svg>
         </button>
-        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
+        <button
+          onClick={() => setIsMonthPickerOpen(true)}
+          className="text-base font-medium text-zinc-100 sm:text-lg hover:text-zinc-300 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
+          aria-label="Выбрать месяц"
+        >
           {monthName} {year}
-        </h2>
+        </button>
         <button
           onClick={nextMonth}
           className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-h-0 sm:min-w-0"
@@ -342,6 +354,16 @@ export function Calendar() {
           )}
         </button>
       </div>
+
+      <MonthPickerModal
+        isOpen={isMonthPickerOpen}
+        currentDate={viewDate}
+        onSelectMonth={(date) => {
+          setViewDate(date)
+          setIsMonthPickerOpen(false)
+        }}
+        onClose={() => setIsMonthPickerOpen(false)}
+      />
     </div>
   )
 }
