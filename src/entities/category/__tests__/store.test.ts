@@ -1,9 +1,11 @@
 import { wrap } from '@reatom/core'
+import { renderHook } from '@testing-library/react'
 
 import {
   isCategoryNameDuplicate,
   categoriesAtom,
   addCategoryIfUnique,
+  useCategoryStore,
 } from '../model/store'
 
 import type { Category } from '@/shared/types'
@@ -107,5 +109,62 @@ describe('addCategoryIfUnique', () => {
 
     expect(result).toBe(false)
     expect(categoriesAtom()).toHaveLength(2)
+  })
+})
+
+describe('Hydration Safety', () => {
+  it('should return empty array when atom is undefined during hydration', () => {
+    // Simulate pre-hydration state where localStorage hasn't loaded yet
+    // @ts-expect-error -- simulate pre-hydration undefined
+    categoriesAtom.set(undefined)
+
+    const { result } = renderHook(() => useCategoryStore())
+
+    // Should return empty array, not undefined
+    expect(result.current.categories).toBeDefined()
+    expect(Array.isArray(result.current.categories)).toBe(true)
+    expect(result.current.categories.length).toBe(0)
+  })
+
+  it('should not throw when calling reduce on categories during hydration', () => {
+    // Simulate pre-hydration state
+    // @ts-expect-error -- simulate pre-hydration undefined
+    categoriesAtom.set(undefined)
+
+    const { result } = renderHook(() => useCategoryStore())
+
+    // This should not throw "Cannot read properties of undefined (reading 'reduce')"
+    expect(() => {
+      result.current.categories.reduce((acc, c) => acc + c.name, '')
+    }).not.toThrow()
+
+    // Result should be empty string for empty array
+    const combined = result.current.categories.reduce(
+      (acc, c) => acc + c.name,
+      ''
+    )
+    expect(combined).toBe('')
+  })
+
+  it('should handle array methods safely when atom is undefined', () => {
+    // @ts-expect-error -- simulate pre-hydration undefined
+    categoriesAtom.set(undefined)
+
+    const { result } = renderHook(() => useCategoryStore())
+
+    // All array methods should work without throwing
+    expect(() => result.current.categories.map((c) => c.id)).not.toThrow()
+    expect(() =>
+      result.current.categories.filter((c) => c.id === 'test')
+    ).not.toThrow()
+    expect(() =>
+      result.current.categories.find((c) => c.id === 'test')
+    ).not.toThrow()
+
+    expect(result.current.categories.map((c) => c.id)).toEqual([])
+    expect(result.current.categories.filter((c) => c.id === 'test')).toEqual([])
+    expect(
+      result.current.categories.find((c) => c.id === 'test')
+    ).toBeUndefined()
   })
 })

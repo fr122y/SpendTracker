@@ -14,6 +14,8 @@ const COLORS = [
   '#f97316', // orange
 ]
 
+const EMPTY_PROJECTS: Project[] = []
+
 function getRandomColor(): string {
   return COLORS[Math.floor(Math.random() * COLORS.length)]
 }
@@ -26,7 +28,7 @@ export const projectsAtom = atom<Project[]>([], 'projectsAtom').extend(
 // Actions
 export const addProject = action(
   (project: Omit<Project, 'color' | 'createdAt'>) => {
-    const current = projectsAtom()
+    const current = projectsAtom() ?? []
     projectsAtom.set([
       ...current,
       {
@@ -40,7 +42,7 @@ export const addProject = action(
 )
 
 export const deleteProject = action((id: string) => {
-  const current = projectsAtom()
+  const current = projectsAtom() ?? []
   projectsAtom.set(current.filter((p) => p.id !== id))
 }, 'deleteProject')
 
@@ -61,7 +63,8 @@ let cachedState: ProjectState | null = null
 let cachedProjects: Project[] | undefined
 
 const getState = (): ProjectState => {
-  const projects = projectsAtom()
+  // Fallback to stable empty array during hydration when localStorage hasn't loaded yet
+  const projects = projectsAtom() ?? EMPTY_PROJECTS
 
   if (cachedState === null || cachedProjects !== projects) {
     cachedProjects = projects

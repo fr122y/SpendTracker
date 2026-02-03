@@ -1,7 +1,7 @@
 import { wrap } from '@reatom/core'
 import { act, renderHook, waitFor } from '@testing-library/react'
 
-import { useBucketStore, updateBuckets } from '../model/store'
+import { useBucketStore, updateBuckets, bucketsAtom } from '../model/store'
 
 import type { AllocationBucket } from '@/shared/types'
 
@@ -167,6 +167,63 @@ describe('useBucketStore', () => {
         expect(result.current.buckets).not.toEqual(initialBuckets)
         expect(result.current.buckets[0].label).toBe('Новый')
       })
+    })
+  })
+
+  describe('Hydration Safety', () => {
+    it('should return empty array when atom is undefined during hydration', () => {
+      // Simulate pre-hydration state where localStorage hasn't loaded yet
+      // @ts-expect-error -- simulate pre-hydration undefined
+      bucketsAtom.set(undefined)
+
+      const { result } = renderHook(() => useBucketStore())
+
+      // Should return empty array, not undefined
+      expect(result.current.buckets).toBeDefined()
+      expect(Array.isArray(result.current.buckets)).toBe(true)
+      expect(result.current.buckets.length).toBe(0)
+    })
+
+    it('should not throw when calling reduce on buckets during hydration', () => {
+      // Simulate pre-hydration state
+      // @ts-expect-error -- simulate pre-hydration undefined
+      bucketsAtom.set(undefined)
+
+      const { result } = renderHook(() => useBucketStore())
+
+      // This should not throw "Cannot read properties of undefined (reading 'reduce')"
+      expect(() => {
+        result.current.buckets.reduce((sum, b) => sum + b.percentage, 0)
+      }).not.toThrow()
+
+      // Result should be 0 for empty array
+      const total = result.current.buckets.reduce(
+        (sum, b) => sum + b.percentage,
+        0
+      )
+      expect(total).toBe(0)
+    })
+
+    it('should handle array methods safely when atom is undefined', () => {
+      // @ts-expect-error -- simulate pre-hydration undefined
+      bucketsAtom.set(undefined)
+
+      const { result } = renderHook(() => useBucketStore())
+
+      // All array methods should work without throwing
+      expect(() => result.current.buckets.map((b) => b.id)).not.toThrow()
+      expect(() =>
+        result.current.buckets.filter((b) => b.percentage > 0)
+      ).not.toThrow()
+      expect(() =>
+        result.current.buckets.find((b) => b.id === 'test')
+      ).not.toThrow()
+
+      expect(result.current.buckets.map((b) => b.id)).toEqual([])
+      expect(result.current.buckets.filter((b) => b.percentage > 0)).toEqual([])
+      expect(
+        result.current.buckets.find((b) => b.id === 'test')
+      ).toBeUndefined()
     })
   })
 })

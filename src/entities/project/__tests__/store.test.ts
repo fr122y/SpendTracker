@@ -233,4 +233,61 @@ describe('useProjectStore', () => {
       expect(result.current?.budget).toBe(20000)
     })
   })
+
+  describe('Hydration Safety', () => {
+    it('should return empty array when atom is undefined during hydration', () => {
+      // Simulate pre-hydration state where localStorage hasn't loaded yet
+      // @ts-expect-error -- simulate pre-hydration undefined
+      projectsAtom.set(undefined)
+
+      const { result } = renderHook(() => useProjectStore())
+
+      // Should return empty array, not undefined
+      expect(result.current.projects).toBeDefined()
+      expect(Array.isArray(result.current.projects)).toBe(true)
+      expect(result.current.projects.length).toBe(0)
+    })
+
+    it('should not throw when calling reduce on projects during hydration', () => {
+      // Simulate pre-hydration state
+      // @ts-expect-error -- simulate pre-hydration undefined
+      projectsAtom.set(undefined)
+
+      const { result } = renderHook(() => useProjectStore())
+
+      // This should not throw "Cannot read properties of undefined (reading 'reduce')"
+      expect(() => {
+        result.current.projects.reduce((sum, p) => sum + p.budget, 0)
+      }).not.toThrow()
+
+      // Result should be 0 for empty array
+      const total = result.current.projects.reduce(
+        (sum, p) => sum + p.budget,
+        0
+      )
+      expect(total).toBe(0)
+    })
+
+    it('should handle array methods safely when atom is undefined', () => {
+      // @ts-expect-error -- simulate pre-hydration undefined
+      projectsAtom.set(undefined)
+
+      const { result } = renderHook(() => useProjectStore())
+
+      // All array methods should work without throwing
+      expect(() => result.current.projects.map((p) => p.id)).not.toThrow()
+      expect(() =>
+        result.current.projects.filter((p) => p.budget > 0)
+      ).not.toThrow()
+      expect(() =>
+        result.current.projects.find((p) => p.id === 'test')
+      ).not.toThrow()
+
+      expect(result.current.projects.map((p) => p.id)).toEqual([])
+      expect(result.current.projects.filter((p) => p.budget > 0)).toEqual([])
+      expect(
+        result.current.projects.find((p) => p.id === 'test')
+      ).toBeUndefined()
+    })
+  })
 })

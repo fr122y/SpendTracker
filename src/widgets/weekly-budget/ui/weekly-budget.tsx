@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
@@ -10,6 +12,11 @@ export function WeeklyBudget() {
   const { weeklyLimit, setWeeklyLimit } = useSettingsStore()
   const expenses = useExpenseStore((state) => state.expenses)
   const selectedDate = useSessionStore((state) => state.selectedDate)
+  const [inputValue, setInputValue] = useState(String(weeklyLimit))
+
+  useEffect(() => {
+    setInputValue(String(weeklyLimit))
+  }, [weeklyLimit])
 
   const stats = getWeeklyStats(expenses, selectedDate, weeklyLimit)
   const remaining = weeklyLimit - stats.spent
@@ -39,11 +46,9 @@ export function WeeklyBudget() {
   const handleLimitChange = (value: string, evaluated: number | null) => {
     if (evaluated !== null) {
       setWeeklyLimit(evaluated)
+      setInputValue(String(evaluated))
     } else {
-      const parsed = parseInt(value, 10)
-      if (!isNaN(parsed) && parsed >= 0) {
-        setWeeklyLimit(parsed)
-      }
+      setInputValue(value)
     }
   }
 
@@ -92,7 +97,7 @@ export function WeeklyBudget() {
       <div className="flex items-center gap-2 sm:gap-3">
         <label className="text-xs text-zinc-400 sm:text-sm">Лимит:</label>
         <MathInput
-          value={String(weeklyLimit)}
+          value={inputValue}
           onValueChange={handleLimitChange}
           min={0}
           className="w-24 sm:w-32"

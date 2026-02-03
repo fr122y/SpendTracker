@@ -12,6 +12,8 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '6', name: 'Другое', emoji: '📝' },
 ]
 
+const EMPTY_CATEGORIES: Category[] = []
+
 // Pure validation function
 export function isCategoryNameDuplicate(
   name: string,
@@ -28,17 +30,17 @@ export const categoriesAtom = atom(DEFAULT_CATEGORIES, 'categoriesAtom').extend(
 
 // Actions
 export const addCategory = action((category: Category) => {
-  const current = categoriesAtom()
+  const current = categoriesAtom() ?? []
   categoriesAtom.set([...current, category])
 }, 'addCategory')
 
 export const deleteCategory = action((id: string) => {
-  const current = categoriesAtom()
+  const current = categoriesAtom() ?? []
   categoriesAtom.set(current.filter((c) => c.id !== id))
 }, 'deleteCategory')
 
 export const addCategoryIfUnique = action((category: Category) => {
-  const current = categoriesAtom()
+  const current = categoriesAtom() ?? []
 
   if (isCategoryNameDuplicate(category.name, current)) {
     return false // Duplicate found
@@ -67,7 +69,8 @@ let cachedState: CategoryState | null = null
 let cachedCategories: Category[] | undefined
 
 const getState = (): CategoryState => {
-  const categories = categoriesAtom()
+  // Fallback to stable empty array during hydration when localStorage hasn't loaded yet
+  const categories = categoriesAtom() ?? EMPTY_CATEGORIES
 
   if (cachedState === null || cachedCategories !== categories) {
     cachedCategories = categories

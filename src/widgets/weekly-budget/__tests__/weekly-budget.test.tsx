@@ -312,7 +312,7 @@ describe('WeeklyBudget', () => {
       expect(mockSetWeeklyLimit).toHaveBeenCalledWith(12000)
 
       // Each value should have been applied
-      expect(mockSetWeeklyLimit).toHaveBeenCalledTimes(6) // 2 calls per change (change + blur)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledTimes(3) // 1 call per blur
     })
 
     it('handles zero expenses', () => {

@@ -8,6 +8,8 @@ const DEFAULT_BUCKETS: AllocationBucket[] = [
   { id: '2', label: 'Инвестиции', percentage: 10 },
 ]
 
+const EMPTY_BUCKETS: AllocationBucket[] = []
+
 // Atoms with persistence
 export const bucketsAtom = atom(DEFAULT_BUCKETS, 'bucketsAtom').extend(
   withLocalStorage('smartspend-buckets')
@@ -34,7 +36,8 @@ let cachedState: BucketState | null = null
 let cachedBuckets: AllocationBucket[] | undefined
 
 const getState = (): BucketState => {
-  const buckets = bucketsAtom()
+  // Fallback to stable empty array during hydration when localStorage hasn't loaded yet
+  const buckets = bucketsAtom() ?? EMPTY_BUCKETS
 
   if (cachedState === null || cachedBuckets !== buckets) {
     cachedBuckets = buckets
