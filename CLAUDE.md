@@ -10,7 +10,7 @@
 1.  **Framework:** Next.js 16 (App Router) + React 19.
 2.  **Styling:** Tailwind CSS v4 (Zero config, CSS-first).
 3.  **State Management:**
-    - **Reatom v4** (with `@reatom/react` & localStorage persistence) for Client State. **Context API is FORBIDDEN** for global state.
+    - **Reatom v1000+** (`@reatom/core@latest`, `@reatom/react`) for Client State. See **Reatom v1000 Rules** section below. **Context API is FORBIDDEN** for global state.
     - **TanStack Query v5** for Async/Server State.
     - **No `useEffect`** for storage synchronization.
 4.  **Backend/AI:**
@@ -72,6 +72,30 @@ npm run test:e2e   # Run E2E tests (Playwright)
   - Files: `kebab-case` (e.g., `expense-card.tsx`).
   - Stores: `use[Entity]Store`.
 - **Drag & Drop:** Use native HTML5 API (no external dnd libs).
+
+## Reatom v1000 — Critical Rules
+
+> **Reatom v1000 removed explicit context (`ctx`).** Context is now implicit. Before writing any Reatom code, verify the current API via context7 or https://v1000.reatom.dev.
+
+**NEVER use (v3/v4 API — does not exist in v1000):**
+
+| Obsolete (v3/v4)              | Replacement (v1000)             |
+| ----------------------------- | ------------------------------- |
+| `ctx.spy(atom)`               | `atom()` inside reactive scope  |
+| `ctx.get(atom)`               | `peek(atom)`                    |
+| `atom(ctx, newState)`         | `atom.set(newState)`            |
+| `ctx.schedule(() => promise)` | `wrap(promise)`                 |
+| `reatomAsync(ctx => ...)`     | `action(async () => { ... })`   |
+| `createCtx()`                 | `context.start(fn)` (SSR/tests) |
+
+**Key primitives:** `atom`, `computed`, `action`, `effect`, `wrap`, `peek`.
+
+**SSR/Provider:** Use `context.start()` for isolated context per request. `reatomContext.Provider` is used in `src/shared/lib/reatom/provider.tsx`.
+
+**Data flow:**
+
+- Mutations: Reatom `action` → Server Action → DB/API.
+- Reads: Server Component fetch → pass as props → `atom.set(initialData)` in Client Component.
 
 ## Key Features Overview
 
