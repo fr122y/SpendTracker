@@ -12,6 +12,9 @@ Drizzle ORM database layer for the app's PostgreSQL backend.
 - Driver: `postgres` via singleton client
 - Config: `drizzle.config.ts` at the repo root
 - Source of truth: PostgreSQL tables for auth and app data
+- Auth users table stores:
+  - OAuth profile fields (`name`, `email`, `image`, `emailVerified`)
+  - Nullable `password` for credentials auth users
 
 ## Dependencies
 

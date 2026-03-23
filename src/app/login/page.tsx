@@ -1,4 +1,4 @@
-import { SignInButton } from '@/features/auth'
+import { AuthTabs } from '@/features/auth'
 
 export default function LoginPage() {
   return (
@@ -12,7 +12,7 @@ export default function LoginPage() {
             Персональный финансовый трекер
           </p>
         </div>
-        <SignInButton />
+        <AuthTabs />
       </div>
     </div>
   )

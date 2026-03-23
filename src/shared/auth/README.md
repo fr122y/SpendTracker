@@ -1,6 +1,6 @@
 # Auth (shared/auth)
 
-NextAuth v5 authentication with Google OAuth and a Drizzle adapter.
+NextAuth v5 authentication with Google OAuth, credentials auth, and Drizzle adapter.
 
 ## Public API (`index.ts`)
 
@@ -11,10 +11,11 @@ NextAuth v5 authentication with Google OAuth and a Drizzle adapter.
 
 ## State & Actions
 
-- `config.ts`: edge-safe provider and page config for middleware
-- `index.ts`: full Node.js auth config with DB adapter and user seeding
+- `config.ts`: edge-safe provider/page config for middleware
+- `index.ts`: full Node.js auth config with adapter, credentials authorize callback, and callbacks/events
+- `seed-defaults.ts`: shared new-user seeding helper used by Google and credentials registration
 - `types.ts`: module augmentation for `session.user.id`
 
 ## Dependencies
 
-- Uses: `next-auth`, `@auth/drizzle-adapter`, `@/shared/db`
+- Uses: `next-auth`, `@auth/drizzle-adapter`, `bcryptjs`, `@/shared/db`

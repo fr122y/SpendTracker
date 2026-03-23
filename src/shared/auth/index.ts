@@ -1,48 +1,63 @@
 import 'server-only'
 
 import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import bcrypt from 'bcryptjs'
+import { eq } from 'drizzle-orm'
 import NextAuth from 'next-auth'
+import Credentials from 'next-auth/providers/credentials'
+import Google from 'next-auth/providers/google'
 
-import {
-  accounts,
-  allocationBuckets,
-  categories,
-  db,
-  layoutConfigs,
-  sessions,
-  userSettings,
-  users,
-  verificationTokens,
-} from '@/shared/db'
+import { accounts, db, sessions, users, verificationTokens } from '@/shared/db'
 
 import authConfig from './config'
-
-import type { LayoutConfig } from '@/shared/types'
-
-const DEFAULT_CATEGORIES = [
-  { name: 'Продукты', emoji: '🛒' },
-  { name: 'Транспорт', emoji: '🚕' },
-  { name: 'Еда', emoji: '☕' },
-  { name: 'Здоровье', emoji: '💊' },
-  { name: 'Развлечения', emoji: '🎬' },
-  { name: 'Другое', emoji: '📝' },
-]
-
-const DEFAULT_BUCKETS = [
-  { label: 'Накопления', percentage: 20 },
-  { label: 'Инвестиции', percentage: 10 },
-]
-
-const DEFAULT_LAYOUT: LayoutConfig = {
-  columns: [
-    { id: 'col-1', width: 33, widgets: ['CALENDAR', 'EXPENSE_LOG'] },
-    { id: 'col-2', width: 33, widgets: ['ANALYSIS', 'DYNAMICS'] },
-    { id: 'col-3', width: 34, widgets: ['WEEKLY_BUDGET', 'SAVINGS'] },
-  ],
-}
+import { seedUserDefaults } from './seed-defaults'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  providers: [
+    Google,
+    Credentials({
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        const email =
+          typeof credentials?.email === 'string'
+            ? credentials.email.trim().toLowerCase()
+            : ''
+        const password =
+          typeof credentials?.password === 'string' ? credentials.password : ''
+
+        if (!email || !password) {
+          return null
+        }
+
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1)
+
+        if (!user?.password) {
+          return null
+        }
+
+        const isValid = await bcrypt.compare(password, user.password)
+
+        if (!isValid) {
+          return null
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+        }
+      },
+    }),
+  ],
   adapter: DrizzleAdapter(db, {
     usersTable: users,
     accountsTable: accounts,
@@ -53,6 +68,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: 'jwt',
   },
   callbacks: {
+    async signIn({ account, profile }) {
+      if (!account || account.provider !== 'google') {
+        return true
+      }
+
+      const email = typeof profile?.email === 'string' ? profile.email : ''
+
+      if (!email) {
+        return true
+      }
+
+      const normalizedEmail = email.trim().toLowerCase()
+      const [existingUser] = await db
+        .select({ id: users.id, password: users.password })
+        .from(users)
+        .where(eq(users.email, normalizedEmail))
+        .limit(1)
+
+      // Prevent auto-linking for credentials-created users.
+      if (existingUser?.password) {
+        return '/login?error=UseCredentialsSignIn'
+      }
+
+      return true
+    },
     jwt({ token, user }) {
       if (user?.id) {
         token.id = user.id
@@ -77,36 +117,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       await db.transaction(async (tx) => {
-        await tx.insert(categories).values(
-          DEFAULT_CATEGORIES.map((category) => ({
-            id: crypto.randomUUID(),
-            userId,
-            ...category,
-          }))
-        )
-
-        await tx.insert(allocationBuckets).values(
-          DEFAULT_BUCKETS.map((bucket) => ({
-            id: crypto.randomUUID(),
-            userId,
-            ...bucket,
-          }))
-        )
-
-        await tx.insert(userSettings).values({
-          id: crypto.randomUUID(),
-          userId,
-          weeklyLimit: 10000,
-          salaryDay: 10,
-          advanceDay: 25,
-          salary: 0,
-        })
-
-        await tx.insert(layoutConfigs).values({
-          id: crypto.randomUUID(),
-          userId,
-          config: DEFAULT_LAYOUT,
-        })
+        await seedUserDefaults(tx, userId)
       })
     },
   },
