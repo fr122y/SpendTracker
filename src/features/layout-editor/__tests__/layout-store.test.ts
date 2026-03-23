@@ -1,23 +1,58 @@
 import { wrap } from '@reatom/core'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
+import { createElement, type ReactNode } from 'react'
 
-import { useLayoutStore, resetLayoutStore } from '../model/layout-store'
+import {
+  useLayoutStore,
+  resetLayoutStore,
+  DEFAULT_LAYOUT,
+} from '../model/queries'
+
+let layoutConfig = DEFAULT_LAYOUT
+
+jest.mock('@/shared/api', () => ({
+  queryKeys: { layout: { all: ['layout'] } },
+  getLayoutConfig: jest.fn(async () => layoutConfig),
+  updateLayoutConfig: jest.fn(async (nextLayout: typeof layoutConfig) => {
+    layoutConfig = nextLayout
+  }),
+}))
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  })
+
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(QueryClientProvider, { client: queryClient }, children)
+  }
+}
 
 describe('useLayoutStore', () => {
   beforeEach(() => {
-    // Reset store state before each test
+    layoutConfig = DEFAULT_LAYOUT
     wrap(resetLayoutStore)()
   })
 
-  it('should have default layout config', () => {
-    const { result } = renderHook(() => useLayoutStore())
+  it('should have default layout config', async () => {
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
-    expect(result.current.layoutConfig.columns).toHaveLength(3)
-    expect(result.current.isEditMode).toBe(false)
+    await waitFor(() => {
+      expect(result.current.layoutConfig.columns).toHaveLength(3)
+      expect(result.current.isEditMode).toBe(false)
+    })
   })
 
   it('should toggle edit mode', async () => {
-    const { result } = renderHook(() => useLayoutStore())
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
     act(() => {
       result.current.toggleEditMode()
@@ -37,18 +72,18 @@ describe('useLayoutStore', () => {
   })
 
   it('should move widget between columns', async () => {
-    const { result } = renderHook(() => useLayoutStore())
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
     act(() => {
       result.current.moveWidget('CALENDAR', 'col-1', 'col-2')
     })
 
     await waitFor(() => {
-      // CALENDAR should be removed from col-1
       expect(result.current.layoutConfig.columns[0].widgets).not.toContain(
         'CALENDAR'
       )
-      // CALENDAR should be added to col-2
       expect(result.current.layoutConfig.columns[1].widgets).toContain(
         'CALENDAR'
       )
@@ -56,7 +91,9 @@ describe('useLayoutStore', () => {
   })
 
   it('should resize column', async () => {
-    const { result } = renderHook(() => useLayoutStore())
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
     act(() => {
       result.current.resizeColumn('col-1', 50)
@@ -68,7 +105,9 @@ describe('useLayoutStore', () => {
   })
 
   it('should not allow negative column width', async () => {
-    const { result } = renderHook(() => useLayoutStore())
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
     act(() => {
       result.current.resizeColumn('col-1', -10)
@@ -80,7 +119,9 @@ describe('useLayoutStore', () => {
   })
 
   it('should not allow column width exceeding 100', async () => {
-    const { result } = renderHook(() => useLayoutStore())
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
     act(() => {
       result.current.resizeColumn('col-1', 150)
@@ -92,14 +133,14 @@ describe('useLayoutStore', () => {
   })
 
   it('should move widget within same column', async () => {
-    const { result } = renderHook(() => useLayoutStore())
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
 
-    // Initial order in col-1: ['CALENDAR', 'EXPENSE_LOG']
     act(() => {
       result.current.moveWidgetInColumn('col-1', 0, 1)
     })
 
-    // After move: ['EXPENSE_LOG', 'CALENDAR']
     await waitFor(() => {
       expect(result.current.layoutConfig.columns[0].widgets).toEqual([
         'EXPENSE_LOG',

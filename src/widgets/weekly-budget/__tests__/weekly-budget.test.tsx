@@ -34,8 +34,18 @@ let mockExpenses = [
 
 const mockSelectedDate = new Date(2026, 0, 21) // Jan 21, 2026 (Tuesday)
 
-// Mock stores
+// Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/settings', () => ({
+  useSettings: () => ({
+    data: {
+      weeklyLimit: mockWeeklyLimit,
+      salaryDay: 10,
+      advanceDay: 25,
+      salary: 0,
+    },
+    isLoading: false,
+  }),
+  useUpdateSettings: () => ({ mutate: mockSetWeeklyLimit, isPending: false }),
   useSettingsStore: () => ({
     weeklyLimit: mockWeeklyLimit,
     setWeeklyLimit: mockSetWeeklyLimit,
@@ -43,6 +53,7 @@ jest.mock('@/entities/settings', () => ({
 }))
 
 jest.mock('@/entities/expense', () => ({
+  useExpenses: () => ({ data: mockExpenses, isLoading: false }),
   useExpenseStore: (
     selector?: (state: { expenses: typeof mockExpenses }) => unknown
   ) => {

@@ -28,5 +28,5 @@ Each widget folder contains:
 
 1. Widgets can depend on entities, features, and shared
 2. Widgets MUST NOT depend on other widgets
-3. Dashboard grid layout is controlled by `useLayoutStore`
-4. Use `next/dynamic` with `{ ssr: false }` for localStorage-dependent widgets
+3. Dashboard grid layout is controlled by `useLayoutConfig` and `useEditMode`
+4. Use `next/dynamic` with `{ ssr: false }` for client-only widgets

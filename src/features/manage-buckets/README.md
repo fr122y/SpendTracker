@@ -8,9 +8,10 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 
 ## State & Data
 
-- **Store:** Uses `useBucketStore` (Persistence Key: `smartspend-buckets`)
-- **Store:** Uses `useSettingsStore` for salary (Persistence Key: `smartspend-settings-salary`)
-- **Actions:** Update bucket percentages, add/remove buckets, set salary
+- `useBuckets`: Query hook for bucket data
+- `useUpdateBuckets`: Mutation hook for replacing the bucket list
+- `useSettings`: Query hook for salary/settings values
+- `useUpdateSettings`: Mutation hook for salary updates
 
 ## Features
 
@@ -21,7 +22,7 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 - Delete existing buckets
 - Validates total doesn't exceed 100%
 - Shows remaining percentage for "Operations"
-- Displays calculated amounts (salary × percentage) when salary is set
+- Displays calculated amounts when salary is set
 
 ## Dependencies
 

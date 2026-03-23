@@ -18,7 +18,7 @@ Reusable test helpers for ExpenseForm and ProjectExpenseForm tests.
 #### Test Setup
 
 - `createTestWrapper()` - Creates QueryClient wrapper with retry disabled
-- `setupExpenseFormMocks()` - Sets up all required store mocks (deprecated - now done inline)
+- `setupExpenseFormMocks()` - Sets up query-hook mocks plus legacy store aliases
 
 #### Form Helpers
 
@@ -31,29 +31,8 @@ Reusable test helpers for ExpenseForm and ProjectExpenseForm tests.
 
 - `createDelayedResolver<T>()` - Creates promise with manual resolver for loading state tests
 
-### Usage Example
-
-```typescript
-import {
-  createTestWrapper,
-  testExpenseData,
-  mockCategoryResponses,
-  fillAndSubmitForm,
-} from '../../__tests__/utils/expense-form-helpers.tsx'
-
-const TestWrapper = createTestWrapper()
-
-it('should submit form', async () => {
-  mockedAction.mockResolvedValueOnce(mockCategoryResponses.groceries)
-  render(<MyForm />, { wrapper: TestWrapper })
-  fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
-  // ... assertions
-})
-```
-
 ## Benefits
 
-- Reduces test code duplication by ~40%
+- Reduces test code duplication
 - Ensures consistent test data across similar tests
-- Makes tests more readable and maintainable
 - Centralizes test setup logic

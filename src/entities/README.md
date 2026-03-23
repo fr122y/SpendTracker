@@ -1,31 +1,31 @@
 # Entities Layer
 
-Business entities and their data models. Each entity owns its Reatom store and types.
+Business entities and their data access hooks. DB-backed entities use TanStack
+Query on top of Server Actions; only ephemeral UI state stays in Reatom.
 
 ## Structure
 
 Each entity folder should contain:
 
-- `model/` - Reatom store (atoms + actions), types, and selectors
+- `model/` - Query hooks, server-action adapters, and local validation helpers
 - `ui/` - Presentational components for the entity
 - `index.ts` - Public API exports
 - `README.md` - Micro-documentation
 
 ## Entities
 
-| Entity       | Store              | Persistence Key         | Description                                               |
-| ------------ | ------------------ | ----------------------- | --------------------------------------------------------- |
-| **expense**  | `useExpenseStore`  | `smartspend-expenses`   | Expense records with amount, category, date, project link |
-| **category** | `useCategoryStore` | `smartspend-categories` | Expense categories (6 Russian defaults)                   |
-| **project**  | `useProjectStore`  | `smartspend-projects`   | Projects for grouping expenses with budget                |
-| **bucket**   | `useBucketStore`   | `smartspend-buckets`    | Allocation buckets (Savings 20%, Investments 10%)         |
-| **settings** | `useSettingsStore` | `smartspend-settings`   | Financial settings (weekly limit, salary/advance days)    |
-| **session**  | `useSessionStore`  | _none_                  | Ephemeral dashboard state (selected date, view date)      |
+| Entity       | Public API                                                             | Data source                            | Description                                               |
+| ------------ | ---------------------------------------------------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| **expense**  | `useExpenses`, `useAddExpense`, `useDeleteExpense`, `useUpdateExpense` | DB via Server Actions + TanStack Query | Expense records with amount, category, date, project link |
+| **category** | `useCategories`, `useAddCategory`, `useDeleteCategory`                 | DB via Server Actions + TanStack Query | Expense categories (6 Russian defaults)                   |
+| **project**  | `useProjects`, `useAddProject`, `useDeleteProject`                     | DB via Server Actions + TanStack Query | Projects for grouping expenses with budget                |
+| **bucket**   | `useBuckets`, `useUpdateBuckets`                                       | DB via Server Actions + TanStack Query | Allocation buckets (Savings 20%, Investments 10%)         |
+| **settings** | `useSettings`, `useUpdateSettings`                                     | DB via Server Actions + TanStack Query | Financial settings (weekly limit, salary/advance days)    |
+| **session**  | `useSessionStore`                                                      | Reatom only                            | Ephemeral dashboard state (selected date, view date)      |
 
 ## Rules
 
 1. Entities MUST NOT depend on features or widgets
-2. Each entity has its own Reatom store (with localStorage persistence where applicable)
-3. Store naming: `use[Entity]Store`
-4. Persistence keys: `smartspend-[entity]`
-5. Session entity has no persistence (resets on reload)
+2. DB-backed entities use TanStack Query for reads and mutations
+3. Query hooks should expose `data` and `mutate` style APIs
+4. Session entity remains Reatom-only and has no persistence

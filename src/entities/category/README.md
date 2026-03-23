@@ -1,31 +1,25 @@
 # Category Entity
 
-Manages expense categories with persistent storage and default Russian categories.
+Manages expense categories through DB-backed query hooks and mutation actions.
 
 ## Public API (`index.ts`)
 
-- `useCategoryStore`: Reatom store hook for category state management
+- `useCategories`: Query hook for the category list
+- `useAddCategory`: Mutation hook for adding a category
+- `useDeleteCategory`: Mutation hook for deleting a category
 - `CategoryBadge`: Pill/badge component displaying emoji + name
 
 ## State & Data
 
-- **Store:** `useCategoryStore` (Persistence Key: `smartspend-categories`)
-- **Default Categories:** Initialized with 6 Russian categories if storage is empty
-  - Продукты (Groceries)
-  - Транспорт (Transport)
-  - Еда (Food)
-  - Здоровье (Health)
-  - Развлечения (Fun)
-  - Другое (Other)
-- **Actions:**
-  - `addCategory(category)`: Add new category
-  - `addCategoryIfUnique(category)`: Add category with duplicate validation, returns boolean
-  - `deleteCategory(id)`: Remove category by ID
+- **Source of truth:** Database via Server Actions
+- **Client cache:** TanStack Query
+- **Default categories:** Seeded in the database for new users
 
 ## Validation
 
-- `isCategoryNameDuplicate(name, categories)`: Pure function to check for duplicate names (case-insensitive, whitespace-trimmed)
+- Duplicate category names are enforced in the data layer and mirrored in the UI when needed
 
 ## Dependencies
 
+- Uses: `@/shared/api` (server actions + query client)
 - Uses: `@/shared/types` (Category type)

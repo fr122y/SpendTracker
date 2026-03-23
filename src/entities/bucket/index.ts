@@ -1,2 +1,2 @@
 // Bucket entity - Public API
-export { useBucketStore } from './model/store'
+export { useBuckets, useBucketStore, useUpdateBuckets } from './model/queries'

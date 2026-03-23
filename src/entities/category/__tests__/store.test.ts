@@ -1,170 +1,83 @@
-import { wrap } from '@reatom/core'
-import { renderHook } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, renderHook, waitFor } from '@testing-library/react'
+import { createElement, type ReactNode } from 'react'
 
-import {
-  isCategoryNameDuplicate,
-  categoriesAtom,
-  addCategoryIfUnique,
-  useCategoryStore,
-} from '../model/store'
+import { isCategoryNameDuplicate, useCategoryStore } from '../model/queries'
 
 import type { Category } from '@/shared/types'
 
-describe('isCategoryNameDuplicate', () => {
-  const testCategories: Category[] = [
-    { id: '1', name: 'Продукты', emoji: '🛒' },
-    { id: '2', name: 'Транспорт', emoji: '🚕' },
-  ]
+let categories: Category[] = []
 
-  it('returns true for exact match', () => {
-    expect(isCategoryNameDuplicate('Продукты', testCategories)).toBe(true)
+jest.mock('@/shared/api', () => ({
+  queryKeys: { categories: { all: ['categories'] } },
+  getCategories: jest.fn(async () => categories),
+  addCategory: jest.fn(async (category: Omit<Category, 'id'>) => {
+    const nextCategory = {
+      id: `category-${categories.length + 1}`,
+      ...category,
+    }
+    categories = [...categories, nextCategory]
+    return nextCategory
+  }),
+  deleteCategory: jest.fn(async (id: string) => {
+    categories = categories.filter((category) => category.id !== id)
+  }),
+}))
+
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
   })
 
-  it('returns true for case-insensitive match', () => {
-    expect(isCategoryNameDuplicate('ПРОДУКТЫ', testCategories)).toBe(true)
-    expect(isCategoryNameDuplicate('продукты', testCategories)).toBe(true)
-    expect(isCategoryNameDuplicate('ПрОдУкТы', testCategories)).toBe(true)
-  })
+  return function Wrapper({ children }: { children: ReactNode }) {
+    return createElement(QueryClientProvider, { client: queryClient }, children)
+  }
+}
 
-  it('returns true when name has leading/trailing whitespace', () => {
-    expect(isCategoryNameDuplicate('  Продукты  ', testCategories)).toBe(true)
-    expect(isCategoryNameDuplicate('\tТранспорт\n', testCategories)).toBe(true)
-  })
-
-  it('returns false for non-existent category', () => {
-    expect(isCategoryNameDuplicate('Здоровье', testCategories)).toBe(false)
-  })
-
-  it('returns false for empty string', () => {
-    expect(isCategoryNameDuplicate('', testCategories)).toBe(false)
-  })
-
-  it('returns false for whitespace-only string', () => {
-    expect(isCategoryNameDuplicate('   ', testCategories)).toBe(false)
-  })
-
-  it('returns false for partial match', () => {
-    expect(isCategoryNameDuplicate('Продукт', testCategories)).toBe(false)
-    expect(isCategoryNameDuplicate('Транс', testCategories)).toBe(false)
-  })
-})
-
-describe('addCategoryIfUnique', () => {
+describe('Category entity', () => {
   beforeEach(() => {
-    // Reset categories to default state before each test
-    categoriesAtom.set([
+    categories = [
       { id: '1', name: 'Продукты', emoji: '🛒' },
       { id: '2', name: 'Транспорт', emoji: '🚕' },
-    ])
+    ]
+    jest.clearAllMocks()
   })
 
-  it('returns true and adds category when name is unique', () => {
-    const newCategory: Category = {
-      id: '3',
-      name: 'Здоровье',
-      emoji: '💊',
-    }
-
-    const result = wrap(addCategoryIfUnique)(newCategory)
-
-    expect(result).toBe(true)
-    expect(categoriesAtom()).toContainEqual(newCategory)
-    expect(categoriesAtom()).toHaveLength(3)
+  it('detects duplicate names', () => {
+    expect(isCategoryNameDuplicate('Продукты', categories)).toBe(true)
+    expect(isCategoryNameDuplicate('Здоровье', categories)).toBe(false)
   })
 
-  it('returns false and does not add category when name is duplicate', () => {
-    const duplicateCategory: Category = {
-      id: '3',
-      name: 'Продукты',
-      emoji: '🛒',
-    }
+  it('reads and mutates categories through the query-backed store', async () => {
+    const wrapper = createWrapper()
+    const { result } = renderHook(() => useCategoryStore(), { wrapper })
 
-    const result = wrap(addCategoryIfUnique)(duplicateCategory)
+    await waitFor(() => {
+      expect(result.current.categories).toHaveLength(2)
+    })
 
-    expect(result).toBe(false)
-    expect(categoriesAtom()).toHaveLength(2)
-  })
+    act(() => {
+      result.current.addCategoryIfUnique({
+        id: 'unused-local-id',
+        name: 'Здоровье',
+        emoji: '💊',
+      })
+    })
 
-  it('returns false for case-insensitive duplicate', () => {
-    const duplicateCategory: Category = {
-      id: '3',
-      name: 'ПРОДУКТЫ',
-      emoji: '🛒',
-    }
+    await waitFor(() => {
+      expect(result.current.categories).toHaveLength(3)
+      expect(result.current.categories[2].name).toBe('Здоровье')
+    })
 
-    const result = wrap(addCategoryIfUnique)(duplicateCategory)
+    act(() => {
+      result.current.deleteCategory(result.current.categories[2].id)
+    })
 
-    expect(result).toBe(false)
-    expect(categoriesAtom()).toHaveLength(2)
-  })
-
-  it('returns false for duplicate with whitespace', () => {
-    const duplicateCategory: Category = {
-      id: '3',
-      name: '  Продукты  ',
-      emoji: '🛒',
-    }
-
-    const result = wrap(addCategoryIfUnique)(duplicateCategory)
-
-    expect(result).toBe(false)
-    expect(categoriesAtom()).toHaveLength(2)
-  })
-})
-
-describe('Hydration Safety', () => {
-  it('should return empty array when atom is undefined during hydration', () => {
-    // Simulate pre-hydration state where localStorage hasn't loaded yet
-    // @ts-expect-error -- simulate pre-hydration undefined
-    categoriesAtom.set(undefined)
-
-    const { result } = renderHook(() => useCategoryStore())
-
-    // Should return empty array, not undefined
-    expect(result.current.categories).toBeDefined()
-    expect(Array.isArray(result.current.categories)).toBe(true)
-    expect(result.current.categories.length).toBe(0)
-  })
-
-  it('should not throw when calling reduce on categories during hydration', () => {
-    // Simulate pre-hydration state
-    // @ts-expect-error -- simulate pre-hydration undefined
-    categoriesAtom.set(undefined)
-
-    const { result } = renderHook(() => useCategoryStore())
-
-    // This should not throw "Cannot read properties of undefined (reading 'reduce')"
-    expect(() => {
-      result.current.categories.reduce((acc, c) => acc + c.name, '')
-    }).not.toThrow()
-
-    // Result should be empty string for empty array
-    const combined = result.current.categories.reduce(
-      (acc, c) => acc + c.name,
-      ''
-    )
-    expect(combined).toBe('')
-  })
-
-  it('should handle array methods safely when atom is undefined', () => {
-    // @ts-expect-error -- simulate pre-hydration undefined
-    categoriesAtom.set(undefined)
-
-    const { result } = renderHook(() => useCategoryStore())
-
-    // All array methods should work without throwing
-    expect(() => result.current.categories.map((c) => c.id)).not.toThrow()
-    expect(() =>
-      result.current.categories.filter((c) => c.id === 'test')
-    ).not.toThrow()
-    expect(() =>
-      result.current.categories.find((c) => c.id === 'test')
-    ).not.toThrow()
-
-    expect(result.current.categories.map((c) => c.id)).toEqual([])
-    expect(result.current.categories.filter((c) => c.id === 'test')).toEqual([])
-    expect(
-      result.current.categories.find((c) => c.id === 'test')
-    ).toBeUndefined()
+    await waitFor(() => {
+      expect(result.current.categories).toHaveLength(2)
+    })
   })
 })

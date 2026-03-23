@@ -1,6 +1,7 @@
 # Calendar Widget
 
-Interactive calendar displaying daily expense totals with visual indicators for expenses, salary, and advance days.
+Interactive calendar displaying daily expense totals with visual indicators for
+expenses, salary, and advance days.
 
 ## Public API (`index.ts`)
 
@@ -8,10 +9,9 @@ Interactive calendar displaying daily expense totals with visual indicators for 
 
 ## State & Data
 
-- **Stores:**
-  - `useSessionStore`: viewDate, selectedDate, navigation actions
-  - `useExpenseStore`: expenses for day markers
-  - `useSettingsStore`: salaryDay, advanceDay for special day markers
+- `useSessionStore`: viewDate, selectedDate, navigation actions
+- `useExpenses`: expenses for day markers
+- `useSettings`: salaryDay, advanceDay for special day markers
 
 ## Features
 
@@ -19,10 +19,7 @@ Interactive calendar displaying daily expense totals with visual indicators for 
 - Month navigation (prev/next)
 - Selected date highlight (blue)
 - Today highlight (dark grey)
-- Visual indicators:
-  - Green dot: has expense
-  - Emerald dot: salary day
-  - Amber dot: advance day
+- Visual indicators for expense/salary/advance days
 
 ## Dependencies
 

@@ -8,18 +8,16 @@ Visualizes daily spending trends for the current month with an interactive bar c
 
 ## State & Data
 
-- **Stores:**
-  - `useSessionStore`: viewDate, selectedDate for highlighting
-  - `useExpenseStore`: expenses for aggregation
+- `useSessionStore`: viewDate, selectedDate for highlighting
+- `useExpenses`: expenses for aggregation
 
 ## Features
 
-- Bar chart with day of month on X-axis, amount on Y-axis
-- Highlighted bar for selected date (blue vs emerald)
+- Bar chart with day of month on X-axis and amount on Y-axis
+- Highlighted bar for selected date
 - Click on bar to select that date
 - Custom tooltip with Russian formatting
 - Monthly total in header
-- Responsive sizing
 
 ## Dependencies
 

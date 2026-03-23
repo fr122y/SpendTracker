@@ -1,4 +1,10 @@
 // Expense entity - Public API
-export { useExpenseStore } from './model/store'
+export {
+  useAddExpense,
+  useDeleteExpense,
+  useExpenseStore,
+  useExpenses,
+  useUpdateExpense,
+} from './model/queries'
 export { ExpenseCard } from './ui/expense-card'
 export { ExpenseList } from './ui/expense-list'

@@ -52,8 +52,11 @@ let mockExpenses: Expense[] = [
 let mockSelectedDate = new Date(2026, 0, 23) // Jan 23, 2026
 const mockDeleteExpense = jest.fn()
 
-// Mock stores
+// Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/expense', () => ({
+  useExpenses: () => ({ data: mockExpenses, isLoading: false }),
+  useDeleteExpense: () => ({ mutate: mockDeleteExpense, isPending: false }),
+  useUpdateExpense: () => ({ mutate: jest.fn(), isPending: false }),
   useExpenseStore: (
     selector?: (state: {
       expenses: Expense[]

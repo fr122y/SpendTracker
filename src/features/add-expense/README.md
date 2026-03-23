@@ -8,15 +8,16 @@ Handles expense creation with AI-powered categorization.
 
 ## State & Data
 
-- **Mutation:** Uses TanStack Query `useMutation` to call Server Action
-- **Actions:** Submit expense, AI categorization, fallback to "Другое" on error
+- `useCategories`: Query hook for category suggestions
+- `useAddExpense`: Mutation hook for saving the new expense
+- `useMutation`: Used to call the `categorizeExpenseAction` Server Action
 
 ## Logic Flow
 
 1. User enters description and amount
-2. On Submit: Calls `categorizeExpenseAction` via mutation
-3. On Success: Receives `{ category, emoji }` from server, calls `addExpense` store action
-4. On Error: Falls back to "Другое" category and saves
+2. On submit, the form calls `categorizeExpenseAction`
+3. On success, the mutation saves the expense through `useAddExpense`
+4. On error, the form falls back to "Другое" and still saves the expense
 
 ## Dependencies
 

@@ -4,12 +4,12 @@ Wrapper widget for financial configuration parameters.
 
 ## Public API (`index.ts`)
 
-- `FinancialSettingsSection`: Wrapper around FinancialSettings entity component
+- `FinancialSettingsSection`: Wrapper around the FinancialSettings entity component
 
 ## State & Data
 
 - Delegates to `FinancialSettings` from `@/entities/settings`
-- **Store:** Uses `useSettingsStore` (Persistence Key: `smartspend-settings`)
+- `useSettings` / `useUpdateSettings` provide the DB-backed state and mutation
 
 ## Features
 

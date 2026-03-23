@@ -1,20 +1,22 @@
 # Project Entity
 
-Manages spending projects with budget allocation and progress tracking.
+Manages spending projects with DB-backed query hooks and mutation actions.
 
 ## Public API (`index.ts`)
 
-- `useProjectStore`: Reatom store hook for project state management
+- `useProjects`: Query hook for the project list
+- `useAddProject`: Mutation hook for creating a project
+- `useDeleteProject`: Mutation hook for deleting a project
 - `ProjectCard`: Component displaying project name, budget, and spend progress
 
 ## State & Data
 
-- **Store:** `useProjectStore` (Persistence Key: `smartspend-projects`)
-- **Actions:**
-  - `addProject(project)`: Add new project with auto-generated random color
-  - `deleteProject(id)`: Remove project by ID
+- **Source of truth:** Database via Server Actions
+- **Client cache:** TanStack Query
+- **Project fields:** name, budget, color, createdAt
 
 ## Dependencies
 
+- Uses: `@/shared/api` (server actions + query client)
 - Uses: `@/shared/types` (Project type)
 - Uses: `@/shared/ui` (ProgressBar component)

@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { DashboardGrid } from '../ui/dashboard-grid'
 
-// Mock the stores and hooks
+// Mock query hooks with legacy aliases for the current component implementation
 const mockMoveWidget = jest.fn()
 const mockMoveWidgetInColumn = jest.fn()
 const mockResizeColumn = jest.fn()
@@ -17,6 +17,15 @@ const mockLayoutConfig = {
 let mockIsEditMode = false
 
 jest.mock('@/features/layout-editor', () => ({
+  useLayoutConfig: () => ({ data: mockLayoutConfig, isLoading: false }),
+  useUpdateLayout: () => ({
+    mutate: jest.fn(),
+    isPending: false,
+  }),
+  useEditMode: () => ({
+    isEditMode: mockIsEditMode,
+    toggleEditMode: jest.fn(),
+  }),
   useLayoutStore: () => ({
     layoutConfig: mockLayoutConfig,
     isEditMode: mockIsEditMode,

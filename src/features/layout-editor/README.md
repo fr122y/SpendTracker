@@ -1,18 +1,21 @@
 # Layout Editor Feature
 
-Dashboard layout customization with drag-and-drop grid editing.
+Dashboard layout customization with DB-backed layout state and an ephemeral
+edit-mode toggle.
 
 ## Public API (`index.ts`)
 
-- `useLayoutStore`: Reatom store hook for layout configuration
+- `useLayoutConfig`: Query hook for the current dashboard layout
+- `useUpdateLayout`: Mutation hook for layout mutations
+- `useEditMode`: Reatom-backed toggle for local edit mode
 - `ColumnResizer`: Draggable handle for resizing columns
 - `WidgetPlaceholder`: Drop zone wrapper for widgets
 
 ## State & Data
 
-- **Store:** `useLayoutStore` (Persistence Key: `smartspend-layout`)
-- **State:** `layoutConfig` (columns, widgets), `isEditMode`
-- **Actions:** `moveWidget`, `moveWidgetInColumn`, `resizeColumn`, `toggleEditMode`
+- **Source of truth:** Database for layout config
+- **Client cache:** TanStack Query
+- **Ephemeral UI state:** Reatom for edit mode only
 
 ## Components
 
@@ -30,7 +33,7 @@ Dashboard layout customization with drag-and-drop grid editing.
 
 ## Notes
 
-- Uses native HTML5 Drag & Drop API (no external dnd libs)
+- Uses native HTML5 Drag & Drop API
 - Column widths are percentages (0-100)
 - Widgets can be moved between columns or reordered within a column
 

@@ -12,7 +12,7 @@ export {
 export { cn } from './cn'
 
 // Reatom
-export { ReatomProvider, createPersist } from './reatom'
+export { ReatomProvider } from './reatom'
 
 // Hooks
 export {

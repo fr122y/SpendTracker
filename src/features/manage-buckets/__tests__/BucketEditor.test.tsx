@@ -12,6 +12,11 @@ const mockSetSalary = jest.fn()
 let mockSalary = 0
 
 jest.mock('@/entities/bucket', () => ({
+  useBuckets: () => ({
+    data: mockBuckets,
+    isLoading: false,
+  }),
+  useUpdateBuckets: () => ({ mutate: mockUpdateBuckets, isPending: false }),
   useBucketStore: (
     selector: (state: {
       buckets: typeof mockBuckets
@@ -25,6 +30,16 @@ jest.mock('@/entities/bucket', () => ({
 }))
 
 jest.mock('@/entities/settings', () => ({
+  useSettings: () => ({
+    data: {
+      weeklyLimit: 10000,
+      salaryDay: 10,
+      advanceDay: 25,
+      salary: mockSalary,
+    },
+    isLoading: false,
+  }),
+  useUpdateSettings: () => ({ mutate: mockSetSalary, isPending: false }),
   useSettingsStore: (
     selector: (state: { salary: number; setSalary: jest.Mock }) => unknown
   ) =>

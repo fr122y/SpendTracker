@@ -8,18 +8,14 @@ Provides spending analysis with category breakdown for the current view month.
 
 ## State & Data
 
-- **Stores:**
-  - `useSessionStore`: viewDate for month selection
-  - `useExpenseStore`: expenses list for aggregation
+- `useSessionStore`: viewDate for month selection
+- `useExpenses`: expenses list for aggregation
 
 ## Features
 
 - Header with month name and total spent
-- Visual category boxes with:
-  - Size proportional to spending percentage
-  - Opacity based on relative spending
-  - Emoji and category name display
-  - Hover tooltip showing exact amount
+- Visual category boxes with size/opacity scaling
+- Hover tooltip showing exact amount
 - Empty state when no data
 
 ## Dependencies

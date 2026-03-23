@@ -64,8 +64,10 @@ let mockExpenses: Expense[] = [
 const mockDeleteProject = jest.fn()
 const mockDeleteExpense = jest.fn()
 
-// Mock stores
+// Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/project', () => ({
+  useProjects: () => ({ data: mockProjects, isLoading: false }),
+  useDeleteProject: () => ({ mutate: mockDeleteProject, isPending: false }),
   useProjectStore: (
     selector: (state: {
       projects: Project[]
@@ -88,6 +90,8 @@ jest.mock('@/entities/project', () => ({
 }))
 
 jest.mock('@/entities/expense', () => ({
+  useExpenses: () => ({ data: mockExpenses, isLoading: false }),
+  useDeleteExpense: () => ({ mutate: mockDeleteExpense, isPending: false }),
   useExpenseStore: (
     selector: (state: {
       expenses: Expense[]

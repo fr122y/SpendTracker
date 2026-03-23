@@ -9,9 +9,11 @@ CRUD operations for expense projects with budget allocation.
 
 ## State & Data
 
-- **Store:** Uses `useProjectStore` for project management
-- **Mutation:** Uses TanStack Query for AI categorization of project expenses
-- **Actions:** Create project (auto-assigns color), add project expense
+- `useProjects`: Query hook for the project list
+- `useAddProject`: Mutation hook for creating a project
+- `useDeleteProject`: Mutation hook for deleting a project
+- `useCategories`: Query hook for category suggestions in project expense forms
+- `useAddExpense`: Mutation hook for saving project-linked expenses
 
 ## Features
 

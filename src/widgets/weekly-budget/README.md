@@ -8,18 +8,18 @@ Displays weekly spending progress against budget limits with editable limit.
 
 ## State & Data
 
-- **Stores:**
-  - `useSettingsStore`: weeklyLimit, setWeeklyLimit
-  - `useExpenseStore`: expenses for calculation
-  - `useSessionStore`: selectedDate for week calculation
+- `useSettings`: weeklyLimit snapshot
+- `useUpdateSettings`: mutation for weekly limit changes
+- `useExpenses`: expenses for calculation
+- `useSessionStore`: selectedDate for week calculation
 
 ## Features
 
 - Week date range display (Mon-Sun)
-- Progress bar with percentage and color coding (green/yellow/red)
+- Progress bar with percentage and color coding
 - Spent and remaining amounts display
 - Direct limit editing via input field
-- Over-budget visual indication (red text)
+- Over-budget visual indication
 
 ## Dependencies
 

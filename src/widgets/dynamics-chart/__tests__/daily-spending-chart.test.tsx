@@ -4,7 +4,7 @@ import { DailySpendingChart } from '../ui/daily-spending-chart'
 
 import type { Expense } from '@/shared/types'
 
-// Mock the stores
+// Mock query hooks with legacy aliases for the current component implementation
 const mockSetSelectedDate = jest.fn()
 let mockViewDate = new Date(2026, 0, 15) // January 15, 2026
 let mockSelectedDate = new Date(2026, 0, 22) // January 22, 2026
@@ -18,6 +18,7 @@ jest.mock('@/entities/session', () => ({
 let mockExpenses: Expense[] = []
 
 jest.mock('@/entities/expense', () => ({
+  useExpenses: () => ({ data: mockExpenses, isLoading: false }),
   useExpenseStore: (selector?: (state: { expenses: Expense[] }) => unknown) => {
     const state = { expenses: mockExpenses }
     return selector ? selector(state) : state

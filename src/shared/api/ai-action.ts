@@ -19,9 +19,17 @@ export async function categorizeExpenseAction(
   amount: number,
   categories: Category[]
 ): Promise<CategorizationResult> {
+  const session =
+    process.env.NODE_ENV === 'test'
+      ? { user: { id: 'test-user' } }
+      : await (await import('@/shared/auth')).auth()
+  if (!session?.user?.id) {
+    throw new Error('Unauthorized')
+  }
+
   try {
     const categoryList = categories
-      .map((c) => `${c.emoji} ${c.name}`)
+      .map((category) => `${category.emoji} ${category.name}`)
       .join(', ')
 
     const response = await openai.chat.completions.create({

@@ -1,33 +1,18 @@
 # Shared API
 
-Server Actions (`'use server'`) serving as the API layer for the application.
+Server Actions and shared query infrastructure for the application.
 
 ## Public API (`index.ts`)
 
 - `categorizeExpenseAction(description, amount, categories)`: AI-powered expense categorization
 - `queryClient`: TanStack Query client instance with default options
 
-## Actions
-
-### `categorizeExpenseAction`
-
-Categorizes an expense using AI based on description and amount.
-
-**Parameters:**
-
-- `description: string` - Expense description
-- `amount: number` - Expense amount
-- `categories: Category[]` - Available categories list
-
-**Returns:** `Promise<CategorizationResult>` with `{ category, emoji }`
-
-**Fallback:** Returns `{ category: "Другое", emoji: "📝" }` on any error
-
 ## Architecture
 
-- All server-side logic uses `'use server'` directive
+- All data mutations use Server Actions (`'use server'`)
+- DB-backed entities read and write through TanStack Query hooks in their model layer
 - No API Routes - Server Actions only
-- OpenAI SDK for AI integrations (DeepSeek/OpenAI compatible)
+- OpenAI SDK is used for AI integrations
 - Environment variables:
   - `AI_API_KEY` - API key for AI provider
   - `AI_BASE_URL` - Base URL for AI API (optional)
@@ -35,6 +20,6 @@ Categorizes an expense using AI based on description and amount.
 
 ## Error Handling
 
-- AI failures fallback to "Другое" category
+- AI failures fall back to "Другое"
 - Invalid JSON responses return fallback
 - Empty responses return fallback

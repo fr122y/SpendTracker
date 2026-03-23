@@ -18,15 +18,17 @@ jest.mock('@/shared/api', () => ({
   categorizeExpenseAction: jest.fn(),
 }))
 
-// Mock the stores
+// Mock the query hooks with legacy aliases for the current component implementation
 const mockAddExpense = jest.fn()
 
 jest.mock('@/entities/expense', () => ({
+  useAddExpense: () => ({ mutate: mockAddExpense, isPending: false }),
   useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
     selector({ addExpense: mockAddExpense }),
 }))
 
 jest.mock('@/entities/category', () => ({
+  useCategories: () => ({ data: mockCategories, isLoading: false }),
   useCategoryStore: (
     selector: (state: { categories: typeof mockCategories }) => unknown
   ) => selector({ categories: mockCategories }),

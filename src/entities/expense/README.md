@@ -1,23 +1,26 @@
 # Expense Entity
 
-Manages individual expense records with CRUD operations and persistent storage.
+Manages individual expense records through DB-backed query hooks and mutation
+actions.
 
 ## Public API (`index.ts`)
 
-- `useExpenseStore`: Reatom store hook for expense state management
-- `ExpenseCard`: Presentational component displaying a single expense with inline amount editing (supports math expressions via MathInput)
-- `ExpenseList`: Component rendering sorted list of expenses (descending by date)
+- `useExpenses`: Query hook for the expense list
+- `useAddExpense`: Mutation hook for creating a new expense
+- `useDeleteExpense`: Mutation hook for deleting an expense by ID
+- `useUpdateExpense`: Mutation hook for partial expense updates
+- `ExpenseCard`: Presentational component displaying a single expense with inline amount editing
+- `ExpenseList`: Component rendering a sorted list of expenses
 
 ## State & Data
 
-- **Store:** `useExpenseStore` (Persistence Key: `smartspend-expenses`)
-- **Actions:**
-  - `addExpense(expense)`: Add new expense
-  - `deleteExpense(id)`: Remove expense by ID
-  - `updateExpense(id, data)`: Partial update of expense
+- **Source of truth:** Database via Server Actions
+- **Client cache:** TanStack Query
+- **Data shape:** Expense records include amount, category, date, and optional project link
 
 ## Dependencies
 
+- Uses: `@/shared/api` (server actions + query client)
 - Uses: `@/shared/types` (Expense type)
 - Uses: `@/shared/ui/math-input` (MathInput component for inline editing)
 - Uses: `lucide-react` (Trash2 icon)

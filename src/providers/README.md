@@ -1,6 +1,6 @@
 # Providers
 
-React context providers wrapping the application.
+Application-level providers that wire TanStack Query and Reatom into the app.
 
 ## Public API (`index.tsx`)
 
@@ -8,9 +8,13 @@ React context providers wrapping the application.
 
 ## Providers Included
 
+### ReatomProvider
+
+Provides the Reatom frame for ephemeral UI state such as session and edit mode.
+
 ### QueryClientProvider
 
-Provides TanStack Query client for async/server state management.
+Provides the shared TanStack Query client for DB-backed async state.
 
 - Uses shared `queryClient` instance from `@/shared/api`
 - Default staleTime: 60000ms (1 minute)
@@ -34,5 +38,5 @@ export default function RootLayout({ children }) {
 
 ## Notes
 
-- Reatom stores use implicit context via `@reatom/react` and do NOT require manual providers
+- Reatom is used only for ephemeral UI state and does not require manual setup
 - This component is a client component (`'use client'`)

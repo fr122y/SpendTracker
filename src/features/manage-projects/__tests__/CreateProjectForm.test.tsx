@@ -16,6 +16,12 @@ const mockAddProject = jest.fn()
 const mockDeleteProject = jest.fn()
 
 jest.mock('@/entities/project', () => ({
+  useProjects: () => ({
+    data: mockProjects,
+    isLoading: false,
+  }),
+  useAddProject: () => ({ mutate: mockAddProject, isPending: false }),
+  useDeleteProject: () => ({ mutate: mockDeleteProject, isPending: false }),
   useProjectStore: (
     selector: (state: {
       projects: typeof mockProjects

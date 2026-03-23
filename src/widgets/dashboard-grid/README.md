@@ -8,9 +8,9 @@ Responsive dashboard grid that renders widgets based on viewport size with drag-
 
 ## State & Data
 
-- **Stores:**
-  - `useLayoutStore`: layoutConfig, isEditMode, moveWidget, moveWidgetInColumn, resizeColumn
-  - Local state: draggedWidget, dropTarget, activeWidget (ephemeral)
+- `useLayoutConfig`: layout configuration from the DB-backed query cache
+- `useEditMode`: local edit-mode state
+- Local state: draggedWidget, dropTarget, activeWidget (ephemeral)
 
 ## Features
 
@@ -23,28 +23,20 @@ Responsive dashboard grid that renders widgets based on viewport size with drag-
 ### Tablet Layout (768-1024px)
 
 - 2-column equal-width grid
-- Static widget distribution (even/odd indices)
+- Static widget distribution
 - No drag-and-drop or edit mode
-- Uses `WidgetRenderer` helper component
 
 ### Desktop Layout (> 1024px)
 
 - Multi-column with dynamic widths
 - HTML5 drag-and-drop for widget reordering
 - Column resizing via `ColumnResizer`
-- Drag handle with `GripVertical` icon (Lucide)
 - Edit mode toggle
 - Visual drop targets and drag feedback
-
-## Performance Optimizations
-
-- `useMemo` for `allWidgets` calculation (prevents unnecessary re-computation)
-- `useMemo` for `allWidgetIds` calculation (prevents array recreation)
-- Conditional rendering based on viewport (single layout per viewport)
 
 ## Dependencies
 
 - Uses: `@/features/layout-editor`, `@/features/mobile-widget-list`, `@/features/mobile-widget-modal`
-- Uses: `@/shared/lib` (hooks, utilities), `@/features/widget-registry`, `@/shared/ui`
-- Uses: `lucide-react` (GripVertical icon)
-- Uses: `react` (useState, useMemo)
+- Uses: `@/shared/lib`, `@/features/widget-registry`, `@/shared/ui`
+- Uses: `lucide-react`
+- Uses: `react`

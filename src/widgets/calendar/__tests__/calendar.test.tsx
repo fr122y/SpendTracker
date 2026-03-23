@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { Calendar } from '../ui/calendar'
 
-// Mock the stores
+// Mock query hooks with legacy aliases for the current component implementation
 const mockSetSelectedDate = jest.fn()
 const mockNextMonth = jest.fn()
 const mockPrevMonth = jest.fn()
@@ -23,6 +23,7 @@ jest.mock('@/entities/session', () => ({
 }))
 
 jest.mock('@/entities/expense', () => ({
+  useExpenses: () => ({ data: [], isLoading: false }),
   useExpenseStore: (
     selector: (state: { expenses: Array<{ date: string }> }) => unknown
   ) => selector({ expenses: [] }),
@@ -32,6 +33,16 @@ let mockSalaryDay = 10
 let mockAdvanceDay = 25
 
 jest.mock('@/entities/settings', () => ({
+  useSettings: () => ({
+    data: {
+      weeklyLimit: 10000,
+      salaryDay: mockSalaryDay,
+      advanceDay: mockAdvanceDay,
+      salary: 0,
+    },
+    isLoading: false,
+  }),
+  useUpdateSettings: () => ({ mutate: jest.fn(), isPending: false }),
   useSettingsStore: () => ({
     salaryDay: mockSalaryDay,
     advanceDay: mockAdvanceDay,

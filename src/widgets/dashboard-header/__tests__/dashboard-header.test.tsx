@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { DashboardHeader } from '../ui/dashboard-header'
 
-// Mock the stores
+// Mock query hooks with legacy aliases for the current component implementation
 const mockNextMonth = jest.fn()
 const mockPrevMonth = jest.fn()
 const mockToggleEditMode = jest.fn()
@@ -20,6 +20,10 @@ jest.mock('@/entities/session', () => ({
 }))
 
 jest.mock('@/features/layout-editor', () => ({
+  useEditMode: () => ({
+    isEditMode: mockIsEditMode,
+    toggleEditMode: mockToggleEditMode,
+  }),
   useLayoutStore: () => ({
     isEditMode: mockIsEditMode,
     toggleEditMode: mockToggleEditMode,

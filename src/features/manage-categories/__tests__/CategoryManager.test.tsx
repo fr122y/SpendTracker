@@ -12,6 +12,15 @@ const mockAddCategoryIfUnique = jest.fn()
 const mockDeleteCategory = jest.fn()
 
 jest.mock('@/entities/category', () => ({
+  useCategories: () => ({
+    data: mockCategories,
+    isLoading: false,
+  }),
+  useAddCategory: () => ({
+    mutate: mockAddCategoryIfUnique,
+    isPending: false,
+  }),
+  useDeleteCategory: () => ({ mutate: mockDeleteCategory, isPending: false }),
   useCategoryStore: (
     selector: (state: {
       categories: typeof mockCategories

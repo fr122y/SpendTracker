@@ -34,21 +34,25 @@ export function createTestWrapper() {
 }
 
 /**
- * Setup mocks for expense form tests
- * Returns mock functions that can be used in assertions
+ * Setup mocks for expense form tests.
+ * Exposes both query-hook style mocks and legacy store aliases so the tests can
+ * run while the component migration is still in flight.
  */
 export function setupExpenseFormMocks() {
   const mockAddExpense = jest.fn()
 
-  // Mock expense store
+  // Mock expense hooks
   jest.mock('@/entities/expense', () => ({
+    useExpenses: () => ({ data: [], isLoading: false }),
+    useAddExpense: () => ({ mutate: mockAddExpense, isPending: false }),
     useExpenseStore: (
       selector: (state: { addExpense: jest.Mock }) => unknown
     ) => selector({ addExpense: mockAddExpense }),
   }))
 
-  // Mock category store
+  // Mock category hooks
   jest.mock('@/entities/category', () => ({
+    useCategories: () => ({ data: mockCategories, isLoading: false }),
     useCategoryStore: (
       selector: (state: { categories: typeof mockCategories }) => unknown
     ) => selector({ categories: mockCategories }),

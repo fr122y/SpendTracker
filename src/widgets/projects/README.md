@@ -8,19 +8,17 @@ Manages expense projects with budget tracking and per-project expense management
 
 ## State & Data
 
-- **Stores:**
-  - `useProjectStore`: projects, deleteProject
-  - `useExpenseStore`: expenses, deleteExpense (for project-linked expenses)
+- `useProjects`: projects list
+- `useDeleteProject`: project deletion mutation
+- `useExpenses`: expenses list for project-linked totals
+- `useDeleteExpense`: expense deletion mutation for project-linked expenses
 
 ## Features
 
 - "Create Project" toggle button and form
-- Responsive grid of ProjectCard components (2 columns on desktop)
+- Responsive grid of ProjectCard components
 - Click card to expand/collapse
-- Expanded view includes:
-  - Delete project button (removes project and all associated expenses)
-  - ProjectExpenseForm for adding expenses to the project
-  - Scrollable ExpenseList showing project expenses
+- Expanded view includes project deletion and project expense form
 - Budget progress display via ProjectCard
 - Empty state message when no projects
 

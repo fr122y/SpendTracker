@@ -43,8 +43,9 @@ let mockExpenses: Expense[] = [
 
 let mockViewDate = new Date(2026, 0, 15) // Jan 15, 2026
 
-// Mock stores
+// Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/expense', () => ({
+  useExpenses: () => ({ data: mockExpenses, isLoading: false }),
   useExpenseStore: (selector?: (state: { expenses: Expense[] }) => unknown) => {
     const state = { expenses: mockExpenses }
     return selector ? selector(state) : state
