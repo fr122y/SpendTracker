@@ -9,7 +9,10 @@ import type { Category } from '@/shared/types'
 let categories: Category[] = []
 
 jest.mock('@/shared/api', () => ({
-  queryKeys: { categories: { all: ['categories'] } },
+  queryKeys: {
+    categories: { all: ['categories'] },
+    keywordMappings: { all: ['keyword-mappings'] },
+  },
   getCategories: jest.fn(async () => categories),
   addCategory: jest.fn(async (category: Omit<Category, 'id'>) => {
     const nextCategory = {

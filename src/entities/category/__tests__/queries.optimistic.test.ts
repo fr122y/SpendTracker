@@ -16,7 +16,10 @@ jest.mock('@/shared/lib', () => ({
 }))
 
 jest.mock('@/shared/api', () => ({
-  queryKeys: { categories: { all: ['categories'] } },
+  queryKeys: {
+    categories: { all: ['categories'] },
+    keywordMappings: { all: ['keyword-mappings'] },
+  },
   getCategories: jest.fn(),
   addCategory: jest.fn(async () => {
     if (shouldRejectAdd) {

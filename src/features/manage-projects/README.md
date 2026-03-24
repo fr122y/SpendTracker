@@ -19,9 +19,9 @@ CRUD operations for expense projects with budget allocation.
 
 - Create project with name and budget limit
 - Auto-generated color from predefined palette
-- Add expenses linked to projects with AI categorization
-- Fallback to "Другое" category on AI failure
+- Add expenses linked to projects with local keyword-based categorization
+- Manual category override with keyword mapping upsert on submit
 
 ## Dependencies
 
-- Uses: `@/entities/project`, `@/entities/expense`, `@/entities/category`, `@/shared/api`, `@/shared/ui`
+- Uses: `@/entities/project`, `@/entities/expense`, `@/entities/category`, `@/entities/keyword-mapping`, `@/shared/ui`

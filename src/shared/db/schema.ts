@@ -101,6 +101,26 @@ export const categories = pgTable(
   (table) => [unique().on(table.userId, table.name)]
 )
 
+export const keywordMappings = pgTable(
+  'keyword_mapping',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    keyword: text('keyword').notNull(),
+    categoryId: text('categoryId')
+      .notNull()
+      .references(() => categories.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [unique().on(table.userId, table.keyword)]
+)
+
 export const projects = pgTable('project', {
   id: text('id')
     .primaryKey()

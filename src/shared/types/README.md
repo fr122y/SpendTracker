@@ -10,16 +10,13 @@ Global TypeScript type definitions used across the application.
 - `Category`: Category entity with id, name, emoji
 - `Project`: Project entity with id, name, budget, color, createdAt
 - `AllocationBucket`: Savings bucket with id, label, percentage
+- `KeywordMapping`: Keyword-to-category mapping with joined category metadata
 
 ### Dashboard
 
 - `WidgetId`: Union type for widget identifiers
 - `ColumnConfig`: Column configuration with id, width, widgets
 - `LayoutConfig`: Dashboard layout with columns array
-
-### AI
-
-- `CategorizationResult`: AI categorization result with category and emoji
 
 ## Type Conventions
 

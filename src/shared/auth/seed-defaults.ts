@@ -3,6 +3,7 @@ import 'server-only'
 import {
   allocationBuckets,
   categories,
+  keywordMappings,
   layoutConfigs,
   userSettings,
 } from '@/shared/db'
@@ -26,17 +27,111 @@ const DEFAULT_BUCKETS = [
   { label: 'Инвестиции', percentage: 10 },
 ]
 
+const DEFAULT_KEYWORD_MAPPINGS: Record<string, string[]> = {
+  Продукты: [
+    'молоко',
+    'хлеб',
+    'яйца',
+    'сыр',
+    'мясо',
+    'рыба',
+    'овощи',
+    'фрукты',
+    'масло',
+    'крупа',
+    'макароны',
+    'сахар',
+    'соль',
+    'кефир',
+    'йогурт',
+    'колбаса',
+    'курица',
+    'картошка',
+    'лук',
+    'морковь',
+    'магнит',
+    'пятёрочка',
+    'перекрёсток',
+    'ашан',
+    'лента',
+  ],
+  Транспорт: [
+    'такси',
+    'метро',
+    'автобус',
+    'бензин',
+    'яндекс такси',
+    'uber',
+    'парковка',
+    'каршеринг',
+    'электричка',
+  ],
+  Еда: [
+    'кофе',
+    'обед',
+    'ужин',
+    'завтрак',
+    'ресторан',
+    'кафе',
+    'пицца',
+    'суши',
+    'бургер',
+    'доставка еды',
+    'яндекс еда',
+  ],
+  Здоровье: [
+    'аптека',
+    'лекарства',
+    'врач',
+    'стоматолог',
+    'анализы',
+    'витамины',
+    'клиника',
+  ],
+  Развлечения: [
+    'кино',
+    'театр',
+    'концерт',
+    'музей',
+    'подписка',
+    'netflix',
+    'spotify',
+    'игра',
+  ],
+}
+
 export async function seedUserDefaults(
   tx: SeedTransaction,
   userId: string
 ): Promise<void> {
-  await tx.insert(categories).values(
-    DEFAULT_CATEGORIES.map((category) => ({
-      id: crypto.randomUUID(),
-      userId,
-      ...category,
-    }))
+  const categoryRows = DEFAULT_CATEGORIES.map((category) => ({
+    id: crypto.randomUUID(),
+    userId,
+    ...category,
+  }))
+
+  await tx.insert(categories).values(categoryRows)
+
+  const categoryIdByName = new Map(
+    categoryRows.map((category) => [category.name, category.id])
   )
+  const keywordRows = Object.entries(DEFAULT_KEYWORD_MAPPINGS).flatMap(
+    ([categoryName, keywords]) => {
+      const categoryId = categoryIdByName.get(categoryName)
+      if (!categoryId) return []
+
+      return keywords.map((keyword) => ({
+        id: crypto.randomUUID(),
+        userId,
+        keyword: keyword.trim().toLowerCase(),
+        categoryId,
+      }))
+    }
+  )
+
+  if (keywordRows.length > 0) {
+    await tx.insert(keywordMappings).values(keywordRows)
+  }
 
   await tx.insert(allocationBuckets).values(
     DEFAULT_BUCKETS.map((bucket) => ({

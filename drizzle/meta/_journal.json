@@ -8,6 +8,13 @@
       "when": 1774264736819,
       "tag": "0000_superb_eternity",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774345256790,
+      "tag": "0001_nebulous_rockslide",
+      "breakpoints": true
     }
   ]
 }

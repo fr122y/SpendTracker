@@ -46,6 +46,7 @@ export function useAddCategory() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.keywordMappings.all })
     },
   })
 }

@@ -4,6 +4,7 @@ const mockInsert = jest.fn(() => ({ values: mockValues }))
 jest.mock('@/shared/db', () => ({
   allocationBuckets: 'allocation-buckets-table',
   categories: 'categories-table',
+  keywordMappings: 'keyword-mappings-table',
   layoutConfigs: 'layout-configs-table',
   userSettings: 'user-settings-table',
 }))
@@ -25,7 +26,7 @@ describe('seedUserDefaults', () => {
       userId
     )
 
-    expect(mockInsert).toHaveBeenCalledTimes(4)
+    expect(mockInsert).toHaveBeenCalledTimes(5)
 
     const categoryInsert = mockValues.mock.calls[0][0]
     expect(categoryInsert).toHaveLength(6)
@@ -43,7 +44,14 @@ describe('seedUserDefaults', () => {
       expect(item.userId).toBe(userId)
     })
 
-    const bucketInsert = mockValues.mock.calls[1][0]
+    const keywordInsert = mockValues.mock.calls[1][0]
+    expect(keywordInsert.length).toBeGreaterThan(0)
+    keywordInsert.forEach((item: { userId: string; keyword: string }) => {
+      expect(item.userId).toBe(userId)
+      expect(item.keyword).toBe(item.keyword.toLowerCase())
+    })
+
+    const bucketInsert = mockValues.mock.calls[2][0]
     expect(bucketInsert).toHaveLength(2)
     expect(bucketInsert[0]).toMatchObject({
       label: 'Накопления',
@@ -57,7 +65,7 @@ describe('seedUserDefaults', () => {
       expect(item.userId).toBe(userId)
     })
 
-    const settingsInsert = mockValues.mock.calls[2][0]
+    const settingsInsert = mockValues.mock.calls[3][0]
     expect(settingsInsert).toMatchObject({
       userId,
       weeklyLimit: 10000,
@@ -66,7 +74,7 @@ describe('seedUserDefaults', () => {
       salary: 0,
     })
 
-    const layoutInsert = mockValues.mock.calls[3][0]
+    const layoutInsert = mockValues.mock.calls[4][0]
     expect(layoutInsert.userId).toBe(userId)
     expect(layoutInsert.config.columns).toHaveLength(3)
   })

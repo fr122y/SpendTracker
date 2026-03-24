@@ -5,6 +5,9 @@ export const queryKeys = {
   categories: {
     all: ['categories'] as const,
   },
+  keywordMappings: {
+    all: ['keyword-mappings'] as const,
+  },
   projects: {
     all: ['projects'] as const,
   },

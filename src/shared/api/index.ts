@@ -1,5 +1,4 @@
 // Shared API - Server Actions
-export { categorizeExpenseAction } from './ai-action'
 export {
   getExpenses,
   addExpense,
@@ -7,6 +6,11 @@ export {
   updateExpense,
 } from './expense-actions'
 export { getCategories, addCategory, deleteCategory } from './category-actions'
+export {
+  getKeywordMappings,
+  saveKeywordMapping,
+  deleteKeywordMapping,
+} from './keyword-actions'
 export { getProjects, addProject, deleteProject } from './project-actions'
 export { getBuckets, updateBuckets } from './bucket-actions'
 export { getSettings, updateSettings } from './settings-actions'

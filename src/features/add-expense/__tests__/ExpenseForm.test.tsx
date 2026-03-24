@@ -1,35 +1,23 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
-import { categorizeExpenseAction } from '@/shared/api'
-
-import {
-  mockCategories,
-  mockSelectedDate,
-  createTestWrapper,
-  testExpenseData,
-  mockCategoryResponses,
-  getFormElements,
-  fillAndSubmitForm,
-  createDelayedResolver,
-} from '../../test-utils/expense-form-helpers'
 import { ExpenseForm } from '../ui/expense-form'
 
-// Mock the server action
-jest.mock('@/shared/api', () => ({
-  categorizeExpenseAction: jest.fn(),
-}))
-
-// Mock the query hooks with legacy aliases for the current component implementation
 const mockAddExpense = jest.fn()
+const mockCategorize = jest.fn()
+const mockSaveMapping = jest.fn()
+
+const mockCategories = [
+  { id: '1', name: 'Продукты', emoji: '🛒' },
+  { id: '2', name: 'Транспорт', emoji: '🚕' },
+  { id: '6', name: 'Другое', emoji: '📝' },
+]
 
 jest.mock('@/entities/expense', () => ({
-  useAddExpense: () => ({ mutate: mockAddExpense, isPending: false }),
   useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
     selector({ addExpense: mockAddExpense }),
 }))
 
 jest.mock('@/entities/category', () => ({
-  useCategories: () => ({ data: mockCategories, isLoading: false }),
   useCategoryStore: (
     selector: (state: { categories: typeof mockCategories }) => unknown
   ) => selector({ categories: mockCategories }),
@@ -37,141 +25,135 @@ jest.mock('@/entities/category', () => ({
 
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
-    selector({ selectedDate: mockSelectedDate }),
+    selector({ selectedDate: new Date('2025-01-15') }),
 }))
 
-const mockedCategorizeAction = categorizeExpenseAction as jest.MockedFunction<
-  typeof categorizeExpenseAction
->
-
-const TestWrapper = createTestWrapper()
+jest.mock('../model/use-categorize', () => ({
+  useCategorize: () => ({
+    categorize: mockCategorize,
+    saveMappingAndGetResult: mockSaveMapping,
+    mappingsLoaded: true,
+    isSavingMapping: false,
+  }),
+}))
 
 describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  it('renders form with description and amount inputs', () => {
-    render(<ExpenseForm />, { wrapper: TestWrapper })
+  it('renders form fields', () => {
+    render(<ExpenseForm />)
 
-    const { descriptionInput, amountInput, submitButton } =
-      getFormElements(screen)
-    expect(descriptionInput).toBeInTheDocument()
-    expect(amountInput).toBeInTheDocument()
-    expect(submitButton).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/описание/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/сумма/i)).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /добавить/i })
+    ).toBeInTheDocument()
   })
 
-  it('should trigger mutation on submit with correct parameters', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce(
-      mockCategoryResponses.groceries
-    )
+  it('shows suggested category on description blur when match is found', async () => {
+    mockCategorize.mockReturnValueOnce({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
 
-    render(<ExpenseForm />, { wrapper: TestWrapper })
+    render(<ExpenseForm />)
 
-    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
 
     await waitFor(() => {
-      expect(mockedCategorizeAction).toHaveBeenCalledWith(
-        testExpenseData.simple.description,
-        testExpenseData.simple.amount,
-        mockCategories
-      )
+      expect(screen.getByText(/🛒 Продукты/i)).toBeInTheDocument()
+      expect(screen.queryByLabelText(/категория/i)).not.toBeInTheDocument()
     })
   })
 
-  it('should add expense to store on successful categorization', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce(
-      mockCategoryResponses.groceries
-    )
+  it('shows category select when no match is found', async () => {
+    mockCategorize.mockReturnValueOnce({ found: false })
 
-    render(<ExpenseForm />, { wrapper: TestWrapper })
+    render(<ExpenseForm />)
 
-    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'неизвестная покупка' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/категория/i)).toBeInTheDocument()
+    })
+  })
+
+  it('submits with suggested category without saving mapping', async () => {
+    mockCategorize.mockReturnValueOnce({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '100' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
 
     await waitFor(() => {
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: testExpenseData.simple.description,
-          amount: testExpenseData.simple.amount,
+          description: 'молоко',
+          amount: 100,
+          category: 'Продукты',
+          emoji: '🛒',
           date: '2025-01-15',
-          category: mockCategoryResponses.groceries.category,
-          emoji: mockCategoryResponses.groceries.emoji,
         })
       )
+      expect(mockSaveMapping).not.toHaveBeenCalled()
     })
   })
 
-  it('should reset form after successful submission', async () => {
-    mockedCategorizeAction.mockResolvedValueOnce(
-      mockCategoryResponses.groceries
-    )
+  it('saves mapping and submits when user selects category manually', async () => {
+    mockCategorize.mockReturnValue({ found: false })
+    mockSaveMapping.mockResolvedValueOnce(undefined)
 
-    render(<ExpenseForm />, { wrapper: TestWrapper })
+    render(<ExpenseForm />)
 
-    const { descriptionInput, amountInput } = getFormElements(screen)
-
-    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
-
-    await waitFor(() => {
-      expect(descriptionInput).toHaveValue('')
-      expect(amountInput).toHaveValue('')
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'кофемашина' },
     })
-  })
-
-  it('should fallback to "Другое" category on error', async () => {
-    mockedCategorizeAction.mockRejectedValueOnce(new Error('API Error'))
-
-    render(<ExpenseForm />, { wrapper: TestWrapper })
-
-    fillAndSubmitForm(screen, fireEvent, testExpenseData.fallback)
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByLabelText(/категория/i), {
+      target: { value: '2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '5000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
 
     await waitFor(() => {
+      expect(mockSaveMapping).toHaveBeenCalledWith('кофемашина', '2')
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
-          description: testExpenseData.fallback.description,
-          amount: testExpenseData.fallback.amount,
-          category: mockCategoryResponses.other.category,
-          emoji: mockCategoryResponses.other.emoji,
+          description: 'кофемашина',
+          amount: 5000,
+          category: 'Транспорт',
+          emoji: '🚕',
         })
       )
     })
   })
 
-  it('should disable submit button when form is empty', () => {
-    render(<ExpenseForm />, { wrapper: TestWrapper })
-
-    const { submitButton } = getFormElements(screen)
-    expect(submitButton).toBeDisabled()
-  })
-
-  it('should disable submit button when only description is filled', () => {
-    render(<ExpenseForm />, { wrapper: TestWrapper })
-
-    const { descriptionInput, submitButton } = getFormElements(screen)
-    fireEvent.change(descriptionInput, {
-      target: { value: testExpenseData.simple.description },
-    })
-
-    expect(submitButton).toBeDisabled()
-  })
-
-  it('should show loading state during mutation', async () => {
-    const { promise, resolve } = createDelayedResolver<{
-      category: string
-      emoji: string
-    }>()
-    mockedCategorizeAction.mockImplementation(() => promise)
-
-    render(<ExpenseForm />, { wrapper: TestWrapper })
-
-    fillAndSubmitForm(screen, fireEvent, testExpenseData.simple)
-
-    await waitFor(() => {
-      const { submitButton } = getFormElements(screen)
-      expect(submitButton).toBeDisabled()
-    })
-
-    // Cleanup: resolve the promise to avoid warnings
-    resolve(mockCategoryResponses.groceries)
+  it('disables submit button when required data is missing', () => {
+    render(<ExpenseForm />)
+    expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
   })
 })

@@ -5,19 +5,19 @@ Reusable utilities, UI components, and API clients. No business logic.
 ## Structure
 
 - `ui/` - UI Kit components (Button, Input, TerminalPanel, ProgressBar)
-- `api/` - Server Actions (AI categorization)
+- `api/` - Server Actions for app data (expenses, categories, keyword mappings)
 - `lib/` - Utility functions (cn, finance selectors)
 - `types/` - Shared TypeScript types
 
 ## API
 
-Server Actions are located in `api/` and use the OpenAI SDK.
+Server Actions are located in `api/` and consumed via TanStack Query entity hooks.
 
 ```typescript
-import { categorizeExpenseAction } from '@/shared/api'
+import { getKeywordMappings, saveKeywordMapping } from '@/shared/api'
 
-const result = await categorizeExpenseAction('Молоко', 100, categories)
-// Returns: { category: "Продукты", emoji: "🛒" }
+const mappings = await getKeywordMappings()
+await saveKeywordMapping('молоко', 'category-id')
 ```
 
 ## Library

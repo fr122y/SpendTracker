@@ -55,8 +55,10 @@ export interface LayoutConfig {
   columns: ColumnConfig[]
 }
 
-// AI Categorization Result
-export interface CategorizationResult {
-  category: string
-  emoji: string
+export interface KeywordMapping {
+  id: string
+  keyword: string
+  categoryId: string
+  categoryName: string
+  categoryEmoji: string
 }

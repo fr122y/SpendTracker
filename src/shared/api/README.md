@@ -4,8 +4,10 @@ Server Actions and shared query infrastructure for the application.
 
 ## Public API (`index.ts`)
 
-- `categorizeExpenseAction(description, amount, categories)`: AI-powered expense categorization
 - `registerUser({ name, email, password })`: credentials registration with validation and default seeding
+- `getKeywordMappings()`: get user keyword mappings joined with category metadata
+- `saveKeywordMapping(keyword, categoryId)`: upsert keyword mapping for user
+- `deleteKeywordMapping(id)`: delete mapping
 - `queryClient`: TanStack Query client instance with default options
 
 ## Architecture
@@ -13,16 +15,10 @@ Server Actions and shared query infrastructure for the application.
 - All data mutations use Server Actions (`'use server'`)
 - DB-backed entities read and write through TanStack Query hooks in their model layer
 - No API Routes - Server Actions only
-- OpenAI SDK is used for AI integrations
 - Credentials auth uses `bcryptjs` hashing and shared auth seeding helper
-- Environment variables:
-  - `AI_API_KEY` - API key for AI provider
-  - `AI_BASE_URL` - Base URL for AI API (optional)
-  - `AI_MODEL` - Model name (default: gpt-4o-mini)
+- Keyword mappings are stored in DB and consumed client-side by Fuse.js matcher
 
 ## Error Handling
 
-- AI failures fall back to "Другое"
-- Invalid JSON responses return fallback
-- Empty responses return fallback
+- Mutations rely on optimistic updates in entity layer with rollback toast on failure
 - Registration returns user-facing validation and duplicate-email messages
