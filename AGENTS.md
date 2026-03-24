@@ -10,6 +10,7 @@ Non-negotiable rules from project context:
 
 - Global state uses **Reatom** only (`@reatom/react`); do not introduce Context API for app state.
 - Async/server state uses **TanStack Query**.
+- All user-visible TanStack Query mutations must use optimistic updates (`onMutate` + rollback in `onError` + refetch in `onSettled`).
 - AI/backend integration must use **Server Actions** (`'use server'`) only; no API Routes.
 - Keep secrets in `.env.local` (server side only), never `NEXT_PUBLIC_` for API keys.
 - For localStorage-dependent UI, prefer `next/dynamic` with `{ ssr: false }`.

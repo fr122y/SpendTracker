@@ -19,6 +19,15 @@ Provides the shared TanStack Query client for DB-backed async state.
 - Uses shared `queryClient` instance from `@/shared/api`
 - Default staleTime: 60000ms (1 minute)
 
+### Toaster (`sonner`)
+
+Provides global toast notifications for async mutation failures and rollback
+feedback.
+
+- Mounted once in root providers
+- Position: bottom-right
+- Default toast duration: 4000ms
+
 ## Usage
 
 ```tsx

@@ -7,6 +7,7 @@ import {
   queryKeys,
   updateSettings as updateSettingsAction,
 } from '@/shared/api'
+import { showMutationRollbackToast } from '@/shared/lib'
 
 import type { Settings } from '@/shared/api/settings-actions'
 
@@ -22,7 +23,22 @@ export function useUpdateSettings() {
 
   return useMutation({
     mutationFn: (data: Partial<Settings>) => updateSettingsAction(data),
-    onSuccess: () => {
+    onMutate: async (partialData) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.settings.all })
+      const previous = queryClient.getQueryData<Settings>(
+        queryKeys.settings.all
+      )
+      queryClient.setQueryData(
+        queryKeys.settings.all,
+        (old: Settings | undefined) => (old ? { ...old, ...partialData } : old)
+      )
+      return { previous }
+    },
+    onError: (_error, _partialData, context) => {
+      queryClient.setQueryData(queryKeys.settings.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.all })
     },
   })

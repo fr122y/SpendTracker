@@ -8,6 +8,7 @@ import {
   getCategories,
   queryKeys,
 } from '@/shared/api'
+import { showMutationRollbackToast } from '@/shared/lib'
 
 import type { Category } from '@/shared/types'
 
@@ -23,7 +24,27 @@ export function useAddCategory() {
 
   return useMutation({
     mutationFn: (data: Omit<Category, 'id'>) => addCategoryAction(data),
-    onSuccess: () => {
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.categories.all })
+      const previous = queryClient.getQueryData<Category[]>(
+        queryKeys.categories.all
+      )
+      const optimisticCategory: Category = {
+        id: `temp-${crypto.randomUUID()}`,
+        name: data.name,
+        emoji: data.emoji,
+      }
+      queryClient.setQueryData(
+        queryKeys.categories.all,
+        (old: Category[] = []) => [...old, optimisticCategory]
+      )
+      return { previous }
+    },
+    onError: (_error, _data, context) => {
+      queryClient.setQueryData(queryKeys.categories.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
     },
   })
@@ -34,7 +55,22 @@ export function useDeleteCategory() {
 
   return useMutation({
     mutationFn: (id: string) => deleteCategoryAction(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.categories.all })
+      const previous = queryClient.getQueryData<Category[]>(
+        queryKeys.categories.all
+      )
+      queryClient.setQueryData(
+        queryKeys.categories.all,
+        (old: Category[] = []) => old.filter((category) => category.id !== id)
+      )
+      return { previous }
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(queryKeys.categories.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
     },
   })

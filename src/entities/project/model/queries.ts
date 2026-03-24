@@ -8,8 +8,9 @@ import {
   getProjects,
   queryKeys,
 } from '@/shared/api'
+import { showMutationRollbackToast } from '@/shared/lib'
 
-import type { Project } from '@/shared/types'
+import type { Expense, Project } from '@/shared/types'
 
 export function useProjects() {
   return useQuery({
@@ -24,7 +25,29 @@ export function useAddProject() {
   return useMutation({
     mutationFn: (data: Omit<Project, 'id' | 'color' | 'createdAt'>) =>
       addProjectAction(data),
-    onSuccess: () => {
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.all })
+      const previous = queryClient.getQueryData<Project[]>(
+        queryKeys.projects.all
+      )
+      const optimisticProject: Project = {
+        id: `temp-${crypto.randomUUID()}`,
+        name: data.name,
+        budget: data.budget,
+        color: '#94a3b8',
+        createdAt: new Date().toISOString(),
+      }
+      queryClient.setQueryData(
+        queryKeys.projects.all,
+        (old: Project[] = []) => [...old, optimisticProject]
+      )
+      return { previous }
+    },
+    onError: (_error, _data, context) => {
+      queryClient.setQueryData(queryKeys.projects.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
     },
   })
@@ -35,7 +58,38 @@ export function useDeleteProject() {
 
   return useMutation({
     mutationFn: (id: string) => deleteProjectAction(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.projects.all })
+      await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
+
+      const previousProjects = queryClient.getQueryData<Project[]>(
+        queryKeys.projects.all
+      )
+      const previousExpenses = queryClient.getQueryData<Expense[]>(
+        queryKeys.expenses.all
+      )
+
+      queryClient.setQueryData(queryKeys.projects.all, (old: Project[] = []) =>
+        old.filter((project) => project.id !== id)
+      )
+      queryClient.setQueryData(queryKeys.expenses.all, (old: Expense[] = []) =>
+        old.filter((expense) => expense.projectId !== id)
+      )
+
+      return { previousProjects, previousExpenses }
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(
+        queryKeys.projects.all,
+        context?.previousProjects
+      )
+      queryClient.setQueryData(
+        queryKeys.expenses.all,
+        context?.previousExpenses
+      )
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
     },

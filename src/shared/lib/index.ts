@@ -26,6 +26,7 @@ export {
 // Import it directly from '@/features/widget-registry' where needed
 
 export { evaluateMathExpression } from './math-eval'
+export { showMutationRollbackToast } from './mutation-toast'
 
 // Layout config helpers
 export {

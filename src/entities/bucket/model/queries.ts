@@ -7,6 +7,7 @@ import {
   queryKeys,
   updateBuckets as updateBucketsAction,
 } from '@/shared/api'
+import { showMutationRollbackToast } from '@/shared/lib'
 
 import type { AllocationBucket } from '@/shared/types'
 
@@ -22,7 +23,19 @@ export function useUpdateBuckets() {
 
   return useMutation({
     mutationFn: (buckets: AllocationBucket[]) => updateBucketsAction(buckets),
-    onSuccess: () => {
+    onMutate: async (nextBuckets) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.buckets.all })
+      const previous = queryClient.getQueryData<AllocationBucket[]>(
+        queryKeys.buckets.all
+      )
+      queryClient.setQueryData(queryKeys.buckets.all, nextBuckets)
+      return { previous }
+    },
+    onError: (_error, _nextBuckets, context) => {
+      queryClient.setQueryData(queryKeys.buckets.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.buckets.all })
     },
   })

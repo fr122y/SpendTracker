@@ -9,6 +9,7 @@ import {
   queryKeys,
   updateExpense as updateExpenseAction,
 } from '@/shared/api'
+import { showMutationRollbackToast } from '@/shared/lib'
 
 import type { Expense } from '@/shared/types'
 
@@ -24,7 +25,26 @@ export function useAddExpense() {
 
   return useMutation({
     mutationFn: (data: Omit<Expense, 'id'>) => addExpenseAction(data),
-    onSuccess: () => {
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
+      const previous = queryClient.getQueryData<Expense[]>(
+        queryKeys.expenses.all
+      )
+      const optimisticExpense: Expense = {
+        id: `temp-${crypto.randomUUID()}`,
+        ...data,
+      }
+      queryClient.setQueryData(
+        queryKeys.expenses.all,
+        (old: Expense[] = []) => [...old, optimisticExpense]
+      )
+      return { previous }
+    },
+    onError: (_error, _data, context) => {
+      queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
     },
   })
@@ -35,7 +55,21 @@ export function useDeleteExpense() {
 
   return useMutation({
     mutationFn: (id: string) => deleteExpenseAction(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
+      const previous = queryClient.getQueryData<Expense[]>(
+        queryKeys.expenses.all
+      )
+      queryClient.setQueryData(queryKeys.expenses.all, (old: Expense[] = []) =>
+        old.filter((expense) => expense.id !== id)
+      )
+      return { previous }
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
     },
   })
@@ -52,7 +86,23 @@ export function useUpdateExpense() {
       id: string
       data: Partial<Omit<Expense, 'id'>>
     }) => updateExpenseAction(id, data),
-    onSuccess: () => {
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
+      const previous = queryClient.getQueryData<Expense[]>(
+        queryKeys.expenses.all
+      )
+      queryClient.setQueryData(queryKeys.expenses.all, (old: Expense[] = []) =>
+        old.map((expense) =>
+          expense.id === id ? { ...expense, ...data } : expense
+        )
+      )
+      return { previous }
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
     },
   })

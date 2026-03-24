@@ -12,6 +12,7 @@
 3.  **State Management:**
     - **Reatom v1000+** (`@reatom/core@latest`, `@reatom/react`) for Client State. See **Reatom v1000 Rules** section below. **Context API is FORBIDDEN** for global state.
     - **TanStack Query v5** for Async/Server State.
+    - **Optimistic Mutations Required:** All user-visible TanStack Query mutations must implement `onMutate`, rollback in `onError`, and `invalidateQueries` in `onSettled`.
     - **No `useEffect`** for storage synchronization.
 4.  **Backend/AI:**
     - **Server Actions** (`'use server'`) ONLY. No API Routes.
