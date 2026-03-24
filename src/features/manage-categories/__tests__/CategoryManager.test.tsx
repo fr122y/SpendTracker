@@ -10,6 +10,7 @@ const mockCategories = [
 
 const mockAddCategoryIfUnique = jest.fn()
 const mockDeleteCategory = jest.fn()
+let mockIsLoading = false
 
 jest.mock('@/entities/category', () => ({
   useCategories: () => ({
@@ -24,12 +25,14 @@ jest.mock('@/entities/category', () => ({
   useCategoryStore: (
     selector: (state: {
       categories: typeof mockCategories
+      isLoading: boolean
       addCategoryIfUnique: jest.Mock
       deleteCategory: jest.Mock
     }) => unknown
   ) =>
     selector({
       categories: mockCategories,
+      isLoading: mockIsLoading,
       addCategoryIfUnique: mockAddCategoryIfUnique,
       deleteCategory: mockDeleteCategory,
     }),
@@ -38,7 +41,17 @@ jest.mock('@/entities/category', () => ({
 describe('CategoryManager', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockIsLoading = false
     mockAddCategoryIfUnique.mockReturnValue(true)
+  })
+
+  it('renders skeleton while categories are loading', () => {
+    mockIsLoading = true
+
+    render(<CategoryManager />)
+
+    expect(screen.getByTestId('category-manager-skeleton')).toBeInTheDocument()
+    expect(screen.queryByPlaceholderText(/название/i)).not.toBeInTheDocument()
   })
 
   it('renders list of existing categories', () => {

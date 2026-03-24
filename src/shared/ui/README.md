@@ -10,6 +10,7 @@ Reusable "dumb" UI components without business logic.
 - `Select`: Dropdown select with options
 - `TerminalPanel`: Container for widgets with header and edit mode
 - `ProgressBar`: Visual indicator with over-budget detection
+- `Skeleton`: Loading placeholder primitives (`SkeletonText`, `SkeletonCircle`, `SkeletonRect`)
 
 ## Design System - "Terminal" Aesthetic
 
@@ -205,6 +206,24 @@ const [amount, setAmount] = useState('')
 
 - Track: `h-2 bg-zinc-800 rounded-full overflow-hidden`
 - Fill: `h-full transition-all duration-500 ease-out`
+
+### Skeleton
+
+Reusable loading placeholders for async widget states.
+
+```tsx
+<Skeleton className="h-10 w-full" />
+<SkeletonText widthClassName="w-32" />
+<SkeletonCircle className="h-8 w-8" />
+<SkeletonRect className="h-24 w-full" />
+```
+
+**Variants:**
+
+- `Skeleton`: Base pulse block (`animate-pulse`, `bg-zinc-800/80`)
+- `SkeletonText`: Text line (`h-4` + configurable width)
+- `SkeletonCircle`: Circular placeholder (`rounded-full`)
+- `SkeletonRect`: Rectangular placeholder (`rounded-lg`)
 
 ## Dependencies
 

@@ -52,6 +52,7 @@ export function isCategoryNameDuplicate(
 
 interface CategoryState {
   categories: Category[]
+  isLoading: boolean
   addCategory: (category: Category) => void
   addCategoryIfUnique: (category: Category) => boolean
   deleteCategory: (id: string) => void
@@ -60,12 +61,13 @@ interface CategoryState {
 export function useCategoryStore(): CategoryState
 export function useCategoryStore<T>(selector: (state: CategoryState) => T): T
 export function useCategoryStore<T>(selector?: (state: CategoryState) => T) {
-  const { data: categories = [] } = useCategories()
+  const { data: categories = [], isLoading } = useCategories()
   const addCategory = useAddCategory()
   const deleteCategory = useDeleteCategory()
 
   const state: CategoryState = {
     categories,
+    isLoading,
     addCategory: (category) => {
       addCategory.mutate({
         name: category.name,

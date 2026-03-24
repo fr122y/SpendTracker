@@ -44,6 +44,7 @@ export function useDeleteProject() {
 
 interface ProjectState {
   projects: Project[]
+  isLoading: boolean
   addProject: (project: Omit<Project, 'color' | 'createdAt'>) => void
   deleteProject: (id: string) => void
 }
@@ -51,12 +52,13 @@ interface ProjectState {
 export function useProjectStore(): ProjectState
 export function useProjectStore<T>(selector: (state: ProjectState) => T): T
 export function useProjectStore<T>(selector?: (state: ProjectState) => T) {
-  const { data: projects = [] } = useProjects()
+  const { data: projects = [], isLoading } = useProjects()
   const addProject = useAddProject()
   const deleteProject = useDeleteProject()
 
   const state: ProjectState = {
     projects,
+    isLoading,
     addProject: (project) => {
       addProject.mutate({
         name: project.name,

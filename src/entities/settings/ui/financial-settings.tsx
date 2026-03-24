@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { Input } from '@/shared/ui'
 
+import { FinancialSettingsSkeleton } from './financial-settings-skeleton'
 import { useSettingsStore } from '../model/queries'
 
 export function FinancialSettings() {
@@ -11,6 +12,7 @@ export function FinancialSettings() {
     weeklyLimit,
     salaryDay,
     advanceDay,
+    isLoading,
     setWeeklyLimit,
     setSalaryDay,
     setAdvanceDay,
@@ -31,6 +33,10 @@ export function FinancialSettings() {
   useEffect(() => {
     setAdvanceDayInput(String(advanceDay))
   }, [advanceDay])
+
+  if (isLoading) {
+    return <FinancialSettingsSkeleton />
+  }
 
   const commitWeeklyLimit = () => {
     const value = Number(weeklyLimitInput)

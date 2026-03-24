@@ -16,11 +16,14 @@ jest.mock('@/entities/session', () => ({
 }))
 
 let mockExpenses: Expense[] = []
+let mockIsLoading = false
 
 jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: mockExpenses, isLoading: false }),
-  useExpenseStore: (selector?: (state: { expenses: Expense[] }) => unknown) => {
-    const state = { expenses: mockExpenses }
+  useExpenseStore: (
+    selector?: (state: { expenses: Expense[]; isLoading: boolean }) => unknown
+  ) => {
+    const state = { expenses: mockExpenses, isLoading: mockIsLoading }
     return selector ? selector(state) : state
   },
 }))
@@ -90,6 +93,7 @@ jest.mock('recharts', () => {
 describe('DailySpendingChart', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockIsLoading = false
     mockExpenses = []
     mockViewDate = new Date(2026, 0, 15)
     mockSelectedDate = new Date(2026, 0, 22)
@@ -114,6 +118,17 @@ describe('DailySpendingChart', () => {
   })
 
   describe('rendering', () => {
+    it('renders skeleton while expenses are loading', () => {
+      mockIsLoading = true
+
+      render(<DailySpendingChart />)
+
+      expect(
+        screen.getByTestId('daily-spending-chart-skeleton')
+      ).toBeInTheDocument()
+      expect(screen.queryByTestId('bar-chart')).not.toBeInTheDocument()
+    })
+
     it('renders chart title with month and year', () => {
       render(<DailySpendingChart />)
 

@@ -30,17 +30,19 @@ export function useUpdateBuckets() {
 
 interface BucketState {
   buckets: AllocationBucket[]
+  isLoading: boolean
   updateBuckets: (buckets: AllocationBucket[]) => void
 }
 
 export function useBucketStore(): BucketState
 export function useBucketStore<T>(selector: (state: BucketState) => T): T
 export function useBucketStore<T>(selector?: (state: BucketState) => T) {
-  const { data: buckets = [] } = useBuckets()
+  const { data: buckets = [], isLoading } = useBuckets()
   const updateBuckets = useUpdateBuckets()
 
   const state: BucketState = {
     buckets,
+    isLoading,
     updateBuckets: (nextBuckets) => {
       updateBuckets.mutate(nextBuckets)
     },

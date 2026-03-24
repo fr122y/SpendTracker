@@ -5,6 +5,8 @@ import { WeeklyBudget } from '../ui/weekly-budget'
 // Mock data
 const mockSetWeeklyLimit = jest.fn()
 let mockWeeklyLimit = 10000
+let mockSettingsLoading = false
+let mockExpensesLoading = false
 let mockExpenses = [
   {
     id: '1',
@@ -48,6 +50,7 @@ jest.mock('@/entities/settings', () => ({
   useUpdateSettings: () => ({ mutate: mockSetWeeklyLimit, isPending: false }),
   useSettingsStore: () => ({
     weeklyLimit: mockWeeklyLimit,
+    isLoading: mockSettingsLoading,
     setWeeklyLimit: mockSetWeeklyLimit,
   }),
 }))
@@ -55,9 +58,12 @@ jest.mock('@/entities/settings', () => ({
 jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: mockExpenses, isLoading: false }),
   useExpenseStore: (
-    selector?: (state: { expenses: typeof mockExpenses }) => unknown
+    selector?: (state: {
+      expenses: typeof mockExpenses
+      isLoading: boolean
+    }) => unknown
   ) => {
-    const state = { expenses: mockExpenses }
+    const state = { expenses: mockExpenses, isLoading: mockExpensesLoading }
     return selector ? selector(state) : state
   },
 }))
@@ -99,6 +105,8 @@ describe('WeeklyBudget', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockWeeklyLimit = 10000
+    mockSettingsLoading = false
+    mockExpensesLoading = false
     mockExpenses = [
       {
         id: '1',
@@ -128,6 +136,15 @@ describe('WeeklyBudget', () => {
   })
 
   describe('rendering', () => {
+    it('renders skeleton while data is loading', () => {
+      mockExpensesLoading = true
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getByTestId('weekly-budget-skeleton')).toBeInTheDocument()
+      expect(screen.queryByText('Бюджет на неделю')).not.toBeInTheDocument()
+    })
+
     it('renders widget title', () => {
       render(<WeeklyBudget />)
 

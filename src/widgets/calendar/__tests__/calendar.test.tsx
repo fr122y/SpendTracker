@@ -11,6 +11,8 @@ const mockSetAdvanceDay = jest.fn()
 
 const mockViewDate = new Date(2026, 0, 15) // January 2026
 const mockSelectedDate = new Date(2026, 0, 22)
+let mockExpenseLoading = false
+let mockSettingsLoading = false
 
 jest.mock('@/entities/session', () => ({
   useSessionStore: () => ({
@@ -25,8 +27,11 @@ jest.mock('@/entities/session', () => ({
 jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: [], isLoading: false }),
   useExpenseStore: (
-    selector: (state: { expenses: Array<{ date: string }> }) => unknown
-  ) => selector({ expenses: [] }),
+    selector: (state: {
+      expenses: Array<{ date: string }>
+      isLoading: boolean
+    }) => unknown
+  ) => selector({ expenses: [], isLoading: mockExpenseLoading }),
 }))
 
 let mockSalaryDay = 10
@@ -46,6 +51,7 @@ jest.mock('@/entities/settings', () => ({
   useSettingsStore: () => ({
     salaryDay: mockSalaryDay,
     advanceDay: mockAdvanceDay,
+    isLoading: mockSettingsLoading,
     setSalaryDay: mockSetSalaryDay,
     setAdvanceDay: mockSetAdvanceDay,
   }),
@@ -56,6 +62,17 @@ describe('Calendar', () => {
     jest.clearAllMocks()
     mockSalaryDay = 10
     mockAdvanceDay = 25
+    mockExpenseLoading = false
+    mockSettingsLoading = false
+  })
+
+  it('renders skeleton while data is loading', () => {
+    mockExpenseLoading = true
+
+    render(<Calendar />)
+
+    expect(screen.getByTestId('calendar-skeleton')).toBeInTheDocument()
+    expect(screen.queryByText('Пн')).not.toBeInTheDocument()
   })
 
   describe('rendering', () => {

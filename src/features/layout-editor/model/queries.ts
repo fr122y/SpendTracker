@@ -50,6 +50,7 @@ export function useUpdateLayout() {
 
 interface LayoutState {
   layoutConfig: LayoutConfig
+  isLoading: boolean
   isEditMode: boolean
   toggleEditMode: () => void
   moveWidget: (
@@ -68,7 +69,7 @@ interface LayoutState {
 export function useLayoutStore(): LayoutState
 export function useLayoutStore<T>(selector: (state: LayoutState) => T): T
 export function useLayoutStore<T>(selector?: (state: LayoutState) => T) {
-  const { data: layoutConfig = DEFAULT_LAYOUT } = useLayoutConfig()
+  const { data: layoutConfig = DEFAULT_LAYOUT, isLoading } = useLayoutConfig()
   const updateLayout = useUpdateLayout()
   const { isEditMode, toggleEditMode } = useEditMode()
 
@@ -130,6 +131,7 @@ export function useLayoutStore<T>(selector?: (state: LayoutState) => T) {
 
   const state: LayoutState = {
     layoutConfig,
+    isLoading,
     isEditMode,
     toggleEditMode,
     moveWidget,

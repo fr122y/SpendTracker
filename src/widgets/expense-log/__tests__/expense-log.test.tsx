@@ -51,6 +51,7 @@ let mockExpenses: Expense[] = [
 
 let mockSelectedDate = new Date(2026, 0, 23) // Jan 23, 2026
 const mockDeleteExpense = jest.fn()
+let mockIsLoading = false
 
 // Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/expense', () => ({
@@ -60,11 +61,13 @@ jest.mock('@/entities/expense', () => ({
   useExpenseStore: (
     selector?: (state: {
       expenses: Expense[]
+      isLoading: boolean
       deleteExpense: (id: string) => void
     }) => unknown
   ) => {
     const state = {
       expenses: mockExpenses,
+      isLoading: mockIsLoading,
       deleteExpense: mockDeleteExpense,
     }
     return selector ? selector(state) : state
@@ -132,6 +135,7 @@ jest.mock('@/shared/ui', () => ({
 describe('ExpenseLog', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockIsLoading = false
     mockSelectedDate = new Date(2026, 0, 23) // Reset to Jan 23, 2026
     mockExpenses = [
       {
@@ -179,6 +183,15 @@ describe('ExpenseLog', () => {
   })
 
   describe('rendering', () => {
+    it('renders skeleton while expenses are loading', () => {
+      mockIsLoading = true
+
+      render(<ExpenseLog />)
+
+      expect(screen.getByTestId('expense-log-skeleton')).toBeInTheDocument()
+      expect(screen.queryByTestId('expense-form')).not.toBeInTheDocument()
+    })
+
     it('renders header with formatted date', () => {
       render(<ExpenseLog />)
 

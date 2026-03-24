@@ -9,6 +9,8 @@ import { WIDGET_REGISTRY } from '@/features/widget-registry'
 import { cn, useViewport, isTabletOrSmaller, isMobile } from '@/shared/lib'
 import { TerminalPanel } from '@/shared/ui'
 
+import { DashboardGridSkeleton } from './dashboard-grid-skeleton'
+
 import type { WidgetId } from '@/shared/types'
 
 // Helper component to render a widget with its TerminalPanel
@@ -35,6 +37,7 @@ function WidgetRenderer({ widgetId }: { widgetId: WidgetId }) {
 export function DashboardGrid() {
   const {
     layoutConfig,
+    isLoading,
     isEditMode,
     moveWidget,
     moveWidgetInColumn,
@@ -150,6 +153,10 @@ export function DashboardGrid() {
     () => allWidgets.map(({ widgetId }) => widgetId),
     [allWidgets]
   )
+
+  if (isLoading) {
+    return <DashboardGridSkeleton />
+  }
 
   // Mobile layout: Accordion-based expandable widgets
   if (mobile) {

@@ -33,6 +33,7 @@ interface SettingsState {
   salaryDay: number
   advanceDay: number
   salary: number
+  isLoading: boolean
   setWeeklyLimit: (limit: number) => void
   setSalaryDay: (day: number) => void
   setAdvanceDay: (day: number) => void
@@ -49,7 +50,7 @@ const DEFAULT_SETTINGS: Settings = {
 export function useSettingsStore(): SettingsState
 export function useSettingsStore<T>(selector: (state: SettingsState) => T): T
 export function useSettingsStore<T>(selector?: (state: SettingsState) => T) {
-  const { data } = useSettings()
+  const { data, isLoading } = useSettings()
   const updateSettings = useUpdateSettings()
 
   const settings = data ?? DEFAULT_SETTINGS
@@ -59,6 +60,7 @@ export function useSettingsStore<T>(selector?: (state: SettingsState) => T) {
     salaryDay: settings.salaryDay,
     advanceDay: settings.advanceDay,
     salary: settings.salary,
+    isLoading,
     setWeeklyLimit: (limit) => {
       updateSettings.mutate({ weeklyLimit: limit })
     },

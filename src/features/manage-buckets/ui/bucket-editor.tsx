@@ -8,6 +8,8 @@ import { useSettingsStore } from '@/entities/settings'
 import { cn } from '@/shared/lib'
 import { Button, Input, MathInput } from '@/shared/ui'
 
+import { BucketEditorSkeleton } from './bucket-editor-skeleton'
+
 import type { AllocationBucket } from '@/shared/types'
 
 function formatAmount(amount: number): string {
@@ -15,10 +17,24 @@ function formatAmount(amount: number): string {
 }
 
 export function BucketEditor() {
-  const buckets = useBucketStore((state) => state.buckets)
-  const updateBuckets = useBucketStore((state) => state.updateBuckets)
-  const salary = useSettingsStore((state) => state.salary)
-  const setSalary = useSettingsStore((state) => state.setSalary)
+  const {
+    buckets,
+    isLoading: isBucketsLoading,
+    updateBuckets,
+  } = useBucketStore((state) => ({
+    buckets: state.buckets,
+    isLoading: state.isLoading,
+    updateBuckets: state.updateBuckets,
+  }))
+  const {
+    salary,
+    isLoading: isSettingsLoading,
+    setSalary,
+  } = useSettingsStore((state) => ({
+    salary: state.salary,
+    isLoading: state.isLoading,
+    setSalary: state.setSalary,
+  }))
 
   const [localBuckets, setLocalBuckets] = useState<AllocationBucket[]>(buckets)
   const [localSalary, setLocalSalary] = useState(salary)
@@ -39,6 +55,10 @@ export function BucketEditor() {
     setLocalSalary(salary)
     setSalaryInputValue(salary ? String(salary) : '')
   }, [salary])
+
+  if (isBucketsLoading || isSettingsLoading) {
+    return <BucketEditorSkeleton />
+  }
 
   const totalPercentage = localBuckets.reduce(
     (sum, bucket) => sum + bucket.percentage,

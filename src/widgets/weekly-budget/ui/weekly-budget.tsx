@@ -8,15 +8,34 @@ import { useSettingsStore } from '@/entities/settings'
 import { getWeeklyStats, cn } from '@/shared/lib'
 import { ProgressBar, MathInput } from '@/shared/ui'
 
+import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
+
 export function WeeklyBudget() {
-  const { weeklyLimit, setWeeklyLimit } = useSettingsStore()
-  const expenses = useExpenseStore((state) => state.expenses)
+  const {
+    weeklyLimit,
+    setWeeklyLimit,
+    isLoading: isSettingsLoading,
+  } = useSettingsStore((state) => ({
+    weeklyLimit: state.weeklyLimit,
+    setWeeklyLimit: state.setWeeklyLimit,
+    isLoading: state.isLoading,
+  }))
+  const { expenses, isLoading: isExpensesLoading } = useExpenseStore(
+    (state) => ({
+      expenses: state.expenses,
+      isLoading: state.isLoading,
+    })
+  )
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const [inputValue, setInputValue] = useState(String(weeklyLimit))
 
   useEffect(() => {
     setInputValue(String(weeklyLimit))
   }, [weeklyLimit])
+
+  if (isSettingsLoading || isExpensesLoading) {
+    return <WeeklyBudgetSkeleton />
+  }
 
   const stats = getWeeklyStats(expenses, selectedDate, weeklyLimit)
   const remaining = weeklyLimit - stats.spent

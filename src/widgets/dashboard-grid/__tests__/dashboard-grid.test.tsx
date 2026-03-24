@@ -15,8 +15,15 @@ const mockLayoutConfig = {
 }
 
 let mockIsEditMode = false
+let mockIsLoading = false
 
 jest.mock('@/features/layout-editor', () => ({
+  DEFAULT_LAYOUT: {
+    columns: [
+      { id: 'col-1', width: 50, widgets: ['CALENDAR', 'EXPENSE_LOG'] },
+      { id: 'col-2', width: 50, widgets: ['ANALYSIS'] },
+    ],
+  },
   useLayoutConfig: () => ({ data: mockLayoutConfig, isLoading: false }),
   useUpdateLayout: () => ({
     mutate: jest.fn(),
@@ -28,6 +35,7 @@ jest.mock('@/features/layout-editor', () => ({
   }),
   useLayoutStore: () => ({
     layoutConfig: mockLayoutConfig,
+    isLoading: mockIsLoading,
     isEditMode: mockIsEditMode,
     moveWidget: mockMoveWidget,
     moveWidgetInColumn: mockMoveWidgetInColumn,
@@ -102,6 +110,16 @@ describe('DashboardGrid', () => {
     mockIsMobile = false
     mockIsTabletOrSmaller = false
     mockIsEditMode = false
+    mockIsLoading = false
+  })
+
+  it('renders dashboard skeleton while layout is loading', () => {
+    mockIsLoading = true
+
+    render(<DashboardGrid />)
+
+    expect(screen.getByTestId('dashboard-grid-skeleton')).toBeInTheDocument()
+    expect(screen.queryByText('Calendar Widget')).not.toBeInTheDocument()
   })
 
   describe('desktop layout', () => {

@@ -8,6 +8,8 @@ import { useSettingsStore } from '@/entities/settings'
 import { MonthPickerModal } from '@/features/month-picker'
 import { cn } from '@/shared/lib'
 
+import { CalendarSkeleton } from './calendar-skeleton'
+
 const WEEKDAY_HEADERS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
 function formatDate(date: Date): string {
@@ -145,15 +147,35 @@ export function Calendar() {
     nextMonth,
     prevMonth,
   } = useSessionStore()
-  const expenses = useExpenseStore((state) => state.expenses)
-  const { salaryDay, advanceDay, setSalaryDay, setAdvanceDay } =
-    useSettingsStore()
+  const { expenses, isLoading: isExpensesLoading } = useExpenseStore(
+    (state) => ({
+      expenses: state.expenses,
+      isLoading: state.isLoading,
+    })
+  )
+  const {
+    salaryDay,
+    advanceDay,
+    setSalaryDay,
+    setAdvanceDay,
+    isLoading: isSettingsLoading,
+  } = useSettingsStore((state) => ({
+    salaryDay: state.salaryDay,
+    advanceDay: state.advanceDay,
+    setSalaryDay: state.setSalaryDay,
+    setAdvanceDay: state.setAdvanceDay,
+    isLoading: state.isLoading,
+  }))
 
   const [editingField, setEditingField] = useState<'salary' | 'advance' | null>(
     null
   )
   const [editValue, setEditValue] = useState('')
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
+
+  if (isExpensesLoading || isSettingsLoading) {
+    return <CalendarSkeleton />
+  }
 
   const handleStartEdit = (field: 'salary' | 'advance') => {
     setEditingField(field)

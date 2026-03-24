@@ -42,12 +42,15 @@ let mockExpenses: Expense[] = [
 ]
 
 let mockViewDate = new Date(2026, 0, 15) // Jan 15, 2026
+let mockIsLoading = false
 
 // Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: mockExpenses, isLoading: false }),
-  useExpenseStore: (selector?: (state: { expenses: Expense[] }) => unknown) => {
-    const state = { expenses: mockExpenses }
+  useExpenseStore: (
+    selector?: (state: { expenses: Expense[]; isLoading: boolean }) => unknown
+  ) => {
+    const state = { expenses: mockExpenses, isLoading: mockIsLoading }
     return selector ? selector(state) : state
   },
 }))
@@ -132,6 +135,7 @@ jest.mock('@/shared/ui', () => ({
 describe('AnalysisDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockIsLoading = false
     mockViewDate = new Date(2026, 0, 15) // Reset to Jan 15, 2026
     mockExpenses = [
       {
@@ -170,6 +174,15 @@ describe('AnalysisDashboard', () => {
   })
 
   describe('rendering', () => {
+    it('renders skeleton while expenses are loading', () => {
+      mockIsLoading = true
+
+      render(<AnalysisDashboard />)
+
+      expect(screen.getByTestId('analysis-skeleton')).toBeInTheDocument()
+      expect(screen.queryByText(/Анализ за/)).not.toBeInTheDocument()
+    })
+
     it('renders header with month and year', () => {
       render(<AnalysisDashboard />)
 

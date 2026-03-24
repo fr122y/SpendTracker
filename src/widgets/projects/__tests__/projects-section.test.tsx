@@ -63,6 +63,8 @@ let mockExpenses: Expense[] = [
 
 const mockDeleteProject = jest.fn()
 const mockDeleteExpense = jest.fn()
+let mockProjectsLoading = false
+let mockExpensesLoading = false
 
 // Mock query hooks with legacy aliases for the current component implementation
 jest.mock('@/entities/project', () => ({
@@ -71,11 +73,13 @@ jest.mock('@/entities/project', () => ({
   useProjectStore: (
     selector: (state: {
       projects: Project[]
+      isLoading: boolean
       deleteProject: jest.Mock
     }) => unknown
   ) =>
     selector({
       projects: mockProjects,
+      isLoading: mockProjectsLoading,
       deleteProject: mockDeleteProject,
     }),
   ProjectCard: jest.fn(
@@ -95,11 +99,13 @@ jest.mock('@/entities/expense', () => ({
   useExpenseStore: (
     selector: (state: {
       expenses: Expense[]
+      isLoading: boolean
       deleteExpense: jest.Mock
     }) => unknown
   ) =>
     selector({
       expenses: mockExpenses,
+      isLoading: mockExpensesLoading,
       deleteExpense: mockDeleteExpense,
     }),
   ExpenseList: jest.fn(
@@ -144,6 +150,7 @@ jest.mock('@/shared/lib', () => ({
 
 // Mock Button and EmptyState components
 jest.mock('@/shared/ui', () => ({
+  ...jest.requireActual('@/shared/ui'),
   Button: jest.fn(
     ({
       children,
@@ -172,6 +179,8 @@ jest.mock('@/shared/ui', () => ({
 describe('ProjectsSection', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockProjectsLoading = false
+    mockExpensesLoading = false
     mockProjects = [
       {
         id: 'project-1',
@@ -228,6 +237,15 @@ describe('ProjectsSection', () => {
   })
 
   describe('rendering', () => {
+    it('renders skeleton while projects are loading', () => {
+      mockProjectsLoading = true
+
+      render(<ProjectsSection />)
+
+      expect(screen.getByTestId('projects-skeleton')).toBeInTheDocument()
+      expect(screen.queryByText('Проекты')).not.toBeInTheDocument()
+    })
+
     it('renders header with title', () => {
       render(<ProjectsSection />)
 

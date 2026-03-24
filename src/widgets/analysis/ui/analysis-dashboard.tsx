@@ -9,6 +9,8 @@ import { getCategoryStats, type CategoryStat } from '@/shared/lib'
 import { cn } from '@/shared/lib'
 import { EmptyState } from '@/shared/ui'
 
+import { AnalysisSkeleton } from './analysis-skeleton'
+
 const MONTH_NAMES = [
   'Январь',
   'Февраль',
@@ -80,7 +82,14 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
 
 export function AnalysisDashboard() {
   const viewDate = useSessionStore((state) => state.viewDate)
-  const expenses = useExpenseStore((state) => state.expenses)
+  const { expenses, isLoading } = useExpenseStore((state) => ({
+    expenses: state.expenses,
+    isLoading: state.isLoading,
+  }))
+
+  if (isLoading) {
+    return <AnalysisSkeleton />
+  }
 
   const stats = getCategoryStats(expenses, viewDate)
   const maxPercent =

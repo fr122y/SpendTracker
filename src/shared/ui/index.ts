@@ -10,3 +10,9 @@ export {
   type ResponsiveContainerProps,
 } from './responsive-container'
 export { EmptyState, type EmptyStateProps } from './empty-state'
+export {
+  Skeleton,
+  SkeletonCircle,
+  SkeletonRect,
+  SkeletonText,
+} from './skeleton'

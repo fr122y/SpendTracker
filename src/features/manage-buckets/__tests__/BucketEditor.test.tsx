@@ -10,6 +10,8 @@ const mockBuckets = [
 const mockUpdateBuckets = jest.fn()
 const mockSetSalary = jest.fn()
 let mockSalary = 0
+let mockBucketsLoading = false
+let mockSettingsLoading = false
 
 jest.mock('@/entities/bucket', () => ({
   useBuckets: () => ({
@@ -20,11 +22,13 @@ jest.mock('@/entities/bucket', () => ({
   useBucketStore: (
     selector: (state: {
       buckets: typeof mockBuckets
+      isLoading: boolean
       updateBuckets: jest.Mock
     }) => unknown
   ) =>
     selector({
       buckets: mockBuckets,
+      isLoading: mockBucketsLoading,
       updateBuckets: mockUpdateBuckets,
     }),
 }))
@@ -41,10 +45,15 @@ jest.mock('@/entities/settings', () => ({
   }),
   useUpdateSettings: () => ({ mutate: mockSetSalary, isPending: false }),
   useSettingsStore: (
-    selector: (state: { salary: number; setSalary: jest.Mock }) => unknown
+    selector: (state: {
+      salary: number
+      isLoading: boolean
+      setSalary: jest.Mock
+    }) => unknown
   ) =>
     selector({
       salary: mockSalary,
+      isLoading: mockSettingsLoading,
       setSalary: mockSetSalary,
     }),
 }))
@@ -53,6 +62,17 @@ describe('BucketEditor', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockSalary = 0
+    mockBucketsLoading = false
+    mockSettingsLoading = false
+  })
+
+  it('renders skeleton while data is loading', () => {
+    mockBucketsLoading = true
+
+    render(<BucketEditor />)
+
+    expect(screen.getByTestId('bucket-editor-skeleton')).toBeInTheDocument()
+    expect(screen.queryByLabelText(/доход/i)).not.toBeInTheDocument()
   })
 
   it('renders list of buckets with labels and percentages', () => {

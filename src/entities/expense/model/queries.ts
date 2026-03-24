@@ -60,6 +60,7 @@ export function useUpdateExpense() {
 
 interface ExpenseState {
   expenses: Expense[]
+  isLoading: boolean
   addExpense: (expense: Expense) => void
   deleteExpense: (id: string) => void
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
@@ -68,13 +69,14 @@ interface ExpenseState {
 export function useExpenseStore(): ExpenseState
 export function useExpenseStore<T>(selector: (state: ExpenseState) => T): T
 export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
-  const { data: expenses = [] } = useExpenses()
+  const { data: expenses = [], isLoading } = useExpenses()
   const addExpense = useAddExpense()
   const deleteExpense = useDeleteExpense()
   const updateExpense = useUpdateExpense()
 
   const state: ExpenseState = {
     expenses,
+    isLoading,
     addExpense: (expense) => {
       addExpense.mutate({
         description: expense.description,

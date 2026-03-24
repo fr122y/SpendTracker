@@ -12,16 +12,36 @@ import {
 import { cn } from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
 
+import { ProjectsSkeleton } from './projects-skeleton'
+
 export function ProjectsSection() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(
     null
   )
 
-  const projects = useProjectStore((state) => state.projects)
-  const deleteProject = useProjectStore((state) => state.deleteProject)
-  const expenses = useExpenseStore((state) => state.expenses)
-  const deleteExpense = useExpenseStore((state) => state.deleteExpense)
+  const {
+    projects,
+    isLoading: isProjectsLoading,
+    deleteProject,
+  } = useProjectStore((state) => ({
+    projects: state.projects,
+    isLoading: state.isLoading,
+    deleteProject: state.deleteProject,
+  }))
+  const {
+    expenses,
+    isLoading: isExpensesLoading,
+    deleteExpense,
+  } = useExpenseStore((state) => ({
+    expenses: state.expenses,
+    isLoading: state.isLoading,
+    deleteExpense: state.deleteExpense,
+  }))
+
+  if (isProjectsLoading || isExpensesLoading) {
+    return <ProjectsSkeleton />
+  }
 
   // Calculate spent amount per project
   const getProjectSpent = (projectId: string) => {

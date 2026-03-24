@@ -5,16 +5,24 @@ import { useState } from 'react'
 import { useCategoryStore } from '@/entities/category'
 import { Button, Input } from '@/shared/ui'
 
+import { CategoryManagerSkeleton } from './category-manager-skeleton'
+
 export function CategoryManager() {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('')
   const [error, setError] = useState('')
 
-  const categories = useCategoryStore((state) => state.categories)
-  const addCategoryIfUnique = useCategoryStore(
-    (state) => state.addCategoryIfUnique
-  )
-  const deleteCategory = useCategoryStore((state) => state.deleteCategory)
+  const { categories, isLoading, addCategoryIfUnique, deleteCategory } =
+    useCategoryStore((state) => ({
+      categories: state.categories,
+      isLoading: state.isLoading,
+      addCategoryIfUnique: state.addCategoryIfUnique,
+      deleteCategory: state.deleteCategory,
+    }))
+
+  if (isLoading) {
+    return <CategoryManagerSkeleton />
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()

@@ -14,6 +14,8 @@ import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { getMonthlyExpenses } from '@/shared/lib'
 
+import { DailySpendingChartSkeleton } from './daily-spending-chart-skeleton'
+
 import type { Expense } from '@/shared/types'
 
 const MONTH_NAMES = [
@@ -90,7 +92,14 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 export function DailySpendingChart() {
   const { viewDate, selectedDate, setSelectedDate } = useSessionStore()
-  const expenses = useExpenseStore((state) => state.expenses)
+  const { expenses, isLoading } = useExpenseStore((state) => ({
+    expenses: state.expenses,
+    isLoading: state.isLoading,
+  }))
+
+  if (isLoading) {
+    return <DailySpendingChartSkeleton />
+  }
 
   const data = getDailySpendingData(expenses, viewDate)
   const selectedDay = selectedDate.getDate()

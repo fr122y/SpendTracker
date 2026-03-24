@@ -8,6 +8,8 @@ import { ExpenseForm } from '@/features/add-expense'
 import { getDailyExpenses } from '@/shared/lib'
 import { EmptyState } from '@/shared/ui'
 
+import { ExpenseLogSkeleton } from './expense-log-skeleton'
+
 function formatDateRussian(date: Date): string {
   const day = date.getDate()
   const months = [
@@ -31,9 +33,18 @@ function formatDateRussian(date: Date): string {
 
 export function ExpenseLog() {
   const selectedDate = useSessionStore((state) => state.selectedDate)
-  const expenses = useExpenseStore((state) => state.expenses)
-  const deleteExpense = useExpenseStore((state) => state.deleteExpense)
-  const updateExpense = useExpenseStore((state) => state.updateExpense)
+  const { expenses, isLoading, deleteExpense, updateExpense } = useExpenseStore(
+    (state) => ({
+      expenses: state.expenses,
+      isLoading: state.isLoading,
+      deleteExpense: state.deleteExpense,
+      updateExpense: state.updateExpense,
+    })
+  )
+
+  if (isLoading) {
+    return <ExpenseLogSkeleton />
+  }
 
   // Get expenses for the selected date, excluding project expenses
   const dailyExpenses = getDailyExpenses(expenses, selectedDate).filter(
