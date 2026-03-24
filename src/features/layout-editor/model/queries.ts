@@ -4,26 +4,13 @@ import { wrap } from '@reatom/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getLayoutConfig, queryKeys, updateLayoutConfig } from '@/shared/api'
+import { DEFAULT_LAYOUT as SHARED_DEFAULT_LAYOUT } from '@/shared/lib'
 
 import { resetEditMode, useEditMode } from './edit-mode-store'
 
 import type { LayoutConfig, WidgetId } from '@/shared/types'
 
-export const DEFAULT_LAYOUT: LayoutConfig = {
-  columns: [
-    {
-      id: 'col-1',
-      width: 33,
-      widgets: ['CALENDAR', 'EXPENSE_LOG', 'CATEGORIES'],
-    },
-    { id: 'col-2', width: 33, widgets: ['ANALYSIS', 'DYNAMICS', 'PROJECTS'] },
-    {
-      id: 'col-3',
-      width: 34,
-      widgets: ['WEEKLY_BUDGET', 'SAVINGS', 'SETTINGS'],
-    },
-  ],
-}
+export const DEFAULT_LAYOUT = SHARED_DEFAULT_LAYOUT
 
 export function useLayoutConfig() {
   return useQuery({

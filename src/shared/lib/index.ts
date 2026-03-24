@@ -26,3 +26,11 @@ export {
 // Import it directly from '@/features/widget-registry' where needed
 
 export { evaluateMathExpression } from './math-eval'
+
+// Layout config helpers
+export {
+  ALL_WIDGET_IDS,
+  DEFAULT_LAYOUT,
+  normalizeLayoutConfig,
+  isLayoutEqual,
+} from './layout-config'
