@@ -1,7 +1,7 @@
 /**
  * Backfills layout_config for all users:
  * - keeps existing widget order where possible
- * - adds missing widgets (PROJECTS/CATEGORIES/SETTINGS, etc.)
+ * - adds missing widgets from current default set
  * - removes duplicates/invalid widget ids
  *
  * Usage: node scripts/backfill-layout-config.mjs
@@ -20,7 +20,6 @@ const ALL_WIDGET_IDS = [
   'SAVINGS',
   'PROJECTS',
   'CATEGORIES',
-  'SETTINGS',
 ]
 
 function isWidgetId(value) {
@@ -44,7 +43,7 @@ function normalizeLayoutConfig(input) {
         {
           id: 'col-3',
           width: 34,
-          widgets: ['WEEKLY_BUDGET', 'SAVINGS', 'SETTINGS'],
+          widgets: ['WEEKLY_BUDGET', 'SAVINGS'],
         },
       ],
     }

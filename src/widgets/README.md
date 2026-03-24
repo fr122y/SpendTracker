@@ -12,17 +12,16 @@ Each widget folder contains:
 
 ## Widgets & Exports
 
-| Widget                  | Export                     | Description                                                                                    |
-| ----------------------- | -------------------------- | ---------------------------------------------------------------------------------------------- |
-| **calendar**            | `Calendar`                 | Interactive calendar with month navigation, date selection, and expense/salary/advance markers |
-| **expense-log**         | `ExpenseLog`               | Daily expense list with add form, filters project expenses                                     |
-| **analysis**            | `AnalysisDashboard`        | Category breakdown with visual boxes sized by spending percentage                              |
-| **dynamics-chart**      | `DailySpendingChart`       | Recharts bar chart showing daily spending for current month                                    |
-| **weekly-budget**       | `WeeklyBudget`             | Progress bar with spent/remaining amounts and editable limit                                   |
-| **savings**             | `SavingsSection`           | Wrapper for BucketEditor (income allocation)                                                   |
-| **categories-settings** | `CategoriesSection`        | Wrapper for CategoryManager CRUD                                                               |
-| **financial-settings**  | `FinancialSettingsSection` | Wrapper for FinancialSettings form                                                             |
-| **projects**            | `ProjectsSection`          | Project grid with expandable details, expense form, and delete                                 |
+| Widget                  | Export               | Description                                                                                    |
+| ----------------------- | -------------------- | ---------------------------------------------------------------------------------------------- |
+| **calendar**            | `Calendar`           | Interactive calendar with month navigation, date selection, and expense/salary/advance markers |
+| **expense-log**         | `ExpenseLog`         | Daily expense list with add form, filters project expenses                                     |
+| **analysis**            | `AnalysisDashboard`  | Category breakdown with visual boxes sized by spending percentage                              |
+| **dynamics-chart**      | `DailySpendingChart` | Recharts bar chart showing daily spending for current month                                    |
+| **weekly-budget**       | `WeeklyBudget`       | Progress bar with spent/remaining amounts and editable limit                                   |
+| **savings**             | `SavingsSection`     | Wrapper for BucketEditor (income allocation)                                                   |
+| **categories-settings** | `CategoriesSection`  | Wrapper for CategoryManager CRUD                                                               |
+| **projects**            | `ProjectsSection`    | Project grid with expandable details, expense form, and delete                                 |
 
 ## Rules
 

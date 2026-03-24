@@ -7,7 +7,6 @@ actions.
 
 - `useSettings`: Query hook for the current settings snapshot
 - `useUpdateSettings`: Mutation hook for partial settings updates
-- `FinancialSettings`: Form component for editing financial settings
 
 ## State & Data
 

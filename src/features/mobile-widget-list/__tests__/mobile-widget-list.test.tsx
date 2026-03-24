@@ -39,10 +39,6 @@ jest.mock('@/features/widget-registry', () => ({
       title: 'Категории',
       icon: () => <div data-testid="icon-categories">CategoriesIcon</div>,
     },
-    SETTINGS: {
-      title: 'Настройки',
-      icon: () => <div data-testid="icon-settings">SettingsIcon</div>,
-    },
   },
 }))
 
@@ -112,7 +108,6 @@ describe('MobileWidgetList', () => {
         'SAVINGS',
         'PROJECTS',
         'CATEGORIES',
-        'SETTINGS',
       ]
 
       render(<MobileWidgetList widgets={widgets} onSelect={mockOnSelect} />)
@@ -125,7 +120,6 @@ describe('MobileWidgetList', () => {
       expect(screen.getByText('Накопления')).toBeInTheDocument()
       expect(screen.getByText('Проекты')).toBeInTheDocument()
       expect(screen.getByText('Категории')).toBeInTheDocument()
-      expect(screen.getByText('Настройки')).toBeInTheDocument()
     })
 
     it('renders widgets as button elements', () => {
@@ -347,22 +341,21 @@ describe('MobileWidgetList', () => {
         'SAVINGS',
         'PROJECTS',
         'CATEGORIES',
-        'SETTINGS',
       ]
 
       render(<MobileWidgetList widgets={widgets} onSelect={mockOnSelect} />)
 
       const buttons = screen.getAllByRole('button')
-      expect(buttons).toHaveLength(9)
+      expect(buttons).toHaveLength(8)
     })
 
     it('maintains widget order as provided in props', () => {
-      const widgets: WidgetId[] = ['SETTINGS', 'CALENDAR', 'EXPENSE_LOG']
+      const widgets: WidgetId[] = ['CATEGORIES', 'CALENDAR', 'EXPENSE_LOG']
 
       render(<MobileWidgetList widgets={widgets} onSelect={mockOnSelect} />)
 
       const buttons = screen.getAllByRole('button')
-      expect(buttons[0]).toHaveTextContent('Настройки')
+      expect(buttons[0]).toHaveTextContent('Категории')
       expect(buttons[1]).toHaveTextContent('Календарь')
       expect(buttons[2]).toHaveTextContent('Журнал расходов')
     })

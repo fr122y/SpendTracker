@@ -44,7 +44,6 @@ export type WidgetId =
   | 'SAVINGS'
   | 'PROJECTS'
   | 'CATEGORIES'
-  | 'SETTINGS'
 
 export interface ColumnConfig {
   id: string

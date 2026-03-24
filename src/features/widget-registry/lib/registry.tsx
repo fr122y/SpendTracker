@@ -7,7 +7,6 @@ import {
   PiggyBank,
   Folder,
   Tags,
-  Settings,
 } from 'lucide-react'
 
 import { AnalysisDashboard } from '@/widgets/analysis'
@@ -15,7 +14,6 @@ import { Calendar } from '@/widgets/calendar'
 import { CategoriesSection } from '@/widgets/categories-settings'
 import { DailySpendingChart } from '@/widgets/dynamics-chart'
 import { ExpenseLog } from '@/widgets/expense-log'
-import { FinancialSettingsSection } from '@/widgets/financial-settings'
 import { ProjectsSection } from '@/widgets/projects'
 import { SavingsSection } from '@/widgets/savings'
 import { WeeklyBudget } from '@/widgets/weekly-budget'
@@ -70,10 +68,5 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetRegistryEntry> = {
     component: CategoriesSection,
     title: 'Категории',
     icon: Tags,
-  },
-  SETTINGS: {
-    component: FinancialSettingsSection,
-    title: 'Настройки',
-    icon: Settings,
   },
 }

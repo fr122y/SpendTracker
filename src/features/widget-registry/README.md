@@ -10,10 +10,10 @@ Central registry for all dashboard widgets. Maps widget IDs to component metadat
 ## State & Data
 
 - **Type:** Static registry (no state management)
-- **Widget IDs:** CALENDAR, EXPENSE_LOG, ANALYSIS, DYNAMICS, WEEKLY_BUDGET, SAVINGS, PROJECTS, CATEGORIES, SETTINGS
+- **Widget IDs:** CALENDAR, EXPENSE_LOG, ANALYSIS, DYNAMICS, WEEKLY_BUDGET, SAVINGS, PROJECTS, CATEGORIES
 
 ## Dependencies
 
-- Uses: `@/widgets/*` (all 9 widgets)
+- Uses: `@/widgets/*` (all 8 widgets)
 - Uses: `@/shared/types` (WidgetId type)
 - Uses: `lucide-react` (icons)

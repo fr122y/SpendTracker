@@ -62,13 +62,6 @@ jest.mock('@/features/widget-registry', () => ({
       title: 'Категории',
       icon: () => <div data-testid="icon-categories">CategoriesIcon</div>,
     },
-    SETTINGS: {
-      component: () => (
-        <div data-testid="settings-content">Settings Widget</div>
-      ),
-      title: 'Настройки',
-      icon: () => <div data-testid="icon-settings">SettingsIcon</div>,
-    },
   },
 }))
 
@@ -140,7 +133,6 @@ describe('MobileWidgetModal', () => {
         'SAVINGS',
         'PROJECTS',
         'CATEGORIES',
-        'SETTINGS',
       ]
 
       widgetIds.forEach((widgetId) => {
@@ -158,7 +150,6 @@ describe('MobileWidgetModal', () => {
           SAVINGS: 'Накопления',
           PROJECTS: 'Проекты',
           CATEGORIES: 'Категории',
-          SETTINGS: 'Настройки',
         }
 
         expect(screen.getByText(widgetTitles[widgetId])).toBeInTheDocument()
@@ -629,13 +620,6 @@ describe('MobileWidgetModal', () => {
 
       expect(screen.getByTestId('analysis-content')).toBeInTheDocument()
       expect(screen.getByText('Analysis Widget')).toBeInTheDocument()
-    })
-
-    it('renders SETTINGS widget content', () => {
-      render(<MobileWidgetModal widgetId="SETTINGS" onClose={mockOnClose} />)
-
-      expect(screen.getByTestId('settings-content')).toBeInTheDocument()
-      expect(screen.getByText('Settings Widget')).toBeInTheDocument()
     })
 
     it('widget content is scrollable', () => {
