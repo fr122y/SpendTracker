@@ -47,3 +47,8 @@ Every FSD slice under `entities`, `features`, `widgets`, and `shared` must inclu
 
 - Use concise, imperative commits, preferably `type: description` (`fix:`, `refactor:`, `test:`, `docs:`).
 - PRs should include scope summary, linked task/issue, UI evidence for visual changes, and confirmation that `npm run validate` passes.
+
+## Preview QA Credentials
+
+- Email: `qa.skeleton.preview.20260324@yandex.ru`
+- Password: `SkelTest#2026`
