@@ -11,9 +11,17 @@ import type { LayoutConfig, WidgetId } from '@/shared/types'
 
 export const DEFAULT_LAYOUT: LayoutConfig = {
   columns: [
-    { id: 'col-1', width: 33, widgets: ['CALENDAR', 'EXPENSE_LOG'] },
-    { id: 'col-2', width: 33, widgets: ['ANALYSIS', 'DYNAMICS'] },
-    { id: 'col-3', width: 34, widgets: ['WEEKLY_BUDGET', 'SAVINGS'] },
+    {
+      id: 'col-1',
+      width: 33,
+      widgets: ['CALENDAR', 'EXPENSE_LOG', 'CATEGORIES'],
+    },
+    { id: 'col-2', width: 33, widgets: ['ANALYSIS', 'DYNAMICS', 'PROJECTS'] },
+    {
+      id: 'col-3',
+      width: 34,
+      widgets: ['WEEKLY_BUDGET', 'SAVINGS', 'SETTINGS'],
+    },
   ],
 }
 

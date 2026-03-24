@@ -145,6 +145,7 @@ describe('useLayoutStore', () => {
       expect(result.current.layoutConfig.columns[0].widgets).toEqual([
         'EXPENSE_LOG',
         'CALENDAR',
+        'CATEGORIES',
       ])
     })
   })
