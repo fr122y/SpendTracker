@@ -17,8 +17,16 @@ const jetbrainsMono = JetBrains_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'SmartSpend Tracker',
-  description: 'Personal Finance SPA - Track your expenses intelligently',
+  title: 'SpendTracker',
+  description:
+    'Track expenses, organize budgets, and monitor spending in one place.',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180' }],
+  },
 }
 
 export default function RootLayout({

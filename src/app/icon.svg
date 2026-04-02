@@ -1,0 +1,41 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="256"
+  height="256"
+  viewBox="0 0 256 256"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">SpendTracker icon</title>
+  <desc id="desc">
+    Minimal wallet and coin mark in emerald on a dark rounded square.
+  </desc>
+  <rect width="256" height="256" rx="56" fill="#09090b" />
+  <rect
+    x="40"
+    y="72"
+    width="176"
+    height="112"
+    rx="30"
+    fill="#10b981"
+  />
+  <path
+    d="M64 96c0-8.837 7.163-16 16-16h88c22.091 0 40 17.909 40 40v4H64V96Z"
+    fill="#34d399"
+  />
+  <rect
+    x="142"
+    y="104"
+    width="74"
+    height="48"
+    rx="20"
+    fill="#064e3b"
+  />
+  <circle cx="188" cy="128" r="10" fill="#d1fae5" />
+  <path
+    d="M78 140h48"
+    stroke="#d1fae5"
+    stroke-width="12"
+    stroke-linecap="round"
+  />
+</svg>
