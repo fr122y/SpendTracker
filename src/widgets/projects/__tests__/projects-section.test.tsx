@@ -146,6 +146,8 @@ jest.mock('@/features/manage-projects', () => ({
 // Mock shared lib
 jest.mock('@/shared/lib', () => ({
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
+  getProjectExpenses: (expenses: Expense[], projectId: string) =>
+    expenses.filter((expense) => expense.projectId === projectId),
 }))
 
 // Mock Button and EmptyState components
@@ -572,7 +574,7 @@ describe('ProjectsSection', () => {
       expect(mockDeleteProject).toHaveBeenCalledWith('project-1')
     })
 
-    it('deletes all project expenses before deleting project', () => {
+    it('does not manually delete project expenses when deleting project', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
@@ -581,13 +583,10 @@ describe('ProjectsSection', () => {
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
 
-      // Should delete both expenses for project-1
-      expect(mockDeleteExpense).toHaveBeenCalledWith('expense-1')
-      expect(mockDeleteExpense).toHaveBeenCalledWith('expense-2')
-      expect(mockDeleteExpense).toHaveBeenCalledTimes(2)
+      expect(mockDeleteExpense).not.toHaveBeenCalled()
     })
 
-    it('deletes project after deleting expenses', () => {
+    it('deletes project with a single store action', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
@@ -596,8 +595,8 @@ describe('ProjectsSection', () => {
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
 
-      // deleteProject should be called after deleteExpense
       expect(mockDeleteProject).toHaveBeenCalledTimes(1)
+      expect(mockDeleteExpense).not.toHaveBeenCalled()
     })
 
     it('collapses expanded view after deleting project', () => {
@@ -879,8 +878,7 @@ describe('ProjectsSection', () => {
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
 
-      // Should delete all 20 expenses
-      expect(mockDeleteExpense).toHaveBeenCalledTimes(20)
+      expect(mockDeleteExpense).not.toHaveBeenCalled()
       expect(mockDeleteProject).toHaveBeenCalledWith('project-1')
     })
   })

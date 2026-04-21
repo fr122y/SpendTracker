@@ -9,7 +9,7 @@ import {
   CreateProjectForm,
   ProjectExpenseForm,
 } from '@/features/manage-projects'
-import { cn } from '@/shared/lib'
+import { cn, getProjectExpenses } from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
 
 import { ProjectsSkeleton } from './projects-skeleton'
@@ -50,21 +50,11 @@ export function ProjectsSection() {
       .reduce((sum, e) => sum + e.amount, 0)
   }
 
-  // Get expenses for a specific project
-  const getProjectExpenses = (projectId: string) => {
-    return expenses.filter((e) => e.projectId === projectId)
-  }
-
   const toggleExpanded = (projectId: string) => {
     setExpandedProjectId((prev) => (prev === projectId ? null : projectId))
   }
 
   const handleDeleteProject = (projectId: string) => {
-    // Delete all expenses associated with this project
-    const projectExpenses = getProjectExpenses(projectId)
-    for (const expense of projectExpenses) {
-      deleteExpense(expense.id)
-    }
     deleteProject(projectId)
     if (expandedProjectId === projectId) {
       setExpandedProjectId(null)
@@ -100,7 +90,7 @@ export function ProjectsSection() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {projects.map((project) => {
             const isExpanded = expandedProjectId === project.id
-            const projectExpenses = getProjectExpenses(project.id)
+            const projectExpenses = getProjectExpenses(expenses, project.id)
 
             return (
               <div

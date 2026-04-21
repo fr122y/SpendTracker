@@ -15,6 +15,23 @@ export interface WeeklyStat {
 }
 
 /**
+ * Returns personal expenses without a linked project
+ */
+export function getPersonalExpenses(expenses: Expense[]): Expense[] {
+  return expenses.filter((expense) => !expense.projectId)
+}
+
+/**
+ * Returns expenses linked to a specific project
+ */
+export function getProjectExpenses(
+  expenses: Expense[],
+  projectId: string
+): Expense[] {
+  return expenses.filter((expense) => expense.projectId === projectId)
+}
+
+/**
  * Returns expenses for the specified month
  */
 export function getMonthlyExpenses(expenses: Expense[], date: Date): Expense[] {
@@ -93,6 +110,30 @@ export function getWeeklyStats(
   const weekExpenses = expenses.filter((expense) => {
     return expense.date >= start && expense.date <= end
   })
+
+  const spent = weekExpenses.reduce((sum, expense) => sum + expense.amount, 0)
+
+  return {
+    spent,
+    limit: weeklyLimit,
+    start,
+    end,
+  }
+}
+
+/**
+ * Returns weekly statistics for personal expenses only
+ */
+export function getWeeklyPersonalStats(
+  expenses: Expense[],
+  date: Date,
+  weeklyLimit: number
+): WeeklyStat {
+  const { start, end } = getWeekBoundaries(date)
+
+  const weekExpenses = getPersonalExpenses(expenses).filter(
+    (expense) => expense.date >= start && expense.date <= end
+  )
 
   const spent = weekExpenses.reduce((sum, expense) => sum + expense.amount, 0)
 

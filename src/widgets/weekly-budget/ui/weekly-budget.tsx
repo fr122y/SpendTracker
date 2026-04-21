@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
-import { getWeeklyStats, cn } from '@/shared/lib'
+import { getWeeklyPersonalStats, cn } from '@/shared/lib'
 import { ProgressBar, MathInput } from '@/shared/ui'
 
 import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
@@ -37,7 +37,7 @@ export function WeeklyBudget() {
     return <WeeklyBudgetSkeleton />
   }
 
-  const stats = getWeeklyStats(expenses, selectedDate, weeklyLimit)
+  const stats = getWeeklyPersonalStats(expenses, selectedDate, weeklyLimit)
   const remaining = weeklyLimit - stats.spent
   const isOverBudget = remaining < 0
 

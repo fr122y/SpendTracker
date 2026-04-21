@@ -2,12 +2,14 @@ import { render, screen, fireEvent } from '@testing-library/react'
 
 import { WeeklyBudget } from '../ui/weekly-budget'
 
+import type { Expense } from '@/shared/types'
+
 // Mock data
 const mockSetWeeklyLimit = jest.fn()
 let mockWeeklyLimit = 10000
 let mockSettingsLoading = false
 let mockExpensesLoading = false
-let mockExpenses = [
+let mockExpenses: Expense[] = [
   {
     id: '1',
     description: 'Groceries',
@@ -77,10 +79,11 @@ jest.mock('@/entities/session', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
-  getWeeklyStats: jest.fn((expenses, date, weeklyLimit) => {
+  getWeeklyPersonalStats: jest.fn((expenses, date, weeklyLimit) => {
     // For Jan 21, 2026 (Tuesday), week is Jan 20 - Jan 26
     const weekExpenses = expenses.filter(
-      (e: { date: string }) => e.date >= '2026-01-20' && e.date <= '2026-01-26'
+      (e: { date: string; projectId?: string }) =>
+        e.date >= '2026-01-20' && e.date <= '2026-01-26' && !e.projectId
     )
     const spent = weekExpenses.reduce(
       (sum: number, e: { amount: number }) => sum + e.amount,
@@ -219,6 +222,26 @@ describe('WeeklyBudget', () => {
       // Remaining: 2000 - 2300 = -300
       const remainingText = screen.getByText(/Осталось:/).parentElement
       expect(remainingText).toHaveTextContent('-300')
+    })
+
+    it('excludes project expenses from weekly spent amount', () => {
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: '4',
+          description: 'Project materials',
+          amount: 5000,
+          date: '2026-01-21',
+          category: 'Проект',
+          emoji: '🔨',
+          projectId: 'project-1',
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
+      expect(screen.getByText(/7\s?700 ₽/)).toBeInTheDocument()
     })
 
     it('applies correct styling when under budget', () => {
@@ -365,7 +388,7 @@ describe('WeeklyBudget', () => {
     it('reads expenses from expense store', () => {
       render(<WeeklyBudget />)
 
-      // Verifies that expenses are being read and calculated
+      // Verifies that personal expenses are being read and calculated
       expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
     })
 
