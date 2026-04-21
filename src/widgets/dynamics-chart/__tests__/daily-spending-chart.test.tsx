@@ -77,7 +77,13 @@ jest.mock('recharts', () => {
       <div
         data-testid={`bar-${dataKey}`}
         onClick={() =>
-          onClick({ day: 15, amount: 5000, date: new Date(2026, 0, 15) })
+          onClick({
+            day: 15,
+            amount: 5000,
+            personalAmount: 3000,
+            projectAmount: 2000,
+            date: new Date(2026, 0, 15),
+          })
         }
       >
         {children}
@@ -157,13 +163,17 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('3 500 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '3 500 ₽'
+      )
     })
 
     it('renders zero total when no expenses', () => {
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('0 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '0 ₽'
+      )
     })
 
     it('renders chart components', () => {
@@ -173,6 +183,8 @@ describe('DailySpendingChart', () => {
       expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
       expect(screen.getByTestId('x-axis')).toBeInTheDocument()
       expect(screen.getByTestId('y-axis')).toBeInTheDocument()
+      expect(screen.getByTestId('bar-personalAmount')).toBeInTheDocument()
+      expect(screen.getByTestId('bar-projectAmount')).toBeInTheDocument()
     })
   })
 
@@ -208,7 +220,9 @@ describe('DailySpendingChart', () => {
       render(<DailySpendingChart />)
 
       // Total should be sum of all expenses
-      expect(screen.getByText('1 500 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '1 500 ₽'
+      )
     })
 
     it('creates data points for all days in month', () => {
@@ -250,7 +264,9 @@ describe('DailySpendingChart', () => {
       render(<DailySpendingChart />)
 
       // Should only show January expense
-      expect(screen.getByText('1 000 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '1 000 ₽'
+      )
     })
 
     it('formats large amounts with thousands separator', () => {
@@ -265,7 +281,43 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('125 000 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '125 000 ₽'
+      )
+    })
+
+    it('renders monthly personal and project breakdown', () => {
+      mockExpenses.push(
+        {
+          id: '1',
+          description: 'Personal expense',
+          amount: 1000,
+          date: '2026-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: '2',
+          description: 'Project expense',
+          amount: 2500,
+          date: '2026-01-20',
+          category: 'Проект',
+          emoji: '💼',
+          projectId: 'project-1',
+        }
+      )
+
+      render(<DailySpendingChart />)
+
+      expect(screen.getByTestId('dynamics-header-personal')).toHaveTextContent(
+        'Личные: 1 000 ₽'
+      )
+      expect(screen.getByTestId('dynamics-header-project')).toHaveTextContent(
+        'Проекты: 2 500 ₽'
+      )
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '3 500 ₽'
+      )
     })
   })
 
@@ -282,7 +334,7 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      const bar = screen.getByTestId('bar-amount')
+      const bar = screen.getByTestId('bar-personalAmount')
       fireEvent.click(bar)
 
       expect(mockSetSelectedDate).toHaveBeenCalled()
@@ -300,7 +352,7 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      const bar = screen.getByTestId('bar-amount')
+      const bar = screen.getByTestId('bar-projectAmount')
       fireEvent.click(bar)
 
       // Check that setSelectedDate was called with a Date object
@@ -332,7 +384,9 @@ describe('DailySpendingChart', () => {
     it('handles empty expenses array', () => {
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('0 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '0 ₽'
+      )
       expect(screen.getByTestId('bar-chart')).toBeInTheDocument()
     })
 
@@ -381,7 +435,9 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('99,99 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '99,99 ₽'
+      )
     })
 
     it('handles zero amount expenses', () => {
@@ -396,7 +452,9 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('0 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '0 ₽'
+      )
     })
 
     it('handles multiple expenses on the last day of month', () => {
@@ -421,7 +479,9 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('2 000 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '2 000 ₽'
+      )
     })
 
     it('handles expenses with projectId', () => {
@@ -437,7 +497,12 @@ describe('DailySpendingChart', () => {
 
       render(<DailySpendingChart />)
 
-      expect(screen.getByText('5 000 ₽')).toBeInTheDocument()
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '5 000 ₽'
+      )
+      expect(screen.getByTestId('dynamics-header-project')).toHaveTextContent(
+        'Проекты: 5 000 ₽'
+      )
     })
   })
 

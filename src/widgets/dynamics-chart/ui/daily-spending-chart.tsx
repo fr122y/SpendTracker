@@ -36,6 +36,8 @@ const MONTH_NAMES = [
 interface DailyData {
   day: number
   amount: number
+  personalAmount: number
+  projectAmount: number
   date: Date
 }
 
@@ -50,11 +52,27 @@ function getDailySpendingData(
   const monthlyExpenses = getMonthlyExpenses(expenses, viewDate)
 
   // Group expenses by day
-  const dailyMap = new Map<number, number>()
+  const dailyMap = new Map<
+    number,
+    { amount: number; personalAmount: number; projectAmount: number }
+  >()
   for (const expense of monthlyExpenses) {
     const expenseDate = new Date(expense.date)
     const day = expenseDate.getDate()
-    dailyMap.set(day, (dailyMap.get(day) || 0) + expense.amount)
+    const current = dailyMap.get(day) ?? {
+      amount: 0,
+      personalAmount: 0,
+      projectAmount: 0,
+    }
+
+    current.amount += expense.amount
+    if (expense.projectId) {
+      current.projectAmount += expense.amount
+    } else {
+      current.personalAmount += expense.amount
+    }
+
+    dailyMap.set(day, current)
   }
 
   // Create array for all days in month
@@ -62,7 +80,9 @@ function getDailySpendingData(
   for (let day = 1; day <= daysInMonth; day++) {
     data.push({
       day,
-      amount: dailyMap.get(day) || 0,
+      amount: dailyMap.get(day)?.amount || 0,
+      personalAmount: dailyMap.get(day)?.personalAmount || 0,
+      projectAmount: dailyMap.get(day)?.projectAmount || 0,
       date: new Date(year, month, day),
     })
   }
@@ -72,17 +92,23 @@ function getDailySpendingData(
 
 interface CustomTooltipProps {
   active?: boolean
-  payload?: Array<{ value: number; payload: DailyData }>
+  payload?: Array<{ value: number; dataKey: string; payload: DailyData }>
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (active && payload && payload.length) {
-    const data = payload[0]
+    const data = payload[0].payload
     return (
       <div className="rounded bg-zinc-800 px-3 py-2 text-sm shadow-lg">
-        <p className="text-zinc-400">День {data.payload.day}</p>
-        <p className="font-semibold text-emerald-400">
-          {data.value.toLocaleString('ru-RU')} ₽
+        <p className="text-zinc-400">День {data.day}</p>
+        <p className="font-semibold text-zinc-100">
+          Всего: {data.amount.toLocaleString('ru-RU')} ₽
+        </p>
+        <p className="text-emerald-400">
+          Личные: {data.personalAmount.toLocaleString('ru-RU')} ₽
+        </p>
+        <p className="text-sky-400">
+          Проекты: {data.projectAmount.toLocaleString('ru-RU')} ₽
         </p>
       </div>
     )
@@ -110,6 +136,8 @@ export function DailySpendingChart() {
   const year = viewDate.getFullYear()
 
   const totalMonthly = data.reduce((sum, d) => sum + d.amount, 0)
+  const personalTotal = data.reduce((sum, d) => sum + d.personalAmount, 0)
+  const projectTotal = data.reduce((sum, d) => sum + d.projectAmount, 0)
 
   const handleBarClick = (data: DailyData) => {
     setSelectedDate(data.date)
@@ -119,10 +147,29 @@ export function DailySpendingChart() {
     <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
-          Динамика за {monthName} {year}
-        </h2>
-        <span className="text-base font-semibold text-emerald-400 sm:text-lg">
+        <div>
+          <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
+            Динамика за {monthName} {year}
+          </h2>
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm">
+            <span
+              className="text-emerald-400"
+              data-testid="dynamics-header-personal"
+            >
+              Личные: {personalTotal.toLocaleString('ru-RU')} ₽
+            </span>
+            <span
+              className="text-sky-400"
+              data-testid="dynamics-header-project"
+            >
+              Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
+            </span>
+          </div>
+        </div>
+        <span
+          className="text-base font-semibold text-emerald-400 sm:text-lg"
+          data-testid="dynamics-header-total"
+        >
           {totalMonthly.toLocaleString('ru-RU')} ₽
         </span>
       </div>
@@ -150,7 +197,8 @@ export function DailySpendingChart() {
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: '#27272a' }} />
             <Bar
-              dataKey="amount"
+              dataKey="personalAmount"
+              stackId="daily-total"
               radius={[4, 4, 0, 0]}
               onClick={(data) => handleBarClick(data)}
               style={{ cursor: 'pointer' }}
@@ -160,9 +208,28 @@ export function DailySpendingChart() {
                   entry.day === selectedDay && selectedMonth === viewMonth
                 return (
                   <Cell
-                    key={`cell-${index}`}
-                    fill={isSelected ? '#3b82f6' : '#10b981'}
-                    opacity={entry.amount > 0 ? 1 : 0.3}
+                    key={`personal-cell-${index}`}
+                    fill={isSelected ? '#34d399' : '#10b981'}
+                    opacity={entry.personalAmount > 0 ? 1 : 0.2}
+                  />
+                )
+              })}
+            </Bar>
+            <Bar
+              dataKey="projectAmount"
+              stackId="daily-total"
+              radius={[4, 4, 0, 0]}
+              onClick={(data) => handleBarClick(data)}
+              style={{ cursor: 'pointer' }}
+            >
+              {data.map((entry, index) => {
+                const isSelected =
+                  entry.day === selectedDay && selectedMonth === viewMonth
+                return (
+                  <Cell
+                    key={`project-cell-${index}`}
+                    fill={isSelected ? '#38bdf8' : '#0ea5e9'}
+                    opacity={entry.projectAmount > 0 ? 1 : 0.2}
                   />
                 )
               })}
