@@ -8,9 +8,15 @@ interface ExpenseListProps {
   expenses: Expense[]
   onDelete: (id: string) => void
   onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
+  showDate?: boolean
 }
 
-export function ExpenseList({ expenses, onDelete, onEdit }: ExpenseListProps) {
+export function ExpenseList({
+  expenses,
+  onDelete,
+  onEdit,
+  showDate = false,
+}: ExpenseListProps) {
   if (expenses.length === 0) {
     return <div className="py-8 text-center text-zinc-500">Нет расходов</div>
   }
@@ -27,6 +33,7 @@ export function ExpenseList({ expenses, onDelete, onEdit }: ExpenseListProps) {
           expense={expense}
           onDelete={onDelete}
           onEdit={onEdit}
+          showDate={showDate}
         />
       ))}
     </div>

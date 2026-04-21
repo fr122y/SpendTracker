@@ -147,6 +147,7 @@ export function ProjectsSection() {
                         <ExpenseList
                           expenses={projectExpenses}
                           onDelete={deleteExpense}
+                          showDate
                         />
                       </div>
                     </div>

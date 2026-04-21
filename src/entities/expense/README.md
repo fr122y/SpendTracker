@@ -9,8 +9,8 @@ actions.
 - `useAddExpense`: Mutation hook for creating a new expense
 - `useDeleteExpense`: Mutation hook for deleting an expense by ID
 - `useUpdateExpense`: Mutation hook for partial expense updates
-- `ExpenseCard`: Presentational component displaying a single expense with inline amount editing
-- `ExpenseList`: Component rendering a sorted list of expenses
+- `ExpenseCard`: Presentational component displaying a single expense with optional date and inline amount editing
+- `ExpenseList`: Component rendering a sorted list of expenses with optional date display
 
 ## State & Data
 

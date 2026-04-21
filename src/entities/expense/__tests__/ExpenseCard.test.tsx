@@ -35,6 +35,17 @@ describe('ExpenseCard', () => {
     expect(screen.getByText('Food')).toBeInTheDocument()
   })
 
+  it('does not render date by default', () => {
+    render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
+    expect(screen.queryByText('15.01.2024')).not.toBeInTheDocument()
+  })
+
+  it('renders formatted date when showDate is enabled', () => {
+    render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} showDate />)
+
+    expect(screen.getByText('15.01.2024')).toBeInTheDocument()
+  })
+
   it('calls onDelete with correct id when delete button is clicked', () => {
     const onDelete = jest.fn()
     render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)

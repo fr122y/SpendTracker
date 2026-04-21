@@ -11,9 +11,24 @@ interface ExpenseCardProps {
   expense: Expense
   onDelete: (id: string) => void
   onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
+  showDate?: boolean
 }
 
-export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
+function formatExpenseDate(date: string) {
+  const [year, month, day] = date.split('-')
+  if (!year || !month || !day) {
+    return date
+  }
+
+  return `${day}.${month}.${year}`
+}
+
+export function ExpenseCard({
+  expense,
+  onDelete,
+  onEdit,
+  showDate = false,
+}: ExpenseCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(String(expense.amount))
   const inputRef = useRef<HTMLInputElement>(null)
@@ -60,7 +75,14 @@ export function ExpenseCard({ expense, onDelete, onEdit }: ExpenseCardProps) {
           <span className="text-sm font-medium text-zinc-100">
             {expense.description}
           </span>
-          <span className="text-xs text-zinc-500">{expense.category}</span>
+          <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-zinc-500">
+            <span>{expense.category}</span>
+            {showDate && (
+              <span data-testid={`expense-date-${expense.id}`}>
+                {formatExpenseDate(expense.date)}
+              </span>
+            )}
+          </div>
         </div>
       </div>
       <div className="flex items-center gap-3">

@@ -112,15 +112,18 @@ jest.mock('@/entities/expense', () => ({
     ({
       expenses,
       onDelete,
+      showDate,
     }: {
       expenses: Expense[]
       onDelete: (id: string) => void
+      showDate?: boolean
     }) => (
       <div data-testid="expense-list">
         <div data-testid="expense-count">{expenses.length}</div>
         {expenses.map((expense) => (
           <div key={expense.id} data-testid={`expense-${expense.id}`}>
             <span>{expense.description}</span>
+            {showDate && <span>{expense.date}</span>}
             <button onClick={() => onDelete(expense.id)}>
               Delete {expense.id}
             </button>
@@ -548,6 +551,15 @@ describe('ProjectsSection', () => {
       // Expand project-2
       fireEvent.click(screen.getByTestId('project-card-project-2'))
       expect(screen.getByTestId('expense-count')).toHaveTextContent('1')
+    })
+
+    it('passes showDate to project expense list', () => {
+      render(<ProjectsSection />)
+
+      fireEvent.click(screen.getByTestId('project-card-project-1'))
+
+      expect(screen.getByText('2026-01-10')).toBeInTheDocument()
+      expect(screen.getByText('2026-01-12')).toBeInTheDocument()
     })
   })
 
