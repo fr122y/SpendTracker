@@ -20,9 +20,9 @@ export function ProjectCard({ project, spent }: ProjectCardProps) {
         />
         <span className="font-medium text-zinc-100">{project.name}</span>
       </div>
-      <div className="mb-2 flex justify-between text-sm">
+      <div className="mb-2 flex flex-col gap-1 text-sm">
         <span className="text-zinc-400">Потрачено</span>
-        <span className="text-zinc-200">
+        <span className="break-words font-semibold text-zinc-200">
           {spent} / {project.budget} ₽
         </span>
       </div>
