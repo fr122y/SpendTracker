@@ -3,6 +3,8 @@ import type { Expense } from '@/shared/types'
 export interface CategoryStat {
   name: string
   value: number
+  personalValue: number
+  projectValue: number
   emoji: string
   percent: number
 }
@@ -64,15 +66,30 @@ export function getCategoryStats(
   const monthlyExpenses = getMonthlyExpenses(expenses, date)
 
   // Group by category
-  const categoryMap = new Map<string, { value: number; emoji: string }>()
+  const categoryMap = new Map<
+    string,
+    {
+      value: number
+      personalValue: number
+      projectValue: number
+      emoji: string
+    }
+  >()
 
   for (const expense of monthlyExpenses) {
     const existing = categoryMap.get(expense.category)
+    const personalValue = expense.projectId ? 0 : expense.amount
+    const projectValue = expense.projectId ? expense.amount : 0
+
     if (existing) {
       existing.value += expense.amount
+      existing.personalValue += personalValue
+      existing.projectValue += projectValue
     } else {
       categoryMap.set(expense.category, {
         value: expense.amount,
+        personalValue,
+        projectValue,
         emoji: expense.emoji,
       })
     }
@@ -89,6 +106,8 @@ export function getCategoryStats(
     ([name, data]) => ({
       name,
       value: data.value,
+      personalValue: data.personalValue,
+      projectValue: data.projectValue,
       emoji: data.emoji,
       percent: total > 0 ? (data.value / total) * 100 : 0,
     })

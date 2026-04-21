@@ -113,6 +113,18 @@ describe('getCategoryStats', () => {
     expect(result[3].value).toBe(150)
   })
 
+  it('should split personal and project values inside category stats', () => {
+    const date = new Date('2024-01-15')
+    const result = getCategoryStats(mockExpenses, date)
+    const projectCategory = result.find((item) => item.name === 'Ремонт')
+
+    expect(projectCategory).toMatchObject({
+      value: 700,
+      personalValue: 0,
+      projectValue: 700,
+    })
+  })
+
   it('should calculate correct percentages', () => {
     const date = new Date('2024-01-15')
     const result = getCategoryStats(mockExpenses, date)

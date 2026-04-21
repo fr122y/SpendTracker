@@ -83,14 +83,29 @@ jest.mock('@/shared/lib', () => ({
       const total = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0)
 
       // Group by category and calculate percentages
-      const categoryMap = new Map<string, { value: number; emoji: string }>()
+      const categoryMap = new Map<
+        string,
+        {
+          value: number
+          personalValue: number
+          projectValue: number
+          emoji: string
+        }
+      >()
       for (const expense of monthlyExpenses) {
         const existing = categoryMap.get(expense.category)
+        const personalValue = expense.projectId ? 0 : expense.amount
+        const projectValue = expense.projectId ? expense.amount : 0
+
         if (existing) {
           existing.value += expense.amount
+          existing.personalValue += personalValue
+          existing.projectValue += projectValue
         } else {
           categoryMap.set(expense.category, {
             value: expense.amount,
+            personalValue,
+            projectValue,
             emoji: expense.emoji,
           })
         }
@@ -101,6 +116,8 @@ jest.mock('@/shared/lib', () => ({
         ([name, data]) => ({
           name,
           value: data.value,
+          personalValue: data.personalValue,
+          projectValue: data.projectValue,
           emoji: data.emoji,
           percent: total > 0 ? (data.value / total) * 100 : 0,
         })
@@ -193,7 +210,36 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       // Total: 5000 + 3000 + 2000 + 1000 = 11000
-      expect(screen.getByText(/11 000 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /11 000 ₽/
+      )
+    })
+
+    it('renders personal and project breakdown in header', () => {
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: '5',
+          description: 'Project groceries',
+          amount: 2500,
+          date: '2026-01-19',
+          category: 'Продукты',
+          emoji: '🛒',
+          projectId: 'project-1',
+        },
+      ]
+
+      render(<AnalysisDashboard />)
+
+      expect(screen.getByTestId('analysis-header-personal')).toHaveTextContent(
+        /Личные: 11 000 ₽/
+      )
+      expect(screen.getByTestId('analysis-header-project')).toHaveTextContent(
+        /Проекты: 2 500 ₽/
+      )
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /13 500 ₽/
+      )
     })
 
     it('applies correct container styling', () => {
@@ -315,8 +361,7 @@ describe('AnalysisDashboard', () => {
     it('does not show tooltip by default', () => {
       render(<AnalysisDashboard />)
 
-      // Look for tooltip with amount
-      expect(screen.queryByText(/5 000 ₽/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/Всего:/)).not.toBeInTheDocument()
     })
 
     it('shows tooltip on mouse enter', () => {
@@ -326,7 +371,15 @@ describe('AnalysisDashboard', () => {
       if (categoryBox?.parentElement) {
         fireEvent.mouseEnter(categoryBox.parentElement)
 
-        expect(screen.getByText(/5 000 ₽/)).toBeInTheDocument()
+        expect(
+          screen.getByTestId('analysis-tooltip-total-Продукты')
+        ).toHaveTextContent(/Всего: 5 000 ₽/)
+        expect(
+          screen.getByTestId('analysis-tooltip-personal-Продукты')
+        ).toHaveTextContent(/Личные: 5 000 ₽/)
+        expect(
+          screen.getByTestId('analysis-tooltip-project-Продукты')
+        ).toHaveTextContent(/Проекты: 0 ₽/)
       }
     })
 
@@ -336,10 +389,14 @@ describe('AnalysisDashboard', () => {
       const categoryBox = screen.getByText('Продукты').parentElement
       if (categoryBox?.parentElement) {
         fireEvent.mouseEnter(categoryBox.parentElement)
-        expect(screen.getByText(/5 000 ₽/)).toBeInTheDocument()
+        expect(
+          screen.getByTestId('analysis-tooltip-total-Продукты')
+        ).toBeInTheDocument()
 
         fireEvent.mouseLeave(categoryBox.parentElement)
-        expect(screen.queryByText(/5 000 ₽/)).not.toBeInTheDocument()
+        expect(
+          screen.queryByTestId('analysis-tooltip-total-Продукты')
+        ).not.toBeInTheDocument()
       }
     })
 
@@ -350,7 +407,9 @@ describe('AnalysisDashboard', () => {
       if (cafeBox?.parentElement) {
         fireEvent.mouseEnter(cafeBox.parentElement)
 
-        expect(screen.getByText(/3 000 ₽/)).toBeInTheDocument()
+        expect(
+          screen.getByTestId('analysis-tooltip-total-Кафе')
+        ).toHaveTextContent(/Всего: 3 000 ₽/)
       }
     })
 
@@ -372,9 +431,51 @@ describe('AnalysisDashboard', () => {
       if (categoryBox?.parentElement) {
         fireEvent.mouseEnter(categoryBox.parentElement)
 
-        // Use getAllByText since amount appears in both header and tooltip
-        const amounts = screen.getAllByText(/125 500/)
-        expect(amounts.length).toBeGreaterThanOrEqual(1)
+        expect(
+          screen.getByTestId('analysis-tooltip-total-Большая покупка')
+        ).toHaveTextContent(/Всего: 125 500 ₽/)
+        expect(
+          screen.getByTestId('analysis-tooltip-personal-Большая покупка')
+        ).toHaveTextContent(/Личные: 125 500 ₽/)
+      }
+    })
+
+    it('shows mixed personal and project breakdown in tooltip', () => {
+      mockExpenses = [
+        {
+          id: '1',
+          description: 'Personal transport',
+          amount: 1000,
+          date: '2026-01-15',
+          category: 'Транспорт',
+          emoji: '🚌',
+        },
+        {
+          id: '2',
+          description: 'Project transport',
+          amount: 4000,
+          date: '2026-01-16',
+          category: 'Транспорт',
+          emoji: '🚌',
+          projectId: 'project-1',
+        },
+      ]
+
+      render(<AnalysisDashboard />)
+
+      const categoryBox = screen.getByText('Транспорт').parentElement
+      if (categoryBox?.parentElement) {
+        fireEvent.mouseEnter(categoryBox.parentElement)
+
+        expect(
+          screen.getByTestId('analysis-tooltip-total-Транспорт')
+        ).toHaveTextContent(/Всего: 5 000 ₽/)
+        expect(
+          screen.getByTestId('analysis-tooltip-personal-Транспорт')
+        ).toHaveTextContent(/Личные: 1 000 ₽/)
+        expect(
+          screen.getByTestId('analysis-tooltip-project-Транспорт')
+        ).toHaveTextContent(/Проекты: 4 000 ₽/)
       }
     })
   })
@@ -442,7 +543,9 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       // 5000 + 3000 + 2000 + 1000 = 11000
-      expect(screen.getByText(/11 000 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /11 000 ₽/
+      )
     })
 
     it('calculates total correctly for single expense', () => {
@@ -459,7 +562,9 @@ describe('AnalysisDashboard', () => {
 
       render(<AnalysisDashboard />)
 
-      expect(screen.getByText(/500 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /500 ₽/
+      )
     })
 
     it('formats large amounts with locale formatting', () => {
@@ -476,7 +581,9 @@ describe('AnalysisDashboard', () => {
 
       render(<AnalysisDashboard />)
 
-      expect(screen.getByText(/999 999 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /999 999 ₽/
+      )
     })
 
     it('handles decimal amounts correctly', () => {
@@ -494,7 +601,9 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       // Russian locale may use comma or period for decimals
-      expect(screen.getByText(/123\.45 ₽|123,45 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /123\.45 ₽|123,45 ₽/
+      )
     })
   })
 
@@ -510,10 +619,45 @@ describe('AnalysisDashboard', () => {
         'items-center',
         'justify-center',
         'rounded-lg',
-        'bg-emerald-600',
         'transition-transform',
         'hover:scale-105'
       )
+    })
+
+    it('uses emerald fill for personal-only categories', () => {
+      render(<AnalysisDashboard />)
+
+      const categoryBox = screen.getByTestId('analysis-category-fill-Продукты')
+
+      expect(categoryBox).toHaveStyle({ backgroundColor: '#10b981' })
+    })
+
+    it('uses split fill for mixed categories', () => {
+      mockExpenses = [
+        {
+          id: '1',
+          description: 'Personal groceries',
+          amount: 3000,
+          date: '2026-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: '2',
+          description: 'Project groceries',
+          amount: 2000,
+          date: '2026-01-16',
+          category: 'Продукты',
+          emoji: '🛒',
+          projectId: 'project-1',
+        },
+      ]
+
+      render(<AnalysisDashboard />)
+
+      const categoryBox = screen.getByTestId('analysis-category-fill-Продукты')
+
+      expect(categoryBox).toHaveAttribute('data-fill-mode', 'mixed')
     })
 
     it('renders category names with correct styling', () => {
@@ -545,9 +689,9 @@ describe('AnalysisDashboard', () => {
 
   describe('category grid layout', () => {
     it('applies flex-wrap layout for category grid', () => {
-      const { container } = render(<AnalysisDashboard />)
+      render(<AnalysisDashboard />)
 
-      const grid = container.querySelector('.flex-wrap')
+      const grid = screen.getByTestId('analysis-category-grid')
       expect(grid).toBeInTheDocument()
       expect(grid).toHaveClass(
         'flex',
@@ -577,7 +721,7 @@ describe('AnalysisDashboard', () => {
     it('applies correct styling to total amount', () => {
       render(<AnalysisDashboard />)
 
-      const total = screen.getByText(/11 000 ₽/)
+      const total = screen.getByTestId('analysis-header-total')
       expect(total).toHaveClass(
         'text-base',
         'font-semibold',
@@ -589,7 +733,7 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       const header = screen.getByText(/Анализ за/).parentElement
-      expect(header).toHaveClass('flex', 'flex-col')
+      expect(header?.parentElement).toHaveClass('flex', 'flex-col')
     })
   })
 
@@ -706,7 +850,9 @@ describe('AnalysisDashboard', () => {
 
       render(<AnalysisDashboard />)
 
-      expect(screen.getByText(/9 999 999 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /9 999 999 ₽/
+      )
     })
 
     it('handles zero amount expense', () => {
@@ -763,9 +909,9 @@ describe('AnalysisDashboard', () => {
       const cafeBox = screen.getByText('Кафе').parentElement
       if (cafeBox?.parentElement) {
         fireEvent.mouseEnter(cafeBox.parentElement)
-        // Use getAllByText since amount appears in both header and tooltip
-        const amounts = screen.getAllByText(/1 000/)
-        expect(amounts.length).toBeGreaterThanOrEqual(1)
+        expect(
+          screen.getByTestId('analysis-tooltip-total-Кафе')
+        ).toHaveTextContent(/Всего: 1 000 ₽/)
       }
     })
   })
@@ -775,7 +921,9 @@ describe('AnalysisDashboard', () => {
       render(<AnalysisDashboard />)
 
       // Russian locale uses space as thousands separator
-      expect(screen.getByText(/11 000 ₽/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /11 000 ₽/
+      )
     })
 
     it('uses Russian month names', () => {
