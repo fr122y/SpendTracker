@@ -12,10 +12,11 @@ const mockSetSalary = jest.fn()
 let mockSalary = 0
 let mockBucketsLoading = false
 let mockSettingsLoading = false
+let mockUseUnstableBucketRefs = false
 
 jest.mock('@/entities/bucket', () => ({
   useBuckets: () => ({
-    data: mockBuckets,
+    data: mockUseUnstableBucketRefs ? [...mockBuckets] : mockBuckets,
     isLoading: false,
   }),
   useUpdateBuckets: () => ({ mutate: mockUpdateBuckets, isPending: false }),
@@ -27,7 +28,7 @@ jest.mock('@/entities/bucket', () => ({
     }) => unknown
   ) =>
     selector({
-      buckets: mockBuckets,
+      buckets: mockUseUnstableBucketRefs ? [...mockBuckets] : mockBuckets,
       isLoading: mockBucketsLoading,
       updateBuckets: mockUpdateBuckets,
     }),
@@ -64,6 +65,13 @@ describe('BucketEditor', () => {
     mockSalary = 0
     mockBucketsLoading = false
     mockSettingsLoading = false
+    mockUseUnstableBucketRefs = false
+  })
+
+  it('does not loop when store returns a new buckets array reference', () => {
+    mockUseUnstableBucketRefs = true
+
+    expect(() => render(<BucketEditor />)).not.toThrow()
   })
 
   it('renders skeleton while data is loading', () => {

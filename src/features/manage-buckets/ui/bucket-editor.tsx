@@ -12,6 +12,29 @@ import { BucketEditorSkeleton } from './bucket-editor-skeleton'
 
 import type { AllocationBucket } from '@/shared/types'
 
+function areBucketsEqual(
+  left: AllocationBucket[],
+  right: AllocationBucket[]
+): boolean {
+  if (left === right) {
+    return true
+  }
+
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((bucket, index) => {
+    const other = right[index]
+
+    return (
+      bucket.id === other.id &&
+      bucket.label === other.label &&
+      bucket.percentage === other.percentage
+    )
+  })
+}
+
 function formatAmount(amount: number): string {
   return new Intl.NumberFormat('ru-RU').format(Math.round(amount))
 }
@@ -46,9 +69,23 @@ export function BucketEditor() {
   )
 
   useEffect(() => {
-    setLocalBuckets(buckets)
+    let didBucketsChange = false
+
+    setLocalBuckets((currentBuckets) => {
+      if (areBucketsEqual(currentBuckets, buckets)) {
+        return currentBuckets
+      }
+
+      didBucketsChange = true
+      return buckets
+    })
+
     // Reset input values when buckets change externally
-    setInputValues({})
+    setInputValues((currentValues) =>
+      didBucketsChange && Object.keys(currentValues).length > 0
+        ? {}
+        : currentValues
+    )
   }, [buckets])
 
   useEffect(() => {
