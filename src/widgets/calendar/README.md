@@ -9,14 +9,14 @@ expenses, salary, and advance days.
 
 ## State & Data
 
-- `useSessionStore`: viewDate, selectedDate, navigation actions
+- `useSessionStore`: selectedDate and navigation actions
 - `useExpenses`: expenses for day markers
 - `useSettings`: salaryDay, advanceDay for special day markers
 
 ## Features
 
 - 7-column grid with Russian weekday headers (Пн-Вс)
-- Month navigation (prev/next)
+- Month navigation derived from `selectedDate` (prev/next month)
 - Selected date highlight (blue)
 - Today highlight (dark grey)
 - Visual indicators for expense/salary/advance days

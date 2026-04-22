@@ -1,38 +1,46 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 
 import { DashboardHeader } from '../ui/dashboard-header'
 
-// Mock query hooks with legacy aliases for the current component implementation
-const mockNextMonth = jest.fn()
-const mockPrevMonth = jest.fn()
+const mockNextDay = jest.fn()
+const mockPrevDay = jest.fn()
+const mockSetToday = jest.fn()
+const mockSetSelectedDate = jest.fn()
 const mockToggleEditMode = jest.fn()
 
-const mockViewDate = new Date(2026, 0, 15) // January 2026
-
+let mockSelectedDate = new Date(2026, 0, 15)
 let mockIsEditMode = false
+let mockViewport = 'desktop'
+let mockIsMobile = false
 
 jest.mock('@/entities/session', () => ({
   useSessionStore: () => ({
-    viewDate: mockViewDate,
-    nextMonth: mockNextMonth,
-    prevMonth: mockPrevMonth,
+    selectedDate: mockSelectedDate,
+    nextDay: mockNextDay,
+    prevDay: mockPrevDay,
+    setToday: mockSetToday,
+    setSelectedDate: mockSetSelectedDate,
   }),
 }))
 
 jest.mock('@/features/layout-editor', () => ({
-  useEditMode: () => ({
-    isEditMode: mockIsEditMode,
-    toggleEditMode: mockToggleEditMode,
-  }),
   useLayoutStore: () => ({
     isEditMode: mockIsEditMode,
     toggleEditMode: mockToggleEditMode,
   }),
 }))
 
-// Mock viewport hook
-let mockViewport = 'desktop'
-let mockIsMobile = false
+jest.mock('@/features/month-picker', () => ({
+  MonthPickerModal: ({
+    isOpen,
+  }: {
+    isOpen: boolean
+    currentDate: Date
+    onSelectMonth: (date: Date) => void
+    onClose: () => void
+  }) =>
+    isOpen ? <div data-testid="month-picker-modal">month picker</div> : null,
+}))
 
 jest.mock('@/shared/lib', () => ({
   ...jest.requireActual('@/shared/lib'),
@@ -43,156 +51,101 @@ jest.mock('@/shared/lib', () => ({
 describe('DashboardHeader', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    jest.useFakeTimers().setSystemTime(new Date(2026, 0, 15))
+    mockSelectedDate = new Date(2026, 0, 15)
+    mockIsEditMode = false
     mockViewport = 'desktop'
     mockIsMobile = false
-    mockIsEditMode = false
   })
 
-  describe('rendering', () => {
-    it('renders the application title', () => {
-      render(<DashboardHeader />)
-
-      expect(screen.getByText('SmartSpend Terminal')).toBeInTheDocument()
-    })
-
-    it('renders month and year in Russian format', () => {
-      render(<DashboardHeader />)
-
-      expect(screen.getByText(/январь 2026/i)).toBeInTheDocument()
-    })
-
-    it('renders navigation buttons', () => {
-      render(<DashboardHeader />)
-
-      expect(screen.getByLabelText('Предыдущий месяц')).toBeInTheDocument()
-      expect(screen.getByLabelText('Следующий месяц')).toBeInTheDocument()
-    })
-
-    it('renders edit mode button on desktop', () => {
-      render(<DashboardHeader />)
-
-      const editButtons = screen.getAllByLabelText(/Редактировать|Готово/)
-      // Should have 2 buttons (mobile and desktop versions)
-      expect(editButtons.length).toBeGreaterThanOrEqual(1)
-    })
+  afterEach(() => {
+    jest.useRealTimers()
   })
 
-  describe('navigation', () => {
-    it('calls prevMonth when clicking previous button', () => {
-      render(<DashboardHeader />)
+  it('renders the application title', () => {
+    render(<DashboardHeader />)
 
-      const prevButton = screen.getByLabelText('Предыдущий месяц')
-      fireEvent.click(prevButton)
-
-      expect(mockPrevMonth).toHaveBeenCalledTimes(1)
-    })
-
-    it('calls nextMonth when clicking next button', () => {
-      render(<DashboardHeader />)
-
-      const nextButton = screen.getByLabelText('Следующий месяц')
-      fireEvent.click(nextButton)
-
-      expect(mockNextMonth).toHaveBeenCalledTimes(1)
-    })
+    expect(screen.getByText('SmartSpend Terminal')).toBeInTheDocument()
   })
 
-  describe('edit mode toggle', () => {
-    it('calls toggleEditMode when clicking edit button', () => {
-      render(<DashboardHeader />)
+  it('renders the full selected date in Russian format', () => {
+    render(<DashboardHeader />)
 
-      const editButton = screen.getAllByLabelText('Редактировать')[0]
-      fireEvent.click(editButton)
-
-      expect(mockToggleEditMode).toHaveBeenCalledTimes(1)
-    })
-
-    it('shows "Готово" text when in edit mode', () => {
-      mockIsEditMode = true
-
-      render(<DashboardHeader />)
-
-      expect(screen.getAllByText('Готово').length).toBeGreaterThanOrEqual(1)
-    })
-
-    it('shows "Редактировать" text when not in edit mode', () => {
-      mockIsEditMode = false
-
-      render(<DashboardHeader />)
-
-      expect(
-        screen.getAllByText('Редактировать').length
-      ).toBeGreaterThanOrEqual(1)
-    })
-
-    it('applies primary variant when in edit mode', () => {
-      mockIsEditMode = true
-
-      render(<DashboardHeader />)
-
-      const editButtons = screen.getAllByLabelText('Готово')
-      // Primary variant is applied via Button component
-      expect(editButtons[0]).toBeInTheDocument()
-    })
+    expect(screen.getByText('15 января 2026 г.')).toBeInTheDocument()
   })
 
-  describe('responsive behavior', () => {
-    it('shows mobile layout on small screens', () => {
-      mockViewport = 'mobile'
-      mockIsMobile = true
+  it('renders day navigation buttons', () => {
+    render(<DashboardHeader />)
 
-      render(<DashboardHeader />)
-
-      // Both mobile and desktop buttons exist but are hidden via CSS
-      const editButtons = screen.getAllByLabelText(/Редактировать|Готово/)
-      expect(editButtons.length).toBeGreaterThanOrEqual(1)
-    })
-
-    it('applies touch-friendly button sizes on mobile', () => {
-      mockViewport = 'mobile'
-      mockIsMobile = true
-
-      render(<DashboardHeader />)
-
-      const prevButton = screen.getByLabelText('Предыдущий месяц')
-      expect(prevButton).toHaveClass('min-h-[44px]', 'min-w-[44px]')
-    })
-
-    it('applies standard button sizes on desktop', () => {
-      mockViewport = 'desktop'
-      mockIsMobile = false
-
-      render(<DashboardHeader />)
-
-      const prevButton = screen.getByLabelText('Предыдущий месяц')
-      expect(prevButton).toHaveClass('sm:min-h-0', 'sm:min-w-0')
-    })
+    expect(screen.getByLabelText('Предыдущий день')).toBeInTheDocument()
+    expect(screen.getByLabelText('Следующий день')).toBeInTheDocument()
   })
 
-  describe('accessibility', () => {
-    it('has proper aria-labels for navigation buttons', () => {
-      render(<DashboardHeader />)
+  it('calls prevDay when clicking previous button', () => {
+    render(<DashboardHeader />)
 
-      expect(screen.getByLabelText('Предыдущий месяц')).toBeInTheDocument()
-      expect(screen.getByLabelText('Следующий месяц')).toBeInTheDocument()
-    })
+    fireEvent.click(screen.getByLabelText('Предыдущий день'))
 
-    it('has proper aria-labels for edit mode toggle', () => {
-      render(<DashboardHeader />)
+    expect(mockPrevDay).toHaveBeenCalledTimes(1)
+  })
 
-      expect(
-        screen.getAllByLabelText('Редактировать').length
-      ).toBeGreaterThanOrEqual(1)
-    })
+  it('calls nextDay when clicking next button', () => {
+    render(<DashboardHeader />)
 
-    it('updates aria-label when switching to edit mode', () => {
-      mockIsEditMode = true
+    fireEvent.click(screen.getByLabelText('Следующий день'))
 
-      render(<DashboardHeader />)
+    expect(mockNextDay).toHaveBeenCalledTimes(1)
+  })
 
-      expect(screen.getAllByLabelText('Готово').length).toBeGreaterThanOrEqual(
-        1
-      )
-    })
+  it('opens month picker when clicking the selected date', () => {
+    render(<DashboardHeader />)
+
+    fireEvent.click(screen.getByLabelText('Выбрать месяц'))
+
+    expect(screen.getByTestId('month-picker-modal')).toBeInTheDocument()
+  })
+
+  it('shows today button only when selected date differs from current day', () => {
+    mockSelectedDate = new Date(2026, 0, 16)
+
+    render(<DashboardHeader />)
+
+    expect(screen.getByText('Сегодня')).toBeInTheDocument()
+  })
+
+  it('hides today button when selected date is today', () => {
+    render(<DashboardHeader />)
+
+    expect(screen.queryByText('Сегодня')).not.toBeInTheDocument()
+  })
+
+  it('calls setToday when clicking today button', () => {
+    mockSelectedDate = new Date(2026, 0, 16)
+
+    render(<DashboardHeader />)
+
+    fireEvent.click(screen.getByText('Сегодня'))
+
+    expect(mockSetToday).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls toggleEditMode when clicking edit button', () => {
+    render(<DashboardHeader />)
+
+    fireEvent.click(screen.getAllByLabelText('Редактировать')[0])
+
+    expect(mockToggleEditMode).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows mobile touch-friendly button sizing', () => {
+    mockViewport = 'mobile'
+    mockIsMobile = true
+
+    render(<DashboardHeader />)
+
+    expect(screen.getByLabelText('Предыдущий день')).toHaveClass(
+      'min-h-[44px]',
+      'min-w-[44px]'
+    )
   })
 })

@@ -40,14 +40,14 @@ interface CalendarDay {
 }
 
 function getCalendarDays(
-  viewDate: Date,
+  currentDate: Date,
   selectedDate: Date,
   expenseDates: Set<string>,
   salaryDay: number,
   advanceDay: number
 ): CalendarDay[] {
-  const year = viewDate.getFullYear()
-  const month = viewDate.getMonth()
+  const year = currentDate.getFullYear()
+  const month = currentDate.getMonth()
   const today = new Date()
 
   // First day of the month
@@ -139,14 +139,8 @@ const MONTH_NAMES = [
 ]
 
 export function Calendar() {
-  const {
-    viewDate,
-    selectedDate,
-    setSelectedDate,
-    setViewDate,
-    nextMonth,
-    prevMonth,
-  } = useSessionStore()
+  const { selectedDate, setSelectedDate, nextMonth, prevMonth } =
+    useSessionStore()
   const { expenses, isLoading: isExpensesLoading } = useExpenseStore(
     (state) => ({
       expenses: state.expenses,
@@ -204,15 +198,15 @@ export function Calendar() {
   const expenseDates = new Set(expenses.map((e) => e.date))
 
   const days = getCalendarDays(
-    viewDate,
+    selectedDate,
     selectedDate,
     expenseDates,
     salaryDay,
     advanceDay
   )
 
-  const monthName = MONTH_NAMES[viewDate.getMonth()]
-  const year = viewDate.getFullYear()
+  const monthName = MONTH_NAMES[selectedDate.getMonth()]
+  const year = selectedDate.getFullYear()
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
@@ -380,9 +374,9 @@ export function Calendar() {
 
       <MonthPickerModal
         isOpen={isMonthPickerOpen}
-        currentDate={viewDate}
+        currentDate={selectedDate}
         onSelectMonth={(date) => {
-          setViewDate(date)
+          setSelectedDate(date)
           setIsMonthPickerOpen(false)
         }}
         onClose={() => setIsMonthPickerOpen(false)}

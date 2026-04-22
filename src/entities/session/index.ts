@@ -1,2 +1,2 @@
 // Session entity - Public API
-export { useSessionStore } from './model/store'
+export { useSessionStore, setDateMonth } from './model/store'

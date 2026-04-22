@@ -41,7 +41,7 @@ let mockExpenses: Expense[] = [
   },
 ]
 
-let mockViewDate = new Date(2026, 0, 15) // Jan 15, 2026
+let mockSelectedDate = new Date(2026, 0, 15) // Jan 15, 2026
 let mockIsLoading = false
 
 // Mock query hooks with legacy aliases for the current component implementation
@@ -56,8 +56,8 @@ jest.mock('@/entities/expense', () => ({
 }))
 
 jest.mock('@/entities/session', () => ({
-  useSessionStore: (selector?: (state: { viewDate: Date }) => unknown) => {
-    const state = { viewDate: mockViewDate }
+  useSessionStore: (selector?: (state: { selectedDate: Date }) => unknown) => {
+    const state = { selectedDate: mockSelectedDate }
     return selector ? selector(state) : state
   },
 }))
@@ -153,7 +153,7 @@ describe('AnalysisDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockIsLoading = false
-    mockViewDate = new Date(2026, 0, 15) // Reset to Jan 15, 2026
+    mockSelectedDate = new Date(2026, 0, 15) // Reset to Jan 15, 2026
     mockExpenses = [
       {
         id: '1',
@@ -251,21 +251,21 @@ describe('AnalysisDashboard', () => {
 
   describe('month and year display', () => {
     it('displays January correctly', () => {
-      mockViewDate = new Date(2026, 0, 15)
+      mockSelectedDate = new Date(2026, 0, 15)
       render(<AnalysisDashboard />)
 
       expect(screen.getByText(/Январь 2026/)).toBeInTheDocument()
     })
 
     it('displays February correctly', () => {
-      mockViewDate = new Date(2026, 1, 15)
+      mockSelectedDate = new Date(2026, 1, 15)
       render(<AnalysisDashboard />)
 
       expect(screen.getByText(/Февраль 2026/)).toBeInTheDocument()
     })
 
     it('displays December correctly', () => {
-      mockViewDate = new Date(2025, 11, 15)
+      mockSelectedDate = new Date(2025, 11, 15)
       render(<AnalysisDashboard />)
 
       expect(screen.getByText(/Декабрь 2025/)).toBeInTheDocument()
@@ -288,7 +288,7 @@ describe('AnalysisDashboard', () => {
       ]
 
       months.forEach((monthName, index) => {
-        mockViewDate = new Date(2026, index, 15)
+        mockSelectedDate = new Date(2026, index, 15)
         const { unmount } = render(<AnalysisDashboard />)
 
         expect(
@@ -300,7 +300,7 @@ describe('AnalysisDashboard', () => {
     })
 
     it('displays correct year', () => {
-      mockViewDate = new Date(2025, 5, 15)
+      mockSelectedDate = new Date(2025, 5, 15)
       render(<AnalysisDashboard />)
 
       expect(screen.getByText(/2025/)).toBeInTheDocument()
@@ -516,7 +516,7 @@ describe('AnalysisDashboard', () => {
       ]
 
       // View date is January
-      mockViewDate = new Date(2026, 0, 15)
+      mockSelectedDate = new Date(2026, 0, 15)
 
       render(<AnalysisDashboard />)
 
@@ -745,21 +745,21 @@ describe('AnalysisDashboard', () => {
       expect(screen.getByText('Кафе')).toBeInTheDocument()
     })
 
-    it('reads viewDate from session store', () => {
-      mockViewDate = new Date(2025, 5, 15)
+    it('reads selectedDate from session store', () => {
+      mockSelectedDate = new Date(2025, 5, 15)
       render(<AnalysisDashboard />)
 
       expect(screen.getByText(/Июнь 2025/)).toBeInTheDocument()
     })
 
-    it('updates display when viewDate changes', () => {
-      mockViewDate = new Date(2026, 0, 15)
+    it('updates display when selectedDate changes', () => {
+      mockSelectedDate = new Date(2026, 0, 15)
       const { unmount } = render(<AnalysisDashboard />)
 
       expect(screen.getByText(/Январь 2026/)).toBeInTheDocument()
       unmount()
 
-      mockViewDate = new Date(2026, 5, 15)
+      mockSelectedDate = new Date(2026, 5, 15)
       render(<AnalysisDashboard />)
 
       expect(screen.getByText(/Июнь 2026/)).toBeInTheDocument()
@@ -812,7 +812,7 @@ describe('AnalysisDashboard', () => {
           emoji: '🧪',
         },
       ]
-      mockViewDate = new Date(2024, 1, 29)
+      mockSelectedDate = new Date(2024, 1, 29)
 
       render(<AnalysisDashboard />)
 

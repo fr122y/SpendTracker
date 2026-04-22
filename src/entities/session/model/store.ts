@@ -1,68 +1,95 @@
 import { atom, action, wrap } from '@reatom/core'
 import { useSyncExternalStore } from 'react'
 
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
+}
+
+export function shiftDateByDays(date: Date, days: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+}
+
+export function shiftDateByMonths(date: Date, months: number) {
+  const targetYear = date.getFullYear()
+  const targetMonth = date.getMonth() + months
+  const targetDay = Math.min(
+    date.getDate(),
+    getDaysInMonth(targetYear, targetMonth)
+  )
+
+  return new Date(targetYear, targetMonth, targetDay)
+}
+
+export function setDateMonth(date: Date, year: number, month: number) {
+  const targetDay = Math.min(date.getDate(), getDaysInMonth(year, month))
+  return new Date(year, month, targetDay)
+}
+
 // Atoms
-export const selectedDateAtom = atom(new Date(), 'selectedDateAtom')
-export const viewDateAtom = atom(new Date(), 'viewDateAtom')
+export const selectedDateAtom = atom(startOfDay(new Date()), 'selectedDateAtom')
 
 // Actions
 export const setSelectedDate = action(
-  (date: Date) => selectedDateAtom.set(date),
+  (date: Date) => selectedDateAtom.set(startOfDay(date)),
   'setSelectedDate'
 )
 
-export const setViewDate = action(
-  (date: Date) => viewDateAtom.set(date),
-  'setViewDate'
-)
+export const nextDay = action(() => {
+  selectedDateAtom.set(shiftDateByDays(selectedDateAtom(), 1))
+}, 'nextDay')
+
+export const prevDay = action(() => {
+  selectedDateAtom.set(shiftDateByDays(selectedDateAtom(), -1))
+}, 'prevDay')
 
 export const nextMonth = action(() => {
-  const current = viewDateAtom()
-  viewDateAtom.set(new Date(current.getFullYear(), current.getMonth() + 1, 1))
+  selectedDateAtom.set(shiftDateByMonths(selectedDateAtom(), 1))
 }, 'nextMonth')
 
 export const prevMonth = action(() => {
-  const current = viewDateAtom()
-  viewDateAtom.set(new Date(current.getFullYear(), current.getMonth() - 1, 1))
+  selectedDateAtom.set(shiftDateByMonths(selectedDateAtom(), -1))
 }, 'prevMonth')
+
+export const setToday = action(() => {
+  selectedDateAtom.set(startOfDay(new Date()))
+}, 'setToday')
 
 // Store state type
 interface SessionState {
   selectedDate: Date
-  viewDate: Date
   setSelectedDate: (date: Date) => void
-  setViewDate: (date: Date) => void
+  nextDay: () => void
+  prevDay: () => void
   nextMonth: () => void
   prevMonth: () => void
+  setToday: () => void
 }
 
 // Stable action references
 const actions = {
   setSelectedDate: (date: Date) => wrap(setSelectedDate)(date),
-  setViewDate: (date: Date) => wrap(setViewDate)(date),
+  nextDay: () => wrap(nextDay)(),
+  prevDay: () => wrap(prevDay)(),
   nextMonth: () => wrap(nextMonth)(),
   prevMonth: () => wrap(prevMonth)(),
+  setToday: () => wrap(setToday)(),
 }
 
 // Cached snapshot for useSyncExternalStore
 let cachedState: SessionState | null = null
 let cachedSelectedDate: Date | null = null
-let cachedViewDate: Date | null = null
 
 const getState = (): SessionState => {
   const currentSelectedDate = selectedDateAtom()
-  const currentViewDate = viewDateAtom()
 
-  if (
-    cachedState === null ||
-    cachedSelectedDate !== currentSelectedDate ||
-    cachedViewDate !== currentViewDate
-  ) {
+  if (cachedState === null || cachedSelectedDate !== currentSelectedDate) {
     cachedSelectedDate = currentSelectedDate
-    cachedViewDate = currentViewDate
     cachedState = {
       selectedDate: currentSelectedDate,
-      viewDate: currentViewDate,
       ...actions,
     }
   }
@@ -71,18 +98,11 @@ const getState = (): SessionState => {
 }
 
 const subscribe = (callback: () => void) => {
-  const unsub1 = selectedDateAtom.subscribe(() => {
+  const unsubscribe = selectedDateAtom.subscribe(() => {
     cachedState = null
     callback()
   })
-  const unsub2 = viewDateAtom.subscribe(() => {
-    cachedState = null
-    callback()
-  })
-  return () => {
-    unsub1()
-    unsub2()
-  }
+  return () => unsubscribe()
 }
 
 // Adapter Hook (Matches old Zustand API with selector support)

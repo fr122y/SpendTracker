@@ -131,7 +131,7 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
 }
 
 export function AnalysisDashboard() {
-  const viewDate = useSessionStore((state) => state.viewDate)
+  const selectedDate = useSessionStore((state) => state.selectedDate)
   const { expenses, isLoading } = useExpenseStore((state) => ({
     expenses: state.expenses,
     isLoading: state.isLoading,
@@ -141,15 +141,15 @@ export function AnalysisDashboard() {
     return <AnalysisSkeleton />
   }
 
-  const stats = getCategoryStats(expenses, viewDate)
+  const stats = getCategoryStats(expenses, selectedDate)
   const maxPercent =
     stats.length > 0 ? Math.max(...stats.map((s) => s.percent)) : 0
   const totalSpent = stats.reduce((sum, s) => sum + s.value, 0)
   const personalTotal = stats.reduce((sum, s) => sum + s.personalValue, 0)
   const projectTotal = stats.reduce((sum, s) => sum + s.projectValue, 0)
 
-  const monthName = MONTH_NAMES[viewDate.getMonth()]
-  const year = viewDate.getFullYear()
+  const monthName = MONTH_NAMES[selectedDate.getMonth()]
+  const year = selectedDate.getFullYear()
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">

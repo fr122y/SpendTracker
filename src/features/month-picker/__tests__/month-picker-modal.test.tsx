@@ -222,6 +222,26 @@ describe('MonthPickerModal', () => {
       expect(selectedDate.getDate()).toBe(15) // Should preserve day 15
       expect(selectedDate.getMonth()).toBe(0) // January
     })
+
+    it('clamps to the nearest valid day for shorter months', () => {
+      const dateWith31st = new Date(2026, 0, 31) // January 31, 2026
+      render(
+        <MonthPickerModal
+          isOpen={true}
+          currentDate={dateWith31st}
+          onSelectMonth={mockOnSelectMonth}
+          onClose={mockOnClose}
+        />
+      )
+
+      const februaryButton = screen.getByText('Февраль')
+      fireEvent.click(februaryButton)
+
+      const selectedDate = mockOnSelectMonth.mock.calls[0][0]
+      expect(selectedDate.getFullYear()).toBe(2026)
+      expect(selectedDate.getMonth()).toBe(1)
+      expect(selectedDate.getDate()).toBe(28)
+    })
   })
 
   describe('year navigation', () => {

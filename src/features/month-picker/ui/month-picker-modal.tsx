@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
+import { setDateMonth } from '@/entities/session'
 import { cn } from '@/shared/lib'
 
 interface MonthPickerModalProps {
@@ -74,16 +75,7 @@ export function MonthPickerModal({
   if (!isOpen) return null
 
   const handleMonthClick = (monthIndex: number) => {
-    // Preserve the day of the month from currentDate
-    const newDate = new Date(
-      selectedYear,
-      monthIndex,
-      currentDate.getDate(),
-      currentDate.getHours(),
-      currentDate.getMinutes(),
-      currentDate.getSeconds()
-    )
-    onSelectMonth(newDate)
+    onSelectMonth(setDateMonth(currentDate, selectedYear, monthIndex))
   }
 
   const handlePrevYear = () => {

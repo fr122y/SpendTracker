@@ -43,13 +43,13 @@ interface DailyData {
 
 function getDailySpendingData(
   expenses: Expense[],
-  viewDate: Date
+  selectedDate: Date
 ): DailyData[] {
-  const year = viewDate.getFullYear()
-  const month = viewDate.getMonth()
+  const year = selectedDate.getFullYear()
+  const month = selectedDate.getMonth()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
-  const monthlyExpenses = getMonthlyExpenses(expenses, viewDate)
+  const monthlyExpenses = getMonthlyExpenses(expenses, selectedDate)
 
   // Group expenses by day
   const dailyMap = new Map<
@@ -117,7 +117,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export function DailySpendingChart() {
-  const { viewDate, selectedDate, setSelectedDate } = useSessionStore()
+  const { selectedDate, setSelectedDate } = useSessionStore()
   const { expenses, isLoading } = useExpenseStore((state) => ({
     expenses: state.expenses,
     isLoading: state.isLoading,
@@ -127,13 +127,11 @@ export function DailySpendingChart() {
     return <DailySpendingChartSkeleton />
   }
 
-  const data = getDailySpendingData(expenses, viewDate)
+  const data = getDailySpendingData(expenses, selectedDate)
   const selectedDay = selectedDate.getDate()
-  const selectedMonth = selectedDate.getMonth()
-  const viewMonth = viewDate.getMonth()
 
-  const monthName = MONTH_NAMES[viewDate.getMonth()]
-  const year = viewDate.getFullYear()
+  const monthName = MONTH_NAMES[selectedDate.getMonth()]
+  const year = selectedDate.getFullYear()
 
   const totalMonthly = data.reduce((sum, d) => sum + d.amount, 0)
   const personalTotal = data.reduce((sum, d) => sum + d.personalAmount, 0)
@@ -204,8 +202,7 @@ export function DailySpendingChart() {
               style={{ cursor: 'pointer' }}
             >
               {data.map((entry, index) => {
-                const isSelected =
-                  entry.day === selectedDay && selectedMonth === viewMonth
+                const isSelected = entry.day === selectedDay
                 return (
                   <Cell
                     key={`personal-cell-${index}`}
@@ -223,8 +220,7 @@ export function DailySpendingChart() {
               style={{ cursor: 'pointer' }}
             >
               {data.map((entry, index) => {
-                const isSelected =
-                  entry.day === selectedDay && selectedMonth === viewMonth
+                const isSelected = entry.day === selectedDay
                 return (
                   <Cell
                     key={`project-cell-${index}`}

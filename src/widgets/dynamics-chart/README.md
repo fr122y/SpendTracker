@@ -8,7 +8,7 @@ Visualizes daily spending trends for the current month with an interactive bar c
 
 ## State & Data
 
-- `useSessionStore`: viewDate, selectedDate for highlighting
+- `useSessionStore`: selectedDate for month scope and active-day highlighting
 - `useExpenses`: expenses for aggregation
 
 ## Features

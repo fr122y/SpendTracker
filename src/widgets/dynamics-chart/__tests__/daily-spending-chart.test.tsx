@@ -6,7 +6,6 @@ import type { Expense } from '@/shared/types'
 
 // Mock query hooks with legacy aliases for the current component implementation
 const mockSetSelectedDate = jest.fn()
-let mockViewDate = new Date(2026, 0, 15) // January 15, 2026
 let mockSelectedDate = new Date(2026, 0, 22) // January 22, 2026
 
 const mockUseSessionStore = jest.fn()
@@ -101,20 +100,17 @@ describe('DailySpendingChart', () => {
     jest.clearAllMocks()
     mockIsLoading = false
     mockExpenses = []
-    mockViewDate = new Date(2026, 0, 15)
     mockSelectedDate = new Date(2026, 0, 22)
 
     // Set up the session store mock implementation
     mockUseSessionStore.mockImplementation(
       (
         selector?: (state: {
-          viewDate: Date
           selectedDate: Date
           setSelectedDate: (date: Date) => void
         }) => unknown
       ) => {
         const state = {
-          viewDate: mockViewDate,
           selectedDate: mockSelectedDate,
           setSelectedDate: mockSetSelectedDate,
         }
@@ -362,19 +358,19 @@ describe('DailySpendingChart', () => {
 
   describe('month names', () => {
     it('displays Январь for January', () => {
-      mockViewDate = new Date(2026, 0, 15)
+      mockSelectedDate = new Date(2026, 0, 15)
       render(<DailySpendingChart />)
       expect(screen.getByText('Динамика за Январь 2026')).toBeInTheDocument()
     })
 
     it('displays Февраль for February', () => {
-      mockViewDate = new Date(2026, 1, 15)
+      mockSelectedDate = new Date(2026, 1, 15)
       render(<DailySpendingChart />)
       expect(screen.getByText('Динамика за Февраль 2026')).toBeInTheDocument()
     })
 
     it('displays Декабрь for December', () => {
-      mockViewDate = new Date(2026, 11, 15)
+      mockSelectedDate = new Date(2026, 11, 15)
       render(<DailySpendingChart />)
       expect(screen.getByText('Динамика за Декабрь 2026')).toBeInTheDocument()
     })
@@ -391,7 +387,7 @@ describe('DailySpendingChart', () => {
     })
 
     it('handles month with 28 days (February non-leap year)', () => {
-      mockViewDate = new Date(2026, 1, 15) // February 2026
+      mockSelectedDate = new Date(2026, 1, 15) // February 2026
       mockSelectedDate = new Date(2026, 1, 15)
 
       render(<DailySpendingChart />)
@@ -402,7 +398,7 @@ describe('DailySpendingChart', () => {
     })
 
     it('handles month with 29 days (February leap year)', () => {
-      mockViewDate = new Date(2024, 1, 15) // February 2024 (leap year)
+      mockSelectedDate = new Date(2024, 1, 15) // February 2024 (leap year)
       mockSelectedDate = new Date(2024, 1, 15)
 
       render(<DailySpendingChart />)
@@ -413,7 +409,7 @@ describe('DailySpendingChart', () => {
     })
 
     it('handles month with 30 days', () => {
-      mockViewDate = new Date(2026, 3, 15) // April 2026
+      mockSelectedDate = new Date(2026, 3, 15) // April 2026
       mockSelectedDate = new Date(2026, 3, 15)
 
       render(<DailySpendingChart />)
@@ -508,19 +504,19 @@ describe('DailySpendingChart', () => {
 
   describe('year display', () => {
     it('displays year 2024', () => {
-      mockViewDate = new Date(2024, 0, 15)
+      mockSelectedDate = new Date(2024, 0, 15)
       render(<DailySpendingChart />)
       expect(screen.getByText('Динамика за Январь 2024')).toBeInTheDocument()
     })
 
     it('displays year 2025', () => {
-      mockViewDate = new Date(2025, 0, 15)
+      mockSelectedDate = new Date(2025, 0, 15)
       render(<DailySpendingChart />)
       expect(screen.getByText('Динамика за Январь 2025')).toBeInTheDocument()
     })
 
     it('displays year 2027', () => {
-      mockViewDate = new Date(2027, 0, 15)
+      mockSelectedDate = new Date(2027, 0, 15)
       render(<DailySpendingChart />)
       expect(screen.getByText('Динамика за Январь 2027')).toBeInTheDocument()
     })

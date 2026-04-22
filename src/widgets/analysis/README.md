@@ -8,7 +8,7 @@ Provides spending analysis with category breakdown for the current view month.
 
 ## State & Data
 
-- `useSessionStore`: viewDate for month selection
+- `useSessionStore`: selectedDate as the source month for analysis
 - `useExpenses`: expenses list for aggregation
 
 ## Features

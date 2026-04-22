@@ -9,14 +9,12 @@ const mockPrevMonth = jest.fn()
 const mockSetSalaryDay = jest.fn()
 const mockSetAdvanceDay = jest.fn()
 
-const mockViewDate = new Date(2026, 0, 15) // January 2026
 const mockSelectedDate = new Date(2026, 0, 22)
 let mockExpenseLoading = false
 let mockSettingsLoading = false
 
 jest.mock('@/entities/session', () => ({
   useSessionStore: () => ({
-    viewDate: mockViewDate,
     selectedDate: mockSelectedDate,
     setSelectedDate: mockSetSelectedDate,
     nextMonth: mockNextMonth,
@@ -144,7 +142,7 @@ describe('Calendar', () => {
       const prevButton = screen.getByLabelText('Предыдущий месяц')
       fireEvent.click(prevButton)
 
-      expect(mockPrevMonth).toHaveBeenCalled()
+      expect(mockPrevMonth).toHaveBeenCalledTimes(1)
     })
 
     it('calls nextMonth when clicking next button', () => {
@@ -153,7 +151,7 @@ describe('Calendar', () => {
       const nextButton = screen.getByLabelText('Следующий месяц')
       fireEvent.click(nextButton)
 
-      expect(mockNextMonth).toHaveBeenCalled()
+      expect(mockNextMonth).toHaveBeenCalledTimes(1)
     })
   })
 

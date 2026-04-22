@@ -1,6 +1,6 @@
 # Month Picker
 
-A modal component for selecting months and years with an intuitive grid-based interface.
+A modal component for selecting months and years while preserving the current selected day when possible.
 
 ## Public API (`index.ts`)
 
@@ -30,7 +30,7 @@ interface MonthPickerModalProps {
 ## State & Data
 
 - **Store:** None (stateless feature component)
-- **Props:** Receives `currentDate` from parent, preserves day of month when selecting new month/year
+- **Props:** Receives `currentDate` from parent, preserves day of month when selecting new month/year and clamps to nearest valid day when needed
 
 ## Dependencies
 
@@ -45,7 +45,7 @@ import { useState } from 'react'
 
 function Calendar() {
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
-  const [viewDate, setViewDate] = useState(new Date())
+  const [selectedDate, setSelectedDate] = useState(new Date())
 
   return (
     <>
@@ -55,9 +55,9 @@ function Calendar() {
 
       <MonthPickerModal
         isOpen={isMonthPickerOpen}
-        currentDate={viewDate}
+        currentDate={selectedDate}
         onSelectMonth={(date) => {
-          setViewDate(date)
+          setSelectedDate(date)
           setIsMonthPickerOpen(false)
         }}
         onClose={() => setIsMonthPickerOpen(false)}
