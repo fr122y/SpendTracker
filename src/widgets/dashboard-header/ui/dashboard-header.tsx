@@ -30,11 +30,11 @@ export function DashboardHeader() {
       <header
         className={cn(
           'border-b border-zinc-700 bg-zinc-900/50 px-3 py-3 sm:px-4 sm:py-4',
-          'flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'
+          'flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center'
         )}
       >
         {/* Top row: Title and Edit button on mobile */}
-        <div className="flex items-center justify-between sm:justify-start">
+        <div className="flex items-center justify-between sm:min-w-0 sm:justify-self-start">
           <h1 className="font-mono text-lg font-bold text-emerald-400 sm:text-xl">
             SmartSpend Terminal
           </h1>
@@ -59,7 +59,7 @@ export function DashboardHeader() {
           </div>
         </div>
 
-        <div className="flex items-center justify-center gap-2">
+        <div className="flex items-center justify-center gap-2 sm:justify-self-center">
           <Button
             variant="ghost"
             onClick={prevDay}
@@ -86,7 +86,7 @@ export function DashboardHeader() {
           </Button>
         </div>
 
-        <div className="hidden items-center gap-2 sm:flex">
+        <div className="hidden items-center justify-end gap-2 sm:flex sm:justify-self-end">
           {!isToday && (
             <Button variant="ghost" onClick={setToday}>
               Сегодня
