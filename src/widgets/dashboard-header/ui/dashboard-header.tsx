@@ -38,16 +38,25 @@ export function DashboardHeader() {
           <h1 className="font-mono text-lg font-bold text-emerald-400 sm:text-xl">
             SmartSpend Terminal
           </h1>
-          {/* Edit button - visible on mobile in top row */}
-          <Button
-            variant={isEditMode ? 'primary' : 'ghost'}
-            onClick={toggleEditMode}
-            className="sm:hidden"
-            aria-label={isEditMode ? 'Готово' : 'Редактировать'}
-          >
-            <Edit3 className="h-4 w-4" />
-            {!mobile && (isEditMode ? 'Готово' : 'Редактировать')}
-          </Button>
+          <div className="flex items-center gap-2 sm:hidden">
+            {!isToday && (
+              <Button
+                variant="ghost"
+                onClick={setToday}
+                className="min-h-[44px] px-3 text-xs"
+              >
+                Сегодня
+              </Button>
+            )}
+            <Button
+              variant={isEditMode ? 'primary' : 'ghost'}
+              onClick={toggleEditMode}
+              aria-label={isEditMode ? 'Готово' : 'Редактировать'}
+            >
+              <Edit3 className="h-4 w-4" />
+              {!mobile && (isEditMode ? 'Готово' : 'Редактировать')}
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center justify-center gap-2">
@@ -75,26 +84,22 @@ export function DashboardHeader() {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
+
+        <div className="hidden items-center gap-2 sm:flex">
           {!isToday && (
-            <Button
-              variant="ghost"
-              onClick={setToday}
-              className="ml-1 min-h-[44px] px-3 text-xs sm:min-h-0 sm:text-sm"
-            >
+            <Button variant="ghost" onClick={setToday}>
               Сегодня
             </Button>
           )}
+          <Button
+            variant={isEditMode ? 'primary' : 'ghost'}
+            onClick={toggleEditMode}
+          >
+            <Edit3 className="mr-2 h-4 w-4" />
+            {isEditMode ? 'Готово' : 'Редактировать'}
+          </Button>
         </div>
-
-        {/* Edit button - visible on desktop only */}
-        <Button
-          variant={isEditMode ? 'primary' : 'ghost'}
-          onClick={toggleEditMode}
-          className="hidden sm:flex"
-        >
-          <Edit3 className="mr-2 h-4 w-4" />
-          {isEditMode ? 'Готово' : 'Редактировать'}
-        </Button>
       </header>
 
       <MonthPickerModal

@@ -110,7 +110,7 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    expect(screen.getByText('Сегодня')).toBeInTheDocument()
+    expect(screen.getAllByText('Сегодня').length).toBeGreaterThanOrEqual(1)
   })
 
   it('hides today button when selected date is today', () => {
@@ -124,7 +124,7 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    fireEvent.click(screen.getByText('Сегодня'))
+    fireEvent.click(screen.getAllByText('Сегодня')[0])
 
     expect(mockSetToday).toHaveBeenCalledTimes(1)
   })
