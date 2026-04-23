@@ -10,8 +10,6 @@ const mockToggleEditMode = jest.fn()
 
 let mockSelectedDate = new Date(2026, 0, 15)
 let mockIsEditMode = false
-let mockViewport = 'desktop'
-let mockIsMobile = false
 
 jest.mock('@/entities/session', () => ({
   useSessionStore: () => ({
@@ -24,7 +22,7 @@ jest.mock('@/entities/session', () => ({
 }))
 
 jest.mock('@/features/layout-editor', () => ({
-  useLayoutStore: () => ({
+  useEditMode: () => ({
     isEditMode: mockIsEditMode,
     toggleEditMode: mockToggleEditMode,
   }),
@@ -42,20 +40,12 @@ jest.mock('@/features/month-picker', () => ({
     isOpen ? <div data-testid="month-picker-modal">month picker</div> : null,
 }))
 
-jest.mock('@/shared/lib', () => ({
-  ...jest.requireActual('@/shared/lib'),
-  useViewport: () => mockViewport,
-  isMobile: () => mockIsMobile,
-}))
-
 describe('DashboardHeader', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     jest.useFakeTimers().setSystemTime(new Date(2026, 0, 15))
     mockSelectedDate = new Date(2026, 0, 15)
     mockIsEditMode = false
-    mockViewport = 'desktop'
-    mockIsMobile = false
   })
 
   afterEach(() => {
@@ -65,13 +55,17 @@ describe('DashboardHeader', () => {
   it('renders the application title', () => {
     render(<DashboardHeader />)
 
-    expect(screen.getByText('SmartSpend Terminal')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'SmartSpend Terminal' })
+    ).toBeInTheDocument()
   })
 
   it('renders the full selected date in Russian format', () => {
     render(<DashboardHeader />)
 
-    expect(screen.getByText('15 января 2026 г.')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Выбрать месяц' })
+    ).toHaveTextContent('15 января 2026 г.')
   })
 
   it('renders day navigation buttons', () => {
@@ -110,7 +104,7 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    expect(screen.getAllByText('Сегодня').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getAllByRole('button', { name: 'Сегодня' })).toHaveLength(2)
   })
 
   it('hides today button when selected date is today', () => {
@@ -124,7 +118,7 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    fireEvent.click(screen.getAllByText('Сегодня')[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Сегодня' })[0])
 
     expect(mockSetToday).toHaveBeenCalledTimes(1)
   })
@@ -132,20 +126,32 @@ describe('DashboardHeader', () => {
   it('calls toggleEditMode when clicking edit button', () => {
     render(<DashboardHeader />)
 
-    fireEvent.click(screen.getAllByLabelText('Редактировать')[0])
+    fireEvent.click(screen.getAllByRole('button', { name: 'Редактировать' })[0])
 
     expect(mockToggleEditMode).toHaveBeenCalledTimes(1)
   })
 
-  it('shows mobile touch-friendly button sizing', () => {
-    mockViewport = 'mobile'
-    mockIsMobile = true
+  it('renders done state when edit mode is active', () => {
+    mockIsEditMode = true
 
+    render(<DashboardHeader />)
+
+    expect(screen.getAllByRole('button', { name: 'Готово' })).toHaveLength(2)
+  })
+
+  it('shows mobile touch-friendly button sizing', () => {
     render(<DashboardHeader />)
 
     expect(screen.getByLabelText('Предыдущий день')).toHaveClass(
       'min-h-[44px]',
       'min-w-[44px]'
     )
+    expect(screen.getByLabelText('Следующий день')).toHaveClass(
+      'min-h-[44px]',
+      'min-w-[44px]'
+    )
+    expect(
+      screen.getAllByRole('button', { name: 'Редактировать' })[0]
+    ).toHaveClass('min-h-11', 'min-w-[44px]')
   })
 })
