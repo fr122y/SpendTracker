@@ -14,17 +14,6 @@ export interface DailyData {
   isWeekStart: boolean
 }
 
-export interface WeekRange {
-  id: string
-  startDay: number
-  endDay: number
-  label: string
-}
-
-function formatWeekRangeLabel(startDay: number, endDay: number) {
-  return startDay === endDay ? `${startDay}` : `${startDay}-${endDay}`
-}
-
 export function getDailySpendingData(
   expenses: Expense[],
   selectedDate: Date
@@ -75,39 +64,4 @@ export function getDailySpendingData(
   }
 
   return data
-}
-
-export function getWeekRanges(data: DailyData[]): WeekRange[] {
-  const ranges: WeekRange[] = []
-  let currentStart: DailyData | undefined
-
-  for (const entry of data) {
-    if (!currentStart) {
-      currentStart = entry
-      continue
-    }
-
-    if (entry.isWeekStart) {
-      const previousDay = entry.day - 1
-      ranges.push({
-        id: `${currentStart.day}-${previousDay}`,
-        startDay: currentStart.day,
-        endDay: previousDay,
-        label: formatWeekRangeLabel(currentStart.day, previousDay),
-      })
-      currentStart = entry
-    }
-  }
-
-  if (currentStart && data.length > 0) {
-    const lastDay = data[data.length - 1].day
-    ranges.push({
-      id: `${currentStart.day}-${lastDay}`,
-      startDay: currentStart.day,
-      endDay: lastDay,
-      label: formatWeekRangeLabel(currentStart.day, lastDay),
-    })
-  }
-
-  return ranges
 }

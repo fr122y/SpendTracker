@@ -17,9 +17,7 @@ import { useSessionStore } from '@/entities/session'
 import { DailySpendingChartSkeleton } from './daily-spending-chart-skeleton'
 import {
   getDailySpendingData,
-  getWeekRanges,
   type DailyData,
-  type WeekRange,
 } from '../lib/daily-spending-data'
 
 const MONTH_NAMES = [
@@ -65,66 +63,6 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null
 }
 
-interface WeekdayAxisTickProps {
-  x?: number
-  y?: number
-  payload?: { value: number }
-  data: DailyData[]
-}
-
-function WeekdayAxisTick({
-  x = 0,
-  y = 0,
-  payload,
-  data,
-}: WeekdayAxisTickProps) {
-  const entry = data.find((item) => item.day === payload?.value)
-
-  if (!entry) {
-    return null
-  }
-
-  return (
-    <text
-      x={x}
-      y={y}
-      data-testid={`dynamics-axis-day-${entry.day}`}
-      textAnchor="middle"
-      fill="#71717a"
-      fontSize={10}
-    >
-      <tspan x={x} dy="0">
-        {entry.day}
-      </tspan>
-      <tspan x={x} dy="12" className="fill-zinc-500">
-        {entry.weekdayLabel}
-      </tspan>
-    </text>
-  )
-}
-
-function WeekRangeLabels({ ranges }: { ranges: WeekRange[] }) {
-  return (
-    <div
-      className="grid gap-1 text-center text-[10px] uppercase tracking-normal text-zinc-500 sm:text-xs"
-      data-testid="dynamics-week-ranges"
-      style={{
-        gridTemplateColumns: `repeat(${ranges.length}, minmax(0, 1fr))`,
-      }}
-    >
-      {ranges.map((range) => (
-        <span
-          key={range.id}
-          className="border-t border-zinc-800 pt-1"
-          data-testid="dynamics-week-range"
-        >
-          {range.label}
-        </span>
-      ))}
-    </div>
-  )
-}
-
 export function DailySpendingChart() {
   const { selectedDate, setSelectedDate } = useSessionStore()
   const { expenses, isLoading } = useExpenseStore((state) => ({
@@ -137,10 +75,15 @@ export function DailySpendingChart() {
   }
 
   const data = getDailySpendingData(expenses, selectedDate)
-  const weekRanges = getWeekRanges(data)
   const weekStartDays = data.filter(
     (entry) => entry.isWeekStart && entry.day !== 1
   )
+  const lastDay = data[data.length - 1]?.day
+  const axisTicks = data
+    .filter(
+      (entry) => entry.day === 1 || entry.day === lastDay || entry.isWeekStart
+    )
+    .map((entry) => entry.day)
   const selectedDay = selectedDate.getDate()
 
   const monthName = MONTH_NAMES[selectedDate.getMonth()]
@@ -186,21 +129,22 @@ export function DailySpendingChart() {
       </div>
 
       {/* Chart */}
-      <div className="flex flex-col gap-2">
-        <div className="h-56 sm:h-72">
+      <div>
+        <div className="h-52 sm:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
-              margin={{ top: 10, right: 10, left: 10, bottom: 28 }}
+              margin={{ top: 10, right: 10, left: 10, bottom: 8 }}
             >
               <XAxis
                 dataKey="day"
-                ticks={data.map((entry) => entry.day)}
-                tick={<WeekdayAxisTick data={data} />}
+                ticks={axisTicks}
+                tick={{ fill: '#71717a', fontSize: 10 }}
+                tickMargin={8}
                 axisLine={{ stroke: '#3f3f46' }}
-                tickLine={{ stroke: '#3f3f46' }}
+                tickLine={false}
                 interval={0}
-                height={36}
+                height={24}
               />
               <YAxis
                 tick={{ fill: '#71717a', fontSize: 10 }}
@@ -262,7 +206,6 @@ export function DailySpendingChart() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <WeekRangeLabels ranges={weekRanges} />
       </div>
     </div>
   )

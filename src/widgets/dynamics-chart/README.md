@@ -11,18 +11,16 @@ stacked bar chart and weekly reading aids.
 
 - `useSessionStore`: selectedDate for month scope and active-day highlighting
 - `useExpenseStore`: expenses for aggregation
-- Local `lib/daily-spending-data`: prepares daily chart data, weekday labels,
-  week starts, and clipped week ranges
+- Local `lib/daily-spending-data`: prepares daily chart data, weekday labels for
+  tooltips, and week-start markers
 
 ## Features
 
-- Bar chart with day of month on X-axis and amount on Y-axis
-- Weekday labels on the X-axis
+- Bar chart with sparse day-of-month ticks on X-axis and amount on Y-axis
 - Dashed week-start markers for Mondays
-- Week range labels clipped to the selected month
 - Highlighted bar for selected date
 - Click on bar to select that date
-- Custom tooltip with Russian formatting
+- Custom tooltip with weekday and Russian formatting
 - Monthly personal, project, and total amounts in header
 
 ## Dependencies

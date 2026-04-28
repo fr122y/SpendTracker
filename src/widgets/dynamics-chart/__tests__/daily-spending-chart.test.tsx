@@ -47,7 +47,6 @@ jest.mock('@/shared/lib', () => {
 
 // Mock recharts to avoid rendering issues in tests
 jest.mock('recharts', () => {
-  const React = jest.requireActual('react')
   const OriginalModule = jest.requireActual('recharts')
   return {
     ...OriginalModule,
@@ -89,27 +88,9 @@ jest.mock('recharts', () => {
         {children}
       </div>
     ),
-    XAxis: ({
-      tick,
-      ticks = [],
-    }: {
-      tick?: React.ReactElement
-      ticks?: number[]
-    }) => (
-      <div data-testid="x-axis">
+    XAxis: ({ ticks = [] }: { ticks?: number[] }) => (
+      <div data-testid="x-axis" data-ticks={ticks.join(',')}>
         XAxis
-        <svg>
-          {ticks.map((value) =>
-            React.isValidElement(tick)
-              ? React.cloneElement(tick, {
-                  key: value,
-                  x: 0,
-                  y: 0,
-                  payload: { value },
-                })
-              : null
-          )}
-        </svg>
       </div>
     ),
     YAxis: () => <div data-testid="y-axis">YAxis</div>,
@@ -209,11 +190,13 @@ describe('DailySpendingChart', () => {
       expect(screen.getByTestId('bar-projectAmount')).toBeInTheDocument()
     })
 
-    it('renders weekday labels on the x-axis', () => {
+    it('renders sparse x-axis ticks for month edges and Mondays', () => {
       render(<DailySpendingChart />)
 
-      expect(screen.getByTestId('dynamics-axis-day-1')).toHaveTextContent('1Чт')
-      expect(screen.getByTestId('dynamics-axis-day-5')).toHaveTextContent('5Пн')
+      expect(screen.getByTestId('x-axis')).toHaveAttribute(
+        'data-ticks',
+        '1,5,12,19,26,31'
+      )
     })
 
     it('renders week start markers for Mondays after the first day', () => {
@@ -225,19 +208,6 @@ describe('DailySpendingChart', () => {
         '12',
         '19',
         '26',
-      ])
-    })
-
-    it('renders clipped week ranges for the selected month', () => {
-      render(<DailySpendingChart />)
-
-      const ranges = screen.getAllByTestId('dynamics-week-range')
-      expect(ranges.map((range) => range.textContent)).toEqual([
-        '1-4',
-        '5-11',
-        '12-18',
-        '19-25',
-        '26-31',
       ])
     })
   })
