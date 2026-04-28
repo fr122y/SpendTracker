@@ -8,15 +8,19 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  ReferenceLine,
 } from 'recharts'
 
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { getMonthlyExpenses } from '@/shared/lib'
 
 import { DailySpendingChartSkeleton } from './daily-spending-chart-skeleton'
-
-import type { Expense } from '@/shared/types'
+import {
+  getDailySpendingData,
+  getWeekRanges,
+  type DailyData,
+  type WeekRange,
+} from '../lib/daily-spending-data'
 
 const MONTH_NAMES = [
   'Январь',
@@ -33,63 +37,6 @@ const MONTH_NAMES = [
   'Декабрь',
 ]
 
-interface DailyData {
-  day: number
-  amount: number
-  personalAmount: number
-  projectAmount: number
-  date: Date
-}
-
-function getDailySpendingData(
-  expenses: Expense[],
-  selectedDate: Date
-): DailyData[] {
-  const year = selectedDate.getFullYear()
-  const month = selectedDate.getMonth()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-
-  const monthlyExpenses = getMonthlyExpenses(expenses, selectedDate)
-
-  // Group expenses by day
-  const dailyMap = new Map<
-    number,
-    { amount: number; personalAmount: number; projectAmount: number }
-  >()
-  for (const expense of monthlyExpenses) {
-    const expenseDate = new Date(expense.date)
-    const day = expenseDate.getDate()
-    const current = dailyMap.get(day) ?? {
-      amount: 0,
-      personalAmount: 0,
-      projectAmount: 0,
-    }
-
-    current.amount += expense.amount
-    if (expense.projectId) {
-      current.projectAmount += expense.amount
-    } else {
-      current.personalAmount += expense.amount
-    }
-
-    dailyMap.set(day, current)
-  }
-
-  // Create array for all days in month
-  const data: DailyData[] = []
-  for (let day = 1; day <= daysInMonth; day++) {
-    data.push({
-      day,
-      amount: dailyMap.get(day)?.amount || 0,
-      personalAmount: dailyMap.get(day)?.personalAmount || 0,
-      projectAmount: dailyMap.get(day)?.projectAmount || 0,
-      date: new Date(year, month, day),
-    })
-  }
-
-  return data
-}
-
 interface CustomTooltipProps {
   active?: boolean
   payload?: Array<{ value: number; dataKey: string; payload: DailyData }>
@@ -100,7 +47,9 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     const data = payload[0].payload
     return (
       <div className="rounded bg-zinc-800 px-3 py-2 text-sm shadow-lg">
-        <p className="text-zinc-400">День {data.day}</p>
+        <p className="text-zinc-400">
+          {data.weekdayLabel}, день {data.day}
+        </p>
         <p className="font-semibold text-zinc-100">
           Всего: {data.amount.toLocaleString('ru-RU')} ₽
         </p>
@@ -116,6 +65,66 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null
 }
 
+interface WeekdayAxisTickProps {
+  x?: number
+  y?: number
+  payload?: { value: number }
+  data: DailyData[]
+}
+
+function WeekdayAxisTick({
+  x = 0,
+  y = 0,
+  payload,
+  data,
+}: WeekdayAxisTickProps) {
+  const entry = data.find((item) => item.day === payload?.value)
+
+  if (!entry) {
+    return null
+  }
+
+  return (
+    <text
+      x={x}
+      y={y}
+      data-testid={`dynamics-axis-day-${entry.day}`}
+      textAnchor="middle"
+      fill="#71717a"
+      fontSize={10}
+    >
+      <tspan x={x} dy="0">
+        {entry.day}
+      </tspan>
+      <tspan x={x} dy="12" className="fill-zinc-500">
+        {entry.weekdayLabel}
+      </tspan>
+    </text>
+  )
+}
+
+function WeekRangeLabels({ ranges }: { ranges: WeekRange[] }) {
+  return (
+    <div
+      className="grid gap-1 text-center text-[10px] uppercase tracking-normal text-zinc-500 sm:text-xs"
+      data-testid="dynamics-week-ranges"
+      style={{
+        gridTemplateColumns: `repeat(${ranges.length}, minmax(0, 1fr))`,
+      }}
+    >
+      {ranges.map((range) => (
+        <span
+          key={range.id}
+          className="border-t border-zinc-800 pt-1"
+          data-testid="dynamics-week-range"
+        >
+          {range.label}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 export function DailySpendingChart() {
   const { selectedDate, setSelectedDate } = useSessionStore()
   const { expenses, isLoading } = useExpenseStore((state) => ({
@@ -128,6 +137,10 @@ export function DailySpendingChart() {
   }
 
   const data = getDailySpendingData(expenses, selectedDate)
+  const weekRanges = getWeekRanges(data)
+  const weekStartDays = data.filter(
+    (entry) => entry.isWeekStart && entry.day !== 1
+  )
   const selectedDay = selectedDate.getDate()
 
   const monthName = MONTH_NAMES[selectedDate.getMonth()]
@@ -173,65 +186,83 @@ export function DailySpendingChart() {
       </div>
 
       {/* Chart */}
-      <div className="h-48 sm:h-64">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
-          >
-            <XAxis
-              dataKey="day"
-              tick={{ fill: '#71717a', fontSize: 10 }}
-              axisLine={{ stroke: '#3f3f46' }}
-              tickLine={{ stroke: '#3f3f46' }}
-              interval={4}
-            />
-            <YAxis
-              tick={{ fill: '#71717a', fontSize: 10 }}
-              axisLine={{ stroke: '#3f3f46' }}
-              tickLine={{ stroke: '#3f3f46' }}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
-              width={35}
-            />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: '#27272a' }} />
-            <Bar
-              dataKey="personalAmount"
-              stackId="daily-total"
-              radius={[4, 4, 0, 0]}
-              onClick={(data) => handleBarClick(data)}
-              style={{ cursor: 'pointer' }}
+      <div className="flex flex-col gap-2">
+        <div className="h-56 sm:h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              margin={{ top: 10, right: 10, left: 10, bottom: 28 }}
             >
-              {data.map((entry, index) => {
-                const isSelected = entry.day === selectedDay
-                return (
-                  <Cell
-                    key={`personal-cell-${index}`}
-                    fill={isSelected ? '#34d399' : '#10b981'}
-                    opacity={entry.personalAmount > 0 ? 1 : 0.2}
-                  />
-                )
-              })}
-            </Bar>
-            <Bar
-              dataKey="projectAmount"
-              stackId="daily-total"
-              radius={[4, 4, 0, 0]}
-              onClick={(data) => handleBarClick(data)}
-              style={{ cursor: 'pointer' }}
-            >
-              {data.map((entry, index) => {
-                const isSelected = entry.day === selectedDay
-                return (
-                  <Cell
-                    key={`project-cell-${index}`}
-                    fill={isSelected ? '#38bdf8' : '#0ea5e9'}
-                    opacity={entry.projectAmount > 0 ? 1 : 0.2}
-                  />
-                )
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+              <XAxis
+                dataKey="day"
+                ticks={data.map((entry) => entry.day)}
+                tick={<WeekdayAxisTick data={data} />}
+                axisLine={{ stroke: '#3f3f46' }}
+                tickLine={{ stroke: '#3f3f46' }}
+                interval={0}
+                height={36}
+              />
+              <YAxis
+                tick={{ fill: '#71717a', fontSize: 10 }}
+                axisLine={{ stroke: '#3f3f46' }}
+                tickLine={{ stroke: '#3f3f46' }}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                width={35}
+              />
+              <Tooltip
+                content={<CustomTooltip />}
+                cursor={{ fill: '#27272a' }}
+              />
+              {weekStartDays.map((entry) => (
+                <ReferenceLine
+                  key={`week-start-${entry.day}`}
+                  x={entry.day}
+                  stroke="#52525b"
+                  strokeDasharray="3 3"
+                  strokeOpacity={0.7}
+                  data-testid="dynamics-week-start"
+                />
+              ))}
+              <Bar
+                dataKey="personalAmount"
+                stackId="daily-total"
+                radius={[4, 4, 0, 0]}
+                onClick={(data) => handleBarClick(data)}
+                style={{ cursor: 'pointer' }}
+              >
+                {data.map((entry, index) => {
+                  const isSelected = entry.day === selectedDay
+                  return (
+                    <Cell
+                      key={`personal-cell-${index}`}
+                      fill={isSelected ? '#34d399' : '#10b981'}
+                      opacity={entry.personalAmount > 0 ? 1 : 0.2}
+                    />
+                  )
+                })}
+              </Bar>
+              <Bar
+                dataKey="projectAmount"
+                stackId="daily-total"
+                radius={[4, 4, 0, 0]}
+                onClick={(data) => handleBarClick(data)}
+                style={{ cursor: 'pointer' }}
+              >
+                {data.map((entry, index) => {
+                  const isSelected = entry.day === selectedDay
+                  return (
+                    <Cell
+                      key={`project-cell-${index}`}
+                      fill={isSelected ? '#38bdf8' : '#0ea5e9'}
+                      opacity={entry.projectAmount > 0 ? 1 : 0.2}
+                    />
+                  )
+                })}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <WeekRangeLabels ranges={weekRanges} />
       </div>
     </div>
   )
