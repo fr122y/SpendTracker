@@ -98,6 +98,9 @@ jest.mock('recharts', () => {
     ReferenceLine: ({ x }: { x: number }) => (
       <div data-testid="dynamics-week-start" data-x={x} />
     ),
+    ReferenceArea: ({ x1, x2 }: { x1: number; x2: number }) => (
+      <div data-testid="dynamics-weekend-area" data-x1={x1} data-x2={x2} />
+    ),
     Cell: () => <div data-testid="cell">Cell</div>,
   }
 })
@@ -204,10 +207,28 @@ describe('DailySpendingChart', () => {
 
       const markers = screen.getAllByTestId('dynamics-week-start')
       expect(markers.map((marker) => marker.getAttribute('data-x'))).toEqual([
-        '5',
-        '12',
-        '19',
-        '26',
+        '4.5',
+        '11.5',
+        '18.5',
+        '25.5',
+      ])
+    })
+
+    it('renders weekend background spans', () => {
+      render(<DailySpendingChart />)
+
+      const areas = screen.getAllByTestId('dynamics-weekend-area')
+      expect(
+        areas.map((area) => [
+          area.getAttribute('data-x1'),
+          area.getAttribute('data-x2'),
+        ])
+      ).toEqual([
+        ['2.5', '4.5'],
+        ['9.5', '11.5'],
+        ['16.5', '18.5'],
+        ['23.5', '25.5'],
+        ['30.5', '31.5'],
       ])
     })
   })

@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Cell,
   ReferenceLine,
+  ReferenceArea,
 } from 'recharts'
 
 import { useExpenseStore } from '@/entities/expense'
@@ -17,6 +18,7 @@ import { useSessionStore } from '@/entities/session'
 import { DailySpendingChartSkeleton } from './daily-spending-chart-skeleton'
 import {
   getDailySpendingData,
+  getWeekendSpans,
   type DailyData,
 } from '../lib/daily-spending-data'
 
@@ -78,12 +80,14 @@ export function DailySpendingChart() {
   const weekStartDays = data.filter(
     (entry) => entry.isWeekStart && entry.day !== 1
   )
+  const weekendSpans = getWeekendSpans(data)
   const lastDay = data[data.length - 1]?.day
   const axisTicks = data
     .filter(
       (entry) => entry.day === 1 || entry.day === lastDay || entry.isWeekStart
     )
     .map((entry) => entry.day)
+  const xAxisDomain = [0.5, (lastDay ?? 1) + 0.5]
   const selectedDay = selectedDate.getDate()
 
   const monthName = MONTH_NAMES[selectedDate.getMonth()]
@@ -137,7 +141,9 @@ export function DailySpendingChart() {
               margin={{ top: 10, right: 10, left: 10, bottom: 8 }}
             >
               <XAxis
+                type="number"
                 dataKey="day"
+                domain={xAxisDomain}
                 ticks={axisTicks}
                 tick={{ fill: '#71717a', fontSize: 10 }}
                 tickMargin={8}
@@ -157,10 +163,22 @@ export function DailySpendingChart() {
                 content={<CustomTooltip />}
                 cursor={{ fill: '#27272a' }}
               />
+              {weekendSpans.map((span) => (
+                <ReferenceArea
+                  key={`weekend-${span.id}`}
+                  x1={span.startDay - 0.5}
+                  x2={span.endDay + 0.5}
+                  fill="#3f3f46"
+                  fillOpacity={0.18}
+                  strokeOpacity={0}
+                  ifOverflow="hidden"
+                  data-testid="dynamics-weekend-area"
+                />
+              ))}
               {weekStartDays.map((entry) => (
                 <ReferenceLine
                   key={`week-start-${entry.day}`}
-                  x={entry.day}
+                  x={entry.day - 0.5}
                   stroke="#52525b"
                   strokeDasharray="3 3"
                   strokeOpacity={0.7}

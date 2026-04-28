@@ -12,6 +12,21 @@ export interface DailyData {
   date: Date
   weekdayLabel: string
   isWeekStart: boolean
+  isWeekend: boolean
+}
+
+export interface WeekendSpan {
+  id: string
+  startDay: number
+  endDay: number
+}
+
+function createWeekendSpan(startDay: number, endDay: number): WeekendSpan {
+  return {
+    id: `${startDay}-${endDay}`,
+    startDay,
+    endDay,
+  }
 }
 
 export function getDailySpendingData(
@@ -60,8 +75,31 @@ export function getDailySpendingData(
       date,
       weekdayLabel: WEEKDAY_LABELS[weekday],
       isWeekStart: day === 1 || weekday === 1,
+      isWeekend: weekday === 0 || weekday === 6,
     })
   }
 
   return data
+}
+
+export function getWeekendSpans(data: DailyData[]): WeekendSpan[] {
+  const spans: WeekendSpan[] = []
+  let currentStart: number | null = null
+
+  for (const entry of data) {
+    if (entry.isWeekend && currentStart === null) {
+      currentStart = entry.day
+    }
+
+    if (!entry.isWeekend && currentStart !== null) {
+      spans.push(createWeekendSpan(currentStart, entry.day - 1))
+      currentStart = null
+    }
+  }
+
+  if (currentStart !== null && data.length > 0) {
+    spans.push(createWeekendSpan(currentStart, data[data.length - 1].day))
+  }
+
+  return spans
 }
