@@ -547,6 +547,40 @@ describe('WeeklyBudget', () => {
       expect(progressBar).toHaveAttribute('aria-valuemax', '10000')
     })
 
+    it('fills the personal budget segment by spent amount, not by full limit', () => {
+      render(<WeeklyBudget />)
+
+      expect(screen.getByTitle('Личный бюджет')).toHaveStyle({
+        width: '23%',
+      })
+    })
+
+    it('fills project segments only by the covered over-limit amount', () => {
+      mockWeeklyLimit = 2000
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: '4',
+          description: 'Top up',
+          amount: 1000,
+          date: '2026-01-21',
+          category: 'Проектные деньги',
+          emoji: '💼',
+          projectId: 'project-1',
+          operationType: 'project_withdrawal',
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getByTitle('Личный бюджет')).toHaveStyle({
+        width: '66.66666666666666%',
+      })
+      expect(screen.getByTitle('Ремонт')).toHaveStyle({
+        width: '10%',
+      })
+    })
+
     it('shows percentage on progress bar', () => {
       render(<WeeklyBudget />)
 

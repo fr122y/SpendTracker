@@ -124,7 +124,7 @@ export function WeeklyBudget() {
           >
             <div
               className="h-full bg-emerald-500 transition-all duration-500"
-              style={{ width: getSegmentWidth(coverage.weeklyLimit) }}
+              style={{ width: getSegmentWidth(coverage.personalCovered) }}
               title="Личный бюджет"
             />
             {coverage.projectSegments.map((segment) => {
@@ -134,7 +134,7 @@ export function WeeklyBudget() {
                   key={segment.projectId}
                   className="h-full transition-all duration-500"
                   style={{
-                    width: getSegmentWidth(segment.available),
+                    width: getSegmentWidth(segment.covered),
                     backgroundColor: project?.color ?? '#38bdf8',
                   }}
                   title={project?.name ?? 'Проектная добавка'}
