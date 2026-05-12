@@ -9,7 +9,12 @@ import {
   CreateProjectForm,
   ProjectExpenseForm,
 } from '@/features/manage-projects'
-import { cn, getProjectExpenses } from '@/shared/lib'
+import {
+  cn,
+  getProjectCashOnHand,
+  getProjectOperations,
+  getProjectSpent,
+} from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
 
 import { ProjectsSkeleton } from './projects-skeleton'
@@ -41,13 +46,6 @@ export function ProjectsSection() {
 
   if (isProjectsLoading || isExpensesLoading) {
     return <ProjectsSkeleton />
-  }
-
-  // Calculate spent amount per project
-  const getProjectSpent = (projectId: string) => {
-    return expenses
-      .filter((e) => e.projectId === projectId)
-      .reduce((sum, e) => sum + e.amount, 0)
   }
 
   const toggleExpanded = (projectId: string) => {
@@ -90,7 +88,9 @@ export function ProjectsSection() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
           {projects.map((project) => {
             const isExpanded = expandedProjectId === project.id
-            const projectExpenses = getProjectExpenses(expenses, project.id)
+            const projectOperations = getProjectOperations(expenses, project.id)
+            const projectSpent = getProjectSpent(expenses, project.id)
+            const projectCashOnHand = getProjectCashOnHand(expenses, project.id)
 
             return (
               <div
@@ -108,7 +108,8 @@ export function ProjectsSection() {
                 >
                   <ProjectCard
                     project={project}
-                    spent={getProjectSpent(project.id)}
+                    spent={projectSpent}
+                    cashOnHand={projectCashOnHand}
                   />
                 </button>
 
@@ -133,7 +134,7 @@ export function ProjectsSection() {
                     {/* Project Expense Form */}
                     <div>
                       <h3 className="mb-2 text-xs font-medium text-zinc-400 sm:text-sm">
-                        Добавить расход
+                        Добавить операцию
                       </h3>
                       <ProjectExpenseForm projectId={project.id} />
                     </div>
@@ -141,11 +142,11 @@ export function ProjectsSection() {
                     {/* Project Expense List */}
                     <div>
                       <h3 className="mb-2 text-xs font-medium text-zinc-400 sm:text-sm">
-                        Расходы проекта
+                        Операции проекта
                       </h3>
                       <div className="max-h-[200px] overflow-y-auto sm:max-h-[300px]">
                         <ExpenseList
-                          expenses={projectExpenses}
+                          expenses={projectOperations}
                           onDelete={deleteExpense}
                           showDate
                         />

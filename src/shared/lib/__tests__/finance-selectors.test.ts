@@ -1,11 +1,17 @@
 import {
   getMonthlyExpenses,
   getDailyExpenses,
+  getDailyOperations,
+  getDailyExpenseTotal,
   getCategoryStats,
   getPersonalExpenses,
   getProjectExpenses,
+  getProjectCashOnHand,
+  getProjectOperations,
+  getProjectSpent,
   getWeeklyStats,
   getWeeklyPersonalStats,
+  getWeeklyProjectEnvelopeStats,
 } from '../finance-selectors'
 
 import type { Expense } from '@/shared/types'
@@ -60,6 +66,26 @@ const mockExpenses: Expense[] = [
     emoji: '🔨',
     projectId: 'project-1',
   },
+  {
+    id: '7',
+    description: 'Взял на материалы',
+    amount: 1000,
+    date: '2024-01-15',
+    category: 'Проектные деньги',
+    emoji: '💼',
+    projectId: 'project-1',
+    operationType: 'project_withdrawal',
+  },
+  {
+    id: '8',
+    description: 'Вернул остаток',
+    amount: 100,
+    date: '2024-01-17',
+    category: 'Проектные деньги',
+    emoji: '💼',
+    projectId: 'project-1',
+    operationType: 'project_return',
+  },
 ]
 
 describe('getMonthlyExpenses', () => {
@@ -93,6 +119,23 @@ describe('getDailyExpenses', () => {
     const result = getDailyExpenses(mockExpenses, date)
 
     expect(result).toHaveLength(0)
+  })
+})
+
+describe('daily operation selectors', () => {
+  it('should return all operations for the specified date', () => {
+    const date = new Date('2024-01-15')
+    const result = getDailyOperations(mockExpenses, date)
+
+    expect(result).toHaveLength(3)
+    expect(result.map((item) => item.id)).toEqual(['1', '2', '7'])
+  })
+
+  it('should sum only real expenses for the specified date', () => {
+    const date = new Date('2024-01-15')
+    const result = getDailyExpenseTotal(mockExpenses, date)
+
+    expect(result).toBe(150)
   })
 })
 
@@ -161,6 +204,24 @@ describe('project and personal expense selectors', () => {
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe('6')
   })
+
+  it('should return all operations for the specified project', () => {
+    const result = getProjectOperations(mockExpenses, 'project-1')
+
+    expect(result.map((item) => item.id)).toEqual(['6', '7', '8'])
+  })
+
+  it('should calculate project spent from expenses only', () => {
+    const result = getProjectSpent(mockExpenses, 'project-1')
+
+    expect(result).toBe(700)
+  })
+
+  it('should calculate project cash on hand from withdrawals, expenses, and returns', () => {
+    const result = getProjectCashOnHand(mockExpenses, 'project-1')
+
+    expect(result).toBe(200)
+  })
 })
 
 describe('getWeeklyStats', () => {
@@ -188,6 +249,50 @@ describe('getWeeklyStats', () => {
 
     expect(result.spent).toBe(0)
     expect(result.limit).toBe(1000)
+  })
+})
+
+describe('getWeeklyProjectEnvelopeStats', () => {
+  it('should track project withdrawals, expenses, returns, and remaining money', () => {
+    const date = new Date('2024-01-15')
+    const result = getWeeklyProjectEnvelopeStats(mockExpenses, date)
+
+    expect(result.withdrawn).toBe(1000)
+    expect(result.spent).toBe(700)
+    expect(result.returned).toBe(100)
+    expect(result.remaining).toBe(200)
+  })
+
+  it('should carry project money from previous weeks', () => {
+    const expenses: Expense[] = [
+      {
+        id: '1',
+        description: 'Взял',
+        amount: 1000,
+        date: '2024-01-10',
+        category: 'Проектные деньги',
+        emoji: '💼',
+        projectId: 'project-1',
+        operationType: 'project_withdrawal',
+      },
+      {
+        id: '2',
+        description: 'Потратил',
+        amount: 300,
+        date: '2024-01-16',
+        category: 'Материалы',
+        emoji: '🔨',
+        projectId: 'project-1',
+      },
+    ]
+    const result = getWeeklyProjectEnvelopeStats(
+      expenses,
+      new Date('2024-01-15')
+    )
+
+    expect(result.carryIn).toBe(1000)
+    expect(result.available).toBe(1000)
+    expect(result.remaining).toBe(700)
   })
 })
 

@@ -4,12 +4,22 @@ import { useState } from 'react'
 
 import { useCategoryStore } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
+import { useProjectStore } from '@/entities/project'
 import { useSessionStore } from '@/entities/session'
 import { useCategorize } from '@/features/add-expense/model/use-categorize'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
+import type { MoneyOperationType } from '@/shared/types'
+
+const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
+const PROJECT_MONEY_EMOJI = '💼'
+
 export function ExpenseForm() {
+  const [operationType, setOperationType] =
+    useState<MoneyOperationType>('expense')
+  const [source, setSource] = useState<'personal' | 'project'>('personal')
+  const [selectedProjectId, setSelectedProjectId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
@@ -22,6 +32,7 @@ export function ExpenseForm() {
 
   const addExpense = useExpenseStore((state) => state.addExpense)
   const categories = useCategoryStore((state) => state.categories)
+  const projects = useProjectStore((state) => state.projects)
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const {
     categorize,
@@ -34,6 +45,12 @@ export function ExpenseForm() {
     value: category.id,
     label: `${category.emoji} ${category.name}`,
   }))
+  const projectOptions = projects.map((project) => ({
+    value: project.id,
+    label: project.name,
+  }))
+  const isMovement = operationType !== 'expense'
+  const needsProject = isMovement || source === 'project'
 
   const resetForm = () => {
     setDescription('')
@@ -45,7 +62,7 @@ export function ExpenseForm() {
   }
 
   const handleDescriptionBlur = () => {
-    if (!mappingsLoaded) return
+    if (isMovement || !mappingsLoaded) return
     const normalizedDescription = description.trim()
     if (!normalizedDescription) return
 
@@ -71,6 +88,26 @@ export function ExpenseForm() {
     const normalizedDescription = description.trim()
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
+    if (needsProject && !selectedProjectId) return
+
+    setIsSubmitting(true)
+
+    if (isMovement) {
+      addExpense({
+        id: crypto.randomUUID(),
+        description: normalizedDescription,
+        amount: parsedAmount,
+        date: formatDate(selectedDate),
+        category: PROJECT_MONEY_CATEGORY,
+        emoji: PROJECT_MONEY_EMOJI,
+        projectId: selectedProjectId,
+        operationType,
+      })
+
+      resetForm()
+      setIsSubmitting(false)
+      return
+    }
 
     let resolvedSuggestedCategoryId = suggestedCategoryId
     let resolvedShowCategorySelect = showCategorySelect
@@ -98,9 +135,11 @@ export function ExpenseForm() {
     const category = shouldUseManualCategory
       ? categories.find((item) => item.id === selectedCategoryId)
       : categories.find((item) => item.id === resolvedSuggestedCategoryId)
-    if (!category) return
+    if (!category) {
+      setIsSubmitting(false)
+      return
+    }
 
-    setIsSubmitting(true)
     if (shouldUseManualCategory) {
       try {
         await saveMappingAndGetResult(normalizedDescription, category.id)
@@ -116,6 +155,8 @@ export function ExpenseForm() {
       date: formatDate(selectedDate),
       category: category.name,
       emoji: category.emoji,
+      projectId: source === 'project' ? selectedProjectId : undefined,
+      operationType,
     })
 
     resetForm()
@@ -126,10 +167,56 @@ export function ExpenseForm() {
     description.trim() &&
     amount &&
     Number(amount) > 0 &&
+    (!needsProject || !!selectedProjectId) &&
     (!showCategorySelect || !!selectedCategoryId)
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Select
+          aria-label="Тип операции"
+          options={[
+            { value: 'expense', label: 'Расход' },
+            { value: 'project_withdrawal', label: 'Взял из проекта' },
+            { value: 'project_return', label: 'Вернул в проект' },
+          ]}
+          value={operationType}
+          onChange={(e) => {
+            const nextType = e.target.value as MoneyOperationType
+            setOperationType(nextType)
+            if (nextType !== 'expense') {
+              setSource('project')
+              setShowCategorySelect(false)
+              setSuggestedCategoryId(null)
+            }
+          }}
+          disabled={isSubmitting || isSavingMapping}
+        />
+        {operationType === 'expense' && (
+          <Select
+            aria-label="Источник средств"
+            options={[
+              { value: 'personal', label: 'Личные' },
+              { value: 'project', label: 'Проект' },
+            ]}
+            value={source}
+            onChange={(e) =>
+              setSource(e.target.value as 'personal' | 'project')
+            }
+            disabled={isSubmitting || isSavingMapping}
+          />
+        )}
+      </div>
+      {needsProject && (
+        <Select
+          aria-label="Проект"
+          options={projectOptions}
+          value={selectedProjectId}
+          onChange={(e) => setSelectedProjectId(e.target.value)}
+          placeholder="Выберите проект"
+          disabled={isSubmitting || isSavingMapping}
+        />
+      )}
       <Input
         placeholder="Описание расхода"
         aria-label="Описание расхода"
@@ -147,7 +234,7 @@ export function ExpenseForm() {
         disabled={isSubmitting || isSavingMapping}
         className="text-base sm:text-sm"
       />
-      {suggestedCategoryId && !showCategorySelect && (
+      {suggestedCategoryId && !showCategorySelect && !isMovement && (
         <div className="text-sm text-zinc-300">
           <span className="mr-2">Категория:</span>
           <span className="font-medium">{suggestedCategoryLabel}</span>
@@ -161,7 +248,7 @@ export function ExpenseForm() {
           </button>
         </div>
       )}
-      {showCategorySelect && (
+      {showCategorySelect && !isMovement && (
         <Select
           aria-label="Категория"
           options={categoryOptions}

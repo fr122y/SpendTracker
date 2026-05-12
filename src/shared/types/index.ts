@@ -1,5 +1,10 @@
 // Shared Types - Global TypeScript Definitions
 
+export type MoneyOperationType =
+  | 'expense'
+  | 'project_withdrawal'
+  | 'project_return'
+
 // Expense entity
 export interface Expense {
   id: string
@@ -9,6 +14,7 @@ export interface Expense {
   category: string // Name of the category
   emoji: string
   projectId?: string // Optional
+  operationType?: MoneyOperationType
 }
 
 // Category entity

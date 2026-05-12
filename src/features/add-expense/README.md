@@ -1,24 +1,27 @@
 # Add Expense Feature
 
-Handles expense creation with local keyword-based categorization.
+Handles money operation creation with local keyword-based categorization for
+real expenses.
 
 ## Public API (`index.ts`)
 
-- `ExpenseForm`: Form component for adding new expenses
+- `ExpenseForm`: Form component for adding personal expenses, project expenses, project withdrawals, and project returns
 
 ## State & Data
 
 - `useCategoryStore`: Category list for suggestion/manual override
 - `useExpenseStore`: Mutation adapter for saving expense
+- `useProjectStore`: Project list for project-linked expenses and movements
 - `useCategorize`: Shared hook over `keyword-mapping` entity and Fuse.js matcher
 
 ## Logic Flow
 
-1. User enters description and amount
-2. On description blur, fuzzy matcher suggests a category if keyword mapping exists
-3. If no match, user picks category manually from `Select`
-4. On manual selection submit, mapping is upserted, then expense is saved
+1. User selects operation type and source
+2. Personal expense remains the default fast path
+3. Project source requires project selection
+4. Real expenses use keyword category suggestions/manual override
+5. Project withdrawals and returns use the technical `Проектные деньги` category
 
 ## Dependencies
 
-- Uses: `@/entities/expense`, `@/entities/category`, `@/entities/keyword-mapping`, `@/shared/ui`
+- Uses: `@/entities/expense`, `@/entities/category`, `@/entities/project`, `@/entities/keyword-mapping`, `@/shared/ui`

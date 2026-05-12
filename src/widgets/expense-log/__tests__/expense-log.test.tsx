@@ -104,12 +104,25 @@ jest.mock('@/features/add-expense', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
-  getDailyExpenses: jest.fn((expenses: Expense[], date: Date) => {
+  getDailyOperations: jest.fn((expenses: Expense[], date: Date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
     const dateStr = `${year}-${month}-${day}`
     return expenses.filter((expense) => expense.date === dateStr)
+  }),
+  getDailyExpenseTotal: jest.fn((expenses: Expense[], date: Date) => {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    const dateStr = `${year}-${month}-${day}`
+    return expenses
+      .filter(
+        (expense) =>
+          expense.date === dateStr &&
+          (expense.operationType ?? 'expense') === 'expense'
+      )
+      .reduce((sum, expense) => sum + expense.amount, 0)
   }),
   cn: jest.fn((...args: unknown[]) => {
     return args
@@ -201,8 +214,8 @@ describe('ExpenseLog', () => {
     it('renders daily total amount', () => {
       render(<ExpenseLog />)
 
-      // Total: 250 + 450 + 100 = 800 (excluding project expense)
-      expect(screen.getByText(/800 ₽/)).toBeInTheDocument()
+      // Total: personal expenses + project expense
+      expect(screen.getByText(/5\s?800 ₽/)).toBeInTheDocument()
     })
 
     it('renders ExpenseForm component', () => {
@@ -255,24 +268,21 @@ describe('ExpenseLog', () => {
       render(<ExpenseLog />)
 
       const expenseCount = screen.getByTestId('expense-count')
-      // Should show 3 expenses (not including yesterday's expense)
-      expect(expenseCount).toHaveTextContent('3')
+      // Should show 4 operations (not including yesterday's expense)
+      expect(expenseCount).toHaveTextContent('4')
     })
 
-    it('filters out project expenses', () => {
+    it('shows project expenses in the default journal view', () => {
       render(<ExpenseLog />)
 
       const expenseCount = screen.getByTestId('expense-count')
-      // Should show 3 expenses (not including project expense)
-      expect(expenseCount).toHaveTextContent('3')
+      expect(expenseCount).toHaveTextContent('4')
     })
 
-    it('calculates daily total excluding project expenses', () => {
+    it('calculates daily total including project expenses', () => {
       render(<ExpenseLog />)
 
-      // Total should be 250 + 450 + 100 = 800 (not including 5000 project expense)
-      expect(screen.getByText(/800 ₽/)).toBeInTheDocument()
-      expect(screen.queryByText(/5800 ₽/)).not.toBeInTheDocument()
+      expect(screen.getByText(/5\s?800 ₽/)).toBeInTheDocument()
     })
 
     it('shows only expenses for selected date', () => {
@@ -354,7 +364,7 @@ describe('ExpenseLog', () => {
       expect(container.innerHTML).toContain('Нет операций за этот день')
     })
 
-    it('shows empty message when only project expenses exist', () => {
+    it('shows project expenses when only project expenses exist', () => {
       mockExpenses = [
         {
           id: '1',
@@ -369,7 +379,7 @@ describe('ExpenseLog', () => {
 
       render(<ExpenseLog />)
 
-      expect(screen.getByText('Нет операций за этот день')).toBeInTheDocument()
+      expect(screen.getByTestId('expense-count')).toHaveTextContent('1')
     })
   })
 
@@ -398,7 +408,7 @@ describe('ExpenseLog', () => {
       render(<ExpenseLog />)
 
       expect(screen.getByTestId('expense-list')).toBeInTheDocument()
-      expect(screen.getByTestId('expense-count')).toHaveTextContent('3')
+      expect(screen.getByTestId('expense-count')).toHaveTextContent('4')
     })
 
     it('reads selected date from session store', () => {
@@ -422,7 +432,7 @@ describe('ExpenseLog', () => {
       render(<ExpenseLog />)
 
       const expenseCount = screen.getByTestId('expense-count')
-      expect(expenseCount).toHaveTextContent('3')
+      expect(expenseCount).toHaveTextContent('4')
     })
 
     it('passes onDelete handler to ExpenseList', () => {

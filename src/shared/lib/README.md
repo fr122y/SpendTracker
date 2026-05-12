@@ -8,8 +8,14 @@ Utility functions and helpers used across the application.
 
 - `getMonthlyExpenses(expenses, date)`: Filter expenses by month
 - `getDailyExpenses(expenses, date)`: Filter expenses by specific date
+- `getDailyOperations(expenses, date)`: Filter all operation types by date
+- `getDailyExpenseTotal(expenses, date)`: Sum real expenses by date
 - `getCategoryStats(expenses, date)`: Get category statistics for month (sorted by value)
+- `getProjectOperations(expenses, projectId)`: Filter all operations for a project
+- `getProjectSpent(expenses, projectId)`: Sum real project expenses
+- `getProjectCashOnHand(expenses, projectId)`: Calculate outstanding project money on hand
 - `getWeeklyStats(expenses, date, limit)`: Get weekly spending stats with boundaries
+- `getWeeklyProjectEnvelopeStats(expenses, date)`: Calculate project money available/spent/remaining for week
 
 ### Utilities
 

@@ -95,7 +95,7 @@ describe('Calendar', () => {
     it('renders legend with expense, salary, and advance indicators', () => {
       render(<Calendar />)
 
-      expect(screen.getByText('Расход')).toBeInTheDocument()
+      expect(screen.getByText('Операция')).toBeInTheDocument()
       expect(screen.getByText(/Зарплата:/)).toBeInTheDocument()
       expect(screen.getByText(/Аванс:/)).toBeInTheDocument()
     })

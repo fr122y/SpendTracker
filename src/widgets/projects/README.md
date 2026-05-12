@@ -1,6 +1,7 @@
 # Projects Widget
 
-Manages expense projects with budget tracking and per-project expense management.
+Manages expense projects with budget tracking and per-project operation
+management.
 
 ## Public API (`index.ts`)
 
@@ -10,16 +11,16 @@ Manages expense projects with budget tracking and per-project expense management
 
 - `useProjects`: projects list
 - `useDeleteProject`: project deletion mutation
-- `useExpenses`: expenses list for project-linked totals
-- `useDeleteExpense`: expense deletion mutation for project-linked expenses
+- `useExpenses`: operation list for project-linked totals
+- `useDeleteExpense`: deletion mutation for project-linked operations
 
 ## Features
 
 - "Create Project" toggle button and form
 - Responsive grid of ProjectCard components
 - Click card to expand/collapse
-- Expanded view includes project deletion and project expense form
-- Budget progress display via ProjectCard
+- Expanded view includes project deletion and project operation form
+- Budget progress distinguishes real spent money from project cash on hand
 - Empty state message when no projects
 
 ## Dependencies

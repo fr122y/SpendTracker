@@ -5,7 +5,7 @@ CRUD operations for expense projects with budget allocation.
 ## Public API (`index.ts`)
 
 - `CreateProjectForm`: Form for creating new projects with name and budget
-- `ProjectExpenseForm`: Form for adding expenses to a specific project
+- `ProjectExpenseForm`: Form for adding expenses, withdrawals, and returns to a specific project
 
 ## State & Data
 
@@ -13,13 +13,14 @@ CRUD operations for expense projects with budget allocation.
 - `useAddProject`: Mutation hook for creating a project
 - `useDeleteProject`: Mutation hook for deleting a project
 - `useCategories`: Query hook for category suggestions in project expense forms
-- `useAddExpense`: Mutation hook for saving project-linked expenses
+- `useAddExpense`: Mutation hook for saving project-linked operations
 
 ## Features
 
 - Create project with name and budget limit
 - Auto-generated color from predefined palette
 - Add expenses linked to projects with local keyword-based categorization
+- Add project withdrawals and returns as non-expense money movements
 - Manual category override with keyword mapping upsert on submit
 
 ## Dependencies

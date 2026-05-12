@@ -2,14 +2,21 @@
 export {
   getMonthlyExpenses,
   getDailyExpenses,
+  getDailyOperations,
+  getDailyExpenseTotal,
   getCategoryStats,
   getPersonalExpenses,
   getProjectExpenses,
+  getProjectOperations,
+  getProjectSpent,
+  getProjectCashOnHand,
   getWeeklyStats,
   getWeeklyPersonalStats,
+  getWeeklyProjectEnvelopeStats,
   formatDate,
   type CategoryStat,
   type WeeklyStat,
+  type WeeklyProjectEnvelopeStat,
 } from './finance-selectors'
 
 export { cn } from './cn'

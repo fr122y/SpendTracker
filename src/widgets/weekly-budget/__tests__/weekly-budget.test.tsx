@@ -96,6 +96,39 @@ jest.mock('@/shared/lib', () => ({
       end: '2026-01-26',
     }
   }),
+  getWeeklyProjectEnvelopeStats: jest.fn((expenses) => {
+    const projectOperations = expenses.filter(
+      (e: { projectId?: string }) => e.projectId
+    )
+    const withdrawn = projectOperations
+      .filter(
+        (e: { operationType?: string }) =>
+          e.operationType === 'project_withdrawal'
+      )
+      .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)
+    const spent = projectOperations
+      .filter(
+        (e: { operationType?: string }) =>
+          (e.operationType ?? 'expense') === 'expense'
+      )
+      .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)
+    const returned = projectOperations
+      .filter(
+        (e: { operationType?: string }) => e.operationType === 'project_return'
+      )
+      .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)
+
+    return {
+      available: withdrawn,
+      spent,
+      returned,
+      remaining: withdrawn - spent - returned,
+      carryIn: 0,
+      withdrawn,
+      start: '2026-01-20',
+      end: '2026-01-26',
+    }
+  }),
   cn: jest.fn((...args: unknown[]) => {
     return args
       .flat()
@@ -165,7 +198,7 @@ describe('WeeklyBudget', () => {
     it('renders progress bar', () => {
       render(<WeeklyBudget />)
 
-      const progressBar = screen.getByRole('progressbar')
+      const progressBar = screen.getAllByRole('progressbar')[0]
       expect(progressBar).toBeInTheDocument()
     })
 
@@ -173,7 +206,7 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Total spent: 1500 + 300 + 500 = 2300
-      expect(screen.getByText(/Потрачено:/)).toBeInTheDocument()
+      expect(screen.getAllByText(/Потрачено:/)[0]).toBeInTheDocument()
       expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
     })
 
@@ -181,7 +214,7 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Remaining: 10000 - 2300 = 7700
-      expect(screen.getByText(/Осталось:/)).toBeInTheDocument()
+      expect(screen.getAllByText(/Осталось:/)[0]).toBeInTheDocument()
       expect(screen.getByText(/7\s?700 ₽/)).toBeInTheDocument()
     })
 
@@ -220,7 +253,7 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Remaining: 2000 - 2300 = -300
-      const remainingText = screen.getByText(/Осталось:/).parentElement
+      const remainingText = screen.getAllByText(/Осталось:/)[0].parentElement
       expect(remainingText).toHaveTextContent('-300')
     })
 
@@ -248,7 +281,7 @@ describe('WeeklyBudget', () => {
       mockWeeklyLimit = 10000
       const { container } = render(<WeeklyBudget />)
 
-      const spentSection = screen.getByText(/Потрачено:/).parentElement
+      const spentSection = screen.getAllByText(/Потрачено:/)[0].parentElement
       expect(spentSection).toBeTruthy()
       expect(container.innerHTML).toContain('text-emerald-400')
     })
@@ -421,14 +454,14 @@ describe('WeeklyBudget', () => {
     it('passes correct value to progress bar', () => {
       render(<WeeklyBudget />)
 
-      const progressBar = screen.getByRole('progressbar')
+      const progressBar = screen.getAllByRole('progressbar')[0]
       expect(progressBar).toHaveAttribute('aria-valuenow', '2300')
     })
 
     it('passes correct max to progress bar', () => {
       render(<WeeklyBudget />)
 
-      const progressBar = screen.getByRole('progressbar')
+      const progressBar = screen.getAllByRole('progressbar')[0]
       expect(progressBar).toHaveAttribute('aria-valuemax', '10000')
     })
 

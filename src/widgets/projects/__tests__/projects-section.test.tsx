@@ -83,11 +83,20 @@ jest.mock('@/entities/project', () => ({
       deleteProject: mockDeleteProject,
     }),
   ProjectCard: jest.fn(
-    ({ project, spent }: { project: Project; spent: number }) => (
+    ({
+      project,
+      spent,
+      cashOnHand,
+    }: {
+      project: Project
+      spent: number
+      cashOnHand: number
+    }) => (
       <div data-testid={`project-card-${project.id}`}>
         <div data-testid="project-name">{project.name}</div>
         <div data-testid="project-budget">{project.budget}</div>
         <div data-testid="project-spent">{spent}</div>
+        <div data-testid="project-cash-on-hand">{cashOnHand}</div>
       </div>
     )
   ),
@@ -150,7 +159,36 @@ jest.mock('@/features/manage-projects', () => ({
 jest.mock('@/shared/lib', () => ({
   cn: (...classes: unknown[]) => classes.filter(Boolean).join(' '),
   getProjectExpenses: (expenses: Expense[], projectId: string) =>
+    expenses.filter(
+      (expense) =>
+        (expense.operationType ?? 'expense') === 'expense' &&
+        expense.projectId === projectId
+    ),
+  getProjectOperations: (expenses: Expense[], projectId: string) =>
     expenses.filter((expense) => expense.projectId === projectId),
+  getProjectSpent: (expenses: Expense[], projectId: string) =>
+    expenses
+      .filter(
+        (expense) =>
+          (expense.operationType ?? 'expense') === 'expense' &&
+          expense.projectId === projectId
+      )
+      .reduce((sum, expense) => sum + expense.amount, 0),
+  getProjectCashOnHand: (expenses: Expense[], projectId: string) =>
+    expenses
+      .filter((expense) => expense.projectId === projectId)
+      .reduce((sum, expense) => {
+        if (expense.operationType === 'project_withdrawal') {
+          return sum + expense.amount
+        }
+        if ((expense.operationType ?? 'expense') === 'expense') {
+          return sum - expense.amount
+        }
+        if (expense.operationType === 'project_return') {
+          return sum - expense.amount
+        }
+        return sum
+      }, 0),
 }))
 
 // Mock Button and EmptyState components
@@ -388,22 +426,22 @@ describe('ProjectsSection', () => {
       ).toBeInTheDocument()
     })
 
-    it('shows "Добавить расход" header when expanded', () => {
+    it('shows "Добавить операцию" header when expanded', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      expect(screen.getByText('Добавить расход')).toBeInTheDocument()
+      expect(screen.getByText('Добавить операцию')).toBeInTheDocument()
     })
 
-    it('shows "Расходы проекта" header when expanded', () => {
+    it('shows "Операции проекта" header when expanded', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      expect(screen.getByText('Расходы проекта')).toBeInTheDocument()
+      expect(screen.getByText('Операции проекта')).toBeInTheDocument()
     })
 
     it('collapses project when clicked again', () => {
@@ -930,16 +968,16 @@ describe('ProjectsSection', () => {
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      expect(screen.getByText('Добавить расход')).toBeInTheDocument()
+      expect(screen.getByText('Добавить операцию')).toBeInTheDocument()
     })
 
-    it('displays project expenses header in Russian', () => {
+    it('displays project operations header in Russian', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
       fireEvent.click(projectCard)
 
-      expect(screen.getByText('Расходы проекта')).toBeInTheDocument()
+      expect(screen.getByText('Операции проекта')).toBeInTheDocument()
     })
 
     it('displays empty state message in Russian', () => {

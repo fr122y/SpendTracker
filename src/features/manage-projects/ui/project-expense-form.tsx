@@ -9,11 +9,18 @@ import { useCategorize } from '@/features/add-expense/model/use-categorize'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
+import type { MoneyOperationType } from '@/shared/types'
+
 interface ProjectExpenseFormProps {
   projectId: string
 }
 
+const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
+const PROJECT_MONEY_EMOJI = '💼'
+
 export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
+  const [operationType, setOperationType] =
+    useState<MoneyOperationType>('expense')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
@@ -38,6 +45,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     value: category.id,
     label: `${category.emoji} ${category.name}`,
   }))
+  const isMovement = operationType !== 'expense'
 
   const resetForm = () => {
     setDescription('')
@@ -49,7 +57,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
   }
 
   const handleDescriptionBlur = () => {
-    if (!mappingsLoaded) return
+    if (isMovement || !mappingsLoaded) return
     const normalizedDescription = description.trim()
     if (!normalizedDescription) return
 
@@ -75,6 +83,25 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     const normalizedDescription = description.trim()
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
+
+    setIsSubmitting(true)
+
+    if (isMovement) {
+      addExpense({
+        id: crypto.randomUUID(),
+        description: normalizedDescription,
+        amount: parsedAmount,
+        date: formatDate(selectedDate),
+        category: PROJECT_MONEY_CATEGORY,
+        emoji: PROJECT_MONEY_EMOJI,
+        projectId,
+        operationType,
+      })
+
+      resetForm()
+      setIsSubmitting(false)
+      return
+    }
 
     let resolvedSuggestedCategoryId = suggestedCategoryId
     let resolvedShowCategorySelect = showCategorySelect
@@ -102,9 +129,11 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     const category = shouldUseManualCategory
       ? categories.find((item) => item.id === selectedCategoryId)
       : categories.find((item) => item.id === resolvedSuggestedCategoryId)
-    if (!category) return
+    if (!category) {
+      setIsSubmitting(false)
+      return
+    }
 
-    setIsSubmitting(true)
     if (shouldUseManualCategory) {
       try {
         await saveMappingAndGetResult(normalizedDescription, category.id)
@@ -121,6 +150,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
       category: category.name,
       emoji: category.emoji,
       projectId,
+      operationType,
     })
 
     resetForm()
@@ -131,10 +161,28 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     description.trim() &&
     amount &&
     Number(amount) > 0 &&
-    (!showCategorySelect || !!selectedCategoryId)
+    (isMovement || !showCategorySelect || !!selectedCategoryId)
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
+      <Select
+        aria-label="Тип операции проекта"
+        options={[
+          { value: 'expense', label: 'Расход проекта' },
+          { value: 'project_withdrawal', label: 'Взял из проекта' },
+          { value: 'project_return', label: 'Вернул в проект' },
+        ]}
+        value={operationType}
+        onChange={(e) => {
+          const nextType = e.target.value as MoneyOperationType
+          setOperationType(nextType)
+          if (nextType !== 'expense') {
+            setShowCategorySelect(false)
+            setSuggestedCategoryId(null)
+          }
+        }}
+        disabled={isSubmitting || isSavingMapping}
+      />
       <Input
         placeholder="Описание расхода"
         value={description}
@@ -150,7 +198,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
         disabled={isSubmitting || isSavingMapping}
         className="text-base sm:text-sm"
       />
-      {suggestedCategoryId && !showCategorySelect && (
+      {suggestedCategoryId && !showCategorySelect && !isMovement && (
         <div className="text-sm text-zinc-300">
           <span className="mr-2">Категория:</span>
           <span className="font-medium">{suggestedCategoryLabel}</span>
@@ -164,7 +212,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
           </button>
         </div>
       )}
-      {showCategorySelect && (
+      {showCategorySelect && !isMovement && (
         <Select
           aria-label="Категория"
           options={categoryOptions}

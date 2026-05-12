@@ -1,6 +1,12 @@
 'use client'
 
-import { Trash2 } from 'lucide-react'
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Briefcase,
+  Receipt,
+  Trash2,
+} from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
 import { MathInput } from '@/shared/ui/math-input'
@@ -23,6 +29,38 @@ function formatExpenseDate(date: string) {
   return `${day}.${month}.${year}`
 }
 
+function getOperationMeta(expense: Expense) {
+  if (expense.operationType === 'project_withdrawal') {
+    return {
+      label: 'Взято из проекта',
+      className: 'bg-sky-500/10 text-sky-300 ring-sky-500/30',
+      Icon: ArrowDownLeft,
+    }
+  }
+
+  if (expense.operationType === 'project_return') {
+    return {
+      label: 'Возврат в проект',
+      className: 'bg-amber-500/10 text-amber-300 ring-amber-500/30',
+      Icon: ArrowUpRight,
+    }
+  }
+
+  if (expense.projectId) {
+    return {
+      label: 'Проектный расход',
+      className: 'bg-blue-500/10 text-blue-300 ring-blue-500/30',
+      Icon: Briefcase,
+    }
+  }
+
+  return {
+    label: 'Личный расход',
+    className: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
+    Icon: Receipt,
+  }
+}
+
 export function ExpenseCard({
   expense,
   onDelete,
@@ -41,7 +79,7 @@ export function ExpenseCard({
   }, [isEditing])
 
   const handleAmountClick = () => {
-    if (onEdit) {
+    if (onEdit && (expense.operationType ?? 'expense') === 'expense') {
       setEditValue(String(expense.amount))
       setIsEditing(true)
     }
@@ -66,6 +104,11 @@ export function ExpenseCard({
     setIsEditing(false)
   }
 
+  const operationMeta = getOperationMeta(expense)
+  const OperationIcon = operationMeta.Icon
+  const canEditAmount =
+    Boolean(onEdit) && (expense.operationType ?? 'expense') === 'expense'
+
   // Enhanced contrast with border-zinc-700 and bg-zinc-900/70, shadow-md for depth, hover states for feedback
   return (
     <div className="flex items-center justify-between rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-2 sm:p-3 transition-all duration-200 ease-out hover:bg-zinc-800/80 hover:border-zinc-600 hover:-translate-y-0.5 hover:shadow-lg">
@@ -77,6 +120,12 @@ export function ExpenseCard({
           </span>
           <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-zinc-500">
             <span>{expense.category}</span>
+            <span
+              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ring-1 ${operationMeta.className}`}
+            >
+              <OperationIcon className="h-3 w-3" />
+              {operationMeta.label}
+            </span>
             {showDate && (
               <span data-testid={`expense-date-${expense.id}`}>
                 {formatExpenseDate(expense.date)}
@@ -101,7 +150,7 @@ export function ExpenseCard({
             onClick={handleAmountClick}
             className="text-base sm:text-sm font-semibold text-emerald-400 hover:text-emerald-300 active:text-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 transition-colors cursor-pointer min-h-11 px-2 rounded-md"
             aria-label="edit amount"
-            disabled={!onEdit}
+            disabled={!canEditAmount}
           >
             {expense.amount} ₽
           </button>

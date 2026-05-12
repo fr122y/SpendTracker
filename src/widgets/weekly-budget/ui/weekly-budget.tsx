@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
-import { getWeeklyPersonalStats, cn } from '@/shared/lib'
+import {
+  getWeeklyPersonalStats,
+  getWeeklyProjectEnvelopeStats,
+  cn,
+} from '@/shared/lib'
 import { ProgressBar, MathInput } from '@/shared/ui'
 
 import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
@@ -38,8 +42,11 @@ export function WeeklyBudget() {
   }
 
   const stats = getWeeklyPersonalStats(expenses, selectedDate, weeklyLimit)
+  const projectStats = getWeeklyProjectEnvelopeStats(expenses, selectedDate)
   const remaining = weeklyLimit - stats.spent
   const isOverBudget = remaining < 0
+  const projectRemaining = projectStats.remaining
+  const isProjectOverBudget = projectRemaining < 0
 
   // Format week dates
   const formatWeekDate = (dateStr: string) => {
@@ -107,6 +114,48 @@ export function WeeklyBudget() {
               )}
             >
               {remaining.toLocaleString('ru-RU')} ₽
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* Project Money Segment */}
+      <div className="space-y-2 rounded-md border border-zinc-800 bg-zinc-900/40 p-3">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+          <span className="text-sm font-medium text-sky-300">
+            Проектные деньги
+          </span>
+          <span className="text-xs text-zinc-500">
+            Доступно: {projectStats.available.toLocaleString('ru-RU')} ₽
+          </span>
+        </div>
+        <ProgressBar
+          value={projectStats.spent}
+          max={Math.max(projectStats.available, 1)}
+          showPercentage
+        />
+        <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-3 sm:text-sm">
+          <span className="text-zinc-400">
+            Выдано:{' '}
+            <span className="font-semibold text-sky-300">
+              {projectStats.withdrawn.toLocaleString('ru-RU')} ₽
+            </span>
+          </span>
+          <span className="text-zinc-400">
+            Потрачено:{' '}
+            <span className="font-semibold text-emerald-400">
+              {projectStats.spent.toLocaleString('ru-RU')} ₽
+            </span>
+          </span>
+          <span className="text-zinc-400">
+            Осталось:{' '}
+            <span
+              className={cn(
+                'font-semibold',
+                isProjectOverBudget ? 'text-red-400' : 'text-zinc-100'
+              )}
+            >
+              {projectRemaining.toLocaleString('ru-RU')} ₽
             </span>
           </span>
         </div>

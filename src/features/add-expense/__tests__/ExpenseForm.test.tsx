@@ -12,6 +12,8 @@ const mockCategories = [
   { id: '6', name: 'Другое', emoji: '📝' },
 ]
 
+const mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
+
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
     selector({ addExpense: mockAddExpense }),
@@ -21,6 +23,12 @@ jest.mock('@/entities/category', () => ({
   useCategoryStore: (
     selector: (state: { categories: typeof mockCategories }) => unknown
   ) => selector({ categories: mockCategories }),
+}))
+
+jest.mock('@/entities/project', () => ({
+  useProjectStore: (
+    selector: (state: { projects: typeof mockProjects }) => unknown
+  ) => selector({ projects: mockProjects }),
 }))
 
 jest.mock('@/entities/session', () => ({

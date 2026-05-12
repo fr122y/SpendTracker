@@ -135,6 +135,7 @@ export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
         category: expense.category,
         emoji: expense.emoji,
         projectId: expense.projectId,
+        operationType: expense.operationType,
       })
     },
     deleteExpense: (id) => {

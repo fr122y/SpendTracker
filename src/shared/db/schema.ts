@@ -81,6 +81,7 @@ export const expenses = pgTable('expense', {
   category: text('category').notNull(),
   emoji: text('emoji').notNull(),
   projectId: text('projectId'),
+  operationType: text('operationType').notNull().default('expense'),
   createdAt: timestamp('createdAt', { mode: 'date' })
     .notNull()
     .default(sql`now()`),

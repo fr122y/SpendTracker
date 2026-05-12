@@ -16,11 +16,34 @@ export interface WeeklyStat {
   end: string
 }
 
+export interface WeeklyProjectEnvelopeStat {
+  available: number
+  spent: number
+  returned: number
+  remaining: number
+  carryIn: number
+  withdrawn: number
+  start: string
+  end: string
+}
+
+function isExpense(expense: Expense): boolean {
+  return (expense.operationType ?? 'expense') === 'expense'
+}
+
+function isProjectWithdrawal(expense: Expense): boolean {
+  return expense.operationType === 'project_withdrawal'
+}
+
+function isProjectReturn(expense: Expense): boolean {
+  return expense.operationType === 'project_return'
+}
+
 /**
  * Returns personal expenses without a linked project
  */
 export function getPersonalExpenses(expenses: Expense[]): Expense[] {
-  return expenses.filter((expense) => !expense.projectId)
+  return expenses.filter((expense) => isExpense(expense) && !expense.projectId)
 }
 
 /**
@@ -30,7 +53,40 @@ export function getProjectExpenses(
   expenses: Expense[],
   projectId: string
 ): Expense[] {
+  return expenses.filter(
+    (expense) => isExpense(expense) && expense.projectId === projectId
+  )
+}
+
+export function getProjectOperations(
+  expenses: Expense[],
+  projectId: string
+): Expense[] {
   return expenses.filter((expense) => expense.projectId === projectId)
+}
+
+export function getProjectSpent(
+  expenses: Expense[],
+  projectId: string
+): number {
+  return getProjectExpenses(expenses, projectId).reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  )
+}
+
+export function getProjectCashOnHand(
+  expenses: Expense[],
+  projectId: string
+): number {
+  const projectOperations = getProjectOperations(expenses, projectId)
+
+  return projectOperations.reduce((sum, expense) => {
+    if (isProjectWithdrawal(expense)) return sum + expense.amount
+    if (isExpense(expense)) return sum - expense.amount
+    if (isProjectReturn(expense)) return sum - expense.amount
+    return sum
+  }, 0)
 }
 
 /**
@@ -43,7 +99,9 @@ export function getMonthlyExpenses(expenses: Expense[], date: Date): Expense[] {
   return expenses.filter((expense) => {
     const expenseDate = new Date(expense.date)
     return (
-      expenseDate.getFullYear() === year && expenseDate.getMonth() === month
+      isExpense(expense) &&
+      expenseDate.getFullYear() === year &&
+      expenseDate.getMonth() === month
     )
   })
 }
@@ -53,7 +111,21 @@ export function getMonthlyExpenses(expenses: Expense[], date: Date): Expense[] {
  */
 export function getDailyExpenses(expenses: Expense[], date: Date): Expense[] {
   const dateStr = formatDate(date)
+  return expenses.filter(
+    (expense) => isExpense(expense) && expense.date === dateStr
+  )
+}
+
+export function getDailyOperations(expenses: Expense[], date: Date): Expense[] {
+  const dateStr = formatDate(date)
   return expenses.filter((expense) => expense.date === dateStr)
+}
+
+export function getDailyExpenseTotal(expenses: Expense[], date: Date): number {
+  return getDailyExpenses(expenses, date).reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  )
 }
 
 /**
@@ -126,9 +198,10 @@ export function getWeeklyStats(
 ): WeeklyStat {
   const { start, end } = getWeekBoundaries(date)
 
-  const weekExpenses = expenses.filter((expense) => {
-    return expense.date >= start && expense.date <= end
-  })
+  const weekExpenses = expenses.filter(
+    (expense) =>
+      isExpense(expense) && expense.date >= start && expense.date <= end
+  )
 
   const spent = weekExpenses.reduce((sum, expense) => sum + expense.amount, 0)
 
@@ -159,6 +232,47 @@ export function getWeeklyPersonalStats(
   return {
     spent,
     limit: weeklyLimit,
+    start,
+    end,
+  }
+}
+
+export function getWeeklyProjectEnvelopeStats(
+  expenses: Expense[],
+  date: Date
+): WeeklyProjectEnvelopeStat {
+  const { start, end } = getWeekBoundaries(date)
+
+  const projectOperations = expenses.filter((expense) => expense.projectId)
+  const carryIn = projectOperations
+    .filter((expense) => expense.date < start)
+    .reduce((sum, expense) => {
+      if (isProjectWithdrawal(expense)) return sum + expense.amount
+      if (isExpense(expense)) return sum - expense.amount
+      if (isProjectReturn(expense)) return sum - expense.amount
+      return sum
+    }, 0)
+  const weekOperations = projectOperations.filter(
+    (expense) => expense.date >= start && expense.date <= end
+  )
+  const withdrawn = weekOperations
+    .filter(isProjectWithdrawal)
+    .reduce((sum, expense) => sum + expense.amount, 0)
+  const spent = weekOperations
+    .filter(isExpense)
+    .reduce((sum, expense) => sum + expense.amount, 0)
+  const returned = weekOperations
+    .filter(isProjectReturn)
+    .reduce((sum, expense) => sum + expense.amount, 0)
+  const available = carryIn + withdrawn
+
+  return {
+    available,
+    spent,
+    returned,
+    remaining: available - spent - returned,
+    carryIn,
+    withdrawn,
     start,
     end,
   }

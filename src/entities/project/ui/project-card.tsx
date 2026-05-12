@@ -7,9 +7,13 @@ import type { Project } from '@/shared/types'
 interface ProjectCardProps {
   project: Project
   spent: number
+  cashOnHand: number
 }
 
-export function ProjectCard({ project, spent }: ProjectCardProps) {
+export function ProjectCard({ project, spent, cashOnHand }: ProjectCardProps) {
+  const reserved = Math.max(cashOnHand, 0)
+  const committed = spent + reserved
+
   // Enhanced contrast with border-zinc-700, shadow-md for depth, card-lift for hover micro-interaction
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-4 card-lift">
@@ -21,12 +25,19 @@ export function ProjectCard({ project, spent }: ProjectCardProps) {
         <span className="font-medium text-zinc-100">{project.name}</span>
       </div>
       <div className="mb-2 flex flex-col gap-1 text-sm">
-        <span className="text-zinc-400">Потрачено</span>
+        <span className="text-zinc-400">Бюджет проекта</span>
         <span className="break-words font-semibold text-zinc-200">
-          {spent} / {project.budget} ₽
+          {committed.toLocaleString('ru-RU')} /{' '}
+          {project.budget.toLocaleString('ru-RU')} ₽
+        </span>
+        <span className="text-xs text-emerald-400">
+          Потрачено: {spent.toLocaleString('ru-RU')} ₽
+        </span>
+        <span className="text-xs text-sky-400">
+          На руках: {reserved.toLocaleString('ru-RU')} ₽
         </span>
       </div>
-      <ProgressBar value={spent} max={project.budget} />
+      <ProgressBar value={committed} max={project.budget} />
     </div>
   )
 }

@@ -1,7 +1,8 @@
 # Expense Entity
 
-Manages individual expense records through DB-backed query hooks and mutation
-actions.
+Manages money operation records through DB-backed query hooks and mutation
+actions. The database table is still named `expense`, but records may represent
+real expenses, project withdrawals, or project returns.
 
 ## Public API (`index.ts`)
 
@@ -9,14 +10,15 @@ actions.
 - `useAddExpense`: Mutation hook for creating a new expense
 - `useDeleteExpense`: Mutation hook for deleting an expense by ID
 - `useUpdateExpense`: Mutation hook for partial expense updates
-- `ExpenseCard`: Presentational component displaying a single expense with optional date and inline amount editing
-- `ExpenseList`: Component rendering a sorted list of expenses with optional date display
+- `ExpenseCard`: Presentational component displaying a single operation with optional date, type badge, and inline amount editing for real expenses
+- `ExpenseList`: Component rendering a sorted list of operations with optional date display
 
 ## State & Data
 
 - **Source of truth:** Database via Server Actions
 - **Client cache:** TanStack Query
-- **Data shape:** Expense records include amount, category, date, and optional project link
+- **Data shape:** Records include amount, category, date, optional project link, and `operationType`
+- **Operation types:** `expense`, `project_withdrawal`, `project_return`
 
 ## Dependencies
 
