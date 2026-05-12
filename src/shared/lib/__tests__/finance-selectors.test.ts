@@ -11,7 +11,7 @@ import {
   getProjectSpent,
   getWeeklyStats,
   getWeeklyPersonalStats,
-  getWeeklyProjectEnvelopeStats,
+  getWeeklyBudgetCoverage,
 } from '../finance-selectors'
 
 import type { Expense } from '@/shared/types'
@@ -217,10 +217,10 @@ describe('project and personal expense selectors', () => {
     expect(result).toBe(700)
   })
 
-  it('should calculate project cash on hand from withdrawals, expenses, and returns', () => {
+  it('should calculate project cash on hand from withdrawals and returns', () => {
     const result = getProjectCashOnHand(mockExpenses, 'project-1')
 
-    expect(result).toBe(200)
+    expect(result).toBe(900)
   })
 })
 
@@ -252,50 +252,6 @@ describe('getWeeklyStats', () => {
   })
 })
 
-describe('getWeeklyProjectEnvelopeStats', () => {
-  it('should track project withdrawals, expenses, returns, and remaining money', () => {
-    const date = new Date('2024-01-15')
-    const result = getWeeklyProjectEnvelopeStats(mockExpenses, date)
-
-    expect(result.withdrawn).toBe(1000)
-    expect(result.spent).toBe(700)
-    expect(result.returned).toBe(100)
-    expect(result.remaining).toBe(200)
-  })
-
-  it('should carry project money from previous weeks', () => {
-    const expenses: Expense[] = [
-      {
-        id: '1',
-        description: 'Взял',
-        amount: 1000,
-        date: '2024-01-10',
-        category: 'Проектные деньги',
-        emoji: '💼',
-        projectId: 'project-1',
-        operationType: 'project_withdrawal',
-      },
-      {
-        id: '2',
-        description: 'Потратил',
-        amount: 300,
-        date: '2024-01-16',
-        category: 'Материалы',
-        emoji: '🔨',
-        projectId: 'project-1',
-      },
-    ]
-    const result = getWeeklyProjectEnvelopeStats(
-      expenses,
-      new Date('2024-01-15')
-    )
-
-    expect(result.carryIn).toBe(1000)
-    expect(result.available).toBe(1000)
-    expect(result.remaining).toBe(700)
-  })
-})
-
 describe('getWeeklyPersonalStats', () => {
   it('should exclude project expenses from weekly spent amount', () => {
     const date = new Date('2024-01-15')
@@ -311,5 +267,164 @@ describe('getWeeklyPersonalStats', () => {
 
     expect(result.start).toBe('2024-01-15')
     expect(result.end).toBe('2024-01-21')
+  })
+})
+
+describe('getWeeklyBudgetCoverage', () => {
+  const baseExpense = {
+    date: '2024-01-16',
+    category: 'Продукты',
+    emoji: '🛒',
+  }
+
+  const personalExpense = (amount: number): Expense => ({
+    id: `personal-${amount}`,
+    description: 'Личный расход',
+    amount,
+    ...baseExpense,
+  })
+
+  const projectWithdrawal = (
+    id: string,
+    projectId: string,
+    amount: number,
+    date = '2024-01-15'
+  ): Expense => ({
+    id,
+    description: 'Взял из проекта',
+    amount,
+    date,
+    category: 'Проектные деньги',
+    emoji: '💼',
+    projectId,
+    operationType: 'project_withdrawal',
+  })
+
+  const projectReturn = (
+    id: string,
+    projectId: string,
+    amount: number
+  ): Expense => ({
+    id,
+    description: 'Вернул в проект',
+    amount,
+    date: '2024-01-17',
+    category: 'Проектные деньги',
+    emoji: '💼',
+    projectId,
+    operationType: 'project_return',
+  })
+
+  it('does not use project coverage while personal spending is below limit', () => {
+    const result = getWeeklyBudgetCoverage(
+      [personalExpense(9000), projectWithdrawal('w1', 'project-1', 3000)],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.personalCovered).toBe(9000)
+    expect(result.projectTopUp).toBe(3000)
+    expect(result.projectCovered).toBe(0)
+    expect(result.uncovered).toBe(0)
+  })
+
+  it('uses project top-up for spending over the personal limit', () => {
+    const result = getWeeklyBudgetCoverage(
+      [personalExpense(11500), projectWithdrawal('w1', 'project-1', 3000)],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.personalCovered).toBe(10000)
+    expect(result.projectCovered).toBe(1500)
+    expect(result.uncovered).toBe(0)
+  })
+
+  it('reports uncovered spending after personal limit and top-ups are spent', () => {
+    const result = getWeeklyBudgetCoverage(
+      [personalExpense(14000), projectWithdrawal('w1', 'project-1', 3000)],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.personalCovered).toBe(10000)
+    expect(result.projectCovered).toBe(3000)
+    expect(result.uncovered).toBe(1000)
+  })
+
+  it('allocates project coverage by withdrawal date', () => {
+    const result = getWeeklyBudgetCoverage(
+      [
+        personalExpense(14500),
+        projectWithdrawal('late', 'project-2', 3000, '2024-01-17'),
+        projectWithdrawal('early', 'project-1', 2000, '2024-01-15'),
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.projectSegments.map((segment) => segment.projectId)).toEqual([
+      'project-1',
+      'project-2',
+    ])
+    expect(result.projectSegments.map((segment) => segment.covered)).toEqual([
+      2000, 2500,
+    ])
+  })
+
+  it('reduces same-week project top-up by project returns', () => {
+    const result = getWeeklyBudgetCoverage(
+      [
+        personalExpense(12000),
+        projectWithdrawal('w1', 'project-1', 3000),
+        projectReturn('r1', 'project-1', 1000),
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.projectTopUp).toBe(2000)
+    expect(result.projectCovered).toBe(2000)
+    expect(result.uncovered).toBe(0)
+  })
+
+  it('does not show a negative top-up when returns exceed withdrawals', () => {
+    const result = getWeeklyBudgetCoverage(
+      [
+        personalExpense(12000),
+        projectWithdrawal('w1', 'project-1', 1000),
+        projectReturn('r1', 'project-1', 3000),
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.projectTopUp).toBe(0)
+    expect(result.projectSegments).toEqual([])
+    expect(result.uncovered).toBe(2000)
+  })
+
+  it('ignores direct project expenses in the weekly personal budget', () => {
+    const result = getWeeklyBudgetCoverage(
+      [
+        personalExpense(9000),
+        {
+          id: 'project-expense',
+          description: 'Материалы',
+          amount: 5000,
+          date: '2024-01-16',
+          category: 'Материалы',
+          emoji: '🔨',
+          projectId: 'project-1',
+          operationType: 'expense',
+        },
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.personalSpent).toBe(9000)
+    expect(result.projectCovered).toBe(0)
+    expect(result.uncovered).toBe(0)
   })
 })

@@ -181,9 +181,6 @@ jest.mock('@/shared/lib', () => ({
         if (expense.operationType === 'project_withdrawal') {
           return sum + expense.amount
         }
-        if ((expense.operationType ?? 'expense') === 'expense') {
-          return sum - expense.amount
-        }
         if (expense.operationType === 'project_return') {
           return sum - expense.amount
         }

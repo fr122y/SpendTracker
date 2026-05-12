@@ -28,12 +28,12 @@ Finance selectors for data aggregation:
 import {
   getMonthlyExpenses,
   getCategoryStats,
-  getWeeklyStats,
+  getWeeklyBudgetCoverage,
 } from '@/shared/lib'
 
 const monthly = getMonthlyExpenses(expenses, new Date())
 const stats = getCategoryStats(expenses, new Date())
-const weekly = getWeeklyStats(expenses, new Date(), 10000)
+const weekly = getWeeklyBudgetCoverage(expenses, new Date(), 10000)
 ```
 
 ## UI Kit

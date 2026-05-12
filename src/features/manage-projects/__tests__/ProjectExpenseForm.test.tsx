@@ -111,4 +111,31 @@ describe('ProjectExpenseForm', () => {
     render(<ProjectExpenseForm projectId={projectId} />)
     expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
   })
+
+  it('adds project movement with the technical category', async () => {
+    render(<ProjectExpenseForm projectId={projectId} />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции проекта/i), {
+      target: { value: 'project_return' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'остаток' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '500' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'остаток',
+          amount: 500,
+          projectId,
+          operationType: 'project_return',
+          category: 'Проектные деньги',
+        })
+      )
+    })
+  })
 })

@@ -123,6 +123,8 @@ describe('ExpenseForm', () => {
           category: 'Продукты',
           emoji: '🛒',
           date: '2025-01-15',
+          projectId: undefined,
+          operationType: 'expense',
         })
       )
       expect(mockSaveMapping).not.toHaveBeenCalled()
@@ -163,5 +165,73 @@ describe('ExpenseForm', () => {
   it('disables submit button when required data is missing', () => {
     render(<ExpenseForm />)
     expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
+  })
+
+  it('creates a direct project expense from the project expense scenario', async () => {
+    mockCategorize.mockReturnValueOnce({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'project_expense' },
+    })
+    fireEvent.change(screen.getByLabelText(/^проект$/i), {
+      target: { value: 'project-1' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'материалы' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '1200' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'материалы',
+          amount: 1200,
+          projectId: 'project-1',
+          operationType: 'expense',
+          category: 'Продукты',
+        })
+      )
+    })
+  })
+
+  it('creates project money movements with the technical category', async () => {
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'project_withdrawal' },
+    })
+    fireEvent.change(screen.getByLabelText(/^проект$/i), {
+      target: { value: 'project-1' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'на неделю' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '3000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'на неделю',
+          amount: 3000,
+          projectId: 'project-1',
+          operationType: 'project_withdrawal',
+          category: 'Проектные деньги',
+        })
+      )
+    })
   })
 })

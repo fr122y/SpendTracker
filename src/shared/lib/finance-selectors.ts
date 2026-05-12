@@ -16,15 +16,25 @@ export interface WeeklyStat {
   end: string
 }
 
-export interface WeeklyProjectEnvelopeStat {
+export interface WeeklyProjectTopUpSegment {
+  projectId: string
   available: number
-  spent: number
-  returned: number
-  remaining: number
-  carryIn: number
+  covered: number
   withdrawn: number
+  returned: number
+}
+
+export interface WeeklyBudgetCoverage {
+  personalSpent: number
+  weeklyLimit: number
+  projectTopUp: number
+  personalCovered: number
+  projectCovered: number
+  uncovered: number
+  totalAvailable: number
   start: string
   end: string
+  projectSegments: WeeklyProjectTopUpSegment[]
 }
 
 function isExpense(expense: Expense): boolean {
@@ -83,7 +93,6 @@ export function getProjectCashOnHand(
 
   return projectOperations.reduce((sum, expense) => {
     if (isProjectWithdrawal(expense)) return sum + expense.amount
-    if (isExpense(expense)) return sum - expense.amount
     if (isProjectReturn(expense)) return sum - expense.amount
     return sum
   }, 0)
@@ -237,44 +246,114 @@ export function getWeeklyPersonalStats(
   }
 }
 
-export function getWeeklyProjectEnvelopeStats(
+export function getWeeklyBudgetCoverage(
   expenses: Expense[],
-  date: Date
-): WeeklyProjectEnvelopeStat {
+  date: Date,
+  weeklyLimit: number
+): WeeklyBudgetCoverage {
   const { start, end } = getWeekBoundaries(date)
 
-  const projectOperations = expenses.filter((expense) => expense.projectId)
-  const carryIn = projectOperations
-    .filter((expense) => expense.date < start)
-    .reduce((sum, expense) => {
-      if (isProjectWithdrawal(expense)) return sum + expense.amount
-      if (isExpense(expense)) return sum - expense.amount
-      if (isProjectReturn(expense)) return sum - expense.amount
-      return sum
-    }, 0)
-  const weekOperations = projectOperations.filter(
+  const weekPersonalExpenses = getPersonalExpenses(expenses).filter(
     (expense) => expense.date >= start && expense.date <= end
   )
-  const withdrawn = weekOperations
-    .filter(isProjectWithdrawal)
-    .reduce((sum, expense) => sum + expense.amount, 0)
-  const spent = weekOperations
-    .filter(isExpense)
-    .reduce((sum, expense) => sum + expense.amount, 0)
-  const returned = weekOperations
-    .filter(isProjectReturn)
-    .reduce((sum, expense) => sum + expense.amount, 0)
-  const available = carryIn + withdrawn
+  const personalSpent = weekPersonalExpenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  )
+
+  const topUpsByProject = new Map<
+    string,
+    {
+      projectId: string
+      withdrawn: number
+      returned: number
+      firstWithdrawalDate: string
+      firstWithdrawalIndex: number
+    }
+  >()
+
+  expenses.forEach((expense, index) => {
+    if (
+      !expense.projectId ||
+      expense.date < start ||
+      expense.date > end ||
+      (!isProjectWithdrawal(expense) && !isProjectReturn(expense))
+    ) {
+      return
+    }
+
+    const existing = topUpsByProject.get(expense.projectId)
+    const item = existing ?? {
+      projectId: expense.projectId,
+      withdrawn: 0,
+      returned: 0,
+      firstWithdrawalDate: expense.date,
+      firstWithdrawalIndex: index,
+    }
+
+    if (isProjectWithdrawal(expense)) {
+      if (item.withdrawn === 0) {
+        item.firstWithdrawalDate = expense.date
+        item.firstWithdrawalIndex = index
+      }
+      item.withdrawn += expense.amount
+    }
+
+    if (isProjectReturn(expense)) {
+      item.returned += expense.amount
+    }
+
+    topUpsByProject.set(expense.projectId, item)
+  })
+
+  const overPersonalLimit = Math.max(personalSpent - weeklyLimit, 0)
+  let remainingProjectCoverage = overPersonalLimit
+
+  const projectSegments = Array.from(topUpsByProject.values())
+    .map((item) => ({
+      ...item,
+      available: Math.max(item.withdrawn - item.returned, 0),
+    }))
+    .filter((item) => item.available > 0)
+    .sort((a, b) => {
+      const dateOrder = a.firstWithdrawalDate.localeCompare(
+        b.firstWithdrawalDate
+      )
+      if (dateOrder !== 0) return dateOrder
+      return a.firstWithdrawalIndex - b.firstWithdrawalIndex
+    })
+    .map((item) => {
+      const covered = Math.min(remainingProjectCoverage, item.available)
+      remainingProjectCoverage -= covered
+
+      return {
+        projectId: item.projectId,
+        available: item.available,
+        covered,
+        withdrawn: item.withdrawn,
+        returned: item.returned,
+      }
+    })
+
+  const projectTopUp = projectSegments.reduce(
+    (sum, segment) => sum + segment.available,
+    0
+  )
+  const personalCovered = Math.min(personalSpent, weeklyLimit)
+  const projectCovered = Math.min(overPersonalLimit, projectTopUp)
+  const uncovered = Math.max(personalSpent - weeklyLimit - projectTopUp, 0)
 
   return {
-    available,
-    spent,
-    returned,
-    remaining: available - spent - returned,
-    carryIn,
-    withdrawn,
+    personalSpent,
+    weeklyLimit,
+    projectTopUp,
+    personalCovered,
+    projectCovered,
+    uncovered,
+    totalAvailable: weeklyLimit + projectTopUp,
     start,
     end,
+    projectSegments,
   }
 }
 

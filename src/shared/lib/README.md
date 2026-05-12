@@ -15,7 +15,7 @@ Utility functions and helpers used across the application.
 - `getProjectSpent(expenses, projectId)`: Sum real project expenses
 - `getProjectCashOnHand(expenses, projectId)`: Calculate outstanding project money on hand
 - `getWeeklyStats(expenses, date, limit)`: Get weekly spending stats with boundaries
-- `getWeeklyProjectEnvelopeStats(expenses, date)`: Calculate project money available/spent/remaining for week
+- `getWeeklyBudgetCoverage(expenses, date, limit)`: Calculate weekly personal spending coverage by personal limit, project top-ups, and uncovered overage
 
 ### Utilities
 
@@ -34,6 +34,7 @@ Utility functions and helpers used across the application.
 
 - `CategoryStat`: Category statistics with name, value, emoji, percent
 - `WeeklyStat`: Weekly stats with spent, limit, start, end
+- `WeeklyBudgetCoverage`: Weekly coverage split into personal, project top-up, and uncovered amounts
 
 ## Usage Examples
 
@@ -41,7 +42,7 @@ Utility functions and helpers used across the application.
 import {
   getMonthlyExpenses,
   getCategoryStats,
-  getWeeklyStats,
+  getWeeklyBudgetCoverage,
 } from '@/shared/lib'
 
 // Get monthly expenses
@@ -51,9 +52,9 @@ const monthly = getMonthlyExpenses(expenses, new Date())
 const stats = getCategoryStats(expenses, new Date())
 // Returns: [{ name: "Продукты", value: 5000, emoji: "🛒", percent: 45.5 }, ...]
 
-// Get weekly budget status
-const weekly = getWeeklyStats(expenses, new Date(), 10000)
-// Returns: { spent: 7500, limit: 10000, start: "2024-01-15", end: "2024-01-21" }
+// Get weekly budget coverage
+const weekly = getWeeklyBudgetCoverage(expenses, new Date(), 10000)
+// Returns personalCovered, projectCovered, projectTopUp, uncovered, and week boundaries
 ```
 
 ### Math Expression Evaluator

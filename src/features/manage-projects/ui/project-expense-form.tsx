@@ -124,7 +124,10 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
 
     const shouldUseManualCategory =
       resolvedShowCategorySelect || !resolvedSuggestedCategoryId
-    if (shouldUseManualCategory && !selectedCategoryId) return
+    if (shouldUseManualCategory && !selectedCategoryId) {
+      setIsSubmitting(false)
+      return
+    }
 
     const category = shouldUseManualCategory
       ? categories.find((item) => item.id === selectedCategoryId)
@@ -166,9 +169,9 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
       <Select
-        aria-label="Тип операции проекта"
+        aria-label="Сценарий операции проекта"
         options={[
-          { value: 'expense', label: 'Расход проекта' },
+          { value: 'expense', label: 'Проектный расход' },
           { value: 'project_withdrawal', label: 'Взял из проекта' },
           { value: 'project_return', label: 'Вернул в проект' },
         ]}

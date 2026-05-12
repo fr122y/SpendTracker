@@ -16,9 +16,9 @@ real expenses.
 
 ## Logic Flow
 
-1. User selects operation type and source
+1. User selects a scenario: personal expense, project expense, project withdrawal, or project return
 2. Personal expense remains the default fast path
-3. Project source requires project selection
+3. Project scenarios require project selection
 4. Real expenses use keyword category suggestions/manual override
 5. Project withdrawals and returns use the technical `Проектные деньги` category
 

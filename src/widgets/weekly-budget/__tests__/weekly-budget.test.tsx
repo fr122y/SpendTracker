@@ -9,6 +9,16 @@ const mockSetWeeklyLimit = jest.fn()
 let mockWeeklyLimit = 10000
 let mockSettingsLoading = false
 let mockExpensesLoading = false
+let mockProjectsLoading = false
+let mockProjects = [
+  {
+    id: 'project-1',
+    name: 'Ремонт',
+    budget: 50000,
+    color: '#38bdf8',
+    createdAt: '2026-01-01',
+  },
+]
 let mockExpenses: Expense[] = [
   {
     id: '1',
@@ -70,6 +80,18 @@ jest.mock('@/entities/expense', () => ({
   },
 }))
 
+jest.mock('@/entities/project', () => ({
+  useProjectStore: (
+    selector?: (state: {
+      projects: typeof mockProjects
+      isLoading: boolean
+    }) => unknown
+  ) => {
+    const state = { projects: mockProjects, isLoading: mockProjectsLoading }
+    return selector ? selector(state) : state
+  },
+}))
+
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector?: (state: { selectedDate: Date }) => unknown) => {
     const state = { selectedDate: mockSelectedDate }
@@ -79,54 +101,65 @@ jest.mock('@/entities/session', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
-  getWeeklyPersonalStats: jest.fn((expenses, date, weeklyLimit) => {
+  getWeeklyBudgetCoverage: jest.fn((expenses, date, weeklyLimit) => {
     // For Jan 21, 2026 (Tuesday), week is Jan 20 - Jan 26
     const weekExpenses = expenses.filter(
-      (e: { date: string; projectId?: string }) =>
-        e.date >= '2026-01-20' && e.date <= '2026-01-26' && !e.projectId
+      (e: { date: string; projectId?: string; operationType?: string }) =>
+        e.date >= '2026-01-20' &&
+        e.date <= '2026-01-26' &&
+        !e.projectId &&
+        (e.operationType ?? 'expense') === 'expense'
     )
-    const spent = weekExpenses.reduce(
+    const personalSpent = weekExpenses.reduce(
       (sum: number, e: { amount: number }) => sum + e.amount,
       0
     )
-    return {
-      spent,
-      limit: weeklyLimit,
-      start: '2026-01-20',
-      end: '2026-01-26',
-    }
-  }),
-  getWeeklyProjectEnvelopeStats: jest.fn((expenses) => {
-    const projectOperations = expenses.filter(
-      (e: { projectId?: string }) => e.projectId
+    const withdrawals = expenses.filter(
+      (e: { date: string; operationType?: string; projectId?: string }) =>
+        e.date >= '2026-01-20' &&
+        e.date <= '2026-01-26' &&
+        e.projectId &&
+        e.operationType === 'project_withdrawal'
     )
-    const withdrawn = projectOperations
+    const returned = expenses
       .filter(
-        (e: { operationType?: string }) =>
-          e.operationType === 'project_withdrawal'
+        (e: { date: string; operationType?: string; projectId?: string }) =>
+          e.date >= '2026-01-20' &&
+          e.date <= '2026-01-26' &&
+          e.projectId &&
+          e.operationType === 'project_return'
       )
       .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)
-    const spent = projectOperations
-      .filter(
-        (e: { operationType?: string }) =>
-          (e.operationType ?? 'expense') === 'expense'
-      )
-      .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)
-    const returned = projectOperations
-      .filter(
-        (e: { operationType?: string }) => e.operationType === 'project_return'
-      )
-      .reduce((sum: number, e: { amount: number }) => sum + e.amount, 0)
+    const withdrawn = withdrawals.reduce(
+      (sum: number, e: { amount: number }) => sum + e.amount,
+      0
+    )
+    const projectTopUp = Math.max(withdrawn - returned, 0)
+    const overPersonalLimit = Math.max(personalSpent - weeklyLimit, 0)
+    const projectCovered = Math.min(overPersonalLimit, projectTopUp)
 
     return {
-      available: withdrawn,
-      spent,
-      returned,
-      remaining: withdrawn - spent - returned,
-      carryIn: 0,
-      withdrawn,
+      personalSpent,
+      weeklyLimit,
+      projectTopUp,
+      personalCovered: Math.min(personalSpent, weeklyLimit),
+      projectCovered,
+      uncovered: Math.max(personalSpent - weeklyLimit - projectTopUp, 0),
+      totalAvailable: weeklyLimit + projectTopUp,
       start: '2026-01-20',
       end: '2026-01-26',
+      projectSegments:
+        projectTopUp > 0
+          ? [
+              {
+                projectId: 'project-1',
+                available: projectTopUp,
+                covered: projectCovered,
+                withdrawn,
+                returned,
+              },
+            ]
+          : [],
     }
   }),
   cn: jest.fn((...args: unknown[]) => {
@@ -143,6 +176,16 @@ describe('WeeklyBudget', () => {
     mockWeeklyLimit = 10000
     mockSettingsLoading = false
     mockExpensesLoading = false
+    mockProjectsLoading = false
+    mockProjects = [
+      {
+        id: 'project-1',
+        name: 'Ремонт',
+        budget: 50000,
+        color: '#38bdf8',
+        createdAt: '2026-01-01',
+      },
+    ]
     mockExpenses = [
       {
         id: '1',
@@ -206,8 +249,10 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Total spent: 1500 + 300 + 500 = 2300
-      expect(screen.getAllByText(/Потрачено:/)[0]).toBeInTheDocument()
-      expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
+      expect(screen.getAllByText(/Личный бюджет:/)[0]).toBeInTheDocument()
+      expect(
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
+      ).toHaveTextContent(/2\s?300/)
     })
 
     it('displays remaining amount', () => {
@@ -215,7 +260,9 @@ describe('WeeklyBudget', () => {
 
       // Remaining: 10000 - 2300 = 7700
       expect(screen.getAllByText(/Осталось:/)[0]).toBeInTheDocument()
-      expect(screen.getByText(/7\s?700 ₽/)).toBeInTheDocument()
+      expect(
+        screen.getAllByText(/Осталось:/)[0].parentElement
+      ).toHaveTextContent(/7\s?700/)
     })
 
     it('renders limit editor with current value', () => {
@@ -237,7 +284,9 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Total: 1500 + 300 + 500 = 2300
-      expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
+      expect(
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
+      ).toHaveTextContent(/2\s?300/)
     })
 
     it('calculates remaining amount correctly when under budget', () => {
@@ -245,7 +294,9 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Remaining: 10000 - 2300 = 7700
-      expect(screen.getByText(/7\s?700 ₽/)).toBeInTheDocument()
+      expect(
+        screen.getAllByText(/Осталось:/)[0].parentElement
+      ).toHaveTextContent(/7\s?700/)
     })
 
     it('shows negative remaining amount when over budget', () => {
@@ -273,15 +324,44 @@ describe('WeeklyBudget', () => {
 
       render(<WeeklyBudget />)
 
-      expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
-      expect(screen.getByText(/7\s?700 ₽/)).toBeInTheDocument()
+      expect(
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
+      ).toHaveTextContent(/2\s?300/)
+      expect(
+        screen.getAllByText(/Осталось:/)[0].parentElement
+      ).toHaveTextContent(/7\s?700/)
+    })
+
+    it('shows project top-up as part of the weekly budget coverage', () => {
+      mockWeeklyLimit = 2000
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: '4',
+          description: 'Top up',
+          amount: 1000,
+          date: '2026-01-21',
+          category: 'Проектные деньги',
+          emoji: '💼',
+          projectId: 'project-1',
+          operationType: 'project_withdrawal',
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getByText(/Проектная добавка:/)).toBeInTheDocument()
+      expect(document.body).toHaveTextContent(/1\s?000/)
+      expect(screen.getByText(/Покрыто проектами:/)).toBeInTheDocument()
+      expect(screen.getAllByRole('progressbar')).toHaveLength(1)
     })
 
     it('applies correct styling when under budget', () => {
       mockWeeklyLimit = 10000
       const { container } = render(<WeeklyBudget />)
 
-      const spentSection = screen.getAllByText(/Потрачено:/)[0].parentElement
+      const spentSection =
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
       expect(spentSection).toBeTruthy()
       expect(container.innerHTML).toContain('text-emerald-400')
     })
@@ -422,7 +502,9 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Verifies that personal expenses are being read and calculated
-      expect(screen.getByText(/2\s?300 ₽/)).toBeInTheDocument()
+      expect(
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
+      ).toHaveTextContent(/2\s?300/)
     })
 
     it('reads weekly limit from settings store', () => {

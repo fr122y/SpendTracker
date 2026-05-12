@@ -14,11 +14,15 @@ import type { MoneyOperationType } from '@/shared/types'
 
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
 const PROJECT_MONEY_EMOJI = '💼'
+type OperationScenario =
+  | 'personal_expense'
+  | 'project_expense'
+  | 'project_withdrawal'
+  | 'project_return'
 
 export function ExpenseForm() {
-  const [operationType, setOperationType] =
-    useState<MoneyOperationType>('expense')
-  const [source, setSource] = useState<'personal' | 'project'>('personal')
+  const [scenario, setScenario] =
+    useState<OperationScenario>('personal_expense')
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -49,8 +53,12 @@ export function ExpenseForm() {
     value: project.id,
     label: project.name,
   }))
+  const operationType: MoneyOperationType =
+    scenario === 'project_withdrawal' || scenario === 'project_return'
+      ? scenario
+      : 'expense'
   const isMovement = operationType !== 'expense'
-  const needsProject = isMovement || source === 'project'
+  const needsProject = scenario !== 'personal_expense'
 
   const resetForm = () => {
     setDescription('')
@@ -130,7 +138,10 @@ export function ExpenseForm() {
 
     const shouldUseManualCategory =
       resolvedShowCategorySelect || !resolvedSuggestedCategoryId
-    if (shouldUseManualCategory && !selectedCategoryId) return
+    if (shouldUseManualCategory && !selectedCategoryId) {
+      setIsSubmitting(false)
+      return
+    }
 
     const category = shouldUseManualCategory
       ? categories.find((item) => item.id === selectedCategoryId)
@@ -155,7 +166,7 @@ export function ExpenseForm() {
       date: formatDate(selectedDate),
       category: category.name,
       emoji: category.emoji,
-      projectId: source === 'project' ? selectedProjectId : undefined,
+      projectId: scenario === 'project_expense' ? selectedProjectId : undefined,
       operationType,
     })
 
@@ -172,40 +183,29 @@ export function ExpenseForm() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+      <div>
         <Select
-          aria-label="Тип операции"
+          aria-label="Сценарий операции"
           options={[
-            { value: 'expense', label: 'Расход' },
+            { value: 'personal_expense', label: 'Личный расход' },
+            { value: 'project_expense', label: 'Проектный расход' },
             { value: 'project_withdrawal', label: 'Взял из проекта' },
             { value: 'project_return', label: 'Вернул в проект' },
           ]}
-          value={operationType}
+          value={scenario}
           onChange={(e) => {
-            const nextType = e.target.value as MoneyOperationType
-            setOperationType(nextType)
-            if (nextType !== 'expense') {
-              setSource('project')
+            const nextScenario = e.target.value as OperationScenario
+            setScenario(nextScenario)
+            if (
+              nextScenario === 'project_withdrawal' ||
+              nextScenario === 'project_return'
+            ) {
               setShowCategorySelect(false)
               setSuggestedCategoryId(null)
             }
           }}
           disabled={isSubmitting || isSavingMapping}
         />
-        {operationType === 'expense' && (
-          <Select
-            aria-label="Источник средств"
-            options={[
-              { value: 'personal', label: 'Личные' },
-              { value: 'project', label: 'Проект' },
-            ]}
-            value={source}
-            onChange={(e) =>
-              setSource(e.target.value as 'personal' | 'project')
-            }
-            disabled={isSubmitting || isSavingMapping}
-          />
-        )}
       </div>
       {needsProject && (
         <Select

@@ -88,7 +88,7 @@ export function ExpenseLog() {
           [
             ['all', 'Все'],
             ['expenses', 'Расходы'],
-            ['project', 'Проектные'],
+            ['project', 'Проекты'],
             ['movement', 'Движение'],
           ] as const
         ).map(([value, label]) => (

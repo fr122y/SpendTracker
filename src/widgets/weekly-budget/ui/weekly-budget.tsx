@@ -3,14 +3,11 @@
 import { useEffect, useState } from 'react'
 
 import { useExpenseStore } from '@/entities/expense'
+import { useProjectStore } from '@/entities/project'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
-import {
-  getWeeklyPersonalStats,
-  getWeeklyProjectEnvelopeStats,
-  cn,
-} from '@/shared/lib'
-import { ProgressBar, MathInput } from '@/shared/ui'
+import { getWeeklyBudgetCoverage, cn } from '@/shared/lib'
+import { MathInput } from '@/shared/ui'
 
 import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
 
@@ -30,6 +27,12 @@ export function WeeklyBudget() {
       isLoading: state.isLoading,
     })
   )
+  const { projects, isLoading: isProjectsLoading } = useProjectStore(
+    (state) => ({
+      projects: state.projects,
+      isLoading: state.isLoading,
+    })
+  )
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const [inputValue, setInputValue] = useState(String(weeklyLimit))
 
@@ -37,16 +40,22 @@ export function WeeklyBudget() {
     setInputValue(String(weeklyLimit))
   }, [weeklyLimit])
 
-  if (isSettingsLoading || isExpensesLoading) {
+  if (isSettingsLoading || isExpensesLoading || isProjectsLoading) {
     return <WeeklyBudgetSkeleton />
   }
 
-  const stats = getWeeklyPersonalStats(expenses, selectedDate, weeklyLimit)
-  const projectStats = getWeeklyProjectEnvelopeStats(expenses, selectedDate)
-  const remaining = weeklyLimit - stats.spent
-  const isOverBudget = remaining < 0
-  const projectRemaining = projectStats.remaining
-  const isProjectOverBudget = projectRemaining < 0
+  const coverage = getWeeklyBudgetCoverage(expenses, selectedDate, weeklyLimit)
+  const remaining = coverage.totalAvailable - coverage.personalSpent
+  const isOverBudget = coverage.uncovered > 0
+  const progressMax = Math.max(
+    coverage.totalAvailable,
+    coverage.personalSpent,
+    1
+  )
+  const progressPercent = Math.round(
+    (coverage.personalSpent / progressMax) * 100
+  )
+  const projectById = new Map(projects.map((project) => [project.id, project]))
 
   // Format week dates
   const formatWeekDate = (dateStr: string) => {
@@ -78,6 +87,8 @@ export function WeeklyBudget() {
     }
   }
 
+  const getSegmentWidth = (value: number) => `${(value / progressMax) * 100}%`
+
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header */}
@@ -86,23 +97,70 @@ export function WeeklyBudget() {
           Бюджет на неделю
         </h2>
         <span className="text-xs text-zinc-500 sm:text-sm">
-          {formatWeekDate(stats.start)} - {formatWeekDate(stats.end)}
+          {formatWeekDate(coverage.start)} - {formatWeekDate(coverage.end)}
         </span>
       </div>
 
       {/* Progress Bar */}
       <div className="space-y-2">
-        <ProgressBar value={stats.spent} max={weeklyLimit} showPercentage />
+        <div>
+          <div className="mb-1.5 flex items-center justify-between">
+            <span className="text-sm text-zinc-400">Покрытие недели</span>
+            <span
+              className={cn(
+                'font-mono text-sm font-medium',
+                isOverBudget ? 'text-red-400' : 'text-zinc-300'
+              )}
+            >
+              {progressPercent}%
+            </span>
+          </div>
+          <div
+            role="progressbar"
+            aria-valuenow={coverage.personalSpent}
+            aria-valuemin={0}
+            aria-valuemax={progressMax}
+            className="flex h-2.5 w-full overflow-hidden rounded-full bg-zinc-800 shadow-inner shadow-black/30"
+          >
+            <div
+              className="h-full bg-emerald-500 transition-all duration-500"
+              style={{ width: getSegmentWidth(coverage.weeklyLimit) }}
+              title="Личный бюджет"
+            />
+            {coverage.projectSegments.map((segment) => {
+              const project = projectById.get(segment.projectId)
+              return (
+                <div
+                  key={segment.projectId}
+                  className="h-full transition-all duration-500"
+                  style={{
+                    width: getSegmentWidth(segment.available),
+                    backgroundColor: project?.color ?? '#38bdf8',
+                  }}
+                  title={project?.name ?? 'Проектная добавка'}
+                />
+              )
+            })}
+            {coverage.uncovered > 0 && (
+              <div
+                className="h-full bg-red-500 transition-all duration-500"
+                style={{ width: getSegmentWidth(coverage.uncovered) }}
+                title="Сверх бюджета"
+              />
+            )}
+          </div>
+        </div>
         <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
           <span className="text-zinc-400">
-            Потрачено:{' '}
+            Личный бюджет:{' '}
             <span
               className={cn(
                 'font-semibold',
                 isOverBudget ? 'text-red-400' : 'text-emerald-400'
               )}
             >
-              {stats.spent.toLocaleString('ru-RU')} ₽
+              {coverage.personalCovered.toLocaleString('ru-RU')} /{' '}
+              {weeklyLimit.toLocaleString('ru-RU')} ₽
             </span>
           </span>
           <span className="text-zinc-400">
@@ -119,46 +177,47 @@ export function WeeklyBudget() {
         </div>
       </div>
 
-      {/* Project Money Segment */}
-      <div className="space-y-2 rounded-md border border-zinc-800 bg-zinc-900/40 p-3">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <span className="text-sm font-medium text-sky-300">
-            Проектные деньги
+      <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-3 sm:text-sm">
+        <span className="text-zinc-400">
+          Проектная добавка:{' '}
+          <span className="font-semibold text-sky-300">
+            {coverage.projectTopUp.toLocaleString('ru-RU')} ₽
           </span>
-          <span className="text-xs text-zinc-500">
-            Доступно: {projectStats.available.toLocaleString('ru-RU')} ₽
+        </span>
+        <span className="text-zinc-400">
+          Покрыто проектами:{' '}
+          <span className="font-semibold text-sky-300">
+            {coverage.projectCovered.toLocaleString('ru-RU')} ₽
           </span>
-        </div>
-        <ProgressBar
-          value={projectStats.spent}
-          max={Math.max(projectStats.available, 1)}
-          showPercentage
-        />
-        <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-3 sm:text-sm">
+        </span>
+        {coverage.uncovered > 0 && (
           <span className="text-zinc-400">
-            Выдано:{' '}
-            <span className="font-semibold text-sky-300">
-              {projectStats.withdrawn.toLocaleString('ru-RU')} ₽
+            Сверх бюджета:{' '}
+            <span className="font-semibold text-red-400">
+              {coverage.uncovered.toLocaleString('ru-RU')} ₽
             </span>
           </span>
-          <span className="text-zinc-400">
-            Потрачено:{' '}
-            <span className="font-semibold text-emerald-400">
-              {projectStats.spent.toLocaleString('ru-RU')} ₽
-            </span>
-          </span>
-          <span className="text-zinc-400">
-            Осталось:{' '}
-            <span
-              className={cn(
-                'font-semibold',
-                isProjectOverBudget ? 'text-red-400' : 'text-zinc-100'
-              )}
-            >
-              {projectRemaining.toLocaleString('ru-RU')} ₽
-            </span>
-          </span>
-        </div>
+        )}
+        {coverage.projectSegments.length > 0 && (
+          <div className="col-span-1 flex flex-wrap gap-x-3 gap-y-1 sm:col-span-3">
+            {coverage.projectSegments.map((segment) => {
+              const project = projectById.get(segment.projectId)
+              return (
+                <span
+                  key={segment.projectId}
+                  className="inline-flex items-center gap-1 text-zinc-400"
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: project?.color ?? '#38bdf8' }}
+                  />
+                  {project?.name ?? 'Проект'}:{' '}
+                  {segment.available.toLocaleString('ru-RU')} ₽
+                </span>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Limit Editor */}

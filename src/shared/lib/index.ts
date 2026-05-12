@@ -12,11 +12,12 @@ export {
   getProjectCashOnHand,
   getWeeklyStats,
   getWeeklyPersonalStats,
-  getWeeklyProjectEnvelopeStats,
+  getWeeklyBudgetCoverage,
   formatDate,
   type CategoryStat,
   type WeeklyStat,
-  type WeeklyProjectEnvelopeStat,
+  type WeeklyBudgetCoverage,
+  type WeeklyProjectTopUpSegment,
 } from './finance-selectors'
 
 export { cn } from './cn'
