@@ -249,9 +249,9 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Total spent: 1500 + 300 + 500 = 2300
-      expect(screen.getAllByText(/Личный бюджет/)[0]).toBeInTheDocument()
+      expect(screen.getAllByText(/Личный бюджет:/)[0]).toBeInTheDocument()
       expect(
-        screen.getAllByText(/Личный бюджет/)[0].parentElement
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
       ).toHaveTextContent(/2\s?300/)
     })
 
@@ -259,9 +259,9 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Remaining: 10000 - 2300 = 7700
-      expect(screen.getAllByText(/Осталось/)[0]).toBeInTheDocument()
+      expect(screen.getAllByText(/Осталось:/)[0]).toBeInTheDocument()
       expect(
-        screen.getAllByText(/Осталось/)[0].parentElement
+        screen.getAllByText(/Осталось:/)[0].parentElement
       ).toHaveTextContent(/7\s?700/)
     })
 
@@ -285,7 +285,7 @@ describe('WeeklyBudget', () => {
 
       // Total: 1500 + 300 + 500 = 2300
       expect(
-        screen.getAllByText(/Личный бюджет/)[0].parentElement
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
       ).toHaveTextContent(/2\s?300/)
     })
 
@@ -295,7 +295,7 @@ describe('WeeklyBudget', () => {
 
       // Remaining: 10000 - 2300 = 7700
       expect(
-        screen.getAllByText(/Осталось/)[0].parentElement
+        screen.getAllByText(/Осталось:/)[0].parentElement
       ).toHaveTextContent(/7\s?700/)
     })
 
@@ -304,7 +304,7 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       // Remaining: 2000 - 2300 = -300
-      const remainingText = screen.getAllByText(/Осталось/)[0].parentElement
+      const remainingText = screen.getAllByText(/Осталось:/)[0].parentElement
       expect(remainingText).toHaveTextContent('-300')
     })
 
@@ -325,10 +325,10 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       expect(
-        screen.getAllByText(/Личный бюджет/)[0].parentElement
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
       ).toHaveTextContent(/2\s?300/)
       expect(
-        screen.getAllByText(/Осталось/)[0].parentElement
+        screen.getAllByText(/Осталось:/)[0].parentElement
       ).toHaveTextContent(/7\s?700/)
     })
 
@@ -350,9 +350,9 @@ describe('WeeklyBudget', () => {
 
       render(<WeeklyBudget />)
 
-      expect(screen.getByText(/Проектная добавка/)).toBeInTheDocument()
+      expect(screen.getByText(/Проектная добавка:/)).toBeInTheDocument()
       expect(document.body).toHaveTextContent(/1\s?000/)
-      expect(screen.getByText(/Покрыто проектами/)).toBeInTheDocument()
+      expect(screen.getByText(/Покрыто проектами:/)).toBeInTheDocument()
       expect(screen.getAllByRole('progressbar')).toHaveLength(1)
     })
 
@@ -360,7 +360,8 @@ describe('WeeklyBudget', () => {
       mockWeeklyLimit = 10000
       const { container } = render(<WeeklyBudget />)
 
-      const spentSection = screen.getAllByText(/Личный бюджет/)[0].parentElement
+      const spentSection =
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
       expect(spentSection).toBeTruthy()
       expect(container.innerHTML).toContain('text-emerald-400')
     })
@@ -502,7 +503,7 @@ describe('WeeklyBudget', () => {
 
       // Verifies that personal expenses are being read and calculated
       expect(
-        screen.getAllByText(/Личный бюджет/)[0].parentElement
+        screen.getAllByText(/Личный бюджет:/)[0].parentElement
       ).toHaveTextContent(/2\s?300/)
     })
 

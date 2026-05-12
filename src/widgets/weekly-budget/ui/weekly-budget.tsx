@@ -88,10 +88,6 @@ export function WeeklyBudget() {
   }
 
   const getSegmentWidth = (value: number) => `${(value / progressMax) * 100}%`
-  const labelValueClass =
-    'flex min-w-0 items-baseline justify-between gap-2 text-xs sm:text-sm'
-  const labelClass = 'min-w-0 text-zinc-400'
-  const valueClass = 'shrink-0 text-right font-semibold tabular-nums'
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
@@ -154,76 +150,70 @@ export function WeeklyBudget() {
             )}
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-x-4">
-          <div className={labelValueClass}>
-            <span className={labelClass}>Личный бюджет</span>
+        <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
+          <span className="text-zinc-400">
+            Личный бюджет:{' '}
             <span
               className={cn(
-                valueClass,
+                'font-semibold',
                 isOverBudget ? 'text-red-400' : 'text-emerald-400'
               )}
             >
               {coverage.personalCovered.toLocaleString('ru-RU')} /{' '}
               {weeklyLimit.toLocaleString('ru-RU')} ₽
             </span>
-          </div>
-          <div className={labelValueClass}>
-            <span className={labelClass}>Осталось</span>
+          </span>
+          <span className="text-zinc-400">
+            Осталось:{' '}
             <span
               className={cn(
-                valueClass,
+                'font-semibold',
                 isOverBudget ? 'text-red-400' : 'text-zinc-100'
               )}
             >
               {remaining.toLocaleString('ru-RU')} ₽
             </span>
-          </div>
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 sm:gap-x-4">
-        <div className={labelValueClass}>
-          <span className={labelClass}>Проектная добавка</span>
-          <span className={cn(valueClass, 'text-sky-300')}>
+      <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-3 sm:text-sm">
+        <span className="text-zinc-400">
+          Проектная добавка:{' '}
+          <span className="font-semibold text-sky-300">
             {coverage.projectTopUp.toLocaleString('ru-RU')} ₽
           </span>
-        </div>
-        <div className={labelValueClass}>
-          <span className={labelClass}>Покрыто проектами</span>
-          <span className={cn(valueClass, 'text-sky-300')}>
+        </span>
+        <span className="text-zinc-400">
+          Покрыто проектами:{' '}
+          <span className="font-semibold text-sky-300">
             {coverage.projectCovered.toLocaleString('ru-RU')} ₽
           </span>
-        </div>
+        </span>
         {coverage.uncovered > 0 && (
-          <div className={labelValueClass}>
-            <span className={labelClass}>Сверх бюджета</span>
-            <span className={cn(valueClass, 'text-red-400')}>
+          <span className="text-zinc-400">
+            Сверх бюджета:{' '}
+            <span className="font-semibold text-red-400">
               {coverage.uncovered.toLocaleString('ru-RU')} ₽
             </span>
-          </div>
+          </span>
         )}
         {coverage.projectSegments.length > 0 && (
-          <div className="col-span-1 grid grid-cols-1 gap-1 pt-1 sm:col-span-2 sm:grid-cols-2 sm:gap-x-4">
+          <div className="col-span-1 flex flex-wrap gap-x-3 gap-y-1 sm:col-span-3">
             {coverage.projectSegments.map((segment) => {
               const project = projectById.get(segment.projectId)
               return (
-                <div
+                <span
                   key={segment.projectId}
-                  className="flex min-w-0 items-baseline justify-between gap-2 text-xs sm:text-sm"
+                  className="inline-flex items-center gap-1 text-zinc-400"
                 >
-                  <span className="flex min-w-0 items-center gap-1 text-zinc-400">
-                    <span
-                      className="h-2 w-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: project?.color ?? '#38bdf8' }}
-                    />
-                    <span className="truncate">
-                      {project?.name ?? 'Проект'}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-right font-semibold tabular-nums text-zinc-300">
-                    {segment.available.toLocaleString('ru-RU')} ₽
-                  </span>
-                </div>
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: project?.color ?? '#38bdf8' }}
+                  />
+                  {project?.name ?? 'Проект'}:{' '}
+                  {segment.available.toLocaleString('ru-RU')} ₽
+                </span>
               )
             })}
           </div>
