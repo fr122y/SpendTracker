@@ -1,8 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+import { cn } from '@/shared/lib'
 import { Button } from '@/shared/ui'
 
 export interface HeaderDateNavigationProps {
+  className?: string
   formattedDate: string
   onNextDay: () => void
   onOpenMonthPicker: () => void
@@ -10,13 +12,14 @@ export interface HeaderDateNavigationProps {
 }
 
 export function HeaderDateNavigation({
+  className,
   formattedDate,
   onNextDay,
   onOpenMonthPicker,
   onPreviousDay,
 }: HeaderDateNavigationProps) {
   return (
-    <div className="flex items-center justify-center gap-2">
+    <div className={cn('flex items-center justify-center gap-2', className)}>
       <Button
         variant="ghost"
         onClick={onPreviousDay}

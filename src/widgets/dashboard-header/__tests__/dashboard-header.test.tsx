@@ -154,4 +154,21 @@ describe('DashboardHeader', () => {
       screen.getAllByRole('button', { name: 'Редактировать' })[0]
     ).toHaveClass('min-h-11', 'min-w-[44px]')
   })
+
+  it('keeps desktop date navigation centered independently from actions', () => {
+    mockSelectedDate = new Date(2026, 0, 16)
+
+    render(<DashboardHeader />)
+
+    expect(screen.getByRole('banner')).toHaveClass(
+      'sm:grid',
+      'sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+    )
+    expect(screen.getByLabelText('Выбрать месяц').parentElement).toHaveClass(
+      'sm:justify-self-center'
+    )
+    expect(
+      screen.getAllByRole('button', { name: 'Сегодня' })[1].parentElement
+    ).toHaveClass('sm:justify-self-end')
+  })
 })
