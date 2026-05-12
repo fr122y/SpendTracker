@@ -88,9 +88,19 @@ jest.mock('recharts', () => {
         {children}
       </div>
     ),
-    XAxis: () => <div data-testid="x-axis">XAxis</div>,
+    XAxis: ({ ticks = [] }: { ticks?: number[] }) => (
+      <div data-testid="x-axis" data-ticks={ticks.join(',')}>
+        XAxis
+      </div>
+    ),
     YAxis: () => <div data-testid="y-axis">YAxis</div>,
     Tooltip: () => <div data-testid="tooltip">Tooltip</div>,
+    ReferenceLine: ({ x }: { x: number }) => (
+      <div data-testid="dynamics-week-start" data-x={x} />
+    ),
+    ReferenceArea: ({ x1, x2 }: { x1: number; x2: number }) => (
+      <div data-testid="dynamics-weekend-area" data-x1={x1} data-x2={x2} />
+    ),
     Cell: () => <div data-testid="cell">Cell</div>,
   }
 })
@@ -181,6 +191,45 @@ describe('DailySpendingChart', () => {
       expect(screen.getByTestId('y-axis')).toBeInTheDocument()
       expect(screen.getByTestId('bar-personalAmount')).toBeInTheDocument()
       expect(screen.getByTestId('bar-projectAmount')).toBeInTheDocument()
+    })
+
+    it('renders sparse x-axis ticks for month edges and Mondays', () => {
+      render(<DailySpendingChart />)
+
+      expect(screen.getByTestId('x-axis')).toHaveAttribute(
+        'data-ticks',
+        '1,5,12,19,26,31'
+      )
+    })
+
+    it('renders week start markers for Mondays after the first day', () => {
+      render(<DailySpendingChart />)
+
+      const markers = screen.getAllByTestId('dynamics-week-start')
+      expect(markers.map((marker) => marker.getAttribute('data-x'))).toEqual([
+        '4.5',
+        '11.5',
+        '18.5',
+        '25.5',
+      ])
+    })
+
+    it('renders weekend background spans', () => {
+      render(<DailySpendingChart />)
+
+      const areas = screen.getAllByTestId('dynamics-weekend-area')
+      expect(
+        areas.map((area) => [
+          area.getAttribute('data-x1'),
+          area.getAttribute('data-x2'),
+        ])
+      ).toEqual([
+        ['2.5', '4.5'],
+        ['9.5', '11.5'],
+        ['16.5', '18.5'],
+        ['23.5', '25.5'],
+        ['30.5', '31.5'],
+      ])
     })
   })
 
