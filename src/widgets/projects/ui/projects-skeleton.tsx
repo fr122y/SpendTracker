@@ -11,7 +11,7 @@ export function ProjectsSkeleton() {
         <SkeletonRect className="h-10 w-full sm:w-36" />
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="rounded-lg border border-zinc-800 p-3">
             <SkeletonText widthClassName="w-28" className="h-5" />
