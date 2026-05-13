@@ -177,49 +177,55 @@ export function WeeklyBudget() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-1 text-xs sm:grid-cols-3 sm:text-sm">
-        <span className="text-zinc-400">
-          Проектная добавка:{' '}
-          <span className="font-semibold text-sky-300">
-            {coverage.projectTopUp.toLocaleString('ru-RU')} ₽
-          </span>
-        </span>
-        <span className="text-zinc-400">
-          Покрыто проектами:{' '}
-          <span className="font-semibold text-sky-300">
-            {coverage.projectCovered.toLocaleString('ru-RU')} ₽
-          </span>
-        </span>
-        {coverage.uncovered > 0 && (
-          <span className="text-zinc-400">
-            Сверх бюджета:{' '}
-            <span className="font-semibold text-red-400">
-              {coverage.uncovered.toLocaleString('ru-RU')} ₽
+      <div className="space-y-2">
+        <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3 sm:text-sm">
+          <span className="flex flex-col gap-0.5">
+            <span className="text-zinc-500">Проектная добавка</span>
+            <span className="whitespace-nowrap font-semibold text-sky-300">
+              {coverage.projectTopUp.toLocaleString('ru-RU')} ₽
             </span>
           </span>
-        )}
+          <span className="flex flex-col gap-0.5">
+            <span className="text-zinc-500">Покрыто проектами</span>
+            <span className="whitespace-nowrap font-semibold text-sky-300">
+              {coverage.projectCovered.toLocaleString('ru-RU')} ₽
+            </span>
+          </span>
+          {coverage.uncovered > 0 && (
+            <span className="flex flex-col gap-0.5">
+              <span className="text-zinc-500">Сверх бюджета</span>
+              <span className="whitespace-nowrap font-semibold text-red-400">
+                {coverage.uncovered.toLocaleString('ru-RU')} ₽
+              </span>
+            </span>
+          )}
+        </div>
+
         {coverage.projectSegments.length > 0 && (
-          <div className="col-span-1 flex flex-wrap gap-x-3 gap-y-1 sm:col-span-3">
+          <div className="flex flex-wrap gap-1.5 text-xs sm:text-sm">
             {coverage.projectSegments.map((segment) => {
               const project = projectById.get(segment.projectId)
               return (
                 <span
                   key={segment.projectId}
-                  className="inline-flex items-center gap-1 text-zinc-400"
+                  className="inline-flex max-w-full min-w-0 items-center gap-1.5 text-zinc-400"
                 >
                   <span
-                    className="h-2 w-2 rounded-full"
+                    className="h-2 w-2 shrink-0 rounded-full"
                     style={{ backgroundColor: project?.color ?? '#38bdf8' }}
                   />
-                  {project?.name ?? 'Проект'}:{' '}
-                  {segment.available.toLocaleString('ru-RU')} ₽
+                  <span className="min-w-0 truncate">
+                    {project?.name ?? 'Проект'}
+                  </span>
+                  <span className="whitespace-nowrap text-zinc-500">
+                    {segment.available.toLocaleString('ru-RU')} ₽
+                  </span>
                 </span>
               )
             })}
           </div>
         )}
       </div>
-
       {/* Limit Editor */}
       <div className="flex items-center gap-2 sm:gap-3">
         <label className="text-xs text-zinc-400 sm:text-sm">Лимит:</label>

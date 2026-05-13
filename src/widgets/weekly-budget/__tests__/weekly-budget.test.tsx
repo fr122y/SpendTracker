@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 
 import { WeeklyBudget } from '../ui/weekly-budget'
 
@@ -350,10 +350,53 @@ describe('WeeklyBudget', () => {
 
       render(<WeeklyBudget />)
 
-      expect(screen.getByText(/Проектная добавка:/)).toBeInTheDocument()
-      expect(document.body).toHaveTextContent(/1\s?000/)
-      expect(screen.getByText(/Покрыто проектами:/)).toBeInTheDocument()
+      expect(screen.getByText('Проектная добавка')).toBeInTheDocument()
+      expect(screen.getByText('Покрыто проектами')).toBeInTheDocument()
+      expect(screen.getAllByText(/1\s?000 ₽/)[0]).toHaveClass(
+        'whitespace-nowrap'
+      )
       expect(screen.getAllByRole('progressbar')).toHaveLength(1)
+    })
+
+    it('renders project details as quiet chips below the summary', () => {
+      mockWeeklyLimit = 2000
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: '4',
+          description: 'Top up',
+          amount: 1000,
+          date: '2026-01-21',
+          category: 'Проектные деньги',
+          emoji: '💼',
+          projectId: 'project-1',
+          operationType: 'project_withdrawal',
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getByText('Ремонт')).toBeInTheDocument()
+      expect(screen.getAllByText(/1\s?000 ₽/)[1]).toHaveClass(
+        'whitespace-nowrap'
+      )
+    })
+
+    it('shows uncovered summary only when personal spending exceeds coverage', () => {
+      render(<WeeklyBudget />)
+
+      expect(screen.queryByText('Сверх бюджета')).not.toBeInTheDocument()
+
+      mockWeeklyLimit = 1000
+      render(<WeeklyBudget />)
+
+      const uncoveredLabel = screen.getByText('Сверх бюджета')
+      const uncoveredMetric = uncoveredLabel.parentElement
+
+      expect(uncoveredMetric).toBeTruthy()
+      expect(
+        within(uncoveredMetric as HTMLElement).getByText(/1\s?300 ₽/)
+      ).toHaveClass('whitespace-nowrap')
     })
 
     it('applies correct styling when under budget', () => {
