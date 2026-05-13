@@ -9,8 +9,7 @@ import {
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
-import { ConfirmDialog } from '@/shared/ui'
-import { MathInput } from '@/shared/ui/math-input'
+import { ConfirmDialog, MathInput } from '@/shared/ui'
 
 import type { Expense } from '@/shared/types'
 

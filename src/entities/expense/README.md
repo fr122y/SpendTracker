@@ -24,5 +24,5 @@ real expenses, project withdrawals, or project returns.
 
 - Uses: `@/shared/api` (server actions + query client)
 - Uses: `@/shared/types` (Expense type)
-- Uses: `@/shared/ui/math-input` (MathInput component for inline editing)
+- Uses: `@/shared/ui` (ConfirmDialog and MathInput components)
 - Uses: `lucide-react` (Trash2 icon)
