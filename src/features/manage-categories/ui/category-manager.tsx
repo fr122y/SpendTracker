@@ -3,14 +3,18 @@
 import { useState } from 'react'
 
 import { useCategoryStore } from '@/entities/category'
-import { Button, Input } from '@/shared/ui'
+import { Button, ConfirmDialog, Input } from '@/shared/ui'
 
 import { CategoryManagerSkeleton } from './category-manager-skeleton'
+
+import type { Category } from '@/shared/types'
 
 export function CategoryManager() {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('')
   const [error, setError] = useState('')
+  const [categoryPendingDelete, setCategoryPendingDelete] =
+    useState<Category | null>(null)
 
   const { categories, isLoading, addCategoryIfUnique, deleteCategory } =
     useCategoryStore((state) => ({
@@ -61,7 +65,7 @@ export function CategoryManager() {
             </div>
             <Button
               variant="danger"
-              onClick={() => deleteCategory(category.id)}
+              onClick={() => setCategoryPendingDelete(category)}
               aria-label={`Удалить ${category.name}`}
               className="w-full sm:w-auto"
             >
@@ -70,6 +74,24 @@ export function CategoryManager() {
           </li>
         ))}
       </ul>
+
+      <ConfirmDialog
+        isOpen={Boolean(categoryPendingDelete)}
+        title={
+          categoryPendingDelete
+            ? `Удалить категорию «${categoryPendingDelete.name}»?`
+            : 'Удалить категорию?'
+        }
+        description="Связанные правила автокатегоризации для этой категории тоже будут удалены."
+        confirmLabel="Удалить категорию"
+        onConfirm={() => {
+          if (categoryPendingDelete) {
+            deleteCategory(categoryPendingDelete.id)
+            setCategoryPendingDelete(null)
+          }
+        }}
+        onClose={() => setCategoryPendingDelete(null)}
+      />
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">

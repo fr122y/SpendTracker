@@ -15,15 +15,19 @@ import {
   getProjectOperations,
   getProjectSpent,
 } from '@/shared/lib'
-import { Button, EmptyState } from '@/shared/ui'
+import { Button, ConfirmDialog, EmptyState } from '@/shared/ui'
 
 import { ProjectsSkeleton } from './projects-skeleton'
+
+import type { Project } from '@/shared/types'
 
 export function ProjectsSection() {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(
     null
   )
+  const [projectPendingDelete, setProjectPendingDelete] =
+    useState<Project | null>(null)
 
   const {
     projects,
@@ -57,6 +61,7 @@ export function ProjectsSection() {
     if (expandedProjectId === projectId) {
       setExpandedProjectId(null)
     }
+    setProjectPendingDelete(null)
   }
 
   return (
@@ -123,7 +128,7 @@ export function ProjectsSection() {
                         variant="danger"
                         onClick={(e) => {
                           e.stopPropagation()
-                          handleDeleteProject(project.id)
+                          setProjectPendingDelete(project)
                         }}
                         className="w-full sm:w-auto"
                       >
@@ -165,6 +170,22 @@ export function ProjectsSection() {
           description="Создайте первый проект для отслеживания бюджета"
         />
       )}
+      <ConfirmDialog
+        isOpen={Boolean(projectPendingDelete)}
+        title={
+          projectPendingDelete
+            ? `Удалить проект «${projectPendingDelete.name}»?`
+            : 'Удалить проект?'
+        }
+        description="Будут удалены все операции проекта. Это действие нельзя отменить."
+        confirmLabel="Удалить проект"
+        onConfirm={() => {
+          if (projectPendingDelete) {
+            handleDeleteProject(projectPendingDelete.id)
+          }
+        }}
+        onClose={() => setProjectPendingDelete(null)}
+      />
     </div>
   )
 }

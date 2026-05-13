@@ -77,13 +77,39 @@ describe('CategoryManager', () => {
     expect(deleteButtons).toHaveLength(3)
   })
 
-  it('calls deleteCategory when delete button is clicked', () => {
+  it('opens confirmation dialog when delete button is clicked', () => {
     render(<CategoryManager />)
 
     const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
     fireEvent.click(deleteButtons[0])
 
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(
+      screen.getByText('Удалить категорию «Продукты»?')
+    ).toBeInTheDocument()
+    expect(mockDeleteCategory).not.toHaveBeenCalled()
+  })
+
+  it('does not call deleteCategory when deletion is canceled', () => {
+    render(<CategoryManager />)
+
+    const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
+    fireEvent.click(deleteButtons[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
+
+    expect(mockDeleteCategory).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  it('calls deleteCategory when deletion is confirmed', () => {
+    render(<CategoryManager />)
+
+    const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
+    fireEvent.click(deleteButtons[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить категорию' }))
+
     expect(mockDeleteCategory).toHaveBeenCalledWith('1')
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 
   it('renders form to add new category', () => {

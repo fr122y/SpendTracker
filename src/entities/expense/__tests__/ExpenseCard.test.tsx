@@ -46,15 +46,39 @@ describe('ExpenseCard', () => {
     expect(screen.getByText('15.01.2024')).toBeInTheDocument()
   })
 
-  it('calls onDelete with correct id when delete button is clicked', () => {
+  it('opens confirmation dialog when delete button is clicked', () => {
     const onDelete = jest.fn()
     render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)
 
     const deleteButton = screen.getByRole('button', { name: /delete/i })
     fireEvent.click(deleteButton)
 
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(screen.getByText('Удалить операцию?')).toBeInTheDocument()
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
+  it('does not call onDelete when delete confirmation is canceled', () => {
+    const onDelete = jest.fn()
+    render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
+
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  it('calls onDelete with correct id when delete is confirmed', () => {
+    const onDelete = jest.fn()
+    render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)
+
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }))
+
     expect(onDelete).toHaveBeenCalledTimes(1)
     expect(onDelete).toHaveBeenCalledWith('1')
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 
   it('delete button has accessible label', () => {

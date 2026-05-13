@@ -147,11 +147,39 @@ describe('BucketEditor', () => {
     })
   })
 
-  it('allows deleting a bucket', async () => {
+  it('opens confirmation dialog when delete bucket button is clicked', () => {
     render(<BucketEditor />)
 
     const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
     fireEvent.click(deleteButtons[0])
+
+    expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+    expect(screen.getByText('Удалить категорию бюджета?')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Категория «Накопления» будет удалена из распределения бюджета.'
+      )
+    ).toBeInTheDocument()
+    expect(mockUpdateBuckets).not.toHaveBeenCalled()
+  })
+
+  it('does not delete a bucket when deletion is canceled', () => {
+    render(<BucketEditor />)
+
+    const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
+    fireEvent.click(deleteButtons[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
+
+    expect(mockUpdateBuckets).not.toHaveBeenCalled()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  it('allows deleting a bucket when deletion is confirmed', async () => {
+    render(<BucketEditor />)
+
+    const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
+    fireEvent.click(deleteButtons[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }))
 
     await waitFor(() => {
       expect(mockUpdateBuckets).toHaveBeenCalledWith([

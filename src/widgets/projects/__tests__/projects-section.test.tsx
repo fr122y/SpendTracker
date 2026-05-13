@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 
 import { ProjectsSection } from '../ui/projects-section'
 
@@ -609,7 +609,7 @@ describe('ProjectsSection', () => {
       expect(deleteButton).toBeInTheDocument()
     })
 
-    it('calls deleteProject when delete button is clicked', () => {
+    it('opens confirmation dialog when delete button is clicked', () => {
       render(<ProjectsSection />)
 
       const projectCard = screen.getByTestId('project-card-project-1')
@@ -617,6 +617,37 @@ describe('ProjectsSection', () => {
 
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
+
+      expect(screen.getByRole('alertdialog')).toBeInTheDocument()
+      expect(screen.getByText('Удалить проект «Ремонт»?')).toBeInTheDocument()
+      expect(mockDeleteProject).not.toHaveBeenCalled()
+    })
+
+    it('does not call deleteProject when deletion is canceled', () => {
+      render(<ProjectsSection />)
+
+      const projectCard = screen.getByTestId('project-card-project-1')
+      fireEvent.click(projectCard)
+
+      fireEvent.click(screen.getByText('Удалить проект'))
+      fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
+
+      expect(mockDeleteProject).not.toHaveBeenCalled()
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    })
+
+    it('calls deleteProject when deletion is confirmed', () => {
+      render(<ProjectsSection />)
+
+      const projectCard = screen.getByTestId('project-card-project-1')
+      fireEvent.click(projectCard)
+
+      fireEvent.click(screen.getByText('Удалить проект'))
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       expect(mockDeleteProject).toHaveBeenCalledWith('project-1')
     })
@@ -629,6 +660,11 @@ describe('ProjectsSection', () => {
 
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       expect(mockDeleteExpense).not.toHaveBeenCalled()
     })
@@ -641,6 +677,11 @@ describe('ProjectsSection', () => {
 
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       expect(mockDeleteProject).toHaveBeenCalledTimes(1)
       expect(mockDeleteExpense).not.toHaveBeenCalled()
@@ -655,6 +696,11 @@ describe('ProjectsSection', () => {
 
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       // After deletion, the expanded view should be closed
       // Since we're mocking stores, the component still renders, but expandedProjectId should be null
@@ -672,6 +718,11 @@ describe('ProjectsSection', () => {
 
       // Click delete button - it should not toggle the project expansion
       fireEvent.click(deleteButton)
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       // deleteProject should have been called
       expect(mockDeleteProject).toHaveBeenCalled()
@@ -801,6 +852,11 @@ describe('ProjectsSection', () => {
 
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       expect(mockDeleteProject).toHaveBeenCalledWith('project-1')
     })
@@ -917,6 +973,11 @@ describe('ProjectsSection', () => {
 
       const deleteButton = screen.getByText('Удалить проект')
       fireEvent.click(deleteButton)
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить проект',
+        })
+      )
 
       expect(mockDeleteExpense).not.toHaveBeenCalled()
       expect(mockDeleteProject).toHaveBeenCalledWith('project-1')

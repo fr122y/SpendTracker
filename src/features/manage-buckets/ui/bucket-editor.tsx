@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { useBucketStore } from '@/entities/bucket'
 import { useSettingsStore } from '@/entities/settings'
 import { cn } from '@/shared/lib'
-import { Button, Input, MathInput } from '@/shared/ui'
+import { Button, ConfirmDialog, Input, MathInput } from '@/shared/ui'
 
 import { BucketEditorSkeleton } from './bucket-editor-skeleton'
 
@@ -64,6 +64,8 @@ export function BucketEditor() {
   const [error, setError] = useState('')
   // Track raw input values while typing expressions (e.g., "50+10")
   const [inputValues, setInputValues] = useState<Record<string, string>>({})
+  const [bucketPendingDelete, setBucketPendingDelete] =
+    useState<AllocationBucket | null>(null)
   const [salaryInputValue, setSalaryInputValue] = useState(
     salary ? String(salary) : ''
   )
@@ -170,6 +172,7 @@ export function BucketEditor() {
     setLocalBuckets(newBuckets)
     updateBuckets(newBuckets)
     setError('')
+    setBucketPendingDelete(null)
   }
 
   const handleSalaryChange = (value: string, evaluated: number | null) => {
@@ -254,7 +257,7 @@ export function BucketEditor() {
                 )}
                 <Button
                   variant="danger"
-                  onClick={() => handleDeleteBucket(bucket.id)}
+                  onClick={() => setBucketPendingDelete(bucket)}
                   aria-label={
                     bucket.label
                       ? `Удалить категорию ${bucket.label}`
@@ -270,6 +273,23 @@ export function BucketEditor() {
           </li>
         ))}
       </ul>
+
+      <ConfirmDialog
+        isOpen={Boolean(bucketPendingDelete)}
+        title="Удалить категорию бюджета?"
+        description={
+          bucketPendingDelete?.label
+            ? `Категория «${bucketPendingDelete.label}» будет удалена из распределения бюджета.`
+            : 'Категория будет удалена из распределения бюджета.'
+        }
+        confirmLabel="Удалить"
+        onConfirm={() => {
+          if (bucketPendingDelete) {
+            handleDeleteBucket(bucketPendingDelete.id)
+          }
+        }}
+        onClose={() => setBucketPendingDelete(null)}
+      />
 
       {/* ⚡ Auto-fix: Added aria-live for screen reader announcement (Principle: Accessibility) */}
       {/* ⚡ Auto-fix: Added role="alert" for critical error messaging */}
