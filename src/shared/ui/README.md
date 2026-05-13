@@ -5,6 +5,7 @@ Reusable "dumb" UI components without business logic.
 ## Public API (`index.ts`)
 
 - `Button`: Styled button with variants (primary, ghost, danger)
+- `ConfirmDialog`: Controlled confirmation dialog for destructive actions
 - `Input`: Form input with label and error support
 - `MathInput`: Input that evaluates math expressions (e.g., "500+50" → "550")
 - `Select`: Dropdown select with options
@@ -60,6 +61,39 @@ Reusable "dumb" UI components without business logic.
 - Primary: `bg-blue-600 hover:bg-blue-500 text-white`
 - Ghost: `bg-transparent hover:bg-zinc-800 text-zinc-400 hover:text-white`
 - Danger: `text-red-400 hover:bg-red-500/10`
+
+### ConfirmDialog
+
+Controlled alert dialog for confirming destructive or important actions.
+
+```tsx
+<ConfirmDialog
+  isOpen={isDeleteOpen}
+  title="Удалить проект?"
+  description="Будут удалены все операции проекта."
+  confirmLabel="Удалить проект"
+  onConfirm={handleDelete}
+  onClose={() => setIsDeleteOpen(false)}
+/>
+```
+
+**Props:**
+
+- `isOpen`: Controls whether the dialog is rendered
+- `title`: Dialog heading and accessible name
+- `description`: Optional supporting content
+- `confirmLabel`: Confirm button text, defaults to `Удалить`
+- `cancelLabel`: Cancel button text, defaults to `Отмена`
+- `confirmVariant`: `primary` or `danger`, defaults to `danger`
+- `isConfirming`: Shows loading state and disables actions
+- `onConfirm`: Called from the confirm button
+- `onClose`: Called by cancel, Escape, and backdrop click
+
+**Behavior:**
+
+- Uses `role="alertdialog"` and `aria-modal="true"`
+- Focus starts on the cancel button
+- Backdrop click and Escape close the dialog when not confirming
 
 ### Input
 
