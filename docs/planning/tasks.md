@@ -63,3 +63,34 @@ Acceptance criteria:
   silently replace that manual selection.
 - Behavior is covered by focused tests where practical.
 - `npm run validate` passes.
+
+## T-003 - Open monthly category expenses from analysis chart
+
+- Status: `backlog`
+- Phase: Analytics UX
+- Type: feature
+- Priority: medium
+- Branch: `task/T-003-analysis-category-drilldown`
+- GitHub issue: #5
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - <https://github.com/fr122y/SpendTracker/issues/5>
+
+Allow users to click a category in the Analysis widget chart and open the list
+of expenses in that category for the current month.
+
+Acceptance criteria:
+
+- Clicking a category in the Analysis widget chart opens a list of expenses for
+  that category in the current month.
+- The list filters by the selected category and current month boundaries.
+- Empty category/month results show an explicit empty state.
+- The user can return from the list to the Analysis view without losing the
+  current month context.
+- The feature is covered by focused UI/unit tests where practical.
+- `npm run validate` passes.
