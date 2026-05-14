@@ -4,11 +4,11 @@ Last updated: 2026-05-14
 
 ## Current Focus
 
-- None. `T-001` is done.
+- `T-002` - Refresh stale long-running app tabs.
 
 ## Active Branch
 
-- `task/T-001-mark-done`
+- `task/T-002-sync-issue-3`
 
 ## Stable Branch
 
@@ -16,7 +16,8 @@ Last updated: 2026-05-14
 
 ## Next Action
 
-Capture the next meaningful project task before implementation work starts.
+Start implementation for `T-002` on branch
+`task/T-002-refresh-stale-tabs`.
 
 ## Validation
 
@@ -24,3 +25,4 @@ Capture the next meaningful project task before implementation work starts.
 - Passed for changed docs/templates:
   `npx prettier --check AGENTS.md docs/**/*.md .github/ISSUE_TEMPLATE/task.md .github/pull_request_template.md .github/workflows/tracker-integrity.yml`
 - PR #1 merged to `main` with merge commit `a255d91`.
+- GitHub issue #3 synced into local task tracker as `T-002`.
