@@ -45,6 +45,47 @@
         "Task tracker validation passes."
       ],
       "next_action": "No further action."
+    },
+    {
+      "id": "T-002",
+      "title": "Refresh stale long-running app tabs",
+      "status": "ready",
+      "phase": "Reliability",
+      "type": "fix",
+      "priority": "high",
+      "github_issue": 3,
+      "branch": "task/T-002-refresh-stale-tabs",
+      "detail": "Implement an app-resume freshness strategy so long-lived browser tabs refresh date-dependent defaults and server-backed data after focus, reconnect, or calendar day rollover.",
+      "depends_on": [],
+      "blocks": [],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "GitHub issue #3 defines scope and acceptance criteria.",
+      "write_scope": [
+        "src/app/**",
+        "src/_pages/**",
+        "src/entities/**",
+        "src/features/**",
+        "src/widgets/**",
+        "src/shared/**",
+        "e2e/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml"
+      ],
+      "acceptance": [
+        "A tab left open overnight updates date-dependent defaults without manual reload.",
+        "Returning to a backgrounded tab triggers refresh of expenses, balances, or other relevant server-backed queries.",
+        "Changes made from another device become visible after the original tab regains focus or reconnects.",
+        "If a user manually selected a date in a form, app-resume logic does not silently replace that manual selection.",
+        "Behavior is covered by focused tests where practical.",
+        "npm run validate passes."
+      ],
+      "next_action": "Start implementation on branch task/T-002-refresh-stale-tabs."
     }
   ]
 }
