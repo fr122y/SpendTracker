@@ -1,0 +1,50 @@
+{
+  "status_values": [
+    "captured",
+    "backlog",
+    "ready",
+    "in_progress",
+    "review",
+    "done",
+    "blocked",
+    "parked",
+    "superseded"
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "title": "Adapt project task tracking framework",
+      "status": "review",
+      "phase": "Foundation",
+      "type": "process",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-001-integrate-task-tracking",
+      "detail": "Install and adapt the project-task-tracking framework for SmartSpend Tracker while preserving existing repository rules.",
+      "depends_on": [],
+      "blocks": [],
+      "parallel": false,
+      "owner_mode": "human-led",
+      "human_gate": "Human owner approved using the project-task-tracking framework and task/ branch prefix.",
+      "write_scope": [
+        "AGENTS.md",
+        ".codex/skills/project-task-tracking/**",
+        ".github/**",
+        "docs/**",
+        "scripts/**"
+      ],
+      "required_context": [
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "AGENTS.md"
+      ],
+      "acceptance": [
+        "Project placeholders are replaced with SmartSpend Tracker details.",
+        "Existing repository architecture and validation rules remain in AGENTS.md.",
+        "The task ledger starts with the real framework-adaptation task.",
+        "Task tracker validation passes."
+      ],
+      "next_action": "Review the integration, push the scoped branch, and create a pull request."
+    }
+  ]
+}
