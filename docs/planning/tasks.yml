@@ -86,6 +86,45 @@
         "npm run validate passes."
       ],
       "next_action": "Start implementation on branch task/T-002-refresh-stale-tabs."
+    },
+    {
+      "id": "T-003",
+      "title": "Open monthly category expenses from analysis chart",
+      "status": "backlog",
+      "phase": "Analytics UX",
+      "type": "feature",
+      "priority": "medium",
+      "github_issue": 5,
+      "branch": "task/T-003-analysis-category-drilldown",
+      "detail": "Allow users to click a category in the Analysis widget chart and open the list of expenses in that category for the current month.",
+      "depends_on": [],
+      "blocks": [],
+      "parallel": true,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner requested capturing the feature before implementation.",
+      "write_scope": [
+        "src/entities/**",
+        "src/features/**",
+        "src/widgets/**",
+        "src/shared/**",
+        "e2e/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml"
+      ],
+      "acceptance": [
+        "Clicking a category in the Analysis widget chart opens a list of expenses for that category in the current month.",
+        "The list filters by the selected category and current month boundaries.",
+        "Empty category/month results show an explicit empty state.",
+        "The user can return from the list to the Analysis view without losing the current month context.",
+        "The feature is covered by focused UI/unit tests where practical.",
+        "npm run validate passes."
+      ],
+      "next_action": "Schedule after the current reliability focus or promote to ready when selected for implementation."
     }
   ]
 }

@@ -8,7 +8,7 @@ Last updated: 2026-05-14
 
 ## Active Branch
 
-- `task/T-002-sync-issue-3`
+- `task/T-003-capture-analysis-category-drilldown`
 
 ## Stable Branch
 
@@ -26,3 +26,4 @@ Start implementation for `T-002` on branch
   `npx prettier --check AGENTS.md docs/**/*.md .github/ISSUE_TEMPLATE/task.md .github/pull_request_template.md .github/workflows/tracker-integrity.yml`
 - PR #1 merged to `main` with merge commit `a255d91`.
 - GitHub issue #3 synced into local task tracker as `T-002`.
+- GitHub issue #5 captured into local task tracker as backlog task `T-003`.
