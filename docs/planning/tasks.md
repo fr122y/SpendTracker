@@ -2,12 +2,14 @@
 
 ## T-001 - Adapt project task tracking framework
 
-- Status: `review`
+- Status: `done`
 - Phase: Foundation
 - Type: process
 - Priority: high
 - Branch: `task/T-001-integrate-task-tracking`
 - GitHub issue: none
+- PR: #1
+- Merge commit: `a255d91`
 - Owner mode: human-led
 - Required context:
   - `docs/context/PROJECT_BRIEF.md`
