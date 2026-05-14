@@ -6,7 +6,7 @@ Branch: `task/T-001-integrate-task-tracking`
 
 Issue: #TBD
 
-PR: TBD
+PR: #1
 
 ## Summary
 
@@ -57,11 +57,11 @@ for SmartSpend Tracker.
 - Regression risk checked: low; process/docs/scripts only.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: local branch not pushed yet.
+- CI or PR status: PR #1 passed checks and merged to `main` as `a255d91`.
 
 ## Follow-Ups
 
-- Push the scoped branch and create a pull request.
+- None.
 
 ## Open Questions
 
@@ -69,4 +69,4 @@ for SmartSpend Tracker.
 
 ## Registry Update Requested
 
-- Move `T-001` to `review`.
+- Move `T-001` to `done`.

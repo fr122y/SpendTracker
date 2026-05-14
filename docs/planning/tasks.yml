@@ -14,7 +14,7 @@
     {
       "id": "T-001",
       "title": "Adapt project task tracking framework",
-      "status": "review",
+      "status": "done",
       "phase": "Foundation",
       "type": "process",
       "priority": "high",
@@ -44,7 +44,7 @@
         "The task ledger starts with the real framework-adaptation task.",
         "Task tracker validation passes."
       ],
-      "next_action": "Review the integration, push the scoped branch, and create a pull request."
+      "next_action": "No further action."
     }
   ]
 }
