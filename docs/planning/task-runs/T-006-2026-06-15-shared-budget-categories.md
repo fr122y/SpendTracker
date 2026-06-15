@@ -65,7 +65,7 @@ category validation, client query hooks, and focused tests.
   separate from shared category selection.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: local validation passed; PR #13 opened.
+- CI or PR status: PR #13 merged to `main` with merge commit `d3dc1a4`.
 
 ## Follow-Ups
 
@@ -79,5 +79,4 @@ category validation, client query hooks, and focused tests.
 
 ## Registry Update Requested
 
-- Keep `T-006` in `review` until PR review, merge, and tracker reconciliation
-  are complete.
+- Mark `T-006` as `done` after PR #13 merge and tracker reconciliation.

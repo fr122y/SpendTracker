@@ -184,13 +184,14 @@ Merge:
 
 ## T-006 - Add shared budget categories
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
 - Branch: `task/T-006-shared-budget-categories`
 - GitHub issue: none
 - PR: #13
+- Merge commit: `d3dc1a4`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
