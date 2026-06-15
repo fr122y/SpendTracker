@@ -17,6 +17,9 @@ export const queryKeys = {
   settings: {
     all: ['settings'] as const,
   },
+  sharedBudgets: {
+    all: ['shared-budgets'] as const,
+  },
   layout: {
     all: ['layout'] as const,
   },

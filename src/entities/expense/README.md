@@ -17,8 +17,13 @@ real expenses, project withdrawals, or project returns.
 
 - **Source of truth:** Database via Server Actions
 - **Client cache:** TanStack Query
-- **Data shape:** Records include amount, category, date, optional project link, and `operationType`
+- **Data shape:** Records include amount, category, date, optional project link,
+  optional shared budget link, author metadata, and `operationType`
 - **Operation types:** `expense`, `project_withdrawal`, `project_return`
+- **Visibility:** The list contains the current user's private expenses and
+  shared expenses from budgets where the current user is a member
+- **Scope rule:** Shared expenses cannot be linked to projects or project money
+  operations
 
 ## Dependencies
 

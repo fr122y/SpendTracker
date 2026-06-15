@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
 import {
+  boolean,
   integer,
+  index,
   jsonb,
   pgTable,
   primaryKey,
@@ -8,6 +10,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
 import type { LayoutConfig } from '@/shared/types'
@@ -68,6 +71,62 @@ export const verificationTokens = pgTable(
   ]
 )
 
+export const sharedBudgets = pgTable('shared_budget', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull(),
+  createdByUserId: text('createdByUserId')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  archivedAt: timestamp('archivedAt', { mode: 'date' }),
+  createdAt: timestamp('createdAt', { mode: 'date' })
+    .notNull()
+    .default(sql`now()`),
+})
+
+export const sharedBudgetMembers = pgTable(
+  'shared_budget_member',
+  {
+    sharedBudgetId: text('sharedBudgetId')
+      .notNull()
+      .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    role: text('role').notNull(),
+    isActive: boolean('isActive').notNull().default(false),
+    joinedAt: timestamp('joinedAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.sharedBudgetId, table.userId] }),
+    index('shared_budget_member_user_idx').on(table.userId),
+    uniqueIndex('shared_budget_member_one_active_per_user_idx')
+      .on(table.userId)
+      .where(sql`${table.isActive} = true`),
+  ]
+)
+
+export const sharedBudgetWeeklyLimits = pgTable(
+  'shared_budget_weekly_limit',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sharedBudgetId: text('sharedBudgetId')
+      .notNull()
+      .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
+    effectiveWeekStart: text('effectiveWeekStart').notNull(),
+    amount: real('amount').notNull(),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [unique().on(table.sharedBudgetId, table.effectiveWeekStart)]
+)
+
 export const expenses = pgTable('expense', {
   id: text('id')
     .primaryKey()
@@ -81,6 +140,9 @@ export const expenses = pgTable('expense', {
   category: text('category').notNull(),
   emoji: text('emoji').notNull(),
   projectId: text('projectId'),
+  sharedBudgetId: text('sharedBudgetId').references(() => sharedBudgets.id, {
+    onDelete: 'set null',
+  }),
   operationType: text('operationType').notNull().default('expense'),
   createdAt: timestamp('createdAt', { mode: 'date' })
     .notNull()
