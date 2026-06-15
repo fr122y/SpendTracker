@@ -25,6 +25,12 @@ export {
   setActiveSharedBudget,
   setSharedWeeklyLimitForWeek,
 } from './shared-budget-actions'
+export {
+  addSharedBudgetCategory,
+  archiveSharedBudgetCategory,
+  getSharedBudgetCategories,
+  updateSharedBudgetCategory,
+} from './shared-category-actions'
 export { getLayoutConfig, updateLayoutConfig } from './layout-actions'
 export { registerUser } from './auth-actions'
 export { queryKeys } from './query-keys'

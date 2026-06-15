@@ -15,6 +15,10 @@ jest.mock('../shared-budget-actions', () => ({
   assertCanUseSharedBudget: jest.fn(),
 }))
 
+jest.mock('../shared-category-actions', () => ({
+  getSharedCategoryForExpense: jest.fn(),
+}))
+
 jest.mock('@/shared/db', () => {
   const mocks = {
     deleteWhere: jest.fn(),
@@ -72,6 +76,7 @@ jest.mock('@/shared/db', () => {
       emoji: 'expense.emoji',
       projectId: 'expense.projectId',
       sharedBudgetId: 'expense.sharedBudgetId',
+      sharedBudgetCategoryId: 'expense.sharedBudgetCategoryId',
       operationType: 'expense.operationType',
     },
     sharedBudgetMembers: {
@@ -101,6 +106,7 @@ import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
 } from '../shared-budget-actions'
+import { getSharedCategoryForExpense } from '../shared-category-actions'
 
 describe('expense-actions shared budget access', () => {
   const dbModule = jest.requireMock('@/shared/db') as {
@@ -157,6 +163,7 @@ describe('expense-actions shared budget access', () => {
         emoji: '☕',
         projectId: null,
         sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
         sharedBudgetName: null,
         operationType: 'expense',
       },
@@ -171,6 +178,7 @@ describe('expense-actions shared budget access', () => {
         emoji: '🛒',
         projectId: null,
         sharedBudgetId: 'shared-1',
+        sharedBudgetCategoryId: 'shared-category-1',
         sharedBudgetName: 'Общий бюджет',
         operationType: 'expense',
       },
@@ -187,28 +195,59 @@ describe('expense-actions shared budget access', () => {
         id: 'shared-expense-1',
         authorUserId: 'user-2',
         sharedBudgetId: 'shared-1',
+        sharedBudgetCategoryId: 'shared-category-1',
         sharedBudgetName: 'Общий бюджет',
       }),
     ])
   })
 
   it('requires membership before adding a shared expense', async () => {
+    ;(getSharedCategoryForExpense as jest.Mock).mockResolvedValueOnce({
+      name: 'Общие продукты',
+      emoji: '🛒',
+    })
+
     await addExpense({
       description: 'Общий расход',
       amount: 900,
       date: '2026-06-15',
-      category: 'Еда',
-      emoji: '☕',
+      category: 'Личная категория не используется',
+      emoji: '❌',
       sharedBudgetId: 'shared-1',
+      sharedBudgetCategoryId: 'shared-category-1',
     })
 
     expect(assertCanUseSharedBudget).toHaveBeenCalledWith('shared-1', 'user-1')
+    expect(getSharedCategoryForExpense).toHaveBeenCalledWith(
+      'shared-1',
+      'shared-category-1',
+      'user-1'
+    )
     expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
       expect.objectContaining({
         sharedBudgetId: 'shared-1',
+        sharedBudgetCategoryId: 'shared-category-1',
         userId: 'user-1',
+        category: 'Общие продукты',
+        emoji: '🛒',
       })
     )
+  })
+
+  it('rejects shared expenses without a shared category', async () => {
+    await expect(
+      addExpense({
+        description: 'Общий расход',
+        amount: 900,
+        date: '2026-06-15',
+        category: 'Еда',
+        emoji: '☕',
+        sharedBudgetId: 'shared-1',
+      })
+    ).rejects.toThrow('Shared expenses require a shared category')
+
+    expect(getSharedCategoryForExpense).not.toHaveBeenCalled()
+    expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
   })
 
   it('rejects project operations linked to a shared budget', async () => {
@@ -234,6 +273,7 @@ describe('expense-actions shared budget access', () => {
         userId: 'user-2',
         projectId: null,
         sharedBudgetId: 'shared-1',
+        sharedBudgetCategoryId: 'shared-category-1',
         operationType: 'expense',
       },
     ])
@@ -245,6 +285,24 @@ describe('expense-actions shared budget access', () => {
       'user-1'
     )
     expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({ amount: 1000 })
+  })
+
+  it('prevents direct category metadata updates for shared expenses', async () => {
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-2',
+        projectId: null,
+        sharedBudgetId: 'shared-1',
+        sharedBudgetCategoryId: 'shared-category-1',
+        operationType: 'expense',
+      },
+    ])
+
+    await expect(
+      updateExpense('expense-1', { category: 'Личная', emoji: '❌' })
+    ).rejects.toThrow('Shared expense category metadata cannot be changed')
+
+    expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
   })
 
   it('prevents non-authors from deleting private expenses', async () => {

@@ -4,11 +4,12 @@ Last updated: 2026-06-15
 
 ## Current Focus
 
-- `T-006` - Add shared budget categories.
+- `T-006` - Add shared budget categories is implemented locally and awaiting
+  PR review.
 
 ## Active Branch
 
-- None. Next implementation branch should be `task/T-006-shared-budget-categories`.
+- `task/T-006-shared-budget-categories`
 
 ## Stable Branch
 
@@ -16,7 +17,7 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Plan or start `T-006` shared budget categories.
+Review, open a PR, and merge `T-006` shared budget categories after validation.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-006` is the next shared budget foundation task.
@@ -28,6 +29,11 @@ Shared budget product discussion has been captured as phased backlog tasks
 - PR #8 merged for `T-004` with merge commit `c93d3e8`.
 - Passed: `npm run validate` for `T-005`.
 - PR #10 merged for `T-005` with merge commit `780b638`.
+- Passed: `npm run typecheck` for `T-006`.
+- Passed: focused Jest tests for `T-006` shared budget category actions,
+  shared budget category copy, and shared expense category validation.
+- Passed: `npm run validate` for `T-006` (60 suites, 762 tests).
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-006`.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`

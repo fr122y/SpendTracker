@@ -20,6 +20,10 @@ export const queryKeys = {
   sharedBudgets: {
     all: ['shared-budgets'] as const,
   },
+  sharedBudgetCategories: {
+    list: (sharedBudgetId: string) =>
+      ['shared-budget-categories', sharedBudgetId] as const,
+  },
   layout: {
     all: ['layout'] as const,
   },

@@ -15,6 +15,7 @@ export interface Expense {
   emoji: string
   projectId?: string // Optional
   sharedBudgetId?: string
+  sharedBudgetCategoryId?: string
   authorUserId?: string
   authorName?: string
   sharedBudgetName?: string
@@ -53,6 +54,15 @@ export interface CreateSharedBudgetInput {
   name: string
   initialWeeklyLimit: number
   effectiveWeekStart: string
+}
+
+export interface SharedBudgetCategory {
+  id: string
+  sharedBudgetId: string
+  name: string
+  emoji: string
+  archivedAt?: string
+  createdAt: string
 }
 
 // Category entity

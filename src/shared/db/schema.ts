@@ -127,6 +127,30 @@ export const sharedBudgetWeeklyLimits = pgTable(
   (table) => [unique().on(table.sharedBudgetId, table.effectiveWeekStart)]
 )
 
+export const sharedBudgetCategories = pgTable(
+  'shared_budget_category',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sharedBudgetId: text('sharedBudgetId')
+      .notNull()
+      .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    emoji: text('emoji').notNull(),
+    archivedAt: timestamp('archivedAt', { mode: 'date' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index('shared_budget_category_budget_idx').on(table.sharedBudgetId),
+    uniqueIndex('shared_budget_category_active_name_idx')
+      .on(table.sharedBudgetId, table.name)
+      .where(sql`${table.archivedAt} is null`),
+  ]
+)
+
 export const expenses = pgTable('expense', {
   id: text('id')
     .primaryKey()
@@ -143,6 +167,10 @@ export const expenses = pgTable('expense', {
   sharedBudgetId: text('sharedBudgetId').references(() => sharedBudgets.id, {
     onDelete: 'set null',
   }),
+  sharedBudgetCategoryId: text('sharedBudgetCategoryId').references(
+    () => sharedBudgetCategories.id,
+    { onDelete: 'set null' }
+  ),
   operationType: text('operationType').notNull().default('expense'),
   createdAt: timestamp('createdAt', { mode: 'date' })
     .notNull()

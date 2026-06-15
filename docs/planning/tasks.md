@@ -184,7 +184,7 @@ Merge:
 
 ## T-006 - Add shared budget categories
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
@@ -216,6 +216,10 @@ Acceptance criteria:
 - Focused tests cover category copy, shared expense category selection, and
   access boundaries.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-006-2026-06-15-shared-budget-categories.md`
 
 ## T-007 - Add one-time invite links for shared budgets
 

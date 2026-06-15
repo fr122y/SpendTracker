@@ -15,6 +15,7 @@ import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
 } from './shared-budget-actions'
+import { getSharedCategoryForExpense } from './shared-category-actions'
 
 import type { Expense } from '@/shared/types'
 
@@ -60,6 +61,7 @@ export async function getExpenses(): Promise<Expense[]> {
       emoji: expenses.emoji,
       projectId: expenses.projectId,
       sharedBudgetId: expenses.sharedBudgetId,
+      sharedBudgetCategoryId: expenses.sharedBudgetCategoryId,
       sharedBudgetName: sharedBudgets.name,
       operationType: expenses.operationType,
     })
@@ -72,6 +74,7 @@ export async function getExpenses(): Promise<Expense[]> {
     ...row,
     projectId: row.projectId ?? undefined,
     sharedBudgetId: row.sharedBudgetId ?? undefined,
+    sharedBudgetCategoryId: row.sharedBudgetCategoryId ?? undefined,
     authorName: row.authorName ?? undefined,
     sharedBudgetName: row.sharedBudgetName ?? undefined,
     operationType: row.operationType as Expense['operationType'],
@@ -97,25 +100,48 @@ export async function addExpense(data: Omit<Expense, 'id'>): Promise<Expense> {
     await assertCanUseSharedBudget(data.sharedBudgetId, userId)
   }
 
+  if (isSharedExpense && !data.sharedBudgetCategoryId) {
+    throw new Error('Shared expenses require a shared category')
+  }
+
+  const sharedCategory =
+    isSharedExpense && data.sharedBudgetId && data.sharedBudgetCategoryId
+      ? await getSharedCategoryForExpense(
+          data.sharedBudgetId,
+          data.sharedBudgetCategoryId,
+          userId
+        )
+      : undefined
+
   await db.insert(expenses).values({
     id,
     userId,
     description: data.description,
     amount: data.amount,
     date: data.date,
-    category: isProjectMovement ? PROJECT_MONEY_CATEGORY : data.category,
-    emoji: isProjectMovement ? PROJECT_MONEY_EMOJI : data.emoji,
+    category: isProjectMovement
+      ? PROJECT_MONEY_CATEGORY
+      : (sharedCategory?.name ?? data.category),
+    emoji: isProjectMovement
+      ? PROJECT_MONEY_EMOJI
+      : (sharedCategory?.emoji ?? data.emoji),
     projectId: data.projectId ?? null,
     sharedBudgetId: data.sharedBudgetId ?? null,
+    sharedBudgetCategoryId: data.sharedBudgetCategoryId ?? null,
     operationType,
   })
 
   return {
     id,
     ...data,
-    category: isProjectMovement ? PROJECT_MONEY_CATEGORY : data.category,
-    emoji: isProjectMovement ? PROJECT_MONEY_EMOJI : data.emoji,
+    category: isProjectMovement
+      ? PROJECT_MONEY_CATEGORY
+      : (sharedCategory?.name ?? data.category),
+    emoji: isProjectMovement
+      ? PROJECT_MONEY_EMOJI
+      : (sharedCategory?.emoji ?? data.emoji),
     sharedBudgetId: data.sharedBudgetId,
+    sharedBudgetCategoryId: data.sharedBudgetCategoryId,
     authorUserId: userId,
     operationType,
   }
@@ -152,6 +178,7 @@ export async function updateExpense(
       userId: expenses.userId,
       projectId: expenses.projectId,
       sharedBudgetId: expenses.sharedBudgetId,
+      sharedBudgetCategoryId: expenses.sharedBudgetCategoryId,
       operationType: expenses.operationType,
     })
     .from(expenses)
@@ -170,6 +197,21 @@ export async function updateExpense(
     (data.sharedBudgetId ?? null) !== (existing.sharedBudgetId ?? null)
   ) {
     throw new Error('Expense budget scope cannot be changed')
+  }
+
+  if (
+    data.sharedBudgetCategoryId !== undefined &&
+    (data.sharedBudgetCategoryId ?? null) !==
+      (existing.sharedBudgetCategoryId ?? null)
+  ) {
+    throw new Error('Expense shared category cannot be changed')
+  }
+
+  if (
+    existing.sharedBudgetId &&
+    (data.category !== undefined || data.emoji !== undefined)
+  ) {
+    throw new Error('Shared expense category metadata cannot be changed')
   }
 
   const nextOperationType = data.operationType ?? existing.operationType
@@ -191,6 +233,7 @@ export async function updateExpense(
     category: string
     emoji: string
     projectId: string | null
+    sharedBudgetCategoryId: string | null
     operationType: Expense['operationType']
   }> = {}
 
