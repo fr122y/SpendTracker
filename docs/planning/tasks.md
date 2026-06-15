@@ -137,7 +137,7 @@ Task-run report:
 
 ## T-005 - Define shared budget domain model and access rules
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
@@ -177,6 +177,10 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-005-2026-06-15-shared-budget-domain.md`
+
+Merge:
+
+- PR #10 merged to `main` with merge commit `780b638`.
 
 ## T-006 - Add shared budget categories
 
