@@ -8,7 +8,7 @@ Last updated: 2026-06-15
 
 ## Active Branch
 
-- `task/T-005-reconcile`
+- None. Next implementation branch should be `task/T-006-shared-budget-categories`.
 
 ## Stable Branch
 
@@ -16,8 +16,7 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Reconcile `T-005` task state after PR #10 merge, then plan or start `T-006`
-shared budget categories.
+Plan or start `T-006` shared budget categories.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-006` is the next shared budget foundation task.
