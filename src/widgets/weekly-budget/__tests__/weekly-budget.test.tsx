@@ -64,6 +64,8 @@ jest.mock('@/entities/settings', () => ({
     weeklyLimit: mockWeeklyLimit,
     isLoading: mockSettingsLoading,
     setWeeklyLimit: mockSetWeeklyLimit,
+    setWeeklyLimitForDate: mockSetWeeklyLimit,
+    getWeeklyLimitForDate: () => mockWeeklyLimit,
   }),
 }))
 
@@ -426,7 +428,7 @@ describe('WeeklyBudget', () => {
       fireEvent.change(input, { target: { value: '15000' } })
       fireEvent.blur(input)
 
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(15000)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 15000)
     })
 
     it('updates limit to zero', () => {
@@ -436,7 +438,7 @@ describe('WeeklyBudget', () => {
       fireEvent.change(input, { target: { value: '0' } })
       fireEvent.blur(input)
 
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(0)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 0)
     })
 
     it('does not update limit for invalid input', () => {
@@ -508,15 +510,15 @@ describe('WeeklyBudget', () => {
 
       fireEvent.change(input, { target: { value: '5000' } })
       fireEvent.blur(input)
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(5000)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 5000)
 
       fireEvent.change(input, { target: { value: '8000' } })
       fireEvent.blur(input)
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(8000)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 8000)
 
       fireEvent.change(input, { target: { value: '12000' } })
       fireEvent.blur(input)
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(12000)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 12000)
 
       // Each value should have been applied
       expect(mockSetWeeklyLimit).toHaveBeenCalledTimes(3) // 1 call per blur
@@ -564,14 +566,14 @@ describe('WeeklyBudget', () => {
       expect(screen.getByText(/20 янв/)).toBeInTheDocument()
     })
 
-    it('calls setWeeklyLimit from settings store', () => {
+    it('calls setWeeklyLimitForDate from settings store', () => {
       render(<WeeklyBudget />)
 
       const input = screen.getByDisplayValue('10000')
       fireEvent.change(input, { target: { value: '20000' } })
       fireEvent.blur(input)
 
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(20000)
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 20000)
     })
   })
 

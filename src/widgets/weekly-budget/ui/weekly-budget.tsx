@@ -12,13 +12,14 @@ import { MathInput } from '@/shared/ui'
 import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
 
 export function WeeklyBudget() {
+  const selectedDate = useSessionStore((state) => state.selectedDate)
   const {
     weeklyLimit,
-    setWeeklyLimit,
+    setWeeklyLimitForDate,
     isLoading: isSettingsLoading,
   } = useSettingsStore((state) => ({
-    weeklyLimit: state.weeklyLimit,
-    setWeeklyLimit: state.setWeeklyLimit,
+    weeklyLimit: state.getWeeklyLimitForDate(selectedDate),
+    setWeeklyLimitForDate: state.setWeeklyLimitForDate,
     isLoading: state.isLoading,
   }))
   const { expenses, isLoading: isExpensesLoading } = useExpenseStore(
@@ -33,7 +34,6 @@ export function WeeklyBudget() {
       isLoading: state.isLoading,
     })
   )
-  const selectedDate = useSessionStore((state) => state.selectedDate)
   const [inputValue, setInputValue] = useState(String(weeklyLimit))
 
   useEffect(() => {
@@ -80,7 +80,7 @@ export function WeeklyBudget() {
 
   const handleLimitChange = (value: string, evaluated: number | null) => {
     if (evaluated !== null) {
-      setWeeklyLimit(evaluated)
+      setWeeklyLimitForDate(selectedDate, evaluated)
       setInputValue(String(evaluated))
     } else {
       setInputValue(value)

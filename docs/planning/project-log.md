@@ -2,6 +2,9 @@
 
 ## 2026-06-15
 
+- Implemented `T-004` historical personal weekly budget limits with
+  effective-week records, migration/backfill from `user_settings.weeklyLimit`,
+  weekly budget widget integration, focused tests, and full `npm run validate`.
 - Captured the shared weekly budget product direction as phased tracker tasks
   `T-004` through `T-011`.
 - Fixed the intended shared budget model: personal budgets remain private,

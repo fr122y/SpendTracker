@@ -12,6 +12,8 @@ import {
   getWeeklyStats,
   getWeeklyPersonalStats,
   getWeeklyBudgetCoverage,
+  getEffectiveWeeklyLimit,
+  getWeekBoundaries,
 } from '../finance-selectors'
 
 import type { Expense } from '@/shared/types'
@@ -426,5 +428,61 @@ describe('getWeeklyBudgetCoverage', () => {
     expect(result.personalSpent).toBe(9000)
     expect(result.projectCovered).toBe(0)
     expect(result.uncovered).toBe(0)
+  })
+})
+
+describe('weekly budget limit selectors', () => {
+  it('returns the limit effective for the selected week', () => {
+    const result = getEffectiveWeeklyLimit(
+      [
+        { effectiveWeekStart: '1970-01-05', amount: 6500 },
+        { effectiveWeekStart: '2026-06-15', amount: 2500 },
+      ],
+      new Date('2026-06-17'),
+      10000
+    )
+
+    expect(result).toBe(2500)
+  })
+
+  it('preserves earlier weeks when a newer week limit exists', () => {
+    const result = getEffectiveWeeklyLimit(
+      [
+        { effectiveWeekStart: '1970-01-05', amount: 6500 },
+        { effectiveWeekStart: '2026-06-15', amount: 2500 },
+      ],
+      new Date('2026-06-10'),
+      10000
+    )
+
+    expect(result).toBe(6500)
+  })
+
+  it('lets future weeks inherit the latest effective limit', () => {
+    const result = getEffectiveWeeklyLimit(
+      [
+        { effectiveWeekStart: '1970-01-05', amount: 6500 },
+        { effectiveWeekStart: '2026-06-15', amount: 2500 },
+      ],
+      new Date('2026-07-01'),
+      10000
+    )
+
+    expect(result).toBe(2500)
+  })
+
+  it('falls back to the default when no historical limit is effective yet', () => {
+    const result = getEffectiveWeeklyLimit(
+      [{ effectiveWeekStart: '2026-06-15', amount: 2500 }],
+      new Date('2026-06-10'),
+      6500
+    )
+
+    expect(result).toBe(6500)
+  })
+
+  it('calculates Monday as the effective week start', () => {
+    expect(getWeekBoundaries(new Date('2026-06-17')).start).toBe('2026-06-15')
+    expect(getWeekBoundaries(new Date('2026-06-21')).start).toBe('2026-06-15')
   })
 })

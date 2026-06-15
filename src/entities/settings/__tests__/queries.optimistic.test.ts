@@ -4,19 +4,25 @@ import { createElement, type ReactNode } from 'react'
 
 import { showMutationRollbackToast } from '@/shared/lib'
 
-import { useUpdateSettings } from '../model/queries'
+import { useSetWeeklyLimitForWeek, useUpdateSettings } from '../model/queries'
 
 import type { Settings } from '@/shared/api/settings-actions'
 
 let shouldReject = false
 
 jest.mock('@/shared/lib', () => ({
+  ...jest.requireActual('@/shared/lib'),
   showMutationRollbackToast: jest.fn(),
 }))
 
 jest.mock('@/shared/api', () => ({
   queryKeys: { settings: { all: ['settings'] } },
   getSettings: jest.fn(),
+  setWeeklyLimitForWeek: jest.fn(async () => {
+    if (shouldReject) {
+      throw new Error('update failed')
+    }
+  }),
   updateSettings: jest.fn(async () => {
     if (shouldReject) {
       throw new Error('update failed')
@@ -31,6 +37,7 @@ const createWrapper = (queryClient: QueryClient) =>
 
 const baseSettings: Settings = {
   weeklyLimit: 10000,
+  weeklyLimits: [{ effectiveWeekStart: '1970-01-05', amount: 10000 }],
   salaryDay: 10,
   advanceDay: 25,
   salary: 50000,
@@ -96,6 +103,43 @@ describe('useUpdateSettings optimistic', () => {
     await waitFor(() => {
       expect(queryClient.getQueryData(['settings'])).toEqual(baseSettings)
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('optimistically upserts a weekly limit entry', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+
+    queryClient.setQueryData(['settings'], baseSettings)
+
+    const { result } = renderHook(() => useSetWeeklyLimitForWeek(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({
+        effectiveWeekStart: '2099-06-15',
+        amount: 2500,
+      })
+    })
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(['settings'])).toEqual({
+        ...baseSettings,
+        weeklyLimits: [
+          { effectiveWeekStart: '1970-01-05', amount: 10000 },
+          { effectiveWeekStart: '2099-06-15', amount: 2500 },
+        ],
+      })
+    })
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['settings'] })
     })
   })
 })

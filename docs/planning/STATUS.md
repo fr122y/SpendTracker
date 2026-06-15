@@ -4,12 +4,11 @@ Last updated: 2026-06-15
 
 ## Current Focus
 
-- `T-002` - Refresh stale long-running app tabs.
+- `T-004` - Add historical weekly personal budget limits.
 
 ## Active Branch
 
-- None. Next implementation branch remains `task/T-002-refresh-stale-tabs`
-  unless the human owner promotes another task.
+- `task/T-004-historical-weekly-limits`
 
 ## Stable Branch
 
@@ -17,14 +16,16 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Start implementation for `T-002` on branch
-`task/T-002-refresh-stale-tabs`.
+Review PR #8 for `T-004`, then merge and reconcile task state after approval.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`.
+`T-004` through `T-011`; `T-004` is now promoted as the active foundation task.
 
 ## Validation
 
+- Passed: `npm run validate` for `T-004`.
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-004`.
+- PR #8 opened for `T-004`; GitHub checks are passing and merge state is clean.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`

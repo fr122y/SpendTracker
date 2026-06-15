@@ -8,6 +8,10 @@ Server Actions and shared query infrastructure for the application.
 - `getKeywordMappings()`: get user keyword mappings joined with category metadata
 - `saveKeywordMapping(keyword, categoryId)`: upsert keyword mapping for user
 - `deleteKeywordMapping(id)`: delete mapping
+- `getSettings()`: get user settings with effective weekly limit history
+- `updateSettings(data)`: update general user settings
+- `setWeeklyLimitForWeek(effectiveWeekStart, amount)`: upsert a personal
+  weekly limit from a selected week forward
 - `queryClient`: TanStack Query client instance with default options
 
 ## Architecture
