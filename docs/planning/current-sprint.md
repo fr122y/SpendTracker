@@ -2,7 +2,8 @@
 
 ## Focus
 
-- `T-004` - Add historical weekly personal budget limits.
+- None. `T-004` is done; `T-005` is the next shared budget foundation task when
+  promoted.
 
 ## Notes
 
@@ -12,4 +13,4 @@
 - `T-002` is ready and tracked from GitHub issue #3.
 - `T-003` is captured in backlog from GitHub issue #5.
 - Shared budget planning was captured as phased tasks `T-004` through `T-011`;
-  `T-004` has been promoted as the current shared budget foundation task.
+  `T-004` is done and unblocks `T-005`.

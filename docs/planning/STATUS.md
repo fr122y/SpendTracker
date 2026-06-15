@@ -4,11 +4,12 @@ Last updated: 2026-06-15
 
 ## Current Focus
 
-- `T-004` - Add historical weekly personal budget limits.
+- None. `T-004` is done; `T-005` is the next shared budget foundation task when
+  promoted.
 
 ## Active Branch
 
-- `task/T-004-historical-weekly-limits`
+- None.
 
 ## Stable Branch
 
@@ -16,16 +17,16 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Review PR #8 for `T-004`, then merge and reconcile task state after approval.
+Select the next task. `T-005` is unblocked by the merge of `T-004`.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-004` is now promoted as the active foundation task.
+`T-004` through `T-011`; `T-004` is done.
 
 ## Validation
 
 - Passed: `npm run validate` for `T-004`.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-004`.
-- PR #8 opened for `T-004`; GitHub checks are passing and merge state is clean.
+- PR #8 merged for `T-004` with merge commit `c93d3e8`.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`
