@@ -6,7 +6,7 @@ Branch: `task/T-006-shared-budget-categories`
 
 Issue: #TBD
 
-PR: TBD
+PR: #13
 
 ## Summary
 
@@ -65,7 +65,7 @@ category validation, client query hooks, and focused tests.
   separate from shared category selection.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: local validation passed; PR pending.
+- CI or PR status: local validation passed; PR #13 opened.
 
 ## Follow-Ups
 

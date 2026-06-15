@@ -17,7 +17,7 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Review, open a PR, and merge `T-006` shared budget categories after validation.
+Review PR #13 and merge `T-006` shared budget categories after approval.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-006` is the next shared budget foundation task.

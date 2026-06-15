@@ -190,7 +190,7 @@ Merge:
 - Priority: high
 - Branch: `task/T-006-shared-budget-categories`
 - GitHub issue: none
-- PR: none
+- PR: #13
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
