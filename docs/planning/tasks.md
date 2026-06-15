@@ -230,7 +230,7 @@ Task-run report:
 - Priority: high
 - Branch: `task/T-007-shared-budget-invites`
 - GitHub issue: none
-- PR: none
+- PR: #15
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

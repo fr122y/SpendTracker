@@ -6,7 +6,7 @@ Branch: `task/T-007-shared-budget-invites`
 
 Issue: #TBD
 
-PR: TBD
+PR: #15
 
 ## Summary
 
@@ -60,7 +60,7 @@ public invite acceptance page that preserves auth callback flow.
   membership, and owner authorization covered by focused tests.
 - Tracker consistency checked: pending final tracker validation.
 - Docs checked: yes.
-- CI or PR status: local validation passed; PR not opened yet.
+- CI or PR status: local validation passed; PR #15 opened.
 
 ## Follow-Ups
 
@@ -74,5 +74,4 @@ public invite acceptance page that preserves auth callback flow.
 
 ## Registry Update Requested
 
-- `T-007` moved to `review`; open PR after this implementation branch is
-  committed and pushed.
+- `T-007` moved to `review`; PR #15 opened for review.
