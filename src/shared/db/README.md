@@ -17,6 +17,8 @@ Drizzle ORM database layer for the app's PostgreSQL backend.
 - Shared budget data is stored in:
   - `shared_budget` for the budget record and archival state
   - `shared_budget_member` for per-user role and active selection
+  - `shared_budget_invite` for one-time invite token hashes and acceptance
+    state
   - `shared_budget_weekly_limit` for effective weekly limits per shared budget
 - `expense.sharedBudgetId` links a record to a shared budget; private expenses
   keep this field null

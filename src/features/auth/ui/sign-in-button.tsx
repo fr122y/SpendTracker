@@ -2,11 +2,15 @@
 
 import { signIn } from 'next-auth/react'
 
-export function SignInButton() {
+interface SignInButtonProps {
+  callbackUrl?: string
+}
+
+export function SignInButton({ callbackUrl = '/' }: SignInButtonProps) {
   return (
     <button
       type="button"
-      onClick={() => signIn('google', { callbackUrl: '/' })}
+      onClick={() => signIn('google', { callbackUrl })}
       className="flex w-full items-center justify-center gap-3 rounded-lg bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-200 transition-colors hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">

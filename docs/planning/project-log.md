@@ -24,6 +24,9 @@
   client query hooks, migration, and focused tests.
 - Merged PR #13 for `T-006` into `main` as `d3dc1a4` and reconciled the task
   to `done`.
+- Implemented `T-007` shared budget invite links with hashed one-time tokens,
+  seven-day expiry, public invite acceptance flow, safe auth callback redirects,
+  migration, focused tests, and full `npm run validate`.
 
 ## 2026-05-14
 

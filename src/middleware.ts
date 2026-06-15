@@ -1,18 +1,24 @@
 import NextAuth from 'next-auth'
 
 import authConfig from '@/shared/auth/config'
+import { getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
 
 const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth
   const { pathname } = req.nextUrl
+  const isInvitePage = pathname.startsWith('/invite/')
 
   if (pathname === '/login' && isLoggedIn) {
-    return Response.redirect(new URL('/', req.nextUrl))
+    const callbackUrl = getSafeCallbackUrl(
+      req.nextUrl.searchParams.get('callbackUrl')
+    )
+
+    return Response.redirect(new URL(callbackUrl, req.nextUrl))
   }
 
-  if (pathname !== '/login' && !isLoggedIn) {
+  if (pathname !== '/login' && !isInvitePage && !isLoggedIn) {
     return Response.redirect(new URL('/login', req.nextUrl))
   }
 })

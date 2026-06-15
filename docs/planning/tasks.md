@@ -224,7 +224,7 @@ Task-run report:
 
 ## T-007 - Add one-time invite links for shared budgets
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget Collaboration
 - Type: feature
 - Priority: high
@@ -258,6 +258,10 @@ Acceptance criteria:
 - Focused tests cover successful acceptance, token reuse, expiry, duplicate
   membership, and unauthorized generation.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-007-2026-06-15-shared-budget-invites.md`
 
 ## T-008 - Extend weekly budget widget for shared budgets
 
