@@ -175,7 +175,7 @@
     {
       "id": "T-005",
       "title": "Define shared budget domain model and access rules",
-      "status": "review",
+      "status": "done",
       "phase": "Shared Budget Foundation",
       "type": "feature",
       "priority": "high",
@@ -222,7 +222,7 @@
         "An ADR or durable context note records the shared budget ownership and visibility model.",
         "npm run validate passes."
       ],
-      "next_action": "Review PR for shared budget server-side domain model and access rules, then merge and reconcile task state."
+      "next_action": "No further action."
     },
     {
       "id": "T-006",

@@ -17,6 +17,8 @@
 - Implemented `T-005` shared budget domain foundation with database schema,
   migration, server actions, expense visibility rules, focused tests, ADR, and
   full `npm run validate`.
+- Merged PR #10 for `T-005` into `main` as `780b638` and reconciled the task to
+  `done`.
 
 ## 2026-05-14
 
