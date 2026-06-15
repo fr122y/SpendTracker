@@ -16,7 +16,7 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Open the PR for `T-004`, review checks, and merge after approval.
+Review PR #8 for `T-004`, then merge and reconcile task state after approval.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-004` is now promoted as the active foundation task.
@@ -25,6 +25,7 @@ Shared budget product discussion has been captured as phased backlog tasks
 
 - Passed: `npm run validate` for `T-004`.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-004`.
+- PR #8 opened for `T-004`; GitHub checks are passing and merge state is clean.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`

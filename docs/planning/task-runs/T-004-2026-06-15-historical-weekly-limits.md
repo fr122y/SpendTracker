@@ -6,7 +6,7 @@ Branch: `task/T-004-historical-weekly-limits`
 
 Issue: #TBD
 
-PR: TBD
+PR: #8
 
 ## Summary
 
@@ -62,7 +62,7 @@ week's limit no longer recalculates earlier weeks.
   focused tests plus full unit suite.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: local validation passed; PR pending.
+- CI or PR status: local validation and GitHub checks passed on PR #8.
 
 ## Follow-Ups
 
