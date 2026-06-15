@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-05-14
+Last updated: 2026-06-15
 
 ## Current Focus
 
@@ -8,7 +8,8 @@ Last updated: 2026-05-14
 
 ## Active Branch
 
-- `task/T-003-capture-analysis-category-drilldown`
+- None. Next implementation branch remains `task/T-002-refresh-stale-tabs`
+  unless the human owner promotes another task.
 
 ## Stable Branch
 
@@ -19,8 +20,13 @@ Last updated: 2026-05-14
 Start implementation for `T-002` on branch
 `task/T-002-refresh-stale-tabs`.
 
+Shared budget product discussion has been captured as phased backlog tasks
+`T-004` through `T-011`.
+
 ## Validation
 
+- Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
+  budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`
 - Passed for changed docs/templates:
   `npx prettier --check AGENTS.md docs/**/*.md .github/ISSUE_TEMPLATE/task.md .github/pull_request_template.md .github/workflows/tracker-integrity.yml`

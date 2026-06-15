@@ -125,6 +125,396 @@
         "npm run validate passes."
       ],
       "next_action": "Schedule after the current reliability focus or promote to ready when selected for implementation."
+    },
+    {
+      "id": "T-004",
+      "title": "Add historical weekly personal budget limits",
+      "status": "captured",
+      "phase": "Shared Budget Foundation",
+      "type": "feature",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-004-historical-weekly-limits",
+      "detail": "Store weekly personal budget limits by effective week so changing the current limit does not recalculate past weeks.",
+      "depends_on": [],
+      "blocks": [
+        "T-005"
+      ],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner requested preserving prior weekly budget history before introducing shared budgets.",
+      "write_scope": [
+        "src/entities/settings/**",
+        "src/widgets/weekly-budget/**",
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/lib/**",
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/widgets/weekly-budget/ui/weekly-budget.tsx",
+        "src/shared/db/schema.ts",
+        "src/shared/lib/finance-selectors.ts"
+      ],
+      "acceptance": [
+        "Changing the personal weekly limit for the selected week does not recalculate earlier weeks.",
+        "New weeks inherit the latest effective personal weekly limit.",
+        "Existing users keep their current user_settings.weeklyLimit as the migration/default source.",
+        "The weekly budget widget continues to show correct personal spent, remaining, project top-up, and over-budget states.",
+        "Focused tests cover current-week changes, past-week preservation, and new-week inheritance.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check the historical limit data model before implementation."
+    },
+    {
+      "id": "T-005",
+      "title": "Define shared budget domain model and access rules",
+      "status": "captured",
+      "phase": "Shared Budget Foundation",
+      "type": "feature",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-005-shared-budget-domain",
+      "detail": "Add the server-side domain model for shared weekly budgets, membership, active budget selection, shared weekly limits, and expense visibility.",
+      "depends_on": [
+        "T-004"
+      ],
+      "blocks": [
+        "T-006",
+        "T-007",
+        "T-008",
+        "T-009"
+      ],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner approved the shared budget model: visible expenses are personal plus shared budgets where the user is a member.",
+      "write_scope": [
+        "src/entities/**",
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/types/**",
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/shared/db/schema.ts",
+        "src/shared/api/expense-actions.ts",
+        "src/shared/types/index.ts"
+      ],
+      "acceptance": [
+        "Shared budget, shared budget member, active shared budget selection, and shared weekly limit concepts exist in the domain model.",
+        "Expense reads return only the current user's personal expenses plus shared expenses from budgets where the user is a member.",
+        "Private expenses from another user are never returned through shared budget queries.",
+        "Server-side authorization protects creating, reading, updating, and deleting shared budget data.",
+        "Roles support owner and member, with both roles allowed to manage shared expenses and only owner allowed to archive the shared budget.",
+        "Existing personal expenses remain personal after migration.",
+        "An ADR or durable context note records the shared budget ownership and visibility model.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check the shared budget schema, access checks, and migration plan."
+    },
+    {
+      "id": "T-006",
+      "title": "Add shared budget categories",
+      "status": "captured",
+      "phase": "Shared Budget Foundation",
+      "type": "feature",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-006-shared-budget-categories",
+      "detail": "Give each shared budget its own shared category set so both members see the same category names and analytics.",
+      "depends_on": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-009",
+        "T-010"
+      ],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner chose shared budget categories over author-owned categories to avoid divergent partner analytics.",
+      "write_scope": [
+        "src/entities/category/**",
+        "src/entities/**",
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/types/**",
+        "docs/planning/**",
+        "docs/context/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/entities/category/README.md",
+        "src/shared/db/schema.ts"
+      ],
+      "acceptance": [
+        "A shared budget has a category set independent from any member's private categories.",
+        "Creating a shared budget copies the creator's categories as the initial shared category set.",
+        "Shared expenses can only use categories from their shared budget.",
+        "Both members see the same shared category names and emojis for shared expenses.",
+        "Private categories of one member are not exposed to another member.",
+        "Focused tests cover category copy, shared expense category selection, and access boundaries.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check category ownership and query boundaries."
+    },
+    {
+      "id": "T-007",
+      "title": "Add one-time invite links for shared budgets",
+      "status": "captured",
+      "phase": "Shared Budget Collaboration",
+      "type": "feature",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-007-shared-budget-invites",
+      "detail": "Allow a shared budget owner to generate a one-time invite link that expires after seven days and adds the accepting user as a member.",
+      "depends_on": [
+        "T-005"
+      ],
+      "blocks": [
+        "T-008"
+      ],
+      "parallel": true,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner chose single-use link invitations and registration/login before acceptance for unauthenticated users.",
+      "write_scope": [
+        "src/app/**",
+        "src/entities/**",
+        "src/features/auth/**",
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/auth/**",
+        "docs/planning/**",
+        "docs/context/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/shared/auth/README.md",
+        "src/shared/db/schema.ts"
+      ],
+      "acceptance": [
+        "An owner can generate an invite URL for a shared budget.",
+        "Invite tokens are generated with a cryptographically secure random source, stored securely, expire after seven days, and are invalidated after acceptance.",
+        "A logged-out user can open an invite link, authenticate or register, and then accept the invite.",
+        "Used, expired, invalid, archived-budget, and duplicate-member invites show explicit failure states and do not create memberships.",
+        "Invite URLs are built from a trusted configured origin rather than an arbitrary request Host header.",
+        "Focused tests cover successful acceptance, token reuse, expiry, duplicate membership, and unauthorized generation.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check invite token storage, route shape, and auth redirect flow."
+    },
+    {
+      "id": "T-008",
+      "title": "Extend weekly budget widget for shared budgets",
+      "status": "captured",
+      "phase": "Shared Budget UX",
+      "type": "feature",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-008-weekly-shared-budget-ui",
+      "detail": "Update the weekly budget widget so users can create, select, invite to, view, and archive shared weekly budgets alongside the personal budget.",
+      "depends_on": [
+        "T-005",
+        "T-007"
+      ],
+      "blocks": [
+        "T-009"
+      ],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner wants shared budget creation and invitations to start from the existing Weekly Budget widget.",
+      "write_scope": [
+        "src/widgets/weekly-budget/**",
+        "src/entities/**",
+        "src/features/**",
+        "src/shared/api/**",
+        "src/shared/ui/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/widgets/weekly-budget/README.md",
+        "src/widgets/weekly-budget/ui/weekly-budget.tsx"
+      ],
+      "acceptance": [
+        "The widget shows the personal weekly budget separately from shared weekly budgets.",
+        "A user can create a shared weekly budget, set its weekly limit, and select it as the active shared budget.",
+        "The widget can generate and display/copy an invite link for a shared budget.",
+        "The active shared budget shows limit, spent, remaining, and members.",
+        "Both members see the same shared weekly limit and shared remaining amount.",
+        "The owner can archive a shared budget, and archived budgets are not offered for new expenses.",
+        "Focused UI tests cover create, select active, invite link display, archive, and shared summary rendering.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check widget UX details before implementation."
+    },
+    {
+      "id": "T-009",
+      "title": "Add shared budget selection to expense entry and journal",
+      "status": "captured",
+      "phase": "Shared Budget UX",
+      "type": "feature",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-009-shared-budget-expense-log",
+      "detail": "Keep one expense journal while allowing users to add and filter expenses by personal or shared budget scope.",
+      "depends_on": [
+        "T-005",
+        "T-006",
+        "T-008"
+      ],
+      "blocks": [
+        "T-010",
+        "T-011"
+      ],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner wants all operations in the existing journal with scope filters rather than a separate shared-expense journal.",
+      "write_scope": [
+        "src/features/add-expense/**",
+        "src/widgets/expense-log/**",
+        "src/entities/expense/**",
+        "src/entities/**",
+        "src/shared/api/**",
+        "src/shared/lib/**",
+        "src/shared/types/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/features/add-expense/ui/expense-form.tsx",
+        "src/widgets/expense-log/ui/expense-log.tsx",
+        "src/entities/expense/ui/expense-card.tsx"
+      ],
+      "acceptance": [
+        "The add-expense form lets a user choose personal budget or an available shared budget for a real expense.",
+        "Shared expenses use shared budget categories, and personal expenses use personal categories.",
+        "A shared expense created by either member appears in both members' journals.",
+        "A personal expense appears only for its author.",
+        "The existing journal remains the single operation list and adds scope filters for all, personal, and shared expenses.",
+        "Existing filters for expenses, projects, and movement remain available.",
+        "Shared expense cards show shared budget name and author.",
+        "Project scenarios keep their current behavior.",
+        "Focused tests cover scope selection, journal filters, shared visibility, personal privacy, and project regression behavior.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check how scope filtering composes with existing project and movement filters."
+    },
+    {
+      "id": "T-010",
+      "title": "Add analytics scopes for visible expenses",
+      "status": "captured",
+      "phase": "Shared Budget Analytics",
+      "type": "feature",
+      "priority": "medium",
+      "github_issue": null,
+      "branch": "task/T-010-shared-budget-analytics-scopes",
+      "detail": "Let analytics and spending charts switch between all visible, personal, and shared expense scopes.",
+      "depends_on": [
+        "T-006",
+        "T-009"
+      ],
+      "blocks": [
+        "T-011"
+      ],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner defined all expenses as the current user's personal expenses plus accessible shared expenses, not partner-private data.",
+      "write_scope": [
+        "src/widgets/analysis/**",
+        "src/widgets/dynamics-chart/**",
+        "src/widgets/calendar/**",
+        "src/shared/lib/**",
+        "src/entities/expense/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/widgets/analysis/ui/analysis-dashboard.tsx",
+        "src/widgets/dynamics-chart/README.md",
+        "src/shared/lib/finance-selectors.ts"
+      ],
+      "acceptance": [
+        "Analytics supports all, personal, and shared scopes.",
+        "All means the current user's personal expenses plus shared expenses from budgets where the user is a member.",
+        "Personal excludes shared expenses.",
+        "Shared excludes personal expenses.",
+        "Private partner expenses are not included in any scope.",
+        "Shared category aggregation is identical for both members of the same shared budget.",
+        "Dynamics chart follows the same scope model.",
+        "Calendar scope behavior is either implemented consistently or explicitly captured as a follow-up.",
+        "Focused selector and UI tests cover all three scopes and privacy boundaries.",
+        "npm run validate passes."
+      ],
+      "next_action": "Draft issue and ready-check which chart/calendar widgets join the first analytics scope release."
+    },
+    {
+      "id": "T-011",
+      "title": "Run end-to-end shared budget QA and tracker sync",
+      "status": "captured",
+      "phase": "Shared Budget Release",
+      "type": "process",
+      "priority": "medium",
+      "github_issue": null,
+      "branch": "task/T-011-shared-budget-qa",
+      "detail": "Verify the full shared budget journey across two users and reconcile documentation, task reports, tracker state, and release readiness.",
+      "depends_on": [
+        "T-009",
+        "T-010"
+      ],
+      "blocks": [],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner requested a phased shared budget rollout with final integration verification.",
+      "write_scope": [
+        "e2e/**",
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**",
+        "src/test/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "docs/context/OPEN_QUESTIONS.md"
+      ],
+      "acceptance": [
+        "End-to-end coverage verifies creating a shared budget, accepting an invite with a second user, adding a shared expense, shared visibility, and analytics scope behavior.",
+        "Historical personal weekly budget migration is checked against prior-week and current-week scenarios.",
+        "Privacy verification confirms partner-private expenses are not visible or aggregated.",
+        "Relevant README, ADR/context notes, task-run reports, and project log entries are reconciled.",
+        "npm run validate passes.",
+        "python3 scripts/validate_task_tracker.py passes."
+      ],
+      "next_action": "Schedule after the implementation tasks reach review."
     }
   ]
 }
