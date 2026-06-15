@@ -62,12 +62,12 @@ week's limit no longer recalculates earlier weeks.
   focused tests plus full unit suite.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: local validation and GitHub checks passed on PR #8.
+- CI or PR status: PR #8 passed GitHub checks and merged to `main` as
+  `c93d3e8`.
 
 ## Follow-Ups
 
-- Continue shared budget foundation with `T-005` after `T-004` is reviewed and
-  merged.
+- Continue shared budget foundation with `T-005` when promoted.
 
 ## Open Questions
 
@@ -75,4 +75,4 @@ week's limit no longer recalculates earlier weeks.
 
 ## Registry Update Requested
 
-- Move `T-004` to `review`.
+- Move `T-004` to `done`.

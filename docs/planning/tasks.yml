@@ -129,7 +129,7 @@
     {
       "id": "T-004",
       "title": "Add historical weekly personal budget limits",
-      "status": "review",
+      "status": "done",
       "phase": "Shared Budget Foundation",
       "type": "feature",
       "priority": "high",
@@ -170,7 +170,7 @@
         "Focused tests cover current-week changes, past-week preservation, and new-week inheritance.",
         "npm run validate passes."
       ],
-      "next_action": "Review PR for historical weekly personal limits, then merge and reconcile task state."
+      "next_action": "No further action."
     },
     {
       "id": "T-005",

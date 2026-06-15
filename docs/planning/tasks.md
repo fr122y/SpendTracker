@@ -97,13 +97,14 @@ Acceptance criteria:
 
 ## T-004 - Add historical weekly personal budget limits
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
 - Branch: `task/T-004-historical-weekly-limits`
 - GitHub issue: none
-- PR: none
+- PR: #8
+- Merge commit: `c93d3e8`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
