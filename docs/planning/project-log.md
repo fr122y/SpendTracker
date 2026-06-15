@@ -1,5 +1,15 @@
 # Project Log
 
+## 2026-06-15
+
+- Captured the shared weekly budget product direction as phased tracker tasks
+  `T-004` through `T-011`.
+- Fixed the intended shared budget model: personal budgets remain private,
+  shared budgets use invite links and membership, visible expense aggregates
+  include only the current user's personal expenses plus shared expenses where
+  the user is a member, and projects remain out of scope for the first shared
+  budget wave.
+
 ## 2026-05-14
 
 - Started integrating the repository-local `project-task-tracking` framework
