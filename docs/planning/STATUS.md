@@ -8,7 +8,8 @@ Last updated: 2026-06-15
 
 ## Active Branch
 
-- `task/shared-budget-task-breakdown`
+- None. Next implementation branch remains `task/T-002-refresh-stale-tabs`
+  unless the human owner promotes another task.
 
 ## Stable Branch
 
