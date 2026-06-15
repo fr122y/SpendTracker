@@ -137,7 +137,7 @@ Task-run report:
 
 ## T-005 - Define shared budget domain model and access rules
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
@@ -173,6 +173,10 @@ Acceptance criteria:
 - An ADR or durable context note records the shared budget ownership and
   visibility model.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-005-2026-06-15-shared-budget-domain.md`
 
 ## T-006 - Add shared budget categories
 

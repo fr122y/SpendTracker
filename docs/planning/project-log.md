@@ -14,6 +14,9 @@
   include only the current user's personal expenses plus shared expenses where
   the user is a member, and projects remain out of scope for the first shared
   budget wave.
+- Implemented `T-005` shared budget domain foundation with database schema,
+  migration, server actions, expense visibility rules, focused tests, ADR, and
+  full `npm run validate`.
 
 ## 2026-05-14
 

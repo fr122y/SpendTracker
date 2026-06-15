@@ -14,7 +14,45 @@ export interface Expense {
   category: string // Name of the category
   emoji: string
   projectId?: string // Optional
+  sharedBudgetId?: string
+  authorUserId?: string
+  authorName?: string
+  sharedBudgetName?: string
   operationType?: MoneyOperationType
+}
+
+export type SharedBudgetRole = 'owner' | 'member'
+
+export interface SharedBudgetMember {
+  userId: string
+  name?: string
+  email?: string
+  role: SharedBudgetRole
+  isActive: boolean
+  joinedAt: string
+}
+
+export interface SharedWeeklyLimitSetting {
+  effectiveWeekStart: string
+  amount: number
+}
+
+export interface SharedBudget {
+  id: string
+  name: string
+  createdByUserId: string
+  archivedAt?: string
+  createdAt: string
+  role: SharedBudgetRole
+  isActive: boolean
+  members: SharedBudgetMember[]
+  weeklyLimits: SharedWeeklyLimitSetting[]
+}
+
+export interface CreateSharedBudgetInput {
+  name: string
+  initialWeeklyLimit: number
+  effectiveWeekStart: string
 }
 
 // Category entity

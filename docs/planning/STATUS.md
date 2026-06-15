@@ -4,12 +4,11 @@ Last updated: 2026-06-15
 
 ## Current Focus
 
-- None. `T-004` is done; `T-005` is the next shared budget foundation task when
-  promoted.
+- `T-005` - Define shared budget domain model and access rules.
 
 ## Active Branch
 
-- None.
+- `task/T-005-shared-budget-domain`
 
 ## Stable Branch
 
@@ -17,16 +16,18 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Select the next task. `T-005` is unblocked by the merge of `T-004`.
+Review PR for `T-005` shared budget server-side domain model and access rules,
+then merge and reconcile task state.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-004` is done.
+`T-004` through `T-011`; `T-005` is now the active foundation task.
 
 ## Validation
 
 - Passed: `npm run validate` for `T-004`.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-004`.
 - PR #8 merged for `T-004` with merge commit `c93d3e8`.
+- Passed: `npm run validate` for `T-005`.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`

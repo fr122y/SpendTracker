@@ -6,7 +6,11 @@ Global TypeScript type definitions used across the application.
 
 ### Entities
 
-- `Expense`: Expense entity with id, description, amount, date, category, emoji, projectId
+- `Expense`: Expense entity with id, description, amount, date, category, emoji,
+  optional project/shared budget metadata
+- `SharedBudget`: Shared weekly budget visible to its members
+- `SharedBudgetMember`: Shared budget membership, role, and active selection
+- `SharedWeeklyLimitSetting`: Effective weekly limit for a shared budget
 - `Category`: Category entity with id, name, emoji
 - `Project`: Project entity with id, name, budget, color, createdAt
 - `AllocationBucket`: Savings bucket with id, label, percentage
