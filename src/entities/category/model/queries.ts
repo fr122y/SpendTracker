@@ -4,13 +4,17 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   addCategory as addCategoryAction,
+  addSharedBudgetCategory as addSharedBudgetCategoryAction,
+  archiveSharedBudgetCategory as archiveSharedBudgetCategoryAction,
   deleteCategory as deleteCategoryAction,
   getCategories,
+  getSharedBudgetCategories,
   queryKeys,
+  updateSharedBudgetCategory as updateSharedBudgetCategoryAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
 
-import type { Category } from '@/shared/types'
+import type { Category, SharedBudgetCategory } from '@/shared/types'
 
 export function useCategories() {
   return useQuery({
@@ -73,6 +77,111 @@ export function useDeleteCategory() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
+    },
+  })
+}
+
+export function useSharedBudgetCategories(sharedBudgetId: string | undefined) {
+  return useQuery({
+    enabled: Boolean(sharedBudgetId),
+    queryKey: queryKeys.sharedBudgetCategories.list(sharedBudgetId ?? ''),
+    queryFn: () => {
+      if (!sharedBudgetId) return Promise.resolve([])
+      return getSharedBudgetCategories(sharedBudgetId)
+    },
+  })
+}
+
+export function useAddSharedBudgetCategory(sharedBudgetId: string) {
+  const queryClient = useQueryClient()
+  const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
+
+  return useMutation({
+    mutationFn: (data: Pick<SharedBudgetCategory, 'name' | 'emoji'>) =>
+      addSharedBudgetCategoryAction(sharedBudgetId, data),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous =
+        queryClient.getQueryData<SharedBudgetCategory[]>(queryKey)
+      const now = new Date().toISOString()
+      const optimisticCategory: SharedBudgetCategory = {
+        id: `temp-${crypto.randomUUID()}`,
+        sharedBudgetId,
+        name: data.name,
+        emoji: data.emoji,
+        createdAt: now,
+      }
+      queryClient.setQueryData(queryKey, (old: SharedBudgetCategory[] = []) => [
+        ...old,
+        optimisticCategory,
+      ])
+      return { previous }
+    },
+    onError: (_error, _data, context) => {
+      queryClient.setQueryData(queryKey, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+}
+
+export function useUpdateSharedBudgetCategory(sharedBudgetId: string) {
+  const queryClient = useQueryClient()
+  const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      name,
+      emoji,
+    }: Pick<SharedBudgetCategory, 'id' | 'name' | 'emoji'>) =>
+      updateSharedBudgetCategoryAction(id, { name, emoji }),
+    onMutate: async (data) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous =
+        queryClient.getQueryData<SharedBudgetCategory[]>(queryKey)
+      queryClient.setQueryData(queryKey, (old: SharedBudgetCategory[] = []) =>
+        old.map((category) =>
+          category.id === data.id
+            ? { ...category, name: data.name, emoji: data.emoji }
+            : category
+        )
+      )
+      return { previous }
+    },
+    onError: (_error, _data, context) => {
+      queryClient.setQueryData(queryKey, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+}
+
+export function useArchiveSharedBudgetCategory(sharedBudgetId: string) {
+  const queryClient = useQueryClient()
+  const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
+
+  return useMutation({
+    mutationFn: (id: string) => archiveSharedBudgetCategoryAction(id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous =
+        queryClient.getQueryData<SharedBudgetCategory[]>(queryKey)
+      queryClient.setQueryData(queryKey, (old: SharedBudgetCategory[] = []) =>
+        old.filter((category) => category.id !== id)
+      )
+      return { previous }
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(queryKey, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }

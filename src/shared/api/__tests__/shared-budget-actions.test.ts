@@ -56,6 +56,17 @@ jest.mock('@/shared/db', () => {
   return {
     __mocks: mocks,
     db,
+    categories: {
+      userId: 'category.userId',
+      name: 'category.name',
+      emoji: 'category.emoji',
+    },
+    sharedBudgetCategories: {
+      id: 'sharedCategory.id',
+      sharedBudgetId: 'sharedCategory.sharedBudgetId',
+      name: 'sharedCategory.name',
+      emoji: 'sharedCategory.emoji',
+    },
     sharedBudgetMembers: {
       sharedBudgetId: 'member.sharedBudgetId',
       userId: 'member.userId',
@@ -110,6 +121,10 @@ describe('shared-budget-actions', () => {
 
   it('creates a shared budget with owner membership and initial limit', async () => {
     dbModule.__mocks.selectWhere
+      .mockResolvedValueOnce([
+        { name: 'Продукты', emoji: '🛒' },
+        { name: 'Кафе', emoji: '☕' },
+      ])
       .mockReturnValueOnce({ orderBy: dbModule.__mocks.orderBy })
       .mockResolvedValueOnce([
         {
@@ -171,6 +186,18 @@ describe('shared-budget-actions', () => {
         amount: 8000,
       })
     )
+    expect(dbModule.__mocks.txInsertValues).toHaveBeenCalledWith([
+      expect.objectContaining({
+        sharedBudgetId: expect.any(String),
+        name: 'Продукты',
+        emoji: '🛒',
+      }),
+      expect.objectContaining({
+        sharedBudgetId: expect.any(String),
+        name: 'Кафе',
+        emoji: '☕',
+      }),
+    ])
     expect(result).toEqual(
       expect.objectContaining({
         name: 'Общий бюджет',

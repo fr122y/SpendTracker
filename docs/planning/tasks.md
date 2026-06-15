@@ -184,13 +184,13 @@ Merge:
 
 ## T-006 - Add shared budget categories
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
 - Branch: `task/T-006-shared-budget-categories`
 - GitHub issue: none
-- PR: none
+- PR: #13
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -216,6 +216,10 @@ Acceptance criteria:
 - Focused tests cover category copy, shared expense category selection, and
   access boundaries.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-006-2026-06-15-shared-budget-categories.md`
 
 ## T-007 - Add one-time invite links for shared budgets
 

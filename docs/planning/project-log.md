@@ -19,6 +19,9 @@
   full `npm run validate`.
 - Merged PR #10 for `T-005` into `main` as `780b638` and reconciled the task to
   `done`.
+- Implemented `T-006` shared budget category foundation with independent shared
+  category sets, creator-category snapshot, shared expense category validation,
+  client query hooks, migration, and focused tests.
 
 ## 2026-05-14
 

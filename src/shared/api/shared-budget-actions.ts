@@ -4,7 +4,9 @@ import { and, asc, eq, inArray } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
 import {
+  categories,
   db,
+  sharedBudgetCategories,
   sharedBudgetMembers,
   sharedBudgets,
   sharedBudgetWeeklyLimits,
@@ -229,6 +231,13 @@ export async function createSharedBudget(
   }
 
   const sharedBudgetId = crypto.randomUUID()
+  const personalCategories = await db
+    .select({
+      name: categories.name,
+      emoji: categories.emoji,
+    })
+    .from(categories)
+    .where(eq(categories.userId, userId))
 
   await db.transaction(async (tx) => {
     await tx
@@ -255,6 +264,17 @@ export async function createSharedBudget(
       effectiveWeekStart: input.effectiveWeekStart,
       amount: input.initialWeeklyLimit,
     })
+
+    if (personalCategories.length > 0) {
+      await tx.insert(sharedBudgetCategories).values(
+        personalCategories.map((category) => ({
+          id: crypto.randomUUID(),
+          sharedBudgetId,
+          name: category.name,
+          emoji: category.emoji,
+        }))
+      )
+    }
   })
 
   return getSharedBudgetForUser(sharedBudgetId, userId)

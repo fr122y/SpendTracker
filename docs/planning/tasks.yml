@@ -227,7 +227,7 @@
     {
       "id": "T-006",
       "title": "Add shared budget categories",
-      "status": "captured",
+      "status": "review",
       "phase": "Shared Budget Foundation",
       "type": "feature",
       "priority": "high",
@@ -270,7 +270,7 @@
         "Focused tests cover category copy, shared expense category selection, and access boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Draft issue and ready-check category ownership and query boundaries."
+      "next_action": "Open PR, complete review, merge, and reconcile task tracker."
     },
     {
       "id": "T-007",
