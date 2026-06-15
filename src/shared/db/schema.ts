@@ -160,6 +160,24 @@ export const userSettings = pgTable('user_settings', {
   salary: real('salary').notNull().default(0),
 })
 
+export const weeklyBudgetLimits = pgTable(
+  'weekly_budget_limit',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    effectiveWeekStart: text('effectiveWeekStart').notNull(),
+    amount: real('amount').notNull(),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [unique().on(table.userId, table.effectiveWeekStart)]
+)
+
 export const layoutConfigs = pgTable('layout_config', {
   id: text('id')
     .primaryKey()

@@ -97,7 +97,7 @@ Acceptance criteria:
 
 ## T-004 - Add historical weekly personal budget limits
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget Foundation
 - Type: feature
 - Priority: high
@@ -129,6 +129,10 @@ Acceptance criteria:
 - Focused tests cover current-week changes, past-week preservation, and
   new-week inheritance.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-004-2026-06-15-historical-weekly-limits.md`
 
 ## T-005 - Define shared budget domain model and access rules
 

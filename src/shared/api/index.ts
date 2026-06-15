@@ -13,7 +13,11 @@ export {
 } from './keyword-actions'
 export { getProjects, addProject, deleteProject } from './project-actions'
 export { getBuckets, updateBuckets } from './bucket-actions'
-export { getSettings, updateSettings } from './settings-actions'
+export {
+  getSettings,
+  setWeeklyLimitForWeek,
+  updateSettings,
+} from './settings-actions'
 export { getLayoutConfig, updateLayoutConfig } from './layout-actions'
 export { registerUser } from './auth-actions'
 export { queryKeys } from './query-keys'

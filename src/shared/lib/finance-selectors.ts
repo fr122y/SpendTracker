@@ -16,6 +16,11 @@ export interface WeeklyStat {
   end: string
 }
 
+export interface WeeklyLimitSetting {
+  effectiveWeekStart: string
+  amount: number
+}
+
 export interface WeeklyProjectTopUpSegment {
   projectId: string
   available: number
@@ -357,6 +362,20 @@ export function getWeeklyBudgetCoverage(
   }
 }
 
+export function getEffectiveWeeklyLimit(
+  weeklyLimits: WeeklyLimitSetting[],
+  date: Date,
+  defaultLimit: number
+): number {
+  const weekStart = getWeekBoundaries(date).start
+  const effectiveLimit = weeklyLimits
+    .filter((limit) => limit.effectiveWeekStart <= weekStart)
+    .sort((a, b) => b.effectiveWeekStart.localeCompare(a.effectiveWeekStart))
+    .at(0)
+
+  return effectiveLimit?.amount ?? defaultLimit
+}
+
 /**
  * Helper: Format date as ISO date string (YYYY-MM-DD)
  */
@@ -370,7 +389,7 @@ export function formatDate(date: Date): string {
 /**
  * Helper: Get week boundaries (Monday - Sunday)
  */
-function getWeekBoundaries(date: Date): { start: string; end: string } {
+export function getWeekBoundaries(date: Date): { start: string; end: string } {
   const d = new Date(date)
 
   // Get day of week (0 = Sunday, 1 = Monday, etc.)
