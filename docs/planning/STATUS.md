@@ -4,12 +4,11 @@ Last updated: 2026-06-15
 
 ## Current Focus
 
-- `T-006` - Add shared budget categories is implemented locally and awaiting
-  PR review.
+- `T-007` - Add one-time invite links for shared budgets.
 
 ## Active Branch
 
-- `task/T-006-shared-budget-categories`
+- None. Next implementation branch should be `task/T-007-shared-budget-invites`.
 
 ## Stable Branch
 
@@ -17,7 +16,7 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Review PR #13 and merge `T-006` shared budget categories after approval.
+Plan or start `T-007` shared budget invite links.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-006` is the next shared budget foundation task.
@@ -34,6 +33,7 @@ Shared budget product discussion has been captured as phased backlog tasks
   shared budget category copy, and shared expense category validation.
 - Passed: `npm run validate` for `T-006` (60 suites, 762 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-006`.
+- PR #13 merged for `T-006` with merge commit `d3dc1a4`.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`

@@ -22,6 +22,8 @@
 - Implemented `T-006` shared budget category foundation with independent shared
   category sets, creator-category snapshot, shared expense category validation,
   client query hooks, migration, and focused tests.
+- Merged PR #13 for `T-006` into `main` as `d3dc1a4` and reconciled the task
+  to `done`.
 
 ## 2026-05-14
 
