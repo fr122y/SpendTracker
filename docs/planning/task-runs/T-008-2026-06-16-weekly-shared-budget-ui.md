@@ -6,7 +6,7 @@ Branch: `task/T-008-weekly-shared-budget-ui`
 
 Issue: #TBD
 
-PR: TBD
+PR: #19
 
 ## Summary
 
@@ -58,7 +58,7 @@ owner-only archival.
   and updated tests.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: PR not created yet.
+- CI or PR status: PR #19 opened.
 
 ## Follow-Ups
 
@@ -73,4 +73,4 @@ owner-only archival.
 
 ## Registry Update Requested
 
-- Move `T-008` to `review` after commit and PR creation.
+- `T-008` moved to `review`; PR #19 opened.

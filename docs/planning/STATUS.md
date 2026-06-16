@@ -16,7 +16,7 @@ Last updated: 2026-06-16
 
 ## Next Action
 
-Open PR and review `T-008` weekly shared budget UI.
+Review PR #19 for `T-008` weekly shared budget UI.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-008` is the next shared budget UX task.

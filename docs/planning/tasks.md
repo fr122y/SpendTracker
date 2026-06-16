@@ -272,7 +272,7 @@ Task-run report:
 - Priority: high
 - Branch: `task/T-008-weekly-shared-budget-ui`
 - GitHub issue: none
-- PR: none
+- PR: #19
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
