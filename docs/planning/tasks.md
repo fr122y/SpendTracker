@@ -266,13 +266,13 @@ Task-run report:
 
 ## T-008 - Extend weekly budget widget for shared budgets
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: high
 - Branch: `task/T-008-weekly-shared-budget-ui`
 - GitHub issue: none
-- PR: none
+- PR: #19
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -299,6 +299,10 @@ Acceptance criteria:
 - Focused UI tests cover create, select active, invite link display, archive,
   and shared summary rendering.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-008-2026-06-16-weekly-shared-budget-ui.md`
 
 ## T-009 - Add shared budget selection to expense entry and journal
 

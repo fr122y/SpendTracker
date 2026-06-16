@@ -7,6 +7,9 @@
   tracking.
 - Merged PR #18 for `T-012` into `main` as `ba60151` and reconciled the task
   to `done` using the new direct docs reconciliation exception.
+- Implemented `T-008` weekly shared budget widget UX with shared budget entity
+  hooks, active shared budget selection, shared limit editing, invite link UI,
+  owner archival, focused tests, and full `npm run validate`.
 
 ## 2026-06-15
 

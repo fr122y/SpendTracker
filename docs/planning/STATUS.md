@@ -8,7 +8,7 @@ Last updated: 2026-06-16
 
 ## Active Branch
 
-- None. Next implementation branch should be `task/T-008-weekly-shared-budget-ui`.
+- `task/T-008-weekly-shared-budget-ui`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-16
 
 ## Next Action
 
-Plan or start `T-008` weekly shared budget UI.
+Review PR #19 for `T-008` weekly shared budget UI.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-008` is the next shared budget UX task.
@@ -42,6 +42,7 @@ Shared budget product discussion has been captured as phased backlog tasks
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`
+- Passed: `npm run validate` for `T-008` (63 suites, 785 tests).
 - Passed for changed docs/templates:
   `npx prettier --check AGENTS.md docs/**/*.md .github/ISSUE_TEMPLATE/task.md .github/pull_request_template.md .github/workflows/tracker-integrity.yml`
 - PR #1 merged to `main` with merge commit `a255d91`.

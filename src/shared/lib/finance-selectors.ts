@@ -58,7 +58,10 @@ function isProjectReturn(expense: Expense): boolean {
  * Returns personal expenses without a linked project
  */
 export function getPersonalExpenses(expenses: Expense[]): Expense[] {
-  return expenses.filter((expense) => isExpense(expense) && !expense.projectId)
+  return expenses.filter(
+    (expense) =>
+      isExpense(expense) && !expense.projectId && !expense.sharedBudgetId
+  )
 }
 
 /**
@@ -359,6 +362,42 @@ export function getWeeklyBudgetCoverage(
     start,
     end,
     projectSegments,
+  }
+}
+
+export function getSharedWeeklyBudgetCoverage(
+  expenses: Expense[],
+  sharedBudgetId: string,
+  date: Date,
+  weeklyLimit: number
+): WeeklyBudgetCoverage {
+  const { start, end } = getWeekBoundaries(date)
+
+  const weekSharedExpenses = expenses.filter(
+    (expense) =>
+      isExpense(expense) &&
+      expense.sharedBudgetId === sharedBudgetId &&
+      expense.date >= start &&
+      expense.date <= end
+  )
+  const personalSpent = weekSharedExpenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  )
+  const personalCovered = Math.min(personalSpent, weeklyLimit)
+  const uncovered = Math.max(personalSpent - weeklyLimit, 0)
+
+  return {
+    personalSpent,
+    weeklyLimit,
+    projectTopUp: 0,
+    personalCovered,
+    projectCovered: 0,
+    uncovered,
+    totalAvailable: weeklyLimit,
+    start,
+    end,
+    projectSegments: [],
   }
 }
 

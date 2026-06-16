@@ -15,7 +15,10 @@ Utility functions and helpers used across the application.
 - `getProjectSpent(expenses, projectId)`: Sum real project expenses
 - `getProjectCashOnHand(expenses, projectId)`: Calculate outstanding project money on hand
 - `getWeeklyStats(expenses, date, limit)`: Get weekly spending stats with boundaries
-- `getWeeklyBudgetCoverage(expenses, date, limit)`: Calculate weekly personal spending coverage by personal limit, project top-ups, and uncovered overage
+- `getWeeklyBudgetCoverage(expenses, date, limit)`: Calculate weekly personal
+  spending coverage by personal limit, project top-ups, and uncovered overage
+- `getSharedWeeklyBudgetCoverage(expenses, sharedBudgetId, date, limit)`:
+  Calculate weekly coverage for one shared budget without project top-ups
 - `getEffectiveWeeklyLimit(limits, date, defaultLimit)`: Resolve the weekly
   budget limit effective for a selected week
 - `getWeekBoundaries(date)`: Return Monday-Sunday ISO date boundaries for a

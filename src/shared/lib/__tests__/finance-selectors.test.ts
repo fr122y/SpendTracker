@@ -12,6 +12,7 @@ import {
   getWeeklyStats,
   getWeeklyPersonalStats,
   getWeeklyBudgetCoverage,
+  getSharedWeeklyBudgetCoverage,
   getEffectiveWeeklyLimit,
   getWeekBoundaries,
 } from '../finance-selectors'
@@ -194,10 +195,22 @@ describe('getCategoryStats', () => {
 
 describe('project and personal expense selectors', () => {
   it('should return only personal expenses', () => {
-    const result = getPersonalExpenses(mockExpenses)
+    const result = getPersonalExpenses([
+      ...mockExpenses,
+      {
+        id: 'shared-1',
+        description: 'Общие продукты',
+        amount: 400,
+        date: '2024-01-16',
+        category: 'Продукты',
+        emoji: '🛒',
+        sharedBudgetId: 'shared-budget-1',
+      },
+    ])
 
     expect(result).toHaveLength(5)
     expect(result.every((expense) => !expense.projectId)).toBe(true)
+    expect(result.every((expense) => !expense.sharedBudgetId)).toBe(true)
   })
 
   it('should return expenses for the specified project', () => {
@@ -427,6 +440,42 @@ describe('getWeeklyBudgetCoverage', () => {
 
     expect(result.personalSpent).toBe(9000)
     expect(result.projectCovered).toBe(0)
+    expect(result.uncovered).toBe(0)
+  })
+})
+
+describe('getSharedWeeklyBudgetCoverage', () => {
+  it('counts only expenses for the selected shared budget', () => {
+    const result = getSharedWeeklyBudgetCoverage(
+      [
+        {
+          id: 'shared-1',
+          description: 'Общие продукты',
+          amount: 2500,
+          date: '2024-01-16',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-budget-1',
+        },
+        {
+          id: 'shared-2',
+          description: 'Другой общий бюджет',
+          amount: 900,
+          date: '2024-01-16',
+          category: 'Кафе',
+          emoji: '☕',
+          sharedBudgetId: 'shared-budget-2',
+        },
+      ],
+      'shared-budget-1',
+      new Date('2024-01-15'),
+      8000
+    )
+
+    expect(result.personalSpent).toBe(2500)
+    expect(result.personalCovered).toBe(2500)
+    expect(result.weeklyLimit).toBe(8000)
+    expect(result.projectTopUp).toBe(0)
     expect(result.uncovered).toBe(0)
   })
 })

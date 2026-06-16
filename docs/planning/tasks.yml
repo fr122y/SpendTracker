@@ -323,7 +323,7 @@
     {
       "id": "T-008",
       "title": "Extend weekly budget widget for shared budgets",
-      "status": "captured",
+      "status": "review",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "high",
@@ -366,7 +366,7 @@
         "Focused UI tests cover create, select active, invite link display, archive, and shared summary rendering.",
         "npm run validate passes."
       ],
-      "next_action": "Draft issue and ready-check widget UX details before implementation."
+      "next_action": "Open PR and review shared weekly budget widget implementation."
     },
     {
       "id": "T-009",
