@@ -6,7 +6,7 @@ Branch: `task/T-012-compact-merge-process`
 
 Issue: #TBD
 
-PR: TBD
+PR: #18
 
 ## Summary
 
@@ -57,7 +57,7 @@ project memory.
   `docs/planning/**`.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: local branch only; PR pending.
+- CI or PR status: PR #18 opened.
 
 ## Follow-Ups
 
@@ -70,4 +70,4 @@ project memory.
 
 ## Registry Update Requested
 
-- `T-012` moved to `review`; open PR after commit and push.
+- `T-012` moved to `review`; PR #18 opened.

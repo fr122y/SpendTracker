@@ -419,7 +419,7 @@ Acceptance criteria:
 - Priority: high
 - Branch: `task/T-012-compact-merge-process`
 - GitHub issue: none
-- PR: none
+- PR: #18
 - Owner mode: human-led
 - Required context:
   - `AGENTS.md`
