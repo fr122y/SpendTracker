@@ -1,5 +1,11 @@
 # Project Log
 
+## 2026-06-16
+
+- Started `T-012` to reduce token/time overhead in routine merge and tracker
+  reconciliation while preserving scoped branches, PR history, and task
+  tracking.
+
 ## 2026-06-15
 
 - Implemented `T-004` historical personal weekly budget limits with

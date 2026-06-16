@@ -410,3 +410,35 @@ Acceptance criteria:
   are reconciled.
 - `npm run validate` passes.
 - `python3 scripts/validate_task_tracker.py` passes.
+
+## T-012 - Optimize merge and tracker reconciliation process
+
+- Status: `review`
+- Phase: Process Optimization
+- Type: process
+- Priority: high
+- Branch: `task/T-012-compact-merge-process`
+- GitHub issue: none
+- PR: none
+- Owner mode: human-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/planning/task-tracking.md`
+  - `.codex/skills/project-task-tracking/SKILL.md`
+
+Reduce token and time overhead for routine merges while preserving scoped
+branches, pull-request history, task tracking, and project memory.
+
+Acceptance criteria:
+
+- Compact merge flow is documented as the default meaning of "merge by the
+  rules".
+- Post-merge docs-only tracker reconciliation may be committed directly to
+  `main` under a narrow, explicit exception.
+- Strict merge flow remains available by explicit human request.
+- External check waiting is bounded unless the human asks to wait.
+- Task tracker validation passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-012-2026-06-16-compact-merge-process.md`
