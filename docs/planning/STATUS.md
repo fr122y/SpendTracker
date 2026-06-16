@@ -4,11 +4,11 @@ Last updated: 2026-06-16
 
 ## Current Focus
 
-- `T-008` - Extend weekly budget widget for shared budgets.
+- `T-012` - Optimize merge and tracker reconciliation process.
 
 ## Active Branch
 
-- None. Next implementation branch should be `task/T-008-weekly-shared-budget-ui`.
+- `task/T-012-compact-merge-process`
 
 ## Stable Branch
 
@@ -16,10 +16,11 @@ Last updated: 2026-06-16
 
 ## Next Action
 
-Plan or start `T-008` weekly shared budget UI.
+Finish and review `T-012`; then return to `T-008` weekly shared budget UI.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-008` is the next shared budget UX task.
+`T-004` through `T-011`; `T-008` is the next shared budget UX task after the
+merge-process optimization lands.
 
 ## Validation
 

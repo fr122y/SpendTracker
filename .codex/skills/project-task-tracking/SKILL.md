@@ -69,11 +69,33 @@ For `done-check`, return:
 Stop and report instead of proceeding when:
 
 - meaningful file edits are unstaged or uncommitted and WIP was not requested;
-- project changes are being made directly on the stable branch;
+- project changes outside the direct docs reconciliation exception are being
+  made directly on the stable branch;
 - a scoped branch has been pushed but no PR exists;
 - merge readiness is unclear;
 - a direct stable-branch merge or push would be needed without explicit
   approval.
+
+## Compact Merge Flow
+
+When the human asks to "merge by the rules", use the repository's Compact
+Merge Flow unless they explicitly ask for strict handling:
+
+- verify the PR is open, mergeable, and required checks are successful;
+- do a focused PR state/scope review instead of repeating a full code review
+  when review already happened;
+- merge the PR, delete the task branch, update local `main`, and prune obsolete
+  refs;
+- reconcile tracker/project-memory state once and report concisely.
+
+For post-merge tracker reconciliation, a narrow direct-main exception is
+approved for `docs/planning/**` only. Run
+`python3 scripts/validate_task_tracker.py` before and after the direct docs
+commit. Do not use this exception for code, migrations, tests, configs,
+automation scripts, or docs outside `docs/planning/**`.
+
+Do not wait on pending external checks for more than 60 seconds unless the
+human explicitly asks to complete the merge in the same turn.
 
 ## Agent Handoff
 

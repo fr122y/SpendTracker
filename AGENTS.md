@@ -31,9 +31,35 @@ Mandatory project-change gates:
 - PR gate: after committing and pushing a scoped branch, create or update the
   pull request before reporting the task as ready for review or merge.
 - Direct-main stop rule: do not merge into, commit on, or push directly to
-  `main` without explicit approval for that exact exception.
+  `main` without explicit approval for that exact exception. The direct docs
+  reconciliation exception below is pre-approved only for its narrow scope.
 - Cleanup gate: after a PR merge or documented direct-merge exception, delete
   or reconcile obsolete task branches and remote-tracking references when safe.
+
+Default merge mode:
+
+- When the human asks to "merge by the rules", use Compact Merge Flow unless
+  they explicitly ask for strict merge handling.
+- Compact Merge Flow means: verify the PR is mergeable and required checks are
+  successful, merge the PR, delete/prune obsolete branches, reconcile the
+  tracker once, and report the result concisely.
+- Do not create cascading reconciliation PRs for non-blocking stale status
+  text. Fix all post-merge tracker/status updates in the same reconciliation
+  step, or carry minor stale text into the next task if it does not invalidate
+  the task ledger.
+- Do not wait on pending external checks for more than 60 seconds unless the
+  human explicitly asks to complete that merge in the same turn.
+
+Direct docs reconciliation exception:
+
+- After a feature/process PR has merged, the agent may commit directly to
+  `main` only for post-merge tracker reconciliation under `docs/planning/**`.
+- This exception may update `tasks.yml`, `tasks.md`, `STATUS.md`,
+  `project-log.md`, and task-run reports. It must not change application code,
+  migrations, tests, configs, or non-planning docs.
+- Before and after this direct docs reconciliation, run
+  `python3 scripts/validate_task_tracker.py`; if it fails, stop and report
+  instead of pushing.
 
 Task IDs are identifiers, not execution order. Pick work by status,
 dependencies, blockers, phase, priority, current focus, and human direction.

@@ -79,6 +79,55 @@ Run `python3 scripts/validate_task_tracker.py` after task tracker changes.
   for WIP.
 - After merge, delete or reconcile obsolete branches when safe.
 
+## Compact Merge Flow
+
+Compact Merge Flow is the default meaning of a human request such as "merge by
+the rules".
+
+Use this flow for routine task merges:
+
+1. Verify the PR is open, mergeable, and required checks are successful.
+2. Do a focused review of PR state and changed-file scope; do not repeat a full
+   code review if review already happened.
+3. Merge the PR and delete the task branch through GitHub when possible.
+4. Update local `main`, prune obsolete remote-tracking refs, and confirm the
+   worktree is clean.
+5. Reconcile tracker/project-memory state once and report the outcome.
+
+Do not create additional reconciliation PRs for non-blocking stale status text.
+Fix tracker and status text in the same reconciliation step, or carry minor
+stale text into the next task if the ledger remains valid.
+
+Do not wait on pending external checks for more than 60 seconds unless the
+human explicitly asks to complete that merge in the same turn. If required
+checks remain pending after that window, report the PR/check state and stop.
+
+## Direct Docs Reconciliation Exception
+
+After a feature or process PR has merged, the agent may commit directly to
+`main` for post-merge tracker reconciliation only when all changed files are
+under `docs/planning/**`.
+
+Allowed files include:
+
+- `docs/planning/tasks.yml`
+- `docs/planning/tasks.md`
+- `docs/planning/STATUS.md`
+- `docs/planning/project-log.md`
+- `docs/planning/task-runs/**`
+
+This exception must not change application code, migrations, tests, configs,
+documentation outside `docs/planning/**`, or automation scripts.
+
+Required gate:
+
+- Run `python3 scripts/validate_task_tracker.py` before and after the direct
+  docs reconciliation commit.
+- If validation fails, stop and report instead of pushing.
+
+Strict merge flow remains available when the human explicitly asks for a strict
+merge, full review, separate reconciliation PR, or full check wait.
+
 ## Issue Shape
 
 Use this structure for meaningful tasks:
