@@ -224,13 +224,14 @@ Task-run report:
 
 ## T-007 - Add one-time invite links for shared budgets
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget Collaboration
 - Type: feature
 - Priority: high
 - Branch: `task/T-007-shared-budget-invites`
 - GitHub issue: none
 - PR: #15
+- Merge commit: `d071d8b`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
