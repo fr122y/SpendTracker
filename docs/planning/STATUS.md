@@ -8,7 +8,7 @@ Last updated: 2026-06-16
 
 ## Active Branch
 
-- `task/T-007-reconcile-after-merge`
+- None. Next implementation branch should be `task/T-008-weekly-shared-budget-ui`.
 
 ## Stable Branch
 
@@ -16,11 +16,10 @@ Last updated: 2026-06-16
 
 ## Next Action
 
-Merge the `T-007` tracker reconciliation PR, then plan or start `T-008`.
+Plan or start `T-008` weekly shared budget UI.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-008` is the next shared budget UX task after
-`T-007` is reconciled to `done`.
+`T-004` through `T-011`; `T-008` is the next shared budget UX task.
 
 ## Validation
 
@@ -37,6 +36,8 @@ Shared budget product discussion has been captured as phased backlog tasks
 - PR #13 merged for `T-006` with merge commit `d3dc1a4`.
 - Passed: `npm run validate` for `T-007` (62 suites, 772 tests).
 - PR #15 merged for `T-007` with merge commit `d071d8b`.
+- PR #16 merged tracker reconciliation for `T-007` with merge commit
+  `6d62117`.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`
