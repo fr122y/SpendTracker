@@ -106,6 +106,13 @@ Do not restate the diff line by line.
 
 ## Enforcement
 
-The first iteration is documentation-only. Agents and reviewers enforce title
-and squash-body quality manually. Do not add commitlint, hooks, or CI title
-checks without a dedicated task.
+Commit messages are enforced locally by the Husky `commit-msg` hook with
+commitlint. The hook validates every new commit message against this document's
+type and scope rules.
+
+GitHub Actions also validates Pull Request commit messages and the Pull Request
+title. This catches commits created with `--no-verify` and keeps the eventual
+squash title aligned with the same convention.
+
+Do not change the scope taxonomy, disable the hook, or weaken CI validation
+without a dedicated process task or an explicit owner-approved exception.

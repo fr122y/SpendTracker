@@ -8,6 +8,9 @@
   self-review rules, and an expanded PR template while preserving the existing
   GitHub PR flow, Compact Merge Flow, direct docs reconciliation exception, and
   `github_issue` ledger fields.
+- Added technical Conventional Commit enforcement to the process refresh:
+  commitlint validates local commit messages through Husky `commit-msg`, and
+  GitHub Actions validates PR commit messages plus PR titles.
 - Started `T-012` to reduce token/time overhead in routine merge and tracker
   reconciliation while preserving scoped branches, PR history, and task
   tracking.

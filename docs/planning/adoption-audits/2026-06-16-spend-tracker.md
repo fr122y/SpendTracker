@@ -46,12 +46,14 @@ Audit task: owner-approved process exception without a new task ledger entry.
 
 ## Existing Automation
 
-- CI files: `.github/workflows/tracker-integrity.yml` and
+- CI files: `.github/workflows/tracker-integrity.yml`,
+  `.github/workflows/conventional-commits.yml`, and
   `.github/workflows/db-migration.yml`.
 - Reusable CI includes: none found.
 - Git hook manager: Husky via `prepare`, with `lint-staged` configured in
   `package.json`.
-- Commitlint: none.
+- Commitlint: `commitlint.config.cjs` with Husky `commit-msg` and GitHub
+  Actions validation.
 - Release automation: none found.
 - Changelog generation: none found.
 - Security checks: no dedicated workflow found.
@@ -75,17 +77,20 @@ Audit task: owner-approved process exception without a new task ledger entry.
 - Existing files to preserve: existing GitHub workflows, local task tracker
   schema, `github_issue` fields, Compact Merge Flow, and direct docs
   reconciliation exception.
-- CI integration notes: no CI title validation in this iteration.
-- Hook integration notes: do not add commitlint or new Husky hooks in this
-  iteration.
+- CI integration notes: validate Pull Request commit messages and Pull Request
+  title with commitlint.
+- Hook integration notes: validate local commit messages with Husky
+  `commit-msg`.
 
 ## Enforcement Plan
 
 - Documentation rules: add `docs/engineering/` process docs and link them from
   `AGENTS.md`, `docs/planning/task-tracking.md`, and the local skill.
-- Commit title validation: manual in PR review for now.
-- CI validation: unchanged.
-- Local hook validation: unchanged.
+- Commit title validation: commitlint checks local commits and CI validates PR
+  commits plus PR title.
+- CI validation: Conventional Commits workflow validates PR commit range and
+  PR title.
+- Local hook validation: Husky `commit-msg` runs commitlint.
 - Manual checks: self-review for non-trivial work and PR template checkboxes.
 
 ## Manual Platform Settings
@@ -100,15 +105,15 @@ Audit task: owner-approved process exception without a new task ledger entry.
 
 ## Risks And Trade-Offs
 
-- Risks: documentation-only enforcement depends on agent and reviewer
-  discipline.
-- Intentional non-automation: no commitlint, PR title CI, or new hooks in the
-  first iteration.
+- Risks: local hooks can be bypassed with `--no-verify`, so CI must remain
+  enabled for PRs.
+- Intentional non-automation: squash commit body quality remains a manual
+  review responsibility.
 - Release automation decision: not needed for the current private app.
 - Remaining limitations: `github_issue` remains GitHub-specific in the ledger
   until a dedicated migration task exists.
 
 ## Follow-Ups
 
-- Consider a dedicated task for PR title CI or commitlint enforcement after the
-  manual process proves useful.
+- Consider making the Conventional Commits workflow a required branch
+  protection check after it passes reliably.

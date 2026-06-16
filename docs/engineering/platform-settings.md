@@ -14,12 +14,14 @@ have the required permissions.
 - Delete source branches after merge when safe.
 - Preserve the Pull Request title as the squash commit title where GitHub
   settings allow it.
+- Treat the Conventional Commits workflow as a required check when branch
+  protection settings allow it.
 
 ## Automation Boundaries
 
 Do not use GitHub APIs to change repository settings without explicit
 maintainer approval and credentials for that exact action.
 
-The current first iteration does not add commitlint, hooks, or CI checks for PR
-title validation. Manual review enforces the convention until a dedicated
-automation task exists.
+The repository enforces commit message format with a local Husky `commit-msg`
+hook and validates Pull Request commits and titles in GitHub Actions. Manual
+review still checks the squash commit body quality for non-trivial changes.
