@@ -4,11 +4,12 @@ Last updated: 2026-06-16
 
 ## Current Focus
 
-- `T-008` - Extend weekly budget widget for shared budgets.
+- `T-009` - Add shared budget selection to expense entry and journal.
 
 ## Active Branch
 
-- `task/T-008-weekly-shared-budget-ui`
+- None. Next implementation branch should be
+  `task/T-009-expense-shared-budget-selection`.
 
 ## Stable Branch
 
@@ -16,10 +17,10 @@ Last updated: 2026-06-16
 
 ## Next Action
 
-Review PR #19 for `T-008` weekly shared budget UI.
+Plan or start `T-009` expense entry and journal shared budget selection.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-008` is the next shared budget UX task.
+`T-004` through `T-011`; `T-009` is the next shared budget UX task.
 
 ## Validation
 
@@ -43,6 +44,7 @@ Shared budget product discussion has been captured as phased backlog tasks
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`
 - Passed: `npm run validate` for `T-008` (63 suites, 785 tests).
+- PR #19 merged for `T-008` with merge commit `57238af`.
 - Passed for changed docs/templates:
   `npx prettier --check AGENTS.md docs/**/*.md .github/ISSUE_TEMPLATE/task.md .github/pull_request_template.md .github/workflows/tracker-integrity.yml`
 - PR #1 merged to `main` with merge commit `a255d91`.

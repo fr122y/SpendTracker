@@ -10,6 +10,8 @@
 - Implemented `T-008` weekly shared budget widget UX with shared budget entity
   hooks, active shared budget selection, shared limit editing, invite link UI,
   owner archival, focused tests, and full `npm run validate`.
+- Merged PR #19 for `T-008` into `main` as `57238af` and reconciled the task
+  to `done`.
 
 ## 2026-06-15
 

@@ -323,12 +323,14 @@
     {
       "id": "T-008",
       "title": "Extend weekly budget widget for shared budgets",
-      "status": "review",
+      "status": "done",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "high",
       "github_issue": null,
       "branch": "task/T-008-weekly-shared-budget-ui",
+      "pr": 19,
+      "merge_commit": "57238af",
       "detail": "Update the weekly budget widget so users can create, select, invite to, view, and archive shared weekly budgets alongside the personal budget.",
       "depends_on": [
         "T-005",
@@ -366,7 +368,7 @@
         "Focused UI tests cover create, select active, invite link display, archive, and shared summary rendering.",
         "npm run validate passes."
       ],
-      "next_action": "Open PR and review shared weekly budget widget implementation."
+      "next_action": "No further action."
     },
     {
       "id": "T-009",

@@ -6,7 +6,7 @@ Branch: `task/T-008-weekly-shared-budget-ui`
 
 Issue: #TBD
 
-PR: #19
+PR: #19, merged as `57238af`
 
 ## Summary
 
@@ -58,7 +58,7 @@ owner-only archival.
   and updated tests.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: PR #19 opened.
+- CI or PR status: PR #19 merged.
 
 ## Follow-Ups
 
