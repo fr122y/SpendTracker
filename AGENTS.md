@@ -19,8 +19,25 @@ Meaningful implementation work requires a task ID in
 `docs/planning/tasks.yml`. If the requested work has no task ID, first capture
 or shape the task unless the request is a small direct answer.
 
+Owner-approved process exceptions without a new ledger task are allowed only
+when the human owner explicitly grants the exception for that exact change. The
+exception must still use a scoped branch, pull request, validation, and project
+memory updates unless the owner explicitly narrows those gates too.
+
 Use scoped branches and pull requests for project changes. Use the `task/`
 branch prefix unless the human owner requests another prefix.
+
+One task should produce one logical change set. Do not include unrelated
+cleanup, opportunistic refactoring, dependency updates, or neighboring bug
+fixes unless the task explicitly requires them.
+
+Before changing existing behavior, read the relevant code, tests, contracts,
+instructions, and targeted Git history for the affected area.
+
+Pull request titles and squash commit titles must follow
+`docs/engineering/change-request.md`: `<type>(<scope>): <description>`.
+Non-trivial squash commits must include a body that explains why the change was
+needed, what changed, why this approach was chosen, risks, and references.
 
 Mandatory project-change gates:
 
@@ -33,6 +50,9 @@ Mandatory project-change gates:
 - Direct-main stop rule: do not merge into, commit on, or push directly to
   `main` without explicit approval for that exact exception. The direct docs
   reconciliation exception below is pre-approved only for its narrow scope.
+- Self-review gate: before reporting non-trivial work as complete, review the
+  full diff against task scope, acceptance criteria, regressions, tracker
+  consistency, docs, verification, and PR readiness.
 - Cleanup gate: after a PR merge or documented direct-merge exception, delete
   or reconcile obsolete task branches and remote-tracking references when safe.
 
@@ -74,7 +94,16 @@ roadmap control, sprint updates, project review, Definition of Ready/Done
 checks, and AI agent handoffs.
 
 The skill is a procedural shortcut. The source of truth remains
-`docs/planning/task-tracking.md`.
+`docs/planning/task-tracking.md` and `docs/engineering/`.
+
+Detailed workflow references:
+
+- Adoption audit: `docs/engineering/adoption-audit.md`
+- Agent workflow: `docs/engineering/agent-workflow.md`
+- Pull requests and commit history:
+  `docs/engineering/change-request.md`
+- Self-review: `docs/engineering/code-review.md`
+- GitHub platform settings: `docs/engineering/platform-settings.md`
 
 ## Project Structure & Architecture Rules
 

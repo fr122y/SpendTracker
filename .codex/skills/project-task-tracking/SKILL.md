@@ -1,12 +1,12 @@
 ---
 name: project-task-tracking
-description: Reusable workflow for project task tracking, issue authoring, roadmap control, project review, Definition of Ready/Done checks, and AI agent handoffs.
+description: Reusable workflow for project task tracking, issue authoring, change request control, roadmap control, project review, Definition of Ready/Done checks, and AI agent handoffs.
 ---
 
 # Project Task Tracking
 
-Use this skill for task tracking and project control inside a repository that
-has installed the `project-task-tracking` framework.
+Use this skill for task tracking, change request control, and project control
+inside a repository that has installed the `project-task-tracking` framework.
 
 ## First Steps
 
@@ -21,20 +21,33 @@ has installed the `project-task-tracking` framework.
    - Progress history: `docs/planning/project-log.md`
    - Open assumptions: `docs/context/OPEN_QUESTIONS.md`
    - Accepted decisions: `docs/decisions/`
+   - Adoption audit: `docs/engineering/adoption-audit.md`
+   - Agent workflow: `docs/engineering/agent-workflow.md`
+   - Pull request rules: `docs/engineering/change-request.md`
+   - Code review: `docs/engineering/code-review.md`
+   - Platform settings: `docs/engineering/platform-settings.md`
 
 Do not scan every project doc by default. Use the active task's required
 context to keep token use small.
 
-Treat `docs/planning/task-tracking.md` as the process source of truth and
-`docs/planning/tasks.yml` as the task state source of truth.
+Treat `docs/planning/task-tracking.md` and `docs/engineering/` as process
+sources of truth. Treat `docs/planning/tasks.yml` as the task state source of
+truth.
 
 ## Operating Modes
 
 - `intake`: classify new discussion into task, backlog, ADR, open question, or
   project log.
+- `adoption-audit`: collect target repository facts before installing or
+  substantially adapting the framework.
 - `draft-issue`: turn a scoped idea into a GitHub Issue.
 - `ready-check`: evaluate whether a task meets Definition of Ready.
 - `done-check`: evaluate whether work meets Definition of Done.
+- `change-request-readiness`: check whether PR title, description, scope, and
+  verification are ready for review.
+- `self-review`: review the full diff against task scope before completion.
+- `scope-taxonomy`: help define or audit the project's controlled PR title
+  scope list.
 - `project-review`: summarize current phase, completed work, next tasks,
   blockers, and open questions.
 - `handoff`: prepare a task brief for another agent.
@@ -44,6 +57,11 @@ Treat `docs/planning/task-tracking.md` as the process source of truth and
 
 If the user does not name a mode, infer the smallest mode that satisfies the
 request.
+
+Before first-time framework installation or substantial framework adaptation,
+stop and create an adoption audit report if one is not already linked from the
+active task's required context. Owner-approved process exceptions without a
+ledger task must record the exception in project memory.
 
 ## Ready And Done Checks
 
