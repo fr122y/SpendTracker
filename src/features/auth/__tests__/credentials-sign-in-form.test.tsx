@@ -61,6 +61,22 @@ describe('CredentialsSignInForm', () => {
     })
   })
 
+  it('redirects to callback URL on successful sign-in', async () => {
+    mockSignIn.mockResolvedValueOnce({ ok: true })
+
+    const user = userEvent.setup()
+    render(<CredentialsSignInForm callbackUrl="/invite/token-1" />)
+
+    await user.type(screen.getByPlaceholderText('Email'), 'test@example.com')
+    await user.type(screen.getByPlaceholderText('Пароль'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Войти' }))
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/invite/token-1')
+      expect(mockRefresh).toHaveBeenCalled()
+    })
+  })
+
   it('disables submit button while submitting', async () => {
     let resolveSignIn: (value: unknown) => void = () => {}
     mockSignIn.mockImplementationOnce(

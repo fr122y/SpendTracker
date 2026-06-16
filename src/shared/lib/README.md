@@ -25,6 +25,8 @@ Utility functions and helpers used across the application.
 
 - `cn(...classes)`: Class name utility (tailwind-merge + clsx)
 - `evaluateMathExpression(expr)`: Safe math expression evaluator
+- `getSafeCallbackUrl(callbackUrl, fallback?)`: allow only same-app relative
+  auth redirect targets
 - `showMutationRollbackToast(message?)`: Unified error toast for optimistic
   mutation rollback UX
 

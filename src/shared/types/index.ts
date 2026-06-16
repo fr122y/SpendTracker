@@ -56,6 +56,25 @@ export interface CreateSharedBudgetInput {
   effectiveWeekStart: string
 }
 
+export type SharedBudgetInviteStatus =
+  | 'valid'
+  | 'invalid'
+  | 'expired'
+  | 'used'
+  | 'archived'
+  | 'duplicate-member'
+  | 'accepted'
+
+export interface SharedBudgetInvitePreview {
+  status: SharedBudgetInviteStatus
+  sharedBudgetName?: string
+}
+
+export interface SharedBudgetInviteResult {
+  inviteUrl: string
+  expiresAt: string
+}
+
 export interface SharedBudgetCategory {
   id: string
   sharedBudgetId: string

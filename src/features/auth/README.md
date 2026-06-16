@@ -13,6 +13,8 @@ Authentication UI for the login page (credentials + Google OAuth).
 
 - Uses `next-auth/react` `signIn` for Google and credentials
 - Uses `registerUser` Server Action for registration
+- Preserves safe relative `callbackUrl` values so invite links can continue
+  after login or registration
 - Local UI state: active tab, form fields, loading/error states
 
 ## Dependencies

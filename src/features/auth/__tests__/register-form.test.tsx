@@ -116,6 +116,28 @@ describe('RegisterForm', () => {
     })
   })
 
+  it('auto-signs in with callback URL after successful registration', async () => {
+    const user = userEvent.setup()
+    render(<RegisterForm callbackUrl="/invite/token-1" />)
+
+    await user.type(screen.getByPlaceholderText('Имя'), 'Тест')
+    await user.type(screen.getByPlaceholderText('Email'), 'test@example.com')
+    await user.type(screen.getByPlaceholderText('Пароль'), 'password123')
+    await user.type(
+      screen.getByPlaceholderText('Подтвердите пароль'),
+      'password123'
+    )
+    await user.click(screen.getByRole('button', { name: 'Зарегистрироваться' }))
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledWith('credentials', {
+        email: 'test@example.com',
+        password: 'password123',
+        callbackUrl: '/invite/token-1',
+      })
+    })
+  })
+
   it('disables submit button while submitting', async () => {
     let resolveRegister: (value: unknown) => void = () => {}
     mockRegisterUser.mockImplementationOnce(

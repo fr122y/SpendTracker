@@ -7,9 +7,13 @@ import { registerUser } from '@/shared/api'
 
 interface RegisterFormProps {
   onSwitchToSignIn?: () => void
+  callbackUrl?: string
 }
 
-export function RegisterForm({ onSwitchToSignIn }: RegisterFormProps) {
+export function RegisterForm({
+  onSwitchToSignIn,
+  callbackUrl = '/',
+}: RegisterFormProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,7 +48,7 @@ export function RegisterForm({ onSwitchToSignIn }: RegisterFormProps) {
     await signIn('credentials', {
       email,
       password,
-      callbackUrl: '/',
+      callbackUrl,
     })
   }
 

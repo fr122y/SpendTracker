@@ -275,7 +275,7 @@
     {
       "id": "T-007",
       "title": "Add one-time invite links for shared budgets",
-      "status": "captured",
+      "status": "review",
       "phase": "Shared Budget Collaboration",
       "type": "feature",
       "priority": "high",
@@ -318,7 +318,7 @@
         "Focused tests cover successful acceptance, token reuse, expiry, duplicate membership, and unauthorized generation.",
         "npm run validate passes."
       ],
-      "next_action": "Draft issue and ready-check invite token storage, route shape, and auth redirect flow."
+      "next_action": "Open PR for review after committing and pushing task/T-007-shared-budget-invites."
     },
     {
       "id": "T-008",

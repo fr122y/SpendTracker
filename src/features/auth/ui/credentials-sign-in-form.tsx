@@ -7,11 +7,13 @@ import { useState } from 'react'
 interface CredentialsSignInFormProps {
   onSwitchToRegister?: () => void
   defaultError?: string
+  callbackUrl?: string
 }
 
 export function CredentialsSignInForm({
   onSwitchToRegister,
   defaultError,
+  callbackUrl = '/',
 }: CredentialsSignInFormProps) {
   const router = useRouter()
   const [email, setEmail] = useState('')
@@ -37,7 +39,7 @@ export function CredentialsSignInForm({
       return
     }
 
-    router.push('/')
+    router.push(callbackUrl)
     router.refresh()
   }
 

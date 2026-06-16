@@ -21,6 +21,11 @@ Server Actions and shared query infrastructure for the application.
   the current user
 - `setSharedWeeklyLimitForWeek(sharedBudgetId, effectiveWeekStart, amount)`:
   upsert a shared budget weekly limit
+- `createSharedBudgetInvite(sharedBudgetId)`: generate a one-time invite URL
+  for a shared budget owner
+- `getSharedBudgetInvitePreview(token)`: resolve invite state for the public
+  invite page
+- `acceptSharedBudgetInvite(token)`: accept a valid invite for the current user
 - `queryClient`: TanStack Query client instance with default options
 
 ## Architecture
@@ -34,9 +39,13 @@ Server Actions and shared query infrastructure for the application.
   expenses from budgets where the current user is a member
 - Shared expenses cannot be linked to project operations; project money remains
   private task-scoped behavior until a later product decision
+- Shared budget invite tokens are stored as hashes and accepted through Server
+  Actions only
 
 ## Error Handling
 
 - Mutations rely on optimistic updates in entity layer with rollback toast on failure
 - Registration returns user-facing validation and duplicate-email messages
 - Shared budget actions throw authorization errors before mutating data
+- Invite acceptance returns explicit invalid/expired/used/archived/duplicate
+  states instead of mutating on failure

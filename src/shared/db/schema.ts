@@ -109,6 +109,34 @@ export const sharedBudgetMembers = pgTable(
   ]
 )
 
+export const sharedBudgetInvites = pgTable(
+  'shared_budget_invite',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sharedBudgetId: text('sharedBudgetId')
+      .notNull()
+      .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
+    createdByUserId: text('createdByUserId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('tokenHash').notNull().unique(),
+    expiresAt: timestamp('expiresAt', { mode: 'date' }).notNull(),
+    acceptedAt: timestamp('acceptedAt', { mode: 'date' }),
+    acceptedByUserId: text('acceptedByUserId').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index('shared_budget_invite_budget_idx').on(table.sharedBudgetId),
+    index('shared_budget_invite_expires_idx').on(table.expiresAt),
+  ]
+)
+
 export const sharedBudgetWeeklyLimits = pgTable(
   'shared_budget_weekly_limit',
   {

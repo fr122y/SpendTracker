@@ -3,6 +3,8 @@
 import { useSearchParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 
+import { getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
+
 import { CredentialsSignInForm } from './credentials-sign-in-form'
 import { RegisterForm } from './register-form'
 import { SignInButton } from './sign-in-button'
@@ -27,6 +29,10 @@ export function AuthTabs() {
 
   const authErrorMessage = useMemo(
     () => getAuthErrorMessage(searchParams.get('error')),
+    [searchParams]
+  )
+  const callbackUrl = useMemo(
+    () => getSafeCallbackUrl(searchParams.get('callbackUrl')),
     [searchParams]
   )
 
@@ -59,11 +65,15 @@ export function AuthTabs() {
 
       {activeTab === 'signin' ? (
         <CredentialsSignInForm
+          callbackUrl={callbackUrl}
           defaultError={authErrorMessage}
           onSwitchToRegister={() => setActiveTab('register')}
         />
       ) : (
-        <RegisterForm onSwitchToSignIn={() => setActiveTab('signin')} />
+        <RegisterForm
+          callbackUrl={callbackUrl}
+          onSwitchToSignIn={() => setActiveTab('signin')}
+        />
       )}
 
       <div className="my-4 flex items-center gap-3">
@@ -72,7 +82,7 @@ export function AuthTabs() {
         <div className="h-px flex-1 bg-zinc-700" />
       </div>
 
-      <SignInButton />
+      <SignInButton callbackUrl={callbackUrl} />
     </div>
   )
 }

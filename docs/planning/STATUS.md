@@ -4,11 +4,12 @@ Last updated: 2026-06-15
 
 ## Current Focus
 
-- `T-007` - Add one-time invite links for shared budgets.
+- `T-007` - Add one-time invite links for shared budgets is implemented and
+  ready for PR review.
 
 ## Active Branch
 
-- None. Next implementation branch should be `task/T-007-shared-budget-invites`.
+- `task/T-007-shared-budget-invites`
 
 ## Stable Branch
 
@@ -16,10 +17,11 @@ Last updated: 2026-06-15
 
 ## Next Action
 
-Plan or start `T-007` shared budget invite links.
+Commit and push `T-007`, then open a PR for review.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-006` is the next shared budget foundation task.
+`T-004` through `T-011`; `T-008` is the next shared budget UX task after
+`T-007` is reviewed and merged.
 
 ## Validation
 
@@ -34,6 +36,7 @@ Shared budget product discussion has been captured as phased backlog tasks
 - Passed: `npm run validate` for `T-006` (60 suites, 762 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-006`.
 - PR #13 merged for `T-006` with merge commit `d3dc1a4`.
+- Passed: `npm run validate` for `T-007` (62 suites, 772 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing shared
   budget tasks `T-004` through `T-011`.
 - Passed: `python3 scripts/validate_task_tracker.py`

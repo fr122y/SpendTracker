@@ -11,6 +11,9 @@ Global TypeScript type definitions used across the application.
 - `SharedBudget`: Shared weekly budget visible to its members
 - `SharedBudgetMember`: Shared budget membership, role, and active selection
 - `SharedWeeklyLimitSetting`: Effective weekly limit for a shared budget
+- `SharedBudgetInvitePreview`: Public invite state used by invite pages and
+  actions
+- `SharedBudgetInviteResult`: Generated invite URL and expiration timestamp
 - `Category`: Category entity with id, name, emoji
 - `Project`: Project entity with id, name, budget, color, createdAt
 - `AllocationBucket`: Savings bucket with id, label, percentage
