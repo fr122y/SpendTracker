@@ -8,6 +8,8 @@ Issue: #TBD
 
 PR: #15
 
+Merge: `d071d8b`
+
 ## Summary
 
 Implemented one-time shared budget invite links with hashed token storage,
@@ -60,7 +62,7 @@ public invite acceptance page that preserves auth callback flow.
   membership, and owner authorization covered by focused tests.
 - Tracker consistency checked: pending final tracker validation.
 - Docs checked: yes.
-- CI or PR status: local validation passed; PR #15 opened.
+- CI or PR status: local validation passed; PR #15 merged.
 
 ## Follow-Ups
 
@@ -74,4 +76,4 @@ public invite acceptance page that preserves auth callback flow.
 
 ## Registry Update Requested
 
-- `T-007` moved to `review`; PR #15 opened for review.
+- `T-007` moved to `done` after PR #15 merged.

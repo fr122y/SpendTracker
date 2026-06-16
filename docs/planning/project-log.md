@@ -27,6 +27,8 @@
 - Implemented `T-007` shared budget invite links with hashed one-time tokens,
   seven-day expiry, public invite acceptance flow, safe auth callback redirects,
   migration, focused tests, and full `npm run validate`.
+- Merged PR #15 for `T-007` into `main` as `d071d8b` and reconciled the task
+  to `done`.
 
 ## 2026-05-14
 
