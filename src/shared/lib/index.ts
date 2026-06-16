@@ -13,6 +13,7 @@ export {
   getWeeklyStats,
   getWeeklyPersonalStats,
   getWeeklyBudgetCoverage,
+  getSharedWeeklyBudgetCoverage,
   getEffectiveWeeklyLimit,
   getWeekBoundaries,
   formatDate,

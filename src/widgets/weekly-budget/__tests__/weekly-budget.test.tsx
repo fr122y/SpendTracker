@@ -1,15 +1,27 @@
-import { render, screen, fireEvent, within } from '@testing-library/react'
+import {
+  render,
+  screen,
+  fireEvent,
+  within,
+  waitFor,
+} from '@testing-library/react'
 
 import { WeeklyBudget } from '../ui/weekly-budget'
 
-import type { Expense } from '@/shared/types'
+import type { Expense, SharedBudget } from '@/shared/types'
 
 // Mock data
 const mockSetWeeklyLimit = jest.fn()
+const mockCreateSharedBudget = jest.fn()
+const mockSetActiveSharedBudget = jest.fn()
+const mockSetSharedWeeklyLimit = jest.fn()
+const mockArchiveSharedBudget = jest.fn()
+const mockCreateInvite = jest.fn()
 let mockWeeklyLimit = 10000
 let mockSettingsLoading = false
 let mockExpensesLoading = false
 let mockProjectsLoading = false
+let mockSharedBudgetsLoading = false
 let mockProjects = [
   {
     id: 'project-1',
@@ -45,6 +57,7 @@ let mockExpenses: Expense[] = [
     emoji: '🚇',
   },
 ]
+let mockSharedBudgets: SharedBudget[] = []
 
 const mockSelectedDate = new Date(2026, 0, 21) // Jan 21, 2026 (Tuesday)
 
@@ -99,6 +112,37 @@ jest.mock('@/entities/session', () => ({
     const state = { selectedDate: mockSelectedDate }
     return selector ? selector(state) : state
   },
+}))
+
+jest.mock('@/entities/shared-budget', () => ({
+  getActiveSharedBudget: (budgets: SharedBudget[]) =>
+    budgets.find((budget) => !budget.archivedAt && budget.isActive),
+  getEffectiveSharedWeeklyLimit: (budget: SharedBudget) =>
+    budget.weeklyLimits.at(-1)?.amount ?? 0,
+  useArchiveSharedBudget: () => ({
+    mutate: mockArchiveSharedBudget,
+    isPending: false,
+  }),
+  useCreateSharedBudget: () => ({
+    mutate: mockCreateSharedBudget,
+    isPending: false,
+  }),
+  useCreateSharedBudgetInvite: () => ({
+    mutate: mockCreateInvite,
+    isPending: false,
+  }),
+  useSetActiveSharedBudget: () => ({
+    mutate: mockSetActiveSharedBudget,
+    isPending: false,
+  }),
+  useSetSharedWeeklyLimitForWeek: () => ({
+    mutate: mockSetSharedWeeklyLimit,
+    isPending: false,
+  }),
+  useSharedBudgets: () => ({
+    data: mockSharedBudgets,
+    isLoading: mockSharedBudgetsLoading,
+  }),
 }))
 
 // Mock shared lib functions
@@ -164,6 +208,42 @@ jest.mock('@/shared/lib', () => ({
           : [],
     }
   }),
+  getSharedWeeklyBudgetCoverage: jest.fn(
+    (expenses, sharedBudgetId, date, weeklyLimit) => {
+      const weekExpenses = expenses.filter(
+        (e: {
+          date: string
+          sharedBudgetId?: string
+          operationType?: string
+        }) =>
+          e.date >= '2026-01-20' &&
+          e.date <= '2026-01-26' &&
+          e.sharedBudgetId === sharedBudgetId &&
+          (e.operationType ?? 'expense') === 'expense'
+      )
+      const personalSpent = weekExpenses.reduce(
+        (sum: number, e: { amount: number }) => sum + e.amount,
+        0
+      )
+
+      return {
+        personalSpent,
+        weeklyLimit,
+        projectTopUp: 0,
+        personalCovered: Math.min(personalSpent, weeklyLimit),
+        projectCovered: 0,
+        uncovered: Math.max(personalSpent - weeklyLimit, 0),
+        totalAvailable: weeklyLimit,
+        start: '2026-01-20',
+        end: '2026-01-26',
+        projectSegments: [],
+      }
+    }
+  ),
+  getWeekBoundaries: jest.fn(() => ({
+    start: '2026-01-20',
+    end: '2026-01-26',
+  })),
   cn: jest.fn((...args: unknown[]) => {
     return args
       .flat()
@@ -179,6 +259,7 @@ describe('WeeklyBudget', () => {
     mockSettingsLoading = false
     mockExpensesLoading = false
     mockProjectsLoading = false
+    mockSharedBudgetsLoading = false
     mockProjects = [
       {
         id: 'project-1',
@@ -214,6 +295,7 @@ describe('WeeklyBudget', () => {
         emoji: '🚇',
       },
     ]
+    mockSharedBudgets = []
   })
 
   describe('rendering', () => {
@@ -459,6 +541,194 @@ describe('WeeklyBudget', () => {
       const input = screen.getByDisplayValue('10000')
       expect(input).toHaveAttribute('type', 'text')
       expect(input).toHaveAttribute('inputmode', 'decimal')
+    })
+  })
+
+  describe('shared budgets', () => {
+    beforeEach(() => {
+      mockSharedBudgets = [
+        {
+          id: 'shared-1',
+          name: 'Дом',
+          createdByUserId: 'user-1',
+          createdAt: '2026-01-01T00:00:00.000Z',
+          role: 'owner',
+          isActive: true,
+          members: [
+            {
+              userId: 'user-1',
+              name: 'Илья',
+              role: 'owner',
+              isActive: true,
+              joinedAt: '2026-01-01T00:00:00.000Z',
+            },
+            {
+              userId: 'user-2',
+              name: 'Партнер',
+              role: 'member',
+              isActive: false,
+              joinedAt: '2026-01-02T00:00:00.000Z',
+            },
+          ],
+          weeklyLimits: [{ effectiveWeekStart: '2026-01-20', amount: 8000 }],
+        },
+      ]
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: 'shared-expense-1',
+          description: 'Shared groceries',
+          amount: 2500,
+          date: '2026-01-21',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-1',
+          authorUserId: 'user-2',
+          authorName: 'Партнер',
+          sharedBudgetName: 'Дом',
+        },
+      ]
+    })
+
+    it('shows active shared budget summary and members', () => {
+      render(<WeeklyBudget />)
+
+      expect(screen.getByText('Общий бюджет')).toBeInTheDocument()
+      expect(screen.getByText('Общие расходы')).toBeInTheDocument()
+      expect(screen.getByText('Илья')).toBeInTheDocument()
+      expect(screen.getByText('Партнер')).toBeInTheDocument()
+      expect(screen.getByText(/2\s?500/)).toBeInTheDocument()
+      expect(screen.getByText(/8\s?000/)).toBeInTheDocument()
+    })
+
+    it('creates a shared budget with selected week start', () => {
+      mockSharedBudgets = []
+
+      render(<WeeklyBudget />)
+
+      fireEvent.change(screen.getByLabelText('Название общего бюджета'), {
+        target: { value: 'Семья' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /создать/i }))
+
+      expect(mockCreateSharedBudget).toHaveBeenCalledWith({
+        name: 'Семья',
+        initialWeeklyLimit: 8000,
+        effectiveWeekStart: '2026-01-20',
+      })
+    })
+
+    it('can open create form when shared budgets already exist', () => {
+      render(<WeeklyBudget />)
+
+      fireEvent.click(screen.getByRole('button', { name: /новый/i }))
+
+      expect(
+        screen.getByLabelText('Название общего бюджета')
+      ).toBeInTheDocument()
+    })
+
+    it('selects another active shared budget', () => {
+      mockSharedBudgets = [
+        ...mockSharedBudgets,
+        {
+          id: 'shared-2',
+          name: 'Путешествие',
+          createdByUserId: 'user-1',
+          createdAt: '2026-01-03T00:00:00.000Z',
+          role: 'member',
+          isActive: false,
+          members: [],
+          weeklyLimits: [{ effectiveWeekStart: '2026-01-20', amount: 12000 }],
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      fireEvent.change(screen.getByLabelText('Общий бюджет'), {
+        target: { value: 'shared-2' },
+      })
+
+      expect(mockSetActiveSharedBudget).toHaveBeenCalledWith('shared-2')
+    })
+
+    it('updates shared weekly limit for selected week', () => {
+      render(<WeeklyBudget />)
+
+      const sharedLimitInput = screen.getAllByDisplayValue('8000')[0]
+      fireEvent.change(sharedLimitInput, { target: { value: '9000' } })
+      fireEvent.blur(sharedLimitInput)
+
+      expect(mockSetSharedWeeklyLimit).toHaveBeenCalledWith({
+        sharedBudgetId: 'shared-1',
+        effectiveWeekStart: '2026-01-20',
+        amount: 9000,
+      })
+    })
+
+    it('shows and copies generated invite link for owner', async () => {
+      mockCreateInvite.mockImplementation((_id, options) => {
+        options.onSuccess({
+          inviteUrl: 'http://localhost:3000/invite/token',
+          expiresAt: '2026-01-27T00:00:00.000Z',
+        })
+      })
+      Object.assign(navigator, {
+        clipboard: { writeText: jest.fn() },
+      })
+
+      render(<WeeklyBudget />)
+
+      fireEvent.click(screen.getByRole('button', { name: /ссылка/i }))
+      expect(mockCreateInvite).toHaveBeenCalledWith(
+        'shared-1',
+        expect.any(Object)
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: /копировать/i }))
+      await waitFor(() => {
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+          'http://localhost:3000/invite/token'
+        )
+      })
+    })
+
+    it('archives active shared budget after confirmation', () => {
+      render(<WeeklyBudget />)
+
+      fireEvent.click(screen.getByRole('button', { name: /архив/i }))
+      fireEvent.click(screen.getByRole('button', { name: 'Архивировать' }))
+
+      expect(mockArchiveSharedBudget).toHaveBeenCalledWith(
+        'shared-1',
+        expect.any(Object)
+      )
+    })
+
+    it('hides owner actions for members and archived budgets from selector', () => {
+      mockSharedBudgets = [
+        {
+          ...mockSharedBudgets[0],
+          role: 'member',
+        },
+        {
+          id: 'shared-archived',
+          name: 'Архив',
+          createdByUserId: 'user-1',
+          archivedAt: '2026-01-04T00:00:00.000Z',
+          createdAt: '2026-01-03T00:00:00.000Z',
+          role: 'owner',
+          isActive: false,
+          members: [],
+          weeklyLimits: [{ effectiveWeekStart: '2026-01-20', amount: 12000 }],
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.queryByRole('button', { name: /ссылка/i })).toBeNull()
+      expect(screen.queryByRole('button', { name: /архив/i })).toBeNull()
+      expect(screen.queryByText('Архив')).toBeNull()
     })
   })
 
