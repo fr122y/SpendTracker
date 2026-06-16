@@ -8,6 +8,8 @@ Issue: #TBD
 
 PR: #18
 
+Merge: `ba60151`
+
 ## Summary
 
 Documented Compact Merge Flow and a narrow direct docs reconciliation exception
@@ -57,7 +59,7 @@ project memory.
   `docs/planning/**`.
 - Tracker consistency checked: yes.
 - Docs checked: yes.
-- CI or PR status: PR #18 opened.
+- CI or PR status: PR #18 merged.
 
 ## Follow-Ups
 
@@ -70,4 +72,4 @@ project memory.
 
 ## Registry Update Requested
 
-- `T-012` moved to `review`; PR #18 opened.
+- `T-012` moved to `done` after PR #18 merged.

@@ -413,13 +413,14 @@ Acceptance criteria:
 
 ## T-012 - Optimize merge and tracker reconciliation process
 
-- Status: `review`
+- Status: `done`
 - Phase: Process Optimization
 - Type: process
 - Priority: high
 - Branch: `task/T-012-compact-merge-process`
 - GitHub issue: none
 - PR: #18
+- Merge commit: `ba60151`
 - Owner mode: human-led
 - Required context:
   - `AGENTS.md`

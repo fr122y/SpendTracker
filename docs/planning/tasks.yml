@@ -519,7 +519,7 @@
     {
       "id": "T-012",
       "title": "Optimize merge and tracker reconciliation process",
-      "status": "review",
+      "status": "done",
       "phase": "Process Optimization",
       "type": "process",
       "priority": "high",
@@ -548,7 +548,7 @@
         "External check waiting is bounded unless the human asks to wait.",
         "Task tracker validation passes."
       ],
-      "next_action": "Open PR for review."
+      "next_action": "No further action."
     }
   ]
 }

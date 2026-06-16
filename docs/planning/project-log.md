@@ -5,6 +5,8 @@
 - Started `T-012` to reduce token/time overhead in routine merge and tracker
   reconciliation while preserving scoped branches, PR history, and task
   tracking.
+- Merged PR #18 for `T-012` into `main` as `ba60151` and reconciled the task
+  to `done` using the new direct docs reconciliation exception.
 
 ## 2026-06-15
 
