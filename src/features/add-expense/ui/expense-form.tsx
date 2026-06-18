@@ -1,29 +1,50 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { useCategoryStore } from '@/entities/category'
+import {
+  useCategoryStore,
+  useSharedBudgetCategories,
+} from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
 import { useProjectStore } from '@/entities/project'
 import { useSessionStore } from '@/entities/session'
+import {
+  getActiveSharedBudget,
+  useSharedBudgets,
+} from '@/entities/shared-budget'
 import { useCategorize } from '@/features/add-expense/model/use-categorize'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
-import type { MoneyOperationType } from '@/shared/types'
+import type { MoneyOperationType, SharedBudget } from '@/shared/types'
 
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
 const PROJECT_MONEY_EMOJI = '💼'
 type OperationScenario =
   | 'personal_expense'
+  | 'shared_expense'
   | 'project_expense'
   | 'project_withdrawal'
   | 'project_return'
+
+function getSharedBudgetOptions(budgets: SharedBudget[]) {
+  const activeBudget = getActiveSharedBudget(budgets)
+  const activeBudgets = budgets.filter((budget) => !budget.archivedAt)
+  const activeBudgetId = activeBudget?.id
+
+  return activeBudgets.sort((a, b) => {
+    if (a.id === activeBudgetId) return -1
+    if (b.id === activeBudgetId) return 1
+    return a.name.localeCompare(b.name, 'ru')
+  })
+}
 
 export function ExpenseForm() {
   const [scenario, setScenario] =
     useState<OperationScenario>('personal_expense')
   const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [selectedSharedBudgetId, setSelectedSharedBudgetId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
@@ -38,6 +59,7 @@ export function ExpenseForm() {
   const categories = useCategoryStore((state) => state.categories)
   const projects = useProjectStore((state) => state.projects)
   const selectedDate = useSessionStore((state) => state.selectedDate)
+  const { data: sharedBudgets = [] } = useSharedBudgets()
   const {
     categorize,
     saveMappingAndGetResult,
@@ -45,7 +67,35 @@ export function ExpenseForm() {
     isSavingMapping,
   } = useCategorize()
 
-  const categoryOptions = categories.map((category) => ({
+  const sharedBudgetOptions = useMemo(
+    () => getSharedBudgetOptions(sharedBudgets),
+    [sharedBudgets]
+  )
+  const selectedSharedBudget =
+    sharedBudgetOptions.find(
+      (budget) => budget.id === selectedSharedBudgetId
+    ) ?? sharedBudgetOptions[0]
+  const isSharedExpense = scenario === 'shared_expense'
+  const { data: sharedCategories = [] } = useSharedBudgetCategories(
+    isSharedExpense ? selectedSharedBudget?.id : undefined
+  )
+
+  useEffect(() => {
+    if (selectedSharedBudgetId) {
+      const exists = sharedBudgetOptions.some(
+        (budget) => budget.id === selectedSharedBudgetId
+      )
+      if (exists) return
+    }
+
+    setSelectedSharedBudgetId(selectedSharedBudget?.id ?? '')
+  }, [selectedSharedBudget?.id, selectedSharedBudgetId, sharedBudgetOptions])
+
+  const personalCategoryOptions = categories.map((category) => ({
+    value: category.id,
+    label: `${category.emoji} ${category.name}`,
+  }))
+  const sharedCategoryOptions = sharedCategories.map((category) => ({
     value: category.id,
     label: `${category.emoji} ${category.name}`,
   }))
@@ -53,12 +103,19 @@ export function ExpenseForm() {
     value: project.id,
     label: project.name,
   }))
+  const sharedBudgetSelectOptions = sharedBudgetOptions.map((budget) => ({
+    value: budget.id,
+    label: budget.name,
+  }))
   const operationType: MoneyOperationType =
     scenario === 'project_withdrawal' || scenario === 'project_return'
       ? scenario
       : 'expense'
   const isMovement = operationType !== 'expense'
-  const needsProject = scenario !== 'personal_expense'
+  const needsProject =
+    scenario === 'project_expense' ||
+    scenario === 'project_withdrawal' ||
+    scenario === 'project_return'
 
   const resetForm = () => {
     setDescription('')
@@ -70,7 +127,7 @@ export function ExpenseForm() {
   }
 
   const handleDescriptionBlur = () => {
-    if (isMovement || !mappingsLoaded) return
+    if (isMovement || isSharedExpense || !mappingsLoaded) return
     const normalizedDescription = description.trim()
     if (!normalizedDescription) return
 
@@ -97,6 +154,7 @@ export function ExpenseForm() {
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
     if (needsProject && !selectedProjectId) return
+    if (isSharedExpense && !selectedSharedBudget?.id) return
 
     setIsSubmitting(true)
 
@@ -109,6 +167,34 @@ export function ExpenseForm() {
         category: PROJECT_MONEY_CATEGORY,
         emoji: PROJECT_MONEY_EMOJI,
         projectId: selectedProjectId,
+        operationType,
+      })
+
+      resetForm()
+      setIsSubmitting(false)
+      return
+    }
+
+    if (isSharedExpense) {
+      const sharedCategory = sharedCategories.find(
+        (item) => item.id === selectedCategoryId
+      )
+
+      if (!selectedSharedBudget || !sharedCategory) {
+        setIsSubmitting(false)
+        return
+      }
+
+      addExpense({
+        id: crypto.randomUUID(),
+        description: normalizedDescription,
+        amount: parsedAmount,
+        date: formatDate(selectedDate),
+        category: sharedCategory.name,
+        emoji: sharedCategory.emoji,
+        sharedBudgetId: selectedSharedBudget.id,
+        sharedBudgetCategoryId: sharedCategory.id,
+        sharedBudgetName: selectedSharedBudget.name,
         operationType,
       })
 
@@ -179,34 +265,62 @@ export function ExpenseForm() {
     amount &&
     Number(amount) > 0 &&
     (!needsProject || !!selectedProjectId) &&
+    (!isSharedExpense ||
+      (!!selectedSharedBudget?.id && !!selectedCategoryId)) &&
     (!showCategorySelect || !!selectedCategoryId)
+
+  const scenarioOptions = [
+    { value: 'personal_expense', label: 'Личный расход' },
+    ...(sharedBudgetOptions.length > 0
+      ? [{ value: 'shared_expense', label: 'Общий расход' }]
+      : []),
+    { value: 'project_expense', label: 'Проектный расход' },
+    { value: 'project_withdrawal', label: 'Взял из проекта' },
+    { value: 'project_return', label: 'Вернул в проект' },
+  ]
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:gap-4">
       <div>
         <Select
           aria-label="Сценарий операции"
-          options={[
-            { value: 'personal_expense', label: 'Личный расход' },
-            { value: 'project_expense', label: 'Проектный расход' },
-            { value: 'project_withdrawal', label: 'Взял из проекта' },
-            { value: 'project_return', label: 'Вернул в проект' },
-          ]}
+          options={scenarioOptions}
           value={scenario}
           onChange={(e) => {
             const nextScenario = e.target.value as OperationScenario
             setScenario(nextScenario)
+            setShowCategorySelect(false)
+            setSuggestedCategoryId(null)
+            setSuggestedCategoryLabel('')
+            setSelectedCategoryId('')
+
             if (
               nextScenario === 'project_withdrawal' ||
               nextScenario === 'project_return'
             ) {
-              setShowCategorySelect(false)
-              setSuggestedCategoryId(null)
+              return
+            }
+
+            if (nextScenario === 'shared_expense') {
+              setSelectedSharedBudgetId(selectedSharedBudget?.id ?? '')
             }
           }}
           disabled={isSubmitting || isSavingMapping}
         />
       </div>
+      {isSharedExpense && sharedBudgetOptions.length > 1 && (
+        <Select
+          aria-label="Общий бюджет"
+          options={sharedBudgetSelectOptions}
+          value={selectedSharedBudget?.id ?? ''}
+          onChange={(e) => {
+            setSelectedSharedBudgetId(e.target.value)
+            setSelectedCategoryId('')
+          }}
+          placeholder="Выберите общий бюджет"
+          disabled={isSubmitting || isSavingMapping}
+        />
+      )}
       {needsProject && (
         <Select
           aria-label="Проект"
@@ -248,10 +362,20 @@ export function ExpenseForm() {
           </button>
         </div>
       )}
-      {showCategorySelect && !isMovement && (
+      {isSharedExpense && (
+        <Select
+          aria-label="Категория общего бюджета"
+          options={sharedCategoryOptions}
+          value={selectedCategoryId}
+          onChange={(e) => setSelectedCategoryId(e.target.value)}
+          placeholder="Выберите категорию"
+          disabled={isSubmitting || isSavingMapping}
+        />
+      )}
+      {showCategorySelect && !isMovement && !isSharedExpense && (
         <Select
           aria-label="Категория"
-          options={categoryOptions}
+          options={personalCategoryOptions}
           value={selectedCategoryId}
           onChange={(e) => setSelectedCategoryId(e.target.value)}
           placeholder="Выберите категорию"

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 
 import { ExpenseLog } from '../ui/expense-log'
 
@@ -294,6 +294,75 @@ describe('ExpenseLog', () => {
       const expenseCount = screen.getByTestId('expense-count')
       // Should show 1 expense (yesterday's expense)
       expect(expenseCount).toHaveTextContent('1')
+    })
+
+    it('filters daily operations by shared budget scope', () => {
+      mockExpenses = [
+        {
+          id: 'personal-1',
+          description: 'Coffee',
+          amount: 250,
+          date: '2026-01-23',
+          category: 'Кафе',
+          emoji: '☕',
+        },
+        {
+          id: 'shared-1',
+          description: 'Dinner',
+          amount: 1200,
+          date: '2026-01-23',
+          category: 'Продукты',
+          emoji: '🧺',
+          sharedBudgetId: 'shared-budget-1',
+          sharedBudgetName: 'Дом',
+          authorName: 'Партнер',
+        },
+      ]
+
+      render(<ExpenseLog />)
+
+      const budgetFilter = screen.getByLabelText('Фильтр бюджета')
+      fireEvent.click(
+        within(budgetFilter).getByRole('button', { name: 'Общие' })
+      )
+
+      expect(screen.getByTestId('expense-count')).toHaveTextContent('1')
+    })
+
+    it('composes shared scope with existing operation filters', () => {
+      mockExpenses = [
+        {
+          id: 'shared-1',
+          description: 'Dinner',
+          amount: 1200,
+          date: '2026-01-23',
+          category: 'Продукты',
+          emoji: '🧺',
+          sharedBudgetId: 'shared-budget-1',
+        },
+        {
+          id: 'project-1',
+          description: 'Project expense',
+          amount: 5000,
+          date: '2026-01-23',
+          category: 'Проект',
+          emoji: '💼',
+          projectId: 'project-123',
+        },
+      ]
+
+      render(<ExpenseLog />)
+
+      const budgetFilter = screen.getByLabelText('Фильтр бюджета')
+      const operationFilter = screen.getByLabelText('Фильтр операций')
+      fireEvent.click(
+        within(budgetFilter).getByRole('button', { name: 'Общие' })
+      )
+      fireEvent.click(
+        within(operationFilter).getByRole('button', { name: 'Проекты' })
+      )
+
+      expect(screen.getByText('Нет операций за этот день')).toBeInTheDocument()
     })
   })
 

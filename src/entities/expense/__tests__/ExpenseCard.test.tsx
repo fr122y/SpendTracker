@@ -35,6 +35,26 @@ describe('ExpenseCard', () => {
     expect(screen.getByText('Food')).toBeInTheDocument()
   })
 
+  it('renders shared budget metadata for shared expenses', () => {
+    render(
+      <ExpenseCard
+        expense={{
+          ...mockExpense,
+          sharedBudgetId: 'shared-1',
+          sharedBudgetName: 'Дом',
+          authorName: 'Партнер',
+        }}
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText('Общий расход')).toBeInTheDocument()
+    expect(screen.getByText(/Общий бюджет:/)).toHaveTextContent(
+      'Общий бюджет: Дом'
+    )
+    expect(screen.getByText('Автор: Партнер')).toBeInTheDocument()
+  })
+
   it('does not render date by default', () => {
     render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
     expect(screen.queryByText('15.01.2024')).not.toBeInTheDocument()

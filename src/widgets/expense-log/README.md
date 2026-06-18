@@ -17,7 +17,9 @@ daily real-expense totals.
 
 - Header with formatted Russian date and daily total
 - ExpenseForm for adding new operations
-- Filters: all, real expenses, project-linked operations, movements
+- Budget scope filters: all visible operations, personal operations, and shared
+  budget operations
+- Operation filters: all, real expenses, project-linked operations, movements
 - Scrollable ExpenseList
 - Empty state message when no operations match the active filter
 

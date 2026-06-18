@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { ExpenseForm } from '../ui/expense-form'
 
+import type { SharedBudget } from '@/shared/types'
+
 const mockAddExpense = jest.fn()
 const mockCategorize = jest.fn()
 const mockSaveMapping = jest.fn()
@@ -10,6 +12,28 @@ const mockCategories = [
   { id: '1', name: 'Продукты', emoji: '🛒' },
   { id: '2', name: 'Транспорт', emoji: '🚕' },
   { id: '6', name: 'Другое', emoji: '📝' },
+]
+
+let mockSharedBudgets: SharedBudget[] = [
+  {
+    id: 'shared-1',
+    name: 'Дом',
+    createdByUserId: 'user-1',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    role: 'owner' as const,
+    isActive: true,
+    members: [],
+    weeklyLimits: [],
+  },
+]
+let mockSharedCategories = [
+  {
+    id: 'shared-category-1',
+    sharedBudgetId: 'shared-1',
+    name: 'Продукты общие',
+    emoji: '🧺',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
 ]
 
 const mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
@@ -23,6 +47,13 @@ jest.mock('@/entities/category', () => ({
   useCategoryStore: (
     selector: (state: { categories: typeof mockCategories }) => unknown
   ) => selector({ categories: mockCategories }),
+  useSharedBudgetCategories: () => ({ data: mockSharedCategories }),
+}))
+
+jest.mock('@/entities/shared-budget', () => ({
+  getActiveSharedBudget: (budgets: typeof mockSharedBudgets) =>
+    budgets.find((budget) => budget.isActive && !budget.archivedAt),
+  useSharedBudgets: () => ({ data: mockSharedBudgets }),
 }))
 
 jest.mock('@/entities/project', () => ({
@@ -48,6 +79,27 @@ jest.mock('../model/use-categorize', () => ({
 describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockSharedBudgets = [
+      {
+        id: 'shared-1',
+        name: 'Дом',
+        createdByUserId: 'user-1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        role: 'owner',
+        isActive: true,
+        members: [],
+        weeklyLimits: [],
+      },
+    ]
+    mockSharedCategories = [
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты общие',
+        emoji: '🧺',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]
   })
 
   it('renders form fields', () => {
@@ -157,6 +209,112 @@ describe('ExpenseForm', () => {
           amount: 5000,
           category: 'Транспорт',
           emoji: '🚕',
+        })
+      )
+    })
+  })
+
+  it('creates a shared expense with a shared budget category', async () => {
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'shared_expense' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'ужин' },
+    })
+    fireEvent.change(screen.getByLabelText(/категория общего бюджета/i), {
+      target: { value: 'shared-category-1' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '1600' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockCategorize).not.toHaveBeenCalled()
+      expect(mockSaveMapping).not.toHaveBeenCalled()
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'ужин',
+          amount: 1600,
+          category: 'Продукты общие',
+          emoji: '🧺',
+          sharedBudgetId: 'shared-1',
+          sharedBudgetCategoryId: 'shared-category-1',
+          sharedBudgetName: 'Дом',
+          operationType: 'expense',
+        })
+      )
+    })
+  })
+
+  it('does not show shared expense scenario without active shared budgets', () => {
+    mockSharedBudgets = []
+
+    render(<ExpenseForm />)
+
+    expect(screen.queryByText('Общий расход')).not.toBeInTheDocument()
+  })
+
+  it('lets the user choose among active shared budgets', async () => {
+    mockSharedBudgets = [
+      {
+        id: 'shared-1',
+        name: 'Дом',
+        createdByUserId: 'user-1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        role: 'owner',
+        isActive: true,
+        members: [],
+        weeklyLimits: [],
+      },
+      {
+        id: 'shared-2',
+        name: 'Путешествие',
+        createdByUserId: 'user-1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        role: 'member',
+        isActive: false,
+        members: [],
+        weeklyLimits: [],
+      },
+    ]
+    mockSharedCategories = [
+      {
+        id: 'shared-category-2',
+        sharedBudgetId: 'shared-2',
+        name: 'Билеты',
+        emoji: '🎫',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'shared_expense' },
+    })
+    fireEvent.change(screen.getByLabelText(/^общий бюджет$/i), {
+      target: { value: 'shared-2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'самолет' },
+    })
+    fireEvent.change(screen.getByLabelText(/категория общего бюджета/i), {
+      target: { value: 'shared-category-2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '9000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sharedBudgetId: 'shared-2',
+          sharedBudgetCategoryId: 'shared-category-2',
+          sharedBudgetName: 'Путешествие',
         })
       )
     })

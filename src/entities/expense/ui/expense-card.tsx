@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   Briefcase,
   Receipt,
+  Users,
   Trash2,
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
@@ -51,6 +52,14 @@ function getOperationMeta(expense: Expense) {
       label: 'Проектный расход',
       className: 'bg-blue-500/10 text-blue-300 ring-blue-500/30',
       Icon: Briefcase,
+    }
+  }
+
+  if (expense.sharedBudgetId) {
+    return {
+      label: 'Общий расход',
+      className: 'bg-violet-500/10 text-violet-300 ring-violet-500/30',
+      Icon: Users,
     }
   }
 
@@ -132,6 +141,14 @@ export function ExpenseCard({
                 <span data-testid={`expense-date-${expense.id}`}>
                   {formatExpenseDate(expense.date)}
                 </span>
+              )}
+              {expense.sharedBudgetId && (
+                <>
+                  <span>
+                    Общий бюджет: {expense.sharedBudgetName ?? 'Общий бюджет'}
+                  </span>
+                  <span>Автор: {expense.authorName ?? 'участник'}</span>
+                </>
               )}
             </div>
           </div>
