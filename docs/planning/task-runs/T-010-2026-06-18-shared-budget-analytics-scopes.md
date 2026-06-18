@@ -8,6 +8,8 @@ Issue: #TBD
 
 PR: #22
 
+Merge commit: `d2d2a2a`
+
 ## Summary
 
 Added all/personal/shared scope switching to analytics, dynamics, and calendar
@@ -59,7 +61,7 @@ widgets using shared finance selectors.
 - Regression risk checked: focused selector/widget tests plus full validation.
 - Tracker consistency checked: yes.
 - Docs checked: slice docs updated.
-- CI or PR status: PR #22 opened.
+- CI or PR status: PR #22 merged.
 
 ## Follow-Ups
 
@@ -71,4 +73,4 @@ widgets using shared finance selectors.
 
 ## Registry Update Requested
 
-- `T-010` is ready for review in PR #22.
+- None.

@@ -355,13 +355,14 @@ Task-run report:
 
 ## T-010 - Add analytics scopes for visible expenses
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget Analytics
 - Type: feature
 - Priority: medium
 - Branch: `task/T-010-shared-budget-analytics-scopes`
 - GitHub issue: none
 - PR: #22
+- Merge commit: `d2d2a2a`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

@@ -4,11 +4,11 @@ Last updated: 2026-06-18
 
 ## Current Focus
 
-- `T-010` - Add analytics scopes for visible expenses.
+- `T-011` - Run end-to-end shared budget QA and tracker sync.
 
 ## Active Branch
 
-- `task/T-010-shared-budget-analytics-scopes`
+- None. Next implementation branch should be `task/T-011-shared-budget-qa`.
 
 ## Stable Branch
 
@@ -16,10 +16,10 @@ Last updated: 2026-06-18
 
 ## Next Action
 
-Open PR and complete self-review for `T-010` analytics scope switching.
+Plan or start `T-011` end-to-end shared budget QA and tracker sync.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-010` is in review.
+`T-004` through `T-011`; `T-011` is the final shared budget release task.
 
 ## Validation
 
@@ -60,3 +60,4 @@ Shared budget product discussion has been captured as phased backlog tasks
   calendar scope filters.
 - Passed: `npm run validate` for `T-010` (63 suites, 802 tests).
 - PR #22 opened for `T-010`.
+- PR #22 merged for `T-010` with merge commit `d2d2a2a`.

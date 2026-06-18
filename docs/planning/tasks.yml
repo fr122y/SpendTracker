@@ -430,13 +430,14 @@
     {
       "id": "T-010",
       "title": "Add analytics scopes for visible expenses",
-      "status": "review",
+      "status": "done",
       "phase": "Shared Budget Analytics",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-010-shared-budget-analytics-scopes",
       "pull_request": 22,
+      "merge_commit": "d2d2a2a",
       "detail": "Let analytics and spending charts switch between all visible, personal, and shared expense scopes.",
       "depends_on": [
         "T-006",
@@ -477,7 +478,7 @@
         "Focused selector and UI tests cover all three scopes and privacy boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Open PR, complete self-review, and merge after review readiness is clear."
+      "next_action": "No further action."
     },
     {
       "id": "T-011",
