@@ -7,6 +7,8 @@
   add-expense form, shared category submission, personal/shared journal scope
   filters, shared expense card metadata, focused tests, and slice README
   updates.
+- Merged PR #21 for `T-009` into `main` as `7374f89` and reconciled the task to
+  `done`.
 - Merged PR #20 into `main` as `b2c4df4`, completing the owner-approved
   project workflow refresh with engineering process docs, adoption audit,
   expanded PR template, Conventional Commit enforcement through Husky

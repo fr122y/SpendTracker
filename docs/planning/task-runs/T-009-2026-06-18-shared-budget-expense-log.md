@@ -8,6 +8,8 @@ Issue: #TBD
 
 PR: #21
 
+Merge: `7374f89`
+
 ## Summary
 
 Implemented shared budget expense entry and journal filtering while preserving
@@ -61,7 +63,8 @@ the single existing expense log.
 - Tracker consistency checked: yes, `python3 scripts/validate_task_tracker.py`
   passed.
 - Docs checked: slice README files and planning docs updated.
-- CI or PR status: PR #21 opened; local validation passed.
+- CI or PR status: PR #21 passed checks and merged to `main` with merge commit
+  `7374f89`.
 
 ## Follow-Ups
 
@@ -74,5 +77,4 @@ the single existing expense log.
 
 ## Registry Update Requested
 
-- Move `T-009` to `review` before PR. Mark `done` only after review, merge, and
-  post-merge reconciliation.
+- Mark `T-009` done after PR #21 merge and post-merge reconciliation.

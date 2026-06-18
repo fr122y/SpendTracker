@@ -311,13 +311,14 @@ Merge:
 
 ## T-009 - Add shared budget selection to expense entry and journal
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: high
 - Branch: `task/T-009-shared-budget-expense-log`
 - GitHub issue: none
-- PR: none
+- PR: #21
+- Merge commit: `7374f89`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

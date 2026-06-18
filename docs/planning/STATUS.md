@@ -4,12 +4,12 @@ Last updated: 2026-06-18
 
 ## Current Focus
 
-- `T-009` - Add shared budget selection to expense entry and journal is in
-  review.
+- `T-010` - Add analytics scopes for visible expenses.
 
 ## Active Branch
 
-- `task/T-009-shared-budget-expense-log`
+- None. Next implementation branch should be
+  `task/T-010-shared-budget-analytics-scopes`.
 
 ## Stable Branch
 
@@ -17,10 +17,10 @@ Last updated: 2026-06-18
 
 ## Next Action
 
-Run full validation, complete self-review, and open the `T-009` pull request.
+Plan or start `T-010` analytics scope switching for visible expenses.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-009` is the next shared budget UX task.
+`T-004` through `T-011`; `T-010` is the next shared budget UX task.
 
 ## Validation
 
@@ -56,3 +56,4 @@ Shared budget product discussion has been captured as phased backlog tasks
   `Vercel Preview Comments`.
 - Passed: `npm run validate` for `T-009` (63 suites, 792 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-009`.
+- PR #21 merged for `T-009` with merge commit `7374f89`.

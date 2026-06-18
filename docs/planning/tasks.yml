@@ -373,12 +373,14 @@
     {
       "id": "T-009",
       "title": "Add shared budget selection to expense entry and journal",
-      "status": "review",
+      "status": "done",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "high",
       "github_issue": null,
       "branch": "task/T-009-shared-budget-expense-log",
+      "pull_request": 21,
+      "merge_commit": "7374f89",
       "detail": "Keep one expense journal while allowing users to add and filter expenses by personal or shared budget scope.",
       "depends_on": [
         "T-005",
@@ -423,7 +425,7 @@
         "Focused tests cover scope selection, journal filters, shared visibility, personal privacy, and project regression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Run full validation, complete self-review, and open a pull request."
+      "next_action": "No further action."
     },
     {
       "id": "T-010",
