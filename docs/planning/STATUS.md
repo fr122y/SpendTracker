@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-06-16
+Last updated: 2026-06-18
 
 ## Current Focus
 
@@ -50,3 +50,7 @@ Shared budget product discussion has been captured as phased backlog tasks
 - PR #1 merged to `main` with merge commit `a255d91`.
 - GitHub issue #3 synced into local task tracker as `T-002`.
 - GitHub issue #5 captured into local task tracker as backlog task `T-003`.
+- PR #20 merged process refresh and Conventional Commit enforcement to `main`
+  with squash commit `b2c4df4`.
+- Passed for PR #20: `validate-task-tracker`, `commitlint`, `Vercel`, and
+  `Vercel Preview Comments`.

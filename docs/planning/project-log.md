@@ -1,5 +1,15 @@
 # Project Log
 
+## 2026-06-18
+
+- Merged PR #20 into `main` as `b2c4df4`, completing the owner-approved
+  project workflow refresh with engineering process docs, adoption audit,
+  expanded PR template, Conventional Commit enforcement through Husky
+  `commit-msg`, and GitHub Actions validation for PR commits and titles.
+- Deleted the obsolete `task/process-rules-refresh` branch after the squash
+  merge and reconciled planning docs under the direct docs reconciliation
+  exception.
+
 ## 2026-06-16
 
 - Adopted the refreshed project-task-tracking process rules under an
