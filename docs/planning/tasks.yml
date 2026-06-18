@@ -436,6 +436,7 @@
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-010-shared-budget-analytics-scopes",
+      "pull_request": 22,
       "detail": "Let analytics and spending charts switch between all visible, personal, and shared expense scopes.",
       "depends_on": [
         "T-006",

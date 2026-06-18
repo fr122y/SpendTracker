@@ -361,7 +361,7 @@ Task-run report:
 - Priority: medium
 - Branch: `task/T-010-shared-budget-analytics-scopes`
 - GitHub issue: none
-- PR: none
+- PR: #22
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

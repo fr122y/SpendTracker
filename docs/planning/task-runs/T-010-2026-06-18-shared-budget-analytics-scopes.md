@@ -6,7 +6,7 @@ Branch: `task/T-010-shared-budget-analytics-scopes`
 
 Issue: #TBD
 
-PR: TBD
+PR: #22
 
 ## Summary
 
@@ -59,7 +59,7 @@ widgets using shared finance selectors.
 - Regression risk checked: focused selector/widget tests plus full validation.
 - Tracker consistency checked: yes.
 - Docs checked: slice docs updated.
-- CI or PR status: PR not opened yet.
+- CI or PR status: PR #22 opened.
 
 ## Follow-Ups
 
@@ -71,4 +71,4 @@ widgets using shared finance selectors.
 
 ## Registry Update Requested
 
-- `T-010` is ready for PR creation and review.
+- `T-010` is ready for review in PR #22.

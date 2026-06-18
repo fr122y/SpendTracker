@@ -59,3 +59,4 @@ Shared budget product discussion has been captured as phased backlog tasks
 - Passed: focused Jest tests for `T-010` selectors, analysis, dynamics, and
   calendar scope filters.
 - Passed: `npm run validate` for `T-010` (63 suites, 802 tests).
+- PR #22 opened for `T-010`.
