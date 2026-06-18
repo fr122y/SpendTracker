@@ -24,6 +24,9 @@ Every important thought should end up in the right durable container:
 - `docs/planning/project-log.md` - chronological progress memory.
 - `docs/context/OPEN_QUESTIONS.md` - unsettled assumptions and questions.
 - `docs/decisions/` - accepted decisions.
+- `docs/engineering/` - workflow, pull request, review, adoption audit, and
+  platform rules.
+- `docs/planning/adoption-audits/` - target repository adoption facts.
 
 ## Startup Protocol
 
@@ -44,6 +47,11 @@ Do not scan every project document by default.
 
 Every executable task, subtask, follow-up, and meaningful pending item should
 be represented in the ledger before implementation starts.
+
+An owner-approved process exception may skip adding a new ledger task only when
+the human owner explicitly grants that exception for the exact change. The
+exception still needs a scoped branch, pull request, validation, and project
+memory updates unless the owner explicitly narrows those gates too.
 
 Tasks use these statuses:
 
@@ -66,6 +74,11 @@ task-run report are complete or any verification gaps are stated. A task can
 move to `done` only after review, merge state, and project-memory
 reconciliation are clear.
 
+First-time framework installation or substantial framework adaptation tasks
+must include an adoption audit report in `required_context`. If the report does
+not exist yet, create it from the structure in
+`docs/engineering/adoption-audit.md` before implementation starts.
+
 Run `python3 scripts/validate_task_tracker.py` after task tracker changes.
 
 ## Branch And PR Gates
@@ -75,6 +88,10 @@ Run `python3 scripts/validate_task_tracker.py` after task tracker changes.
   exception is approved.
 - If a scoped branch is pushed, create or update the PR before reporting review
   or merge readiness.
+- Pull request titles and squash commit titles must follow
+  `docs/engineering/change-request.md`.
+- For non-trivial work, run the self-review in
+  `docs/engineering/code-review.md` before reporting completion.
 - Do not leave meaningful edits in a dirty worktree unless the human owner asks
   for WIP.
 - After merge, delete or reconcile obsolete branches when safe.

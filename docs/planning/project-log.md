@@ -2,6 +2,15 @@
 
 ## 2026-06-16
 
+- Adopted the refreshed project-task-tracking process rules under an
+  owner-approved process exception without adding a new ledger task: added
+  engineering workflow docs, adoption audit, PR/squash title guidance,
+  self-review rules, and an expanded PR template while preserving the existing
+  GitHub PR flow, Compact Merge Flow, direct docs reconciliation exception, and
+  `github_issue` ledger fields.
+- Added technical Conventional Commit enforcement to the process refresh:
+  commitlint validates local commit messages through Husky `commit-msg`, and
+  GitHub Actions validates PR commit messages plus PR titles.
 - Started `T-012` to reduce token/time overhead in routine merge and tracker
   reconciliation while preserving scoped branches, PR history, and task
   tracking.
