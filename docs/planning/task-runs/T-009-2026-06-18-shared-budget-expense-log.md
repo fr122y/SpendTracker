@@ -6,7 +6,7 @@ Branch: `task/T-009-shared-budget-expense-log`
 
 Issue: #TBD
 
-PR: TBD
+PR: #21
 
 ## Summary
 
@@ -61,7 +61,7 @@ the single existing expense log.
 - Tracker consistency checked: yes, `python3 scripts/validate_task_tracker.py`
   passed.
 - Docs checked: slice README files and planning docs updated.
-- CI or PR status: PR not opened yet; local validation passed.
+- CI or PR status: PR #21 opened; local validation passed.
 
 ## Follow-Ups
 
