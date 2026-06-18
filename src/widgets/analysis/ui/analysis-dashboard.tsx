@@ -5,9 +5,13 @@ import { useState } from 'react'
 
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { getCategoryStats, type CategoryStat } from '@/shared/lib'
+import {
+  getCategoryStats,
+  type CategoryStat,
+  type ExpenseScope,
+} from '@/shared/lib'
 import { cn } from '@/shared/lib'
-import { EmptyState } from '@/shared/ui'
+import { Button, EmptyState } from '@/shared/ui'
 
 import { AnalysisSkeleton } from './analysis-skeleton'
 
@@ -29,9 +33,16 @@ const MONTH_NAMES = [
 interface CategoryBoxProps {
   stat: CategoryStat
   maxPercent: number
+  scope: ExpenseScope
 }
 
-function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
+const SCOPE_OPTIONS: Array<{ value: ExpenseScope; label: string }> = [
+  { value: 'all', label: 'Все' },
+  { value: 'personal', label: 'Личные' },
+  { value: 'shared', label: 'Общие' },
+]
+
+function CategoryBox({ stat, maxPercent, scope }: CategoryBoxProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
   // Calculate size based on percentage (min 60px/80px, max 120px/160px for mobile/desktop)
@@ -41,23 +52,35 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
   const opacity = Math.max(0.4, Math.min(1, 0.4 + sizeScale * 0.6))
   const personalShare =
     stat.value > 0 ? (stat.personalValue / stat.value) * 100 : 0
+  const sharedShare = stat.value > 0 ? (stat.sharedValue / stat.value) * 100 : 0
   const projectShare =
     stat.value > 0 ? (stat.projectValue / stat.value) * 100 : 0
 
-  const backgroundColor = (() => {
-    if (projectShare === 0) {
-      return '#10b981'
-    }
-    if (personalShare === 0) {
-      return '#0ea5e9'
-    }
-
-    return undefined
-  })()
+  const segments = [
+    { value: personalShare, color: '#10b981' },
+    { value: sharedShare, color: '#f59e0b' },
+    { value: projectShare, color: '#0ea5e9' },
+  ].filter((segment) => segment.value > 0)
+  const backgroundColor = segments.length === 1 ? segments[0].color : undefined
+  let offset = 0
   const backgroundImage =
-    projectShare > 0 && personalShare > 0
-      ? `linear-gradient(135deg, #10b981 0%, #10b981 ${personalShare}%, #0ea5e9 ${personalShare}%, #0ea5e9 100%)`
+    segments.length > 1
+      ? `linear-gradient(135deg, ${segments
+          .map((segment) => {
+            const start = offset
+            offset += segment.value
+            return `${segment.color} ${start}%, ${segment.color} ${offset}%`
+          })
+          .join(', ')})`
       : undefined
+  const fillMode =
+    segments.length > 1
+      ? 'mixed'
+      : sharedShare > 0
+        ? 'shared'
+        : projectShare > 0
+          ? 'project'
+          : 'personal'
 
   return (
     <div
@@ -70,13 +93,7 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
     >
       <div
         data-testid={`analysis-category-fill-${stat.name}`}
-        data-fill-mode={
-          projectShare > 0 && personalShare > 0
-            ? 'mixed'
-            : projectShare > 0
-              ? 'project'
-              : 'personal'
-        }
+        data-fill-mode={fillMode}
         className={cn(
           'flex cursor-default flex-col items-center justify-center rounded-lg transition-transform hover:scale-105',
           'h-20 w-20 sm:h-24 sm:w-24 md:h-auto md:w-auto'
@@ -111,18 +128,30 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
           >
             Всего: {stat.value.toLocaleString('ru-RU')} ₽
           </div>
-          <div
-            className="mt-1 text-emerald-400"
-            data-testid={`analysis-tooltip-personal-${stat.name}`}
-          >
-            Личные: {stat.personalValue.toLocaleString('ru-RU')} ₽
-          </div>
-          <div
-            className="text-sky-400"
-            data-testid={`analysis-tooltip-project-${stat.name}`}
-          >
-            Проекты: {stat.projectValue.toLocaleString('ru-RU')} ₽
-          </div>
+          {(scope === 'all' || scope === 'personal') && (
+            <div
+              className="mt-1 text-emerald-400"
+              data-testid={`analysis-tooltip-personal-${stat.name}`}
+            >
+              Личные: {stat.personalValue.toLocaleString('ru-RU')} ₽
+            </div>
+          )}
+          {(scope === 'all' || scope === 'shared') && (
+            <div
+              className="text-amber-400"
+              data-testid={`analysis-tooltip-shared-${stat.name}`}
+            >
+              Общие: {stat.sharedValue.toLocaleString('ru-RU')} ₽
+            </div>
+          )}
+          {(scope === 'all' || scope === 'personal') && (
+            <div
+              className="text-sky-400"
+              data-testid={`analysis-tooltip-project-${stat.name}`}
+            >
+              Проекты: {stat.projectValue.toLocaleString('ru-RU')} ₽
+            </div>
+          )}
           <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-zinc-800" />
         </div>
       )}
@@ -131,6 +160,7 @@ function CategoryBox({ stat, maxPercent }: CategoryBoxProps) {
 }
 
 export function AnalysisDashboard() {
+  const [scope, setScope] = useState<ExpenseScope>('all')
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const { expenses, isLoading } = useExpenseStore((state) => ({
     expenses: state.expenses,
@@ -141,11 +171,12 @@ export function AnalysisDashboard() {
     return <AnalysisSkeleton />
   }
 
-  const stats = getCategoryStats(expenses, selectedDate)
+  const stats = getCategoryStats(expenses, selectedDate, scope)
   const maxPercent =
     stats.length > 0 ? Math.max(...stats.map((s) => s.percent)) : 0
   const totalSpent = stats.reduce((sum, s) => sum + s.value, 0)
   const personalTotal = stats.reduce((sum, s) => sum + s.personalValue, 0)
+  const sharedTotal = stats.reduce((sum, s) => sum + s.sharedValue, 0)
   const projectTotal = stats.reduce((sum, s) => sum + s.projectValue, 0)
 
   const monthName = MONTH_NAMES[selectedDate.getMonth()]
@@ -160,18 +191,30 @@ export function AnalysisDashboard() {
             Анализ за {monthName} {year}
           </h2>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm">
-            <span
-              className="text-emerald-400"
-              data-testid="analysis-header-personal"
-            >
-              Личные: {personalTotal.toLocaleString('ru-RU')} ₽
-            </span>
-            <span
-              className="text-sky-400"
-              data-testid="analysis-header-project"
-            >
-              Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
-            </span>
+            {(scope === 'all' || scope === 'personal') && (
+              <span
+                className="text-emerald-400"
+                data-testid="analysis-header-personal"
+              >
+                Личные: {personalTotal.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
+            {(scope === 'all' || scope === 'shared') && (
+              <span
+                className="text-amber-400"
+                data-testid="analysis-header-shared"
+              >
+                Общие: {sharedTotal.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
+            {(scope === 'all' || scope === 'personal') && (
+              <span
+                className="text-sky-400"
+                data-testid="analysis-header-project"
+              >
+                Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
           </div>
         </div>
         <span
@@ -182,6 +225,20 @@ export function AnalysisDashboard() {
         </span>
       </div>
 
+      <div className="flex flex-wrap gap-2" aria-label="Фильтр аналитики">
+        {SCOPE_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            variant={scope === option.value ? 'primary' : 'ghost'}
+            onClick={() => setScope(option.value)}
+            className="min-h-9 px-3 py-1 text-xs"
+          >
+            {option.label}
+          </Button>
+        ))}
+      </div>
+
       {/* Category Grid */}
       {stats.length > 0 ? (
         <div
@@ -189,7 +246,12 @@ export function AnalysisDashboard() {
           data-testid="analysis-category-grid"
         >
           {stats.map((stat) => (
-            <CategoryBox key={stat.name} stat={stat} maxPercent={maxPercent} />
+            <CategoryBox
+              key={stat.name}
+              stat={stat}
+              maxPercent={maxPercent}
+              scope={scope}
+            />
           ))}
         </div>
       ) : (

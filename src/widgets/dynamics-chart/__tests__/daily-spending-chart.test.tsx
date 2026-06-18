@@ -32,13 +32,22 @@ jest.mock('@/shared/lib', () => {
   const actualLib = jest.requireActual('@/shared/lib')
   return {
     ...actualLib,
-    getMonthlyExpenses: (expenses: Expense[], date: Date) => {
+    getMonthlyExpenses: (
+      expenses: Expense[],
+      date: Date,
+      scope: 'all' | 'personal' | 'shared' = 'all'
+    ) => {
       const year = date.getFullYear()
       const month = date.getMonth()
       return expenses.filter((expense) => {
         const expenseDate = new Date(expense.date)
         return (
-          expenseDate.getFullYear() === year && expenseDate.getMonth() === month
+          (expense.operationType ?? 'expense') === 'expense' &&
+          (scope === 'all' ||
+            (scope === 'personal' && !expense.sharedBudgetId) ||
+            (scope === 'shared' && expense.sharedBudgetId)) &&
+          expenseDate.getFullYear() === year &&
+          expenseDate.getMonth() === month
         )
       })
     },
@@ -81,6 +90,7 @@ jest.mock('recharts', () => {
             amount: 5000,
             personalAmount: 3000,
             projectAmount: 2000,
+            sharedAmount: 0,
             date: new Date(2026, 0, 15),
           })
         }
@@ -191,6 +201,7 @@ describe('DailySpendingChart', () => {
       expect(screen.getByTestId('y-axis')).toBeInTheDocument()
       expect(screen.getByTestId('bar-personalAmount')).toBeInTheDocument()
       expect(screen.getByTestId('bar-projectAmount')).toBeInTheDocument()
+      expect(screen.getByTestId('bar-sharedAmount')).toBeInTheDocument()
     })
 
     it('renders sparse x-axis ticks for month edges and Mondays', () => {
@@ -363,6 +374,70 @@ describe('DailySpendingChart', () => {
       expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
         '3 500 ₽'
       )
+    })
+
+    it('switches monthly totals between all, personal, and shared scopes', () => {
+      mockExpenses.push(
+        {
+          id: 'personal',
+          description: 'Personal expense',
+          amount: 1000,
+          date: '2026-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: 'project',
+          description: 'Project expense',
+          amount: 2500,
+          date: '2026-01-20',
+          category: 'Проект',
+          emoji: '💼',
+          projectId: 'project-1',
+        },
+        {
+          id: 'shared',
+          description: 'Shared expense',
+          amount: 3000,
+          date: '2026-01-21',
+          category: 'Общее',
+          emoji: '🤝',
+          sharedBudgetId: 'shared-budget-1',
+        }
+      )
+
+      render(<DailySpendingChart />)
+
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '6 500 ₽'
+      )
+      expect(screen.getByTestId('dynamics-header-shared')).toHaveTextContent(
+        'Общие: 3 000 ₽'
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Личные' }))
+
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '3 500 ₽'
+      )
+      expect(
+        screen.queryByTestId('dynamics-header-shared')
+      ).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+      expect(screen.getByTestId('dynamics-header-total')).toHaveTextContent(
+        '3 000 ₽'
+      )
+      expect(screen.getByTestId('dynamics-header-shared')).toHaveTextContent(
+        'Общие: 3 000 ₽'
+      )
+      expect(
+        screen.queryByTestId('dynamics-header-personal')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('dynamics-header-project')
+      ).not.toBeInTheDocument()
     })
   })
 

@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -14,6 +15,8 @@ import {
 
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
+import { type ExpenseScope } from '@/shared/lib'
+import { Button } from '@/shared/ui'
 
 import { DailySpendingChartSkeleton } from './daily-spending-chart-skeleton'
 import {
@@ -37,12 +40,19 @@ const MONTH_NAMES = [
   'Декабрь',
 ]
 
+const SCOPE_OPTIONS: Array<{ value: ExpenseScope; label: string }> = [
+  { value: 'all', label: 'Все' },
+  { value: 'personal', label: 'Личные' },
+  { value: 'shared', label: 'Общие' },
+]
+
 interface CustomTooltipProps {
+  scope: ExpenseScope
   active?: boolean
   payload?: Array<{ value: number; dataKey: string; payload: DailyData }>
 }
 
-function CustomTooltip({ active, payload }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, scope }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     const data = payload[0].payload
     return (
@@ -53,12 +63,21 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
         <p className="font-semibold text-zinc-100">
           Всего: {data.amount.toLocaleString('ru-RU')} ₽
         </p>
-        <p className="text-emerald-400">
-          Личные: {data.personalAmount.toLocaleString('ru-RU')} ₽
-        </p>
-        <p className="text-sky-400">
-          Проекты: {data.projectAmount.toLocaleString('ru-RU')} ₽
-        </p>
+        {(scope === 'all' || scope === 'personal') && (
+          <p className="text-emerald-400">
+            Личные: {data.personalAmount.toLocaleString('ru-RU')} ₽
+          </p>
+        )}
+        {(scope === 'all' || scope === 'shared') && (
+          <p className="text-amber-400">
+            Общие: {data.sharedAmount.toLocaleString('ru-RU')} ₽
+          </p>
+        )}
+        {(scope === 'all' || scope === 'personal') && (
+          <p className="text-sky-400">
+            Проекты: {data.projectAmount.toLocaleString('ru-RU')} ₽
+          </p>
+        )}
       </div>
     )
   }
@@ -66,6 +85,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 }
 
 export function DailySpendingChart() {
+  const [scope, setScope] = useState<ExpenseScope>('all')
   const { selectedDate, setSelectedDate } = useSessionStore()
   const { expenses, isLoading } = useExpenseStore((state) => ({
     expenses: state.expenses,
@@ -76,7 +96,7 @@ export function DailySpendingChart() {
     return <DailySpendingChartSkeleton />
   }
 
-  const data = getDailySpendingData(expenses, selectedDate)
+  const data = getDailySpendingData(expenses, selectedDate, scope)
   const weekStartDays = data.filter(
     (entry) => entry.isWeekStart && entry.day !== 1
   )
@@ -95,6 +115,7 @@ export function DailySpendingChart() {
 
   const totalMonthly = data.reduce((sum, d) => sum + d.amount, 0)
   const personalTotal = data.reduce((sum, d) => sum + d.personalAmount, 0)
+  const sharedTotal = data.reduce((sum, d) => sum + d.sharedAmount, 0)
   const projectTotal = data.reduce((sum, d) => sum + d.projectAmount, 0)
 
   const handleBarClick = (data: DailyData) => {
@@ -110,18 +131,30 @@ export function DailySpendingChart() {
             Динамика за {monthName} {year}
           </h2>
           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs sm:text-sm">
-            <span
-              className="text-emerald-400"
-              data-testid="dynamics-header-personal"
-            >
-              Личные: {personalTotal.toLocaleString('ru-RU')} ₽
-            </span>
-            <span
-              className="text-sky-400"
-              data-testid="dynamics-header-project"
-            >
-              Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
-            </span>
+            {(scope === 'all' || scope === 'personal') && (
+              <span
+                className="text-emerald-400"
+                data-testid="dynamics-header-personal"
+              >
+                Личные: {personalTotal.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
+            {(scope === 'all' || scope === 'shared') && (
+              <span
+                className="text-amber-400"
+                data-testid="dynamics-header-shared"
+              >
+                Общие: {sharedTotal.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
+            {(scope === 'all' || scope === 'personal') && (
+              <span
+                className="text-sky-400"
+                data-testid="dynamics-header-project"
+              >
+                Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
+              </span>
+            )}
           </div>
         </div>
         <span
@@ -130,6 +163,20 @@ export function DailySpendingChart() {
         >
           {totalMonthly.toLocaleString('ru-RU')} ₽
         </span>
+      </div>
+
+      <div className="flex flex-wrap gap-2" aria-label="Фильтр динамики">
+        {SCOPE_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            variant={scope === option.value ? 'primary' : 'ghost'}
+            onClick={() => setScope(option.value)}
+            className="min-h-9 px-3 py-1 text-xs"
+          >
+            {option.label}
+          </Button>
+        ))}
       </div>
 
       {/* Chart */}
@@ -160,7 +207,7 @@ export function DailySpendingChart() {
                 width={35}
               />
               <Tooltip
-                content={<CustomTooltip />}
+                content={<CustomTooltip scope={scope} />}
                 cursor={{ fill: '#27272a' }}
               />
               {weekendSpans.map((span) => (
@@ -199,6 +246,24 @@ export function DailySpendingChart() {
                       key={`personal-cell-${index}`}
                       fill={isSelected ? '#34d399' : '#10b981'}
                       opacity={entry.personalAmount > 0 ? 1 : 0.2}
+                    />
+                  )
+                })}
+              </Bar>
+              <Bar
+                dataKey="sharedAmount"
+                stackId="daily-total"
+                radius={[4, 4, 0, 0]}
+                onClick={(data) => handleBarClick(data)}
+                style={{ cursor: 'pointer' }}
+              >
+                {data.map((entry, index) => {
+                  const isSelected = entry.day === selectedDay
+                  return (
+                    <Cell
+                      key={`shared-cell-${index}`}
+                      fill={isSelected ? '#fbbf24' : '#f59e0b'}
+                      opacity={entry.sharedAmount > 0 ? 1 : 0.2}
                     />
                   )
                 })}

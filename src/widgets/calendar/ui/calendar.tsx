@@ -6,11 +6,18 @@ import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
 import { MonthPickerModal } from '@/features/month-picker'
-import { cn } from '@/shared/lib'
+import { cn, getScopedOperations, type ExpenseScope } from '@/shared/lib'
+import { Button } from '@/shared/ui'
 
 import { CalendarSkeleton } from './calendar-skeleton'
 
 const WEEKDAY_HEADERS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
+
+const SCOPE_OPTIONS: Array<{ value: ExpenseScope; label: string }> = [
+  { value: 'all', label: 'Все' },
+  { value: 'personal', label: 'Личные' },
+  { value: 'shared', label: 'Общие' },
+]
 
 function formatDate(date: Date): string {
   const year = date.getFullYear()
@@ -139,6 +146,7 @@ const MONTH_NAMES = [
 ]
 
 export function Calendar() {
+  const [scope, setScope] = useState<ExpenseScope>('all')
   const { selectedDate, setSelectedDate, nextMonth, prevMonth } =
     useSessionStore()
   const { expenses, isLoading: isExpensesLoading } = useExpenseStore(
@@ -194,8 +202,9 @@ export function Calendar() {
     }
   }
 
-  // Create set of dates with operations
-  const expenseDates = new Set(expenses.map((e) => e.date))
+  const expenseDates = new Set(
+    getScopedOperations(expenses, scope).map((expense) => expense.date)
+  )
 
   const days = getCalendarDays(
     selectedDate,
@@ -257,6 +266,20 @@ export function Calendar() {
             />
           </svg>
         </button>
+      </div>
+
+      <div className="flex flex-wrap gap-2" aria-label="Фильтр календаря">
+        {SCOPE_OPTIONS.map((option) => (
+          <Button
+            key={option.value}
+            type="button"
+            variant={scope === option.value ? 'primary' : 'ghost'}
+            onClick={() => setScope(option.value)}
+            className="min-h-9 px-3 py-1 text-xs"
+          >
+            {option.label}
+          </Button>
+        ))}
       </div>
 
       {/* Weekday Headers */}

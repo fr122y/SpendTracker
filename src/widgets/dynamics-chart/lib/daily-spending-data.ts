@@ -1,4 +1,4 @@
-import { getMonthlyExpenses } from '@/shared/lib'
+import { getMonthlyExpenses, type ExpenseScope } from '@/shared/lib'
 
 import type { Expense } from '@/shared/types'
 
@@ -8,6 +8,7 @@ export interface DailyData {
   day: number
   amount: number
   personalAmount: number
+  sharedAmount: number
   projectAmount: number
   date: Date
   weekdayLabel: string
@@ -31,17 +32,23 @@ function createWeekendSpan(startDay: number, endDay: number): WeekendSpan {
 
 export function getDailySpendingData(
   expenses: Expense[],
-  selectedDate: Date
+  selectedDate: Date,
+  scope: ExpenseScope = 'all'
 ): DailyData[] {
   const year = selectedDate.getFullYear()
   const month = selectedDate.getMonth()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
 
-  const monthlyExpenses = getMonthlyExpenses(expenses, selectedDate)
+  const monthlyExpenses = getMonthlyExpenses(expenses, selectedDate, scope)
 
   const dailyMap = new Map<
     number,
-    { amount: number; personalAmount: number; projectAmount: number }
+    {
+      amount: number
+      personalAmount: number
+      sharedAmount: number
+      projectAmount: number
+    }
   >()
   for (const expense of monthlyExpenses) {
     const expenseDate = new Date(expense.date)
@@ -49,11 +56,14 @@ export function getDailySpendingData(
     const current = dailyMap.get(day) ?? {
       amount: 0,
       personalAmount: 0,
+      sharedAmount: 0,
       projectAmount: 0,
     }
 
     current.amount += expense.amount
-    if (expense.projectId) {
+    if (expense.sharedBudgetId) {
+      current.sharedAmount += expense.amount
+    } else if (expense.projectId) {
       current.projectAmount += expense.amount
     } else {
       current.personalAmount += expense.amount
@@ -71,6 +81,7 @@ export function getDailySpendingData(
       day,
       amount: dailyMap.get(day)?.amount || 0,
       personalAmount: dailyMap.get(day)?.personalAmount || 0,
+      sharedAmount: dailyMap.get(day)?.sharedAmount || 0,
       projectAmount: dailyMap.get(day)?.projectAmount || 0,
       date,
       weekdayLabel: WEEKDAY_LABELS[weekday],

@@ -1,7 +1,7 @@
 # Dynamics Chart Widget
 
 Visualizes daily spending trends for the current month with an interactive
-stacked bar chart and weekly reading aids.
+stacked bar chart, visible-expense scope switching, and weekly reading aids.
 
 ## Public API (`index.ts`)
 
@@ -11,6 +11,7 @@ stacked bar chart and weekly reading aids.
 
 - `useSessionStore`: selectedDate for month scope and active-day highlighting
 - `useExpenseStore`: expenses for aggregation
+- Local scope state: all visible, personal, or shared expenses
 - Local `lib/daily-spending-data`: prepares daily chart data, weekday labels for
   tooltips, week-start markers, and weekend spans
 
@@ -22,7 +23,8 @@ stacked bar chart and weekly reading aids.
 - Highlighted bar for selected date
 - Click on bar to select that date
 - Custom tooltip with weekday and Russian formatting
-- Monthly personal, project, and total amounts in header
+- Local `Все` / `Личные` / `Общие` expense scope filter
+- Monthly personal, shared, project, and total amounts in header
 
 ## Dependencies
 

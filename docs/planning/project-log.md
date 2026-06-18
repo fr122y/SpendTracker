@@ -2,6 +2,10 @@
 
 ## 2026-06-18
 
+- Implemented `T-010` shared budget analytics scopes on
+  `task/T-010-shared-budget-analytics-scopes`: shared scope selectors, analysis
+  scope filter, dynamics chart scope filter, calendar marker scope filter,
+  focused tests, slice README updates, and full `npm run validate`.
 - Implemented `T-009` shared budget expense-log UX on
   `task/T-009-shared-budget-expense-log`: shared expense selection in the
   add-expense form, shared category submission, personal/shared journal scope

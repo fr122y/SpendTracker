@@ -1,6 +1,7 @@
 # Analysis Widget
 
-Provides spending analysis with category breakdown for the current view month.
+Provides spending analysis with category breakdown for the current view month
+and visible-expense scope switching.
 
 ## Public API (`index.ts`)
 
@@ -9,13 +10,15 @@ Provides spending analysis with category breakdown for the current view month.
 ## State & Data
 
 - `useSessionStore`: selectedDate as the source month for analysis
-- `useExpenses`: expenses list for aggregation
+- `useExpenseStore`: visible expenses list for aggregation
+- Local scope state: all visible, personal, or shared expenses
 
 ## Features
 
 - Header with month name and total spent
+- Local `Все` / `Личные` / `Общие` expense scope filter
 - Visual category boxes with size/opacity scaling
-- Hover tooltip showing exact amount
+- Hover tooltip showing exact personal, shared, project, and total amounts
 - Empty state when no data
 
 ## Dependencies

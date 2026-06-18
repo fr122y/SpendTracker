@@ -3,6 +3,8 @@ import {
   getDailyExpenses,
   getDailyOperations,
   getDailyExpenseTotal,
+  getScopedExpenses,
+  getScopedOperations,
   getCategoryStats,
   getPersonalExpenses,
   getProjectExpenses,
@@ -142,6 +144,55 @@ describe('daily operation selectors', () => {
   })
 })
 
+describe('expense scope selectors', () => {
+  const scopedExpenses: Expense[] = [
+    ...mockExpenses,
+    {
+      id: 'shared-expense',
+      description: 'Общие продукты',
+      amount: 400,
+      date: '2024-01-16',
+      category: 'Продукты',
+      emoji: '🛒',
+      sharedBudgetId: 'shared-budget-1',
+    },
+    {
+      id: 'shared-operation',
+      description: 'Общая операция',
+      amount: 100,
+      date: '2024-01-16',
+      category: 'Общее',
+      emoji: '🤝',
+      sharedBudgetId: 'shared-budget-1',
+      operationType: 'project_withdrawal',
+    },
+  ]
+
+  it('returns all visible real expenses for all scope', () => {
+    expect(
+      getScopedExpenses(scopedExpenses, 'all').map((item) => item.id)
+    ).toEqual(['1', '2', '3', '4', '5', '6', 'shared-expense'])
+  })
+
+  it('keeps project expenses and excludes shared expenses for personal scope', () => {
+    expect(
+      getScopedExpenses(scopedExpenses, 'personal').map((item) => item.id)
+    ).toEqual(['1', '2', '3', '4', '5', '6'])
+  })
+
+  it('returns only shared real expenses for shared scope', () => {
+    expect(
+      getScopedExpenses(scopedExpenses, 'shared').map((item) => item.id)
+    ).toEqual(['shared-expense'])
+  })
+
+  it('filters operations by shared scope without dropping movement operations', () => {
+    expect(
+      getScopedOperations(scopedExpenses, 'shared').map((item) => item.id)
+    ).toEqual(['shared-expense', 'shared-operation'])
+  })
+})
+
 describe('getCategoryStats', () => {
   it('should return category statistics for the month sorted by value', () => {
     const date = new Date('2024-01-15')
@@ -168,6 +219,119 @@ describe('getCategoryStats', () => {
       value: 700,
       personalValue: 0,
       projectValue: 700,
+    })
+  })
+
+  it('should split personal, shared, and project values inside category stats', () => {
+    const date = new Date('2024-01-15')
+    const result = getCategoryStats(
+      [
+        {
+          id: 'personal-food',
+          description: 'Личные продукты',
+          amount: 100,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: 'shared-food',
+          description: 'Общие продукты',
+          amount: 200,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-budget-1',
+        },
+        {
+          id: 'project-food',
+          description: 'Проектные продукты',
+          amount: 300,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+          projectId: 'project-1',
+        },
+      ],
+      date
+    )
+
+    expect(result).toEqual([
+      {
+        name: 'Продукты',
+        value: 600,
+        personalValue: 100,
+        sharedValue: 200,
+        projectValue: 300,
+        emoji: '🛒',
+        percent: 100,
+      },
+    ])
+  })
+
+  it('should filter category stats by personal scope', () => {
+    const date = new Date('2024-01-15')
+    const result = getCategoryStats(
+      [
+        {
+          id: 'personal-food',
+          description: 'Личные продукты',
+          amount: 100,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: 'shared-food',
+          description: 'Общие продукты',
+          amount: 200,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-budget-1',
+        },
+      ],
+      date,
+      'personal'
+    )
+
+    expect(result[0]).toMatchObject({
+      value: 100,
+      personalValue: 100,
+      sharedValue: 0,
+    })
+  })
+
+  it('should filter category stats by shared scope', () => {
+    const date = new Date('2024-01-15')
+    const result = getCategoryStats(
+      [
+        {
+          id: 'personal-food',
+          description: 'Личные продукты',
+          amount: 100,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: 'shared-food',
+          description: 'Общие продукты',
+          amount: 200,
+          date: '2024-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-budget-1',
+        },
+      ],
+      date,
+      'shared'
+    )
+
+    expect(result[0]).toMatchObject({
+      value: 200,
+      personalValue: 0,
+      sharedValue: 200,
     })
   })
 
