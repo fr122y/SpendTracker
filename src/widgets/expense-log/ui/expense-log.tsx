@@ -33,9 +33,12 @@ function formatDateRussian(date: Date): string {
 }
 
 export function ExpenseLog() {
-  const [filter, setFilter] = useState<
+  const [operationFilter, setOperationFilter] = useState<
     'all' | 'expenses' | 'project' | 'movement'
   >('all')
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'personal' | 'shared'>(
+    'all'
+  )
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const { expenses, isLoading, deleteExpense, updateExpense } = useExpenseStore(
     (state) => ({
@@ -52,13 +55,20 @@ export function ExpenseLog() {
 
   const dailyOperations = getDailyOperations(expenses, selectedDate)
   const filteredOperations = dailyOperations.filter((expense) => {
-    if (filter === 'expenses') {
+    if (scopeFilter === 'personal' && expense.sharedBudgetId) {
+      return false
+    }
+    if (scopeFilter === 'shared' && !expense.sharedBudgetId) {
+      return false
+    }
+
+    if (operationFilter === 'expenses') {
       return (expense.operationType ?? 'expense') === 'expense'
     }
-    if (filter === 'project') {
+    if (operationFilter === 'project') {
       return Boolean(expense.projectId)
     }
-    if (filter === 'movement') {
+    if (operationFilter === 'movement') {
       return (expense.operationType ?? 'expense') !== 'expense'
     }
     return true
@@ -83,7 +93,27 @@ export function ExpenseLog() {
       {/* Expense Form */}
       <ExpenseForm />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2" aria-label="Фильтр бюджета">
+        {(
+          [
+            ['all', 'Все'],
+            ['personal', 'Личные'],
+            ['shared', 'Общие'],
+          ] as const
+        ).map(([value, label]) => (
+          <Button
+            key={value}
+            type="button"
+            variant={scopeFilter === value ? 'primary' : 'ghost'}
+            onClick={() => setScopeFilter(value)}
+            className="min-h-9 px-3 py-1 text-xs"
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2" aria-label="Фильтр операций">
         {(
           [
             ['all', 'Все'],
@@ -95,8 +125,8 @@ export function ExpenseLog() {
           <Button
             key={value}
             type="button"
-            variant={filter === value ? 'primary' : 'ghost'}
-            onClick={() => setFilter(value)}
+            variant={operationFilter === value ? 'primary' : 'ghost'}
+            onClick={() => setOperationFilter(value)}
             className="min-h-9 px-3 py-1 text-xs"
           >
             {label}

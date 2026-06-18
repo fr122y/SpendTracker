@@ -10,7 +10,9 @@ real expenses, project withdrawals, or project returns.
 - `useAddExpense`: Mutation hook for creating a new expense
 - `useDeleteExpense`: Mutation hook for deleting an expense by ID
 - `useUpdateExpense`: Mutation hook for partial expense updates
-- `ExpenseCard`: Presentational component displaying a single operation with optional date, type badge, and inline amount editing for real expenses
+- `ExpenseCard`: Presentational component displaying a single operation with
+  optional date, type badge, shared budget metadata, and inline amount editing
+  for real expenses
 - `ExpenseList`: Component rendering a sorted list of operations with optional date display
 
 ## State & Data
@@ -24,6 +26,8 @@ real expenses, project withdrawals, or project returns.
   shared expenses from budgets where the current user is a member
 - **Scope rule:** Shared expenses cannot be linked to projects or project money
   operations
+- **Shared metadata:** Shared expense cards display the shared budget name and
+  author when server data includes them
 
 ## Dependencies
 

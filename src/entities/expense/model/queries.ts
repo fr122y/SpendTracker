@@ -135,6 +135,10 @@ export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
         category: expense.category,
         emoji: expense.emoji,
         projectId: expense.projectId,
+        sharedBudgetId: expense.sharedBudgetId,
+        sharedBudgetCategoryId: expense.sharedBudgetCategoryId,
+        sharedBudgetName: expense.sharedBudgetName,
+        authorName: expense.authorName,
         operationType: expense.operationType,
       })
     },

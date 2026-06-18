@@ -102,6 +102,45 @@ describe('expense optimistic mutations', () => {
     })
   })
 
+  it('keeps shared budget fields in optimistic expense', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+
+    queryClient.setQueryData(['expenses'], initialExpenses)
+
+    const { result } = renderHook(() => useAddExpense(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({
+        description: 'Общий ужин',
+        amount: 1600,
+        date: '2026-03-21',
+        category: 'Продукты',
+        emoji: '🧺',
+        sharedBudgetId: 'shared-1',
+        sharedBudgetCategoryId: 'category-1',
+        sharedBudgetName: 'Дом',
+      })
+    })
+
+    await waitFor(() => {
+      const optimistic = queryClient.getQueryData<Expense[]>(['expenses'])
+      expect(optimistic?.[1]).toEqual(
+        expect.objectContaining({
+          sharedBudgetId: 'shared-1',
+          sharedBudgetCategoryId: 'category-1',
+          sharedBudgetName: 'Дом',
+        })
+      )
+    })
+  })
+
   it('rolls back update on error and shows toast', async () => {
     shouldRejectUpdate = true
 

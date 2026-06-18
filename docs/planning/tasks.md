@@ -38,7 +38,7 @@ Task-run report:
 - Priority: high
 - Branch: `task/T-002-refresh-stale-tabs`
 - GitHub issue: #3
-- PR: none
+- PR: #21
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -311,7 +311,7 @@ Merge:
 
 ## T-009 - Add shared budget selection to expense entry and journal
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: high
@@ -347,6 +347,10 @@ Acceptance criteria:
 - Focused tests cover scope selection, journal filters, shared visibility,
   personal privacy, and project regression behavior.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-009-2026-06-18-shared-budget-expense-log.md`
 
 ## T-010 - Add analytics scopes for visible expenses
 

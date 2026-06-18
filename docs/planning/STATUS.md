@@ -4,12 +4,12 @@ Last updated: 2026-06-18
 
 ## Current Focus
 
-- `T-009` - Add shared budget selection to expense entry and journal.
+- `T-009` - Add shared budget selection to expense entry and journal is in
+  review.
 
 ## Active Branch
 
-- None. Next implementation branch should be
-  `task/T-009-expense-shared-budget-selection`.
+- `task/T-009-shared-budget-expense-log`
 
 ## Stable Branch
 
@@ -17,7 +17,7 @@ Last updated: 2026-06-18
 
 ## Next Action
 
-Plan or start `T-009` expense entry and journal shared budget selection.
+Run full validation, complete self-review, and open the `T-009` pull request.
 
 Shared budget product discussion has been captured as phased backlog tasks
 `T-004` through `T-011`; `T-009` is the next shared budget UX task.
@@ -54,3 +54,5 @@ Shared budget product discussion has been captured as phased backlog tasks
   with squash commit `b2c4df4`.
 - Passed for PR #20: `validate-task-tracker`, `commitlint`, `Vercel`, and
   `Vercel Preview Comments`.
+- Passed: `npm run validate` for `T-009` (63 suites, 792 tests).
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-009`.

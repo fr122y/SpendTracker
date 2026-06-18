@@ -373,7 +373,7 @@
     {
       "id": "T-009",
       "title": "Add shared budget selection to expense entry and journal",
-      "status": "captured",
+      "status": "review",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "high",
@@ -423,7 +423,7 @@
         "Focused tests cover scope selection, journal filters, shared visibility, personal privacy, and project regression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Draft issue and ready-check how scope filtering composes with existing project and movement filters."
+      "next_action": "Run full validation, complete self-review, and open a pull request."
     },
     {
       "id": "T-010",
