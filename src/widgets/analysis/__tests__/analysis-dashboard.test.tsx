@@ -65,7 +65,11 @@ jest.mock('@/entities/session', () => ({
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
   getCategoryStats: jest.fn(
-    (expenses: Expense[], date: Date): CategoryStat[] => {
+    (
+      expenses: Expense[],
+      date: Date,
+      scope: 'all' | 'personal' | 'shared' = 'all'
+    ): CategoryStat[] => {
       const year = date.getFullYear()
       const month = date.getMonth()
 
@@ -73,7 +77,12 @@ jest.mock('@/shared/lib', () => ({
       const monthlyExpenses = expenses.filter((expense) => {
         const expenseDate = new Date(expense.date)
         return (
-          expenseDate.getFullYear() === year && expenseDate.getMonth() === month
+          (expense.operationType ?? 'expense') === 'expense' &&
+          (scope === 'all' ||
+            (scope === 'personal' && !expense.sharedBudgetId) ||
+            (scope === 'shared' && expense.sharedBudgetId)) &&
+          expenseDate.getFullYear() === year &&
+          expenseDate.getMonth() === month
         )
       })
 
@@ -88,23 +97,29 @@ jest.mock('@/shared/lib', () => ({
         {
           value: number
           personalValue: number
+          sharedValue: number
           projectValue: number
           emoji: string
         }
       >()
       for (const expense of monthlyExpenses) {
         const existing = categoryMap.get(expense.category)
-        const personalValue = expense.projectId ? 0 : expense.amount
-        const projectValue = expense.projectId ? expense.amount : 0
+        const sharedValue = expense.sharedBudgetId ? expense.amount : 0
+        const projectValue =
+          !expense.sharedBudgetId && expense.projectId ? expense.amount : 0
+        const personalValue =
+          !expense.sharedBudgetId && !expense.projectId ? expense.amount : 0
 
         if (existing) {
           existing.value += expense.amount
           existing.personalValue += personalValue
+          existing.sharedValue += sharedValue
           existing.projectValue += projectValue
         } else {
           categoryMap.set(expense.category, {
             value: expense.amount,
             personalValue,
+            sharedValue,
             projectValue,
             emoji: expense.emoji,
           })
@@ -117,6 +132,7 @@ jest.mock('@/shared/lib', () => ({
           name,
           value: data.value,
           personalValue: data.personalValue,
+          sharedValue: data.sharedValue,
           projectValue: data.projectValue,
           emoji: data.emoji,
           percent: total > 0 ? (data.value / total) * 100 : 0,
@@ -240,6 +256,76 @@ describe('AnalysisDashboard', () => {
       expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
         /13 500 ₽/
       )
+    })
+
+    it('switches analysis totals between all, personal, and shared scopes', () => {
+      mockExpenses = [
+        {
+          id: 'personal',
+          description: 'Personal groceries',
+          amount: 1000,
+          date: '2026-01-15',
+          category: 'Продукты',
+          emoji: '🛒',
+        },
+        {
+          id: 'project',
+          description: 'Project groceries',
+          amount: 2500,
+          date: '2026-01-16',
+          category: 'Продукты',
+          emoji: '🛒',
+          projectId: 'project-1',
+        },
+        {
+          id: 'shared',
+          description: 'Shared groceries',
+          amount: 3000,
+          date: '2026-01-17',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-budget-1',
+        },
+      ]
+
+      render(<AnalysisDashboard />)
+
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /6 500 ₽/
+      )
+      expect(screen.getByTestId('analysis-header-shared')).toHaveTextContent(
+        /Общие: 3 000 ₽/
+      )
+      expect(
+        screen.getByTestId('analysis-category-fill-Продукты')
+      ).toHaveAttribute('data-fill-mode', 'mixed')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Личные' }))
+
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /3 500 ₽/
+      )
+      expect(
+        screen.queryByTestId('analysis-header-shared')
+      ).not.toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /3 000 ₽/
+      )
+      expect(screen.getByTestId('analysis-header-shared')).toHaveTextContent(
+        /Общие: 3 000 ₽/
+      )
+      expect(
+        screen.queryByTestId('analysis-header-personal')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('analysis-header-project')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByTestId('analysis-category-fill-Продукты')
+      ).toHaveAttribute('data-fill-mode', 'shared')
     })
 
     it('applies correct container styling', () => {

@@ -26,13 +26,15 @@ Finance selectors for data aggregation:
 
 ```typescript
 import {
+  getScopedExpenses,
   getMonthlyExpenses,
   getCategoryStats,
   getWeeklyBudgetCoverage,
 } from '@/shared/lib'
 
-const monthly = getMonthlyExpenses(expenses, new Date())
-const stats = getCategoryStats(expenses, new Date())
+const personalExpenses = getScopedExpenses(expenses, 'personal')
+const monthly = getMonthlyExpenses(expenses, new Date(), 'shared')
+const stats = getCategoryStats(expenses, new Date(), 'all')
 const weekly = getWeeklyBudgetCoverage(expenses, new Date(), 10000)
 ```
 

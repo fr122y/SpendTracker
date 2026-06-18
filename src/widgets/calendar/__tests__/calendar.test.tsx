@@ -12,6 +12,7 @@ const mockSetAdvanceDay = jest.fn()
 const mockSelectedDate = new Date(2026, 0, 22)
 let mockExpenseLoading = false
 let mockSettingsLoading = false
+let mockExpenses: Array<{ date: string; sharedBudgetId?: string }> = []
 
 jest.mock('@/entities/session', () => ({
   useSessionStore: () => ({
@@ -26,10 +27,10 @@ jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: [], isLoading: false }),
   useExpenseStore: (
     selector: (state: {
-      expenses: Array<{ date: string }>
+      expenses: Array<{ date: string; sharedBudgetId?: string }>
       isLoading: boolean
     }) => unknown
-  ) => selector({ expenses: [], isLoading: mockExpenseLoading }),
+  ) => selector({ expenses: mockExpenses, isLoading: mockExpenseLoading }),
 }))
 
 let mockSalaryDay = 10
@@ -60,6 +61,7 @@ describe('Calendar', () => {
     jest.clearAllMocks()
     mockSalaryDay = 10
     mockAdvanceDay = 25
+    mockExpenses = []
     mockExpenseLoading = false
     mockSettingsLoading = false
   })
@@ -96,6 +98,30 @@ describe('Calendar', () => {
       render(<Calendar />)
 
       expect(screen.getByText('Операция')).toBeInTheDocument()
+      expect(screen.getByText(/Зарплата:/)).toBeInTheDocument()
+      expect(screen.getByText(/Аванс:/)).toBeInTheDocument()
+    })
+
+    it('filters operation markers by all, personal, and shared scopes', () => {
+      mockExpenses = [
+        { date: '2026-01-15' },
+        { date: '2026-01-16', sharedBudgetId: 'shared-budget-1' },
+      ]
+
+      render(<Calendar />)
+
+      expect(screen.getByText('15').querySelector('span')).toBeInTheDocument()
+      expect(screen.getByText('16').querySelector('span')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Личные' }))
+
+      expect(screen.getByText('15').querySelector('span')).toBeInTheDocument()
+      expect(screen.getByText('16').querySelector('span')).toBeNull()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+      expect(screen.getByText('15').querySelector('span')).toBeNull()
+      expect(screen.getByText('16').querySelector('span')).toBeInTheDocument()
       expect(screen.getByText(/Зарплата:/)).toBeInTheDocument()
       expect(screen.getByText(/Аванс:/)).toBeInTheDocument()
     })

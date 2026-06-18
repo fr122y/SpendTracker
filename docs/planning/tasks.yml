@@ -430,7 +430,7 @@
     {
       "id": "T-010",
       "title": "Add analytics scopes for visible expenses",
-      "status": "captured",
+      "status": "review",
       "phase": "Shared Budget Analytics",
       "type": "feature",
       "priority": "medium",
@@ -476,7 +476,7 @@
         "Focused selector and UI tests cover all three scopes and privacy boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Draft issue and ready-check which chart/calendar widgets join the first analytics scope release."
+      "next_action": "Open PR, complete self-review, and merge after review readiness is clear."
     },
     {
       "id": "T-011",

@@ -355,7 +355,7 @@ Task-run report:
 
 ## T-010 - Add analytics scopes for visible expenses
 
-- Status: `captured`
+- Status: `review`
 - Phase: Shared Budget Analytics
 - Type: feature
 - Priority: medium
@@ -390,6 +390,10 @@ Acceptance criteria:
   captured as a follow-up.
 - Focused selector and UI tests cover all three scopes and privacy boundaries.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-010-2026-06-18-shared-budget-analytics-scopes.md`
 
 ## T-011 - Run end-to-end shared budget QA and tracker sync
 

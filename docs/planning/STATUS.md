@@ -8,8 +8,7 @@ Last updated: 2026-06-18
 
 ## Active Branch
 
-- None. Next implementation branch should be
-  `task/T-010-shared-budget-analytics-scopes`.
+- `task/T-010-shared-budget-analytics-scopes`
 
 ## Stable Branch
 
@@ -17,10 +16,10 @@ Last updated: 2026-06-18
 
 ## Next Action
 
-Plan or start `T-010` analytics scope switching for visible expenses.
+Open PR and complete self-review for `T-010` analytics scope switching.
 
 Shared budget product discussion has been captured as phased backlog tasks
-`T-004` through `T-011`; `T-010` is the next shared budget UX task.
+`T-004` through `T-011`; `T-010` is in review.
 
 ## Validation
 
@@ -57,3 +56,6 @@ Shared budget product discussion has been captured as phased backlog tasks
 - Passed: `npm run validate` for `T-009` (63 suites, 792 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-009`.
 - PR #21 merged for `T-009` with merge commit `7374f89`.
+- Passed: focused Jest tests for `T-010` selectors, analysis, dynamics, and
+  calendar scope filters.
+- Passed: `npm run validate` for `T-010` (63 suites, 802 tests).

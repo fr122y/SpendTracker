@@ -4,10 +4,13 @@ export interface CategoryStat {
   name: string
   value: number
   personalValue: number
+  sharedValue: number
   projectValue: number
   emoji: string
   percent: number
 }
+
+export type ExpenseScope = 'all' | 'personal' | 'shared'
 
 export interface WeeklyStat {
   spent: number
@@ -52,6 +55,34 @@ function isProjectWithdrawal(expense: Expense): boolean {
 
 function isProjectReturn(expense: Expense): boolean {
   return expense.operationType === 'project_return'
+}
+
+function matchesExpenseScope(expense: Expense, scope: ExpenseScope): boolean {
+  if (scope === 'personal') {
+    return !expense.sharedBudgetId
+  }
+
+  if (scope === 'shared') {
+    return Boolean(expense.sharedBudgetId)
+  }
+
+  return true
+}
+
+export function getScopedOperations(
+  expenses: Expense[],
+  scope: ExpenseScope = 'all'
+): Expense[] {
+  return expenses.filter((expense) => matchesExpenseScope(expense, scope))
+}
+
+export function getScopedExpenses(
+  expenses: Expense[],
+  scope: ExpenseScope = 'all'
+): Expense[] {
+  return expenses.filter(
+    (expense) => isExpense(expense) && matchesExpenseScope(expense, scope)
+  )
 }
 
 /**
@@ -109,16 +140,18 @@ export function getProjectCashOnHand(
 /**
  * Returns expenses for the specified month
  */
-export function getMonthlyExpenses(expenses: Expense[], date: Date): Expense[] {
+export function getMonthlyExpenses(
+  expenses: Expense[],
+  date: Date,
+  scope: ExpenseScope = 'all'
+): Expense[] {
   const year = date.getFullYear()
   const month = date.getMonth()
 
-  return expenses.filter((expense) => {
+  return getScopedExpenses(expenses, scope).filter((expense) => {
     const expenseDate = new Date(expense.date)
     return (
-      isExpense(expense) &&
-      expenseDate.getFullYear() === year &&
-      expenseDate.getMonth() === month
+      expenseDate.getFullYear() === year && expenseDate.getMonth() === month
     )
   })
 }
@@ -126,20 +159,34 @@ export function getMonthlyExpenses(expenses: Expense[], date: Date): Expense[] {
 /**
  * Returns expenses for the specified date
  */
-export function getDailyExpenses(expenses: Expense[], date: Date): Expense[] {
+export function getDailyExpenses(
+  expenses: Expense[],
+  date: Date,
+  scope: ExpenseScope = 'all'
+): Expense[] {
   const dateStr = formatDate(date)
-  return expenses.filter(
-    (expense) => isExpense(expense) && expense.date === dateStr
+  return getScopedExpenses(expenses, scope).filter(
+    (expense) => expense.date === dateStr
   )
 }
 
-export function getDailyOperations(expenses: Expense[], date: Date): Expense[] {
+export function getDailyOperations(
+  expenses: Expense[],
+  date: Date,
+  scope: ExpenseScope = 'all'
+): Expense[] {
   const dateStr = formatDate(date)
-  return expenses.filter((expense) => expense.date === dateStr)
+  return getScopedOperations(expenses, scope).filter(
+    (expense) => expense.date === dateStr
+  )
 }
 
-export function getDailyExpenseTotal(expenses: Expense[], date: Date): number {
-  return getDailyExpenses(expenses, date).reduce(
+export function getDailyExpenseTotal(
+  expenses: Expense[],
+  date: Date,
+  scope: ExpenseScope = 'all'
+): number {
+  return getDailyExpenses(expenses, date, scope).reduce(
     (sum, expense) => sum + expense.amount,
     0
   )
@@ -150,9 +197,10 @@ export function getDailyExpenseTotal(expenses: Expense[], date: Date): number {
  */
 export function getCategoryStats(
   expenses: Expense[],
-  date: Date
+  date: Date,
+  scope: ExpenseScope = 'all'
 ): CategoryStat[] {
-  const monthlyExpenses = getMonthlyExpenses(expenses, date)
+  const monthlyExpenses = getMonthlyExpenses(expenses, date, scope)
 
   // Group by category
   const categoryMap = new Map<
@@ -160,6 +208,7 @@ export function getCategoryStats(
     {
       value: number
       personalValue: number
+      sharedValue: number
       projectValue: number
       emoji: string
     }
@@ -167,17 +216,22 @@ export function getCategoryStats(
 
   for (const expense of monthlyExpenses) {
     const existing = categoryMap.get(expense.category)
-    const personalValue = expense.projectId ? 0 : expense.amount
-    const projectValue = expense.projectId ? expense.amount : 0
+    const sharedValue = expense.sharedBudgetId ? expense.amount : 0
+    const projectValue =
+      !expense.sharedBudgetId && expense.projectId ? expense.amount : 0
+    const personalValue =
+      !expense.sharedBudgetId && !expense.projectId ? expense.amount : 0
 
     if (existing) {
       existing.value += expense.amount
       existing.personalValue += personalValue
+      existing.sharedValue += sharedValue
       existing.projectValue += projectValue
     } else {
       categoryMap.set(expense.category, {
         value: expense.amount,
         personalValue,
+        sharedValue,
         projectValue,
         emoji: expense.emoji,
       })
@@ -196,6 +250,7 @@ export function getCategoryStats(
       name,
       value: data.value,
       personalValue: data.personalValue,
+      sharedValue: data.sharedValue,
       projectValue: data.projectValue,
       emoji: data.emoji,
       percent: total > 0 ? (data.value / total) * 100 : 0,
