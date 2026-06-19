@@ -1,22 +1,26 @@
 import Fuse from 'fuse.js'
 
-import type { KeywordMapping } from '@/shared/types'
+import type { KeywordMapping, SharedKeywordMapping } from '@/shared/types'
 import type { IFuseOptions } from 'fuse.js'
 
-export type MatchResult = ({ found: true } & KeywordMapping) | { found: false }
+type MatchableKeywordMapping = KeywordMapping | SharedKeywordMapping
+
+export type MatchResult =
+  | ({ found: true } & MatchableKeywordMapping)
+  | { found: false }
 
 const FUSE_OPTIONS = {
   keys: ['keyword'],
   threshold: 0.4,
   includeScore: true,
   minMatchCharLength: 2,
-} satisfies IFuseOptions<KeywordMapping>
+} satisfies IFuseOptions<MatchableKeywordMapping>
 
 function normalizeDescription(description: string): string {
   return description.trim().toLowerCase()
 }
 
-export function createMatcher(mappings: KeywordMapping[]) {
+export function createMatcher(mappings: MatchableKeywordMapping[]) {
   const fuse = new Fuse(mappings, FUSE_OPTIONS)
 
   return function match(description: string): MatchResult {

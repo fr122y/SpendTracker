@@ -2,6 +2,10 @@
 
 ## 2026-06-19
 
+- Implemented `T-013` shared expense autocategorization on
+  `task/T-013-shared-expense-autocategorization`: shared budget keyword mapping
+  schema, Server Actions, optimistic query hooks, shared expense suggestions,
+  manual choice learning, and focused tests.
 - Closed `T-011` shared budget release QA from manual owner verification:
   shared budget creation, invitation, shared expense usage, visibility, and
   analytics behavior are broadly working in real use.

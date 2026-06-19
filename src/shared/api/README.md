@@ -8,6 +8,10 @@ Server Actions and shared query infrastructure for the application.
 - `getKeywordMappings()`: get user keyword mappings joined with category metadata
 - `saveKeywordMapping(keyword, categoryId)`: upsert keyword mapping for user
 - `deleteKeywordMapping(id)`: delete mapping
+- `getSharedKeywordMappings(sharedBudgetId)`: get shared budget keyword
+  mappings joined with shared category metadata
+- `saveSharedKeywordMapping(sharedBudgetId, keyword, categoryId)`: upsert a
+  shared budget keyword mapping
 - `getSettings()`: get user settings with effective weekly limit history
 - `updateSettings(data)`: update general user settings
 - `setWeeklyLimitForWeek(effectiveWeekStart, amount)`: upsert a personal
@@ -35,6 +39,8 @@ Server Actions and shared query infrastructure for the application.
 - No API Routes - Server Actions only
 - Credentials auth uses `bcryptjs` hashing and shared auth seeding helper
 - Keyword mappings are stored in DB and consumed client-side by Fuse.js matcher
+- Shared keyword mappings are scoped to a shared budget and can only target
+  active categories from that same shared budget
 - Expense reads return the current user's private expenses plus shared-budget
   expenses from budgets where the current user is a member
 - Shared expenses cannot be linked to project operations; project money remains

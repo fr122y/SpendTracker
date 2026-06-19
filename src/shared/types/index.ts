@@ -135,3 +135,11 @@ export interface KeywordMapping {
   categoryName: string
   categoryEmoji: string
 }
+
+export interface SharedKeywordMapping {
+  id: string
+  keyword: string
+  categoryId: string
+  categoryName: string
+  categoryEmoji: string
+}

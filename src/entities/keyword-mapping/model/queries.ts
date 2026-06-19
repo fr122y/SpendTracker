@@ -5,12 +5,19 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   deleteKeywordMapping as deleteKeywordMappingAction,
   getKeywordMappings,
+  getSharedKeywordMappings,
   queryKeys,
   saveKeywordMapping as saveKeywordMappingAction,
+  saveSharedKeywordMapping as saveSharedKeywordMappingAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
 
-import type { Category, KeywordMapping } from '@/shared/types'
+import type {
+  Category,
+  KeywordMapping,
+  SharedBudgetCategory,
+  SharedKeywordMapping,
+} from '@/shared/types'
 
 function normalizeKeyword(keyword: string): string {
   return keyword.trim().toLowerCase()
@@ -31,6 +38,17 @@ export function useKeywordMappings() {
   return useQuery({
     queryKey: queryKeys.keywordMappings.all,
     queryFn: getKeywordMappings,
+  })
+}
+
+export function useSharedKeywordMappings(sharedBudgetId: string | undefined) {
+  return useQuery({
+    enabled: Boolean(sharedBudgetId),
+    queryKey: queryKeys.sharedKeywordMappings.list(sharedBudgetId ?? ''),
+    queryFn: () => {
+      if (!sharedBudgetId) return Promise.resolve([])
+      return getSharedKeywordMappings(sharedBudgetId)
+    },
   })
 }
 
@@ -89,6 +107,69 @@ export function useSaveKeywordMapping() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.keywordMappings.all,
       })
+    },
+  })
+}
+
+function getSharedCategoryMeta(
+  categories: SharedBudgetCategory[] | undefined,
+  categoryId: string
+): { name: string; emoji: string } {
+  const category = (categories ?? []).find((item) => item.id === categoryId)
+  return {
+    name: category?.name ?? 'Другое',
+    emoji: category?.emoji ?? '📝',
+  }
+}
+
+export function useSaveSharedKeywordMapping(sharedBudgetId: string) {
+  const queryClient = useQueryClient()
+  const queryKey = queryKeys.sharedKeywordMappings.list(sharedBudgetId)
+
+  return useMutation({
+    mutationFn: ({
+      keyword,
+      categoryId,
+    }: {
+      keyword: string
+      categoryId: string
+    }) => saveSharedKeywordMappingAction(sharedBudgetId, keyword, categoryId),
+    onMutate: async ({ keyword, categoryId }) => {
+      const normalizedKeyword = normalizeKeyword(keyword)
+      if (!normalizedKeyword) {
+        return { previous: undefined as SharedKeywordMapping[] | undefined }
+      }
+
+      await queryClient.cancelQueries({ queryKey })
+      const previous =
+        queryClient.getQueryData<SharedKeywordMapping[]>(queryKey)
+      const categories = queryClient.getQueryData<SharedBudgetCategory[]>(
+        queryKeys.sharedBudgetCategories.list(sharedBudgetId)
+      )
+      const categoryMeta = getSharedCategoryMeta(categories, categoryId)
+      const optimisticRow: SharedKeywordMapping = {
+        id: `temp-${crypto.randomUUID()}`,
+        keyword: normalizedKeyword,
+        categoryId,
+        categoryName: categoryMeta.name,
+        categoryEmoji: categoryMeta.emoji,
+      }
+
+      queryClient.setQueryData(queryKey, (old: SharedKeywordMapping[] = []) => {
+        const withoutDuplicateKeyword = old.filter(
+          (item) => item.keyword !== normalizedKeyword
+        )
+        return [...withoutDuplicateKeyword, optimisticRow]
+      })
+
+      return { previous }
+    },
+    onError: (_error, _payload, context) => {
+      queryClient.setQueryData(queryKey, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }

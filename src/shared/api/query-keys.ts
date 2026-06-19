@@ -8,6 +8,10 @@ export const queryKeys = {
   keywordMappings: {
     all: ['keyword-mappings'] as const,
   },
+  sharedKeywordMappings: {
+    list: (sharedBudgetId: string) =>
+      ['shared-keyword-mappings', sharedBudgetId] as const,
+  },
   projects: {
     all: ['projects'] as const,
   },

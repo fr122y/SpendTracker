@@ -23,11 +23,11 @@ real expenses.
 1. User selects a scenario: personal expense, shared expense, project expense,
    project withdrawal, or project return
 2. Personal expense remains the default fast path
-3. Shared expense appears only when active shared budgets exist and requires a
-   shared budget category
+3. Shared expense appears only when active shared budgets exist and uses shared
+   budget keyword mappings to suggest a shared budget category
 4. Project scenarios require project selection
-5. Personal and project real expenses use keyword category suggestions/manual
-   override
+5. Personal, project, and shared real expenses use keyword category
+   suggestions/manual override
 6. Project withdrawals and returns use the technical `Проектные деньги` category
 
 ## Dependencies

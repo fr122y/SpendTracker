@@ -13,7 +13,10 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import { useCategorize } from '@/features/add-expense/model/use-categorize'
+import {
+  useCategorize,
+  useSharedCategorize,
+} from '@/features/add-expense/model/use-categorize'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
@@ -53,6 +56,8 @@ export function ExpenseForm() {
   const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useState('')
   const [showCategorySelect, setShowCategorySelect] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [hasManualCategoryOverride, setHasManualCategoryOverride] =
+    useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
@@ -79,6 +84,15 @@ export function ExpenseForm() {
   const { data: sharedCategories = [] } = useSharedBudgetCategories(
     isSharedExpense ? selectedSharedBudget?.id : undefined
   )
+  const {
+    categorize: categorizeShared,
+    saveMappingAndGetResult: saveSharedMappingAndGetResult,
+    mappingsLoaded: sharedMappingsLoaded,
+    isSavingMapping: isSavingSharedMapping,
+  } = useSharedCategorize(
+    isSharedExpense ? selectedSharedBudget?.id : undefined
+  )
+  const isSavingAnyMapping = isSavingMapping || isSavingSharedMapping
 
   useEffect(() => {
     if (selectedSharedBudgetId) {
@@ -124,12 +138,44 @@ export function ExpenseForm() {
     setSuggestedCategoryLabel('')
     setShowCategorySelect(false)
     setSelectedCategoryId('')
+    setHasManualCategoryOverride(false)
+  }
+
+  const resetCategorySelection = () => {
+    setSuggestedCategoryId(null)
+    setSuggestedCategoryLabel('')
+    setShowCategorySelect(false)
+    setSelectedCategoryId('')
   }
 
   const handleDescriptionBlur = () => {
-    if (isMovement || isSharedExpense || !mappingsLoaded) return
+    if (isMovement) return
     const normalizedDescription = description.trim()
     if (!normalizedDescription) return
+    if (hasManualCategoryOverride) return
+
+    if (isSharedExpense) {
+      if (!sharedMappingsLoaded) return
+
+      const result = categorizeShared(normalizedDescription)
+      if (result.found) {
+        setSuggestedCategoryId(result.categoryId)
+        setSuggestedCategoryLabel(
+          `${result.categoryEmoji} ${result.categoryName}`
+        )
+        setSelectedCategoryId(result.categoryId)
+        setShowCategorySelect(false)
+        return
+      }
+
+      setSuggestedCategoryId(null)
+      setSuggestedCategoryLabel('')
+      setSelectedCategoryId('')
+      setShowCategorySelect(true)
+      return
+    }
+
+    if (!mappingsLoaded) return
 
     const result = categorize(normalizedDescription)
     if (result.found) {
@@ -176,13 +222,59 @@ export function ExpenseForm() {
     }
 
     if (isSharedExpense) {
+      let resolvedSuggestedCategoryId = suggestedCategoryId
+      let resolvedShowCategorySelect = showCategorySelect
+
+      if (
+        !resolvedSuggestedCategoryId &&
+        sharedMappingsLoaded &&
+        !hasManualCategoryOverride
+      ) {
+        const result = categorizeShared(normalizedDescription)
+        if (result.found) {
+          resolvedSuggestedCategoryId = result.categoryId
+          setSuggestedCategoryId(result.categoryId)
+          setSuggestedCategoryLabel(
+            `${result.categoryEmoji} ${result.categoryName}`
+          )
+          setSelectedCategoryId(result.categoryId)
+          setShowCategorySelect(false)
+        } else {
+          resolvedShowCategorySelect = true
+          setShowCategorySelect(true)
+        }
+      }
+
+      if (
+        (resolvedShowCategorySelect || !resolvedSuggestedCategoryId) &&
+        !selectedCategoryId
+      ) {
+        setIsSubmitting(false)
+        return
+      }
+
+      const categoryId =
+        resolvedShowCategorySelect || !resolvedSuggestedCategoryId
+          ? selectedCategoryId
+          : resolvedSuggestedCategoryId
       const sharedCategory = sharedCategories.find(
-        (item) => item.id === selectedCategoryId
+        (item) => item.id === categoryId
       )
 
       if (!selectedSharedBudget || !sharedCategory) {
         setIsSubmitting(false)
         return
+      }
+
+      if (resolvedShowCategorySelect || !resolvedSuggestedCategoryId) {
+        try {
+          await saveSharedMappingAndGetResult(
+            normalizedDescription,
+            sharedCategory.id
+          )
+        } catch {
+          // Rollback toast is handled inside shared keyword mapping mutation.
+        }
       }
 
       addExpense({
@@ -289,10 +381,7 @@ export function ExpenseForm() {
           onChange={(e) => {
             const nextScenario = e.target.value as OperationScenario
             setScenario(nextScenario)
-            setShowCategorySelect(false)
-            setSuggestedCategoryId(null)
-            setSuggestedCategoryLabel('')
-            setSelectedCategoryId('')
+            resetCategorySelection()
 
             if (
               nextScenario === 'project_withdrawal' ||
@@ -305,7 +394,7 @@ export function ExpenseForm() {
               setSelectedSharedBudgetId(selectedSharedBudget?.id ?? '')
             }
           }}
-          disabled={isSubmitting || isSavingMapping}
+          disabled={isSubmitting || isSavingAnyMapping}
         />
       </div>
       {isSharedExpense && sharedBudgetOptions.length > 1 && (
@@ -315,10 +404,10 @@ export function ExpenseForm() {
           value={selectedSharedBudget?.id ?? ''}
           onChange={(e) => {
             setSelectedSharedBudgetId(e.target.value)
-            setSelectedCategoryId('')
+            resetCategorySelection()
           }}
           placeholder="Выберите общий бюджет"
-          disabled={isSubmitting || isSavingMapping}
+          disabled={isSubmitting || isSavingAnyMapping}
         />
       )}
       {needsProject && (
@@ -328,7 +417,7 @@ export function ExpenseForm() {
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
           placeholder="Выберите проект"
-          disabled={isSubmitting || isSavingMapping}
+          disabled={isSubmitting || isSavingAnyMapping}
         />
       )}
       <Input
@@ -337,7 +426,7 @@ export function ExpenseForm() {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         onBlur={handleDescriptionBlur}
-        disabled={isSubmitting || isSavingMapping}
+        disabled={isSubmitting || isSavingAnyMapping}
       />
       <MathInput
         placeholder="Сумма (можно ввести выражение, напр. 500+50)"
@@ -345,7 +434,7 @@ export function ExpenseForm() {
         value={amount}
         onValueChange={(value) => setAmount(value)}
         min={0}
-        disabled={isSubmitting || isSavingMapping}
+        disabled={isSubmitting || isSavingAnyMapping}
         className="text-base sm:text-sm"
       />
       {suggestedCategoryId && !showCategorySelect && !isMovement && (
@@ -356,20 +445,23 @@ export function ExpenseForm() {
             type="button"
             onClick={() => setShowCategorySelect(true)}
             className="ml-3 text-blue-400 underline underline-offset-2"
-            disabled={isSubmitting || isSavingMapping}
+            disabled={isSubmitting || isSavingAnyMapping}
           >
             Изменить
           </button>
         </div>
       )}
-      {isSharedExpense && (
+      {isSharedExpense && (!suggestedCategoryId || showCategorySelect) && (
         <Select
           aria-label="Категория общего бюджета"
           options={sharedCategoryOptions}
           value={selectedCategoryId}
-          onChange={(e) => setSelectedCategoryId(e.target.value)}
+          onChange={(e) => {
+            setSelectedCategoryId(e.target.value)
+            setHasManualCategoryOverride(true)
+          }}
           placeholder="Выберите категорию"
-          disabled={isSubmitting || isSavingMapping}
+          disabled={isSubmitting || isSavingAnyMapping}
         />
       )}
       {showCategorySelect && !isMovement && !isSharedExpense && (
@@ -377,15 +469,18 @@ export function ExpenseForm() {
           aria-label="Категория"
           options={personalCategoryOptions}
           value={selectedCategoryId}
-          onChange={(e) => setSelectedCategoryId(e.target.value)}
+          onChange={(e) => {
+            setSelectedCategoryId(e.target.value)
+            setHasManualCategoryOverride(true)
+          }}
           placeholder="Выберите категорию"
-          disabled={isSubmitting || isSavingMapping}
+          disabled={isSubmitting || isSavingAnyMapping}
         />
       )}
       <Button
         type="submit"
-        disabled={!isFormValid || isSubmitting || isSavingMapping}
-        isLoading={isSubmitting || isSavingMapping}
+        disabled={!isFormValid || isSubmitting || isSavingAnyMapping}
+        isLoading={isSubmitting || isSavingAnyMapping}
         className="w-full sm:w-auto"
       >
         Добавить
