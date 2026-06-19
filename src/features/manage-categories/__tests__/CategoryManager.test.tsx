@@ -10,7 +10,38 @@ const mockCategories = [
 
 const mockAddCategoryIfUnique = jest.fn()
 const mockDeleteCategory = jest.fn()
+const mockAddSharedCategory = jest.fn()
+const mockUpdateSharedCategory = jest.fn()
+const mockArchiveSharedCategory = jest.fn()
 let mockIsLoading = false
+let mockSharedBudgets = [
+  {
+    id: 'shared-1',
+    name: 'Дом',
+    createdByUserId: 'user-1',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    role: 'owner' as const,
+    isActive: true,
+    members: [],
+    weeklyLimits: [],
+  },
+]
+let mockSharedCategories = [
+  {
+    id: 'shared-category-1',
+    sharedBudgetId: 'shared-1',
+    name: 'Продукты',
+    emoji: '🛒',
+    createdAt: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    id: 'shared-category-2',
+    sharedBudgetId: 'shared-1',
+    name: 'Кафе',
+    emoji: '☕',
+    createdAt: '2026-01-02T00:00:00.000Z',
+  },
+]
 
 jest.mock('@/entities/category', () => ({
   useCategories: () => ({
@@ -22,6 +53,32 @@ jest.mock('@/entities/category', () => ({
     isPending: false,
   }),
   useDeleteCategory: () => ({ mutate: mockDeleteCategory, isPending: false }),
+  useSharedBudgetCategories: () => ({
+    data: mockSharedCategories,
+    isLoading: false,
+  }),
+  useAddSharedBudgetCategory: () => ({
+    mutate: mockAddSharedCategory,
+    isPending: false,
+  }),
+  useUpdateSharedBudgetCategory: () => ({
+    mutate: mockUpdateSharedCategory,
+    isPending: false,
+  }),
+  useArchiveSharedBudgetCategory: () => ({
+    mutate: mockArchiveSharedCategory,
+    isPending: false,
+  }),
+  isSharedCategoryNameDuplicate: (
+    name: string,
+    categories: typeof mockSharedCategories,
+    excludeId?: string
+  ) =>
+    categories.some(
+      (category) =>
+        category.id !== excludeId &&
+        category.name.toLowerCase() === name.trim().toLowerCase()
+    ),
   useCategoryStore: (
     selector: (state: {
       categories: typeof mockCategories
@@ -38,11 +95,48 @@ jest.mock('@/entities/category', () => ({
     }),
 }))
 
+jest.mock('@/entities/shared-budget', () => ({
+  getActiveSharedBudget: (budgets: typeof mockSharedBudgets) =>
+    budgets.find((budget) => budget.isActive),
+  useSharedBudgets: () => ({
+    data: mockSharedBudgets,
+    isLoading: false,
+  }),
+}))
+
 describe('CategoryManager', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockIsLoading = false
     mockAddCategoryIfUnique.mockReturnValue(true)
+    mockSharedBudgets = [
+      {
+        id: 'shared-1',
+        name: 'Дом',
+        createdByUserId: 'user-1',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        role: 'owner',
+        isActive: true,
+        members: [],
+        weeklyLimits: [],
+      },
+    ]
+    mockSharedCategories = [
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты',
+        emoji: '🛒',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'shared-category-2',
+        sharedBudgetId: 'shared-1',
+        name: 'Кафе',
+        emoji: '☕',
+        createdAt: '2026-01-02T00:00:00.000Z',
+      },
+    ]
   })
 
   it('renders skeleton while categories are loading', () => {
@@ -198,5 +292,82 @@ describe('CategoryManager', () => {
       name: /добавить категорию/i,
     })
     expect(addButton).toBeDisabled()
+  })
+
+  it('shows shared categories for the selected shared budget', () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+    expect(screen.getByLabelText('Общий бюджет')).toHaveValue('shared-1')
+    expect(screen.getByText('Кафе')).toBeInTheDocument()
+  })
+
+  it('adds a shared category', async () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+    fireEvent.change(screen.getByPlaceholderText(/название/i), {
+      target: { value: 'Аптека' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/эмодзи/i), {
+      target: { value: '💊' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
+
+    await waitFor(() => {
+      expect(mockAddSharedCategory).toHaveBeenCalledWith(
+        { name: 'Аптека', emoji: '💊' },
+        expect.any(Object)
+      )
+    })
+  })
+
+  it('edits a shared category', async () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+    fireEvent.click(screen.getAllByRole('button', { name: /изменить/i })[0])
+    fireEvent.change(screen.getByDisplayValue('Продукты'), {
+      target: { value: 'Супермаркет' },
+    })
+    fireEvent.change(screen.getByDisplayValue('🛒'), {
+      target: { value: '🛍️' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /сохранить/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateSharedCategory).toHaveBeenCalledWith(
+        {
+          id: 'shared-category-1',
+          name: 'Супермаркет',
+          emoji: '🛍️',
+        },
+        expect.any(Object)
+      )
+    })
+  })
+
+  it('archives a shared category after confirmation', () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+    fireEvent.click(screen.getAllByRole('button', { name: /архив/i })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Архивировать' }))
+
+    expect(mockArchiveSharedCategory).toHaveBeenCalledWith(
+      'shared-category-1',
+      expect.any(Object)
+    )
+  })
+
+  it('shows empty state when there are no shared budgets', () => {
+    mockSharedBudgets = []
+
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+    expect(screen.getByText('Нет общих бюджетов')).toBeInTheDocument()
   })
 })

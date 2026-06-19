@@ -6,6 +6,7 @@ jest.mock('drizzle-orm', () => ({
   and: jest.fn(() => ({})),
   eq: jest.fn(() => ({})),
   isNull: jest.fn(() => ({})),
+  ne: jest.fn(() => ({})),
 }))
 
 jest.mock('../shared-budget-actions', () => ({
@@ -20,7 +21,12 @@ jest.mock('@/shared/db', () => {
     updateWhere: jest.fn(),
   }
 
-  const db = {
+  const db: {
+    select: jest.Mock
+    insert: jest.Mock
+    update: jest.Mock
+    transaction: jest.Mock
+  } = {
     select: jest.fn(() => ({
       from: jest.fn(() => ({
         where: mocks.selectWhere,
@@ -32,13 +38,20 @@ jest.mock('@/shared/db', () => {
     update: jest.fn(() => ({
       set: mocks.updateSet,
     })),
+    transaction: jest.fn(),
   }
+  db.transaction.mockImplementation(async (callback) => callback(db))
 
   mocks.updateSet.mockReturnValue({ where: mocks.updateWhere })
 
   return {
     __mocks: mocks,
     db,
+    expenses: {
+      sharedBudgetCategoryId: 'expense.sharedBudgetCategoryId',
+      category: 'expense.category',
+      emoji: 'expense.emoji',
+    },
     sharedBudgetCategories: {
       id: 'sharedCategory.id',
       sharedBudgetId: 'sharedCategory.sharedBudgetId',
@@ -104,16 +117,18 @@ describe('shared-category-actions', () => {
   })
 
   it('adds a shared category for an active member', async () => {
-    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
-      {
-        id: 'shared-category-1',
-        sharedBudgetId: 'shared-1',
-        name: 'Аптека',
-        emoji: '💊',
-        archivedAt: null,
-        createdAt: new Date('2026-06-15T00:00:00.000Z'),
-      },
-    ])
+    dbModule.__mocks.selectWhere
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: 'shared-category-1',
+          sharedBudgetId: 'shared-1',
+          name: 'Аптека',
+          emoji: '💊',
+          archivedAt: null,
+          createdAt: new Date('2026-06-15T00:00:00.000Z'),
+        },
+      ])
 
     const result = await addSharedBudgetCategory('shared-1', {
       name: '  Аптека  ',
@@ -138,16 +153,18 @@ describe('shared-category-actions', () => {
   })
 
   it('updates a non-archived shared category for an active member', async () => {
-    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
-      {
-        id: 'shared-category-1',
-        sharedBudgetId: 'shared-1',
-        name: 'Продукты',
-        emoji: '🛒',
-        archivedAt: null,
-        createdAt: new Date('2026-06-15T00:00:00.000Z'),
-      },
-    ])
+    dbModule.__mocks.selectWhere
+      .mockResolvedValueOnce([
+        {
+          id: 'shared-category-1',
+          sharedBudgetId: 'shared-1',
+          name: 'Продукты',
+          emoji: '🛒',
+          archivedAt: null,
+          createdAt: new Date('2026-06-15T00:00:00.000Z'),
+        },
+      ])
+      .mockResolvedValueOnce([])
 
     await updateSharedBudgetCategory('shared-category-1', {
       name: 'Супермаркет',
@@ -159,6 +176,25 @@ describe('shared-category-actions', () => {
       name: 'Супермаркет',
       emoji: '🛍️',
     })
+    expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({
+      category: 'Супермаркет',
+      emoji: '🛍️',
+    })
+  })
+
+  it('rejects duplicate active shared category names', async () => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
+      { id: 'shared-category-existing' },
+    ])
+
+    await expect(
+      addSharedBudgetCategory('shared-1', {
+        name: 'Продукты',
+        emoji: '🛒',
+      })
+    ).rejects.toThrow('Shared category with this name already exists')
+
+    expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
   })
 
   it('archives instead of deleting a shared category', async () => {

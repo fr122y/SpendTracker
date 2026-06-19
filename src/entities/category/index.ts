@@ -1,6 +1,7 @@
 // Category entity - Public API
 export {
   isCategoryNameDuplicate,
+  isSharedCategoryNameDuplicate,
   useAddCategory,
   useAddSharedBudgetCategory,
   useArchiveSharedBudgetCategory,
