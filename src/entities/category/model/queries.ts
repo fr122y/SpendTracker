@@ -123,6 +123,9 @@ export function useAddSharedBudgetCategory(sharedBudgetId: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sharedKeywordMappings.list(sharedBudgetId),
+      })
     },
   })
 }
@@ -157,6 +160,10 @@ export function useUpdateSharedBudgetCategory(sharedBudgetId: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sharedKeywordMappings.list(sharedBudgetId),
+      })
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
     },
   })
 }
@@ -182,6 +189,9 @@ export function useArchiveSharedBudgetCategory(sharedBudgetId: string) {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.sharedKeywordMappings.list(sharedBudgetId),
+      })
     },
   })
 }
@@ -193,6 +203,18 @@ export function isCategoryNameDuplicate(
   const normalized = name.trim().toLowerCase()
   return categories.some(
     (category) => category.name.toLowerCase() === normalized
+  )
+}
+
+export function isSharedCategoryNameDuplicate(
+  name: string,
+  categories: SharedBudgetCategory[],
+  excludeId?: string
+): boolean {
+  const normalized = name.trim().toLowerCase()
+  return categories.some(
+    (category) =>
+      category.id !== excludeId && category.name.toLowerCase() === normalized
   )
 }
 

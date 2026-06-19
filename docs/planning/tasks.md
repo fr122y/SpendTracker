@@ -516,7 +516,7 @@ Merge:
 
 ## T-014 - Manage shared budget categories
 
-- Status: `backlog`
+- Status: `review`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: medium
@@ -550,3 +550,7 @@ Acceptance criteria:
 - Focused tests cover category creation, editing, used-category behavior, and
   access boundaries.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-014-2026-06-19-shared-category-management.md`

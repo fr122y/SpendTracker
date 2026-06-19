@@ -4,7 +4,11 @@ import { createElement, type ReactNode } from 'react'
 
 import { showMutationRollbackToast } from '@/shared/lib'
 
-import { useAddCategory, useDeleteCategory } from '../model/queries'
+import {
+  useAddCategory,
+  useDeleteCategory,
+  useUpdateSharedBudgetCategory,
+} from '../model/queries'
 
 import type { Category } from '@/shared/types'
 
@@ -18,7 +22,20 @@ jest.mock('@/shared/lib', () => ({
 jest.mock('@/shared/api', () => ({
   queryKeys: {
     categories: { all: ['categories'] },
+    expenses: { all: ['expenses'] },
     keywordMappings: { all: ['keyword-mappings'] },
+    sharedBudgetCategories: {
+      list: (sharedBudgetId: string) => [
+        'shared-budget-categories',
+        sharedBudgetId,
+      ],
+    },
+    sharedKeywordMappings: {
+      list: (sharedBudgetId: string) => [
+        'shared-keyword-mappings',
+        sharedBudgetId,
+      ],
+    },
   },
   getCategories: jest.fn(),
   addCategory: jest.fn(async () => {
@@ -31,6 +48,10 @@ jest.mock('@/shared/api', () => ({
       throw new Error('delete failed')
     }
   }),
+  getSharedBudgetCategories: jest.fn(),
+  addSharedBudgetCategory: jest.fn(async () => undefined),
+  updateSharedBudgetCategory: jest.fn(async () => undefined),
+  archiveSharedBudgetCategory: jest.fn(async () => undefined),
 }))
 
 const createWrapper = (queryClient: QueryClient) =>
@@ -139,6 +160,65 @@ describe('category optimistic mutations', () => {
         initialCategories
       )
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('updates shared category cache and invalidates dependent data', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+
+    queryClient.setQueryData(
+      ['shared-budget-categories', 'shared-1'],
+      [
+        {
+          id: 'shared-category-1',
+          sharedBudgetId: 'shared-1',
+          name: 'Продукты',
+          emoji: '🛒',
+          createdAt: '2026-06-15T00:00:00.000Z',
+        },
+      ]
+    )
+
+    const { result } = renderHook(
+      () => useUpdateSharedBudgetCategory('shared-1'),
+      {
+        wrapper: createWrapper(queryClient),
+      }
+    )
+
+    act(() => {
+      result.current.mutate({
+        id: 'shared-category-1',
+        name: 'Супермаркет',
+        emoji: '🛍️',
+      })
+    })
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData(['shared-budget-categories', 'shared-1'])
+      ).toEqual([
+        expect.objectContaining({
+          id: 'shared-category-1',
+          name: 'Супермаркет',
+          emoji: '🛍️',
+        }),
+      ])
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['shared-budget-categories', 'shared-1'],
+      })
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['shared-keyword-mappings', 'shared-1'],
+      })
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['expenses'],
+      })
     })
   })
 })

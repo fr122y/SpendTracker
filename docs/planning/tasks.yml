@@ -610,7 +610,7 @@
     {
       "id": "T-014",
       "title": "Manage shared budget categories",
-      "status": "backlog",
+      "status": "review",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "medium",
@@ -655,7 +655,7 @@
         "Focused tests cover category creation, editing, used-category behavior, and access boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Clarify permission and delete/archive rules before promoting to ready."
+      "next_action": "Open a pull request, then review and merge when ready."
     }
   ]
 }

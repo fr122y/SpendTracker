@@ -1,9 +1,9 @@
 'use server'
 
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, ne } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
-import { db, sharedBudgetCategories } from '@/shared/db'
+import { db, expenses, sharedBudgetCategories } from '@/shared/db'
 
 import { assertCanUseSharedBudget } from './shared-budget-actions'
 
@@ -78,6 +78,31 @@ async function getCategoryForActiveMember(
   return mapSharedCategory(category)
 }
 
+async function assertUniqueActiveCategoryName(
+  sharedBudgetId: string,
+  name: string,
+  excludeId?: string
+): Promise<void> {
+  const conditions = [
+    eq(sharedBudgetCategories.sharedBudgetId, sharedBudgetId),
+    eq(sharedBudgetCategories.name, name),
+    isNull(sharedBudgetCategories.archivedAt),
+  ]
+
+  if (excludeId) {
+    conditions.push(ne(sharedBudgetCategories.id, excludeId))
+  }
+
+  const [duplicate] = await db
+    .select({ id: sharedBudgetCategories.id })
+    .from(sharedBudgetCategories)
+    .where(and(...conditions))
+
+  if (duplicate) {
+    throw new Error('Shared category with this name already exists')
+  }
+}
+
 export async function getSharedBudgetCategories(
   sharedBudgetId: string
 ): Promise<SharedBudgetCategory[]> {
@@ -112,6 +137,7 @@ export async function addSharedBudgetCategory(
   await assertCanUseSharedBudget(sharedBudgetId, userId)
 
   const category = requireValidCategory(data)
+  await assertUniqueActiveCategoryName(sharedBudgetId, category.name)
   const id = crypto.randomUUID()
 
   await db.insert(sharedBudgetCategories).values({
@@ -152,14 +178,29 @@ export async function updateSharedBudgetCategory(
   }
 
   const nextCategory = requireValidCategory(data)
+  await assertUniqueActiveCategoryName(
+    category.sharedBudgetId,
+    nextCategory.name,
+    id
+  )
 
-  await db
-    .update(sharedBudgetCategories)
-    .set({
-      name: nextCategory.name,
-      emoji: nextCategory.emoji,
-    })
-    .where(eq(sharedBudgetCategories.id, id))
+  await db.transaction(async (tx) => {
+    await tx
+      .update(sharedBudgetCategories)
+      .set({
+        name: nextCategory.name,
+        emoji: nextCategory.emoji,
+      })
+      .where(eq(sharedBudgetCategories.id, id))
+
+    await tx
+      .update(expenses)
+      .set({
+        category: nextCategory.name,
+        emoji: nextCategory.emoji,
+      })
+      .where(eq(expenses.sharedBudgetCategoryId, id))
+  })
 }
 
 export async function archiveSharedBudgetCategory(id: string): Promise<void> {

@@ -4,11 +4,11 @@ Last updated: 2026-06-19
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-014` - Manage shared budget categories.
 
 ## Active Branch
 
-- None.
+- `task/T-014-shared-category-management`
 
 ## Stable Branch
 
@@ -16,8 +16,7 @@ Last updated: 2026-06-19
 
 ## Next Action
 
-Apply the `T-013` database migration in the target environment, then choose
-the next task: `T-014`, `T-002`, or `T-003`.
+Open a pull request for `T-014`, then review and merge when ready.
 
 ## Validation
 
@@ -62,3 +61,5 @@ the next task: `T-014`, `T-002`, or `T-003`.
 - Manual QA closed `T-011`: shared budget v1 mechanics are usable, with
   category UX follow-ups captured as `T-013` and `T-014`.
 - PR #23 merged for `T-013` with merge commit `9199d4b`.
+- Passed: `npm run validate` for `T-014` (64 suites, 820 tests).
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-014`.
