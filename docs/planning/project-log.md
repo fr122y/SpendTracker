@@ -2,6 +2,12 @@
 
 ## 2026-06-19
 
+- Implemented `T-014` shared budget category management in the existing
+  categories widget: personal/shared category modes, shared budget selection,
+  member add/edit/archive flows, duplicate-name checks, retroactive linked
+  shared expense label updates, cache invalidation, and focused tests.
+- Merged PR #24 for `T-014` into `main` as `3c0acfa` and reconciled the task
+  to `done`.
 - Implemented `T-013` shared expense autocategorization on
   `task/T-013-shared-expense-autocategorization`: shared budget keyword mapping
   schema, Server Actions, optimistic query hooks, shared expense suggestions,

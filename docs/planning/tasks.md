@@ -516,13 +516,14 @@ Merge:
 
 ## T-014 - Manage shared budget categories
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: medium
 - Branch: `task/T-014-shared-category-management`
 - GitHub issue: none
-- PR: none
+- PR: #24
+- Merge commit: `3c0acfa`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -554,3 +555,7 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-014-2026-06-19-shared-category-management.md`
+
+Merge:
+
+- PR #24 merged to `main` with merge commit `3c0acfa`.
