@@ -19,6 +19,16 @@ Provides the shared TanStack Query client for DB-backed async state.
 - Uses shared `queryClient` instance from `@/shared/api`
 - Default staleTime: 60000ms (1 minute)
 
+### AppFreshnessController
+
+Keeps long-running tabs fresh without forcing a full page reload.
+
+- Refreshes active TanStack Query data after tab focus or browser reconnect
+- Schedules a local midnight check for date-dependent defaults
+- Preserves manually selected dates by syncing today only while session state is
+  following today
+- Shows a lightweight toast after long resume or day rollover refreshes
+
 ### Toaster (`sonner`)
 
 Provides global toast notifications for async mutation failures and rollback

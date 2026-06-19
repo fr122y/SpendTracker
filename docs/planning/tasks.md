@@ -32,13 +32,13 @@ Task-run report:
 
 ## T-002 - Refresh stale long-running app tabs
 
-- Status: `ready`
+- Status: `review`
 - Phase: Reliability
 - Type: fix
 - Priority: high
 - Branch: `task/T-002-refresh-stale-tabs`
 - GitHub issue: #3
-- PR: #21
+- PR: #25
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -63,6 +63,10 @@ Acceptance criteria:
   silently replace that manual selection.
 - Behavior is covered by focused tests where practical.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-002-2026-06-19-refresh-stale-tabs.md`
 
 ## T-003 - Open monthly category expenses from analysis chart
 

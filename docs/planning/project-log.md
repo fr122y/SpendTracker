@@ -2,6 +2,11 @@
 
 ## 2026-06-19
 
+- Implemented `T-002` app-resume freshness on
+  `task/T-002-refresh-stale-tabs`: active query refresh on focus/reconnect,
+  follow-today date rollover, local midnight scheduling, long-resume toast
+  feedback, manual date preservation, focused tests, and full
+  `npm run validate`.
 - Implemented `T-014` shared budget category management in the existing
   categories widget: personal/shared category modes, shared budget selection,
   member add/edit/archive flows, duplicate-name checks, retroactive linked

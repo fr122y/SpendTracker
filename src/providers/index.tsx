@@ -7,6 +7,8 @@ import { Toaster } from 'sonner'
 import { queryClient } from '@/shared/api'
 import { ReatomProvider } from '@/shared/lib/reatom'
 
+import { AppFreshnessController } from './app-freshness-controller'
+
 interface ProvidersProps {
   children: React.ReactNode
 }
@@ -16,6 +18,7 @@ export function Providers({ children }: ProvidersProps) {
     <SessionProvider>
       <ReatomProvider>
         <QueryClientProvider client={queryClient}>
+          <AppFreshnessController />
           {children}
           <Toaster
             position="bottom-right"
