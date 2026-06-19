@@ -470,7 +470,7 @@ Task-run report:
 
 ## T-013 - Autoselect categories for shared expenses
 
-- Status: `backlog`
+- Status: `review`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: medium
@@ -486,6 +486,8 @@ Task-run report:
   - `src/features/add-expense/ui/expense-form.tsx`
   - `src/shared/api/expense-actions.ts`
   - `src/entities/category/README.md`
+  - `src/entities/keyword-mapping/README.md`
+  - `src/shared/db/schema.ts`
 
 Bring shared expense category selection closer to the personal expense flow by
 automatically selecting the likely shared category where possible.
@@ -502,6 +504,10 @@ Acceptance criteria:
 - Focused tests cover personal/shared scope switching, suggestion behavior,
   and privacy boundaries.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-013-2026-06-19-shared-expense-autocategorization.md`
 
 ## T-014 - Manage shared budget categories
 

@@ -559,7 +559,7 @@
     {
       "id": "T-013",
       "title": "Autoselect categories for shared expenses",
-      "status": "backlog",
+      "status": "review",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "medium",
@@ -575,11 +575,15 @@
       "owner_mode": "agent-led",
       "human_gate": "Manual shared budget QA found that shared expenses currently require manual category selection.",
       "write_scope": [
+        "drizzle/**",
         "src/features/add-expense/**",
         "src/entities/category/**",
+        "src/entities/keyword-mapping/**",
         "src/entities/shared-budget/**",
         "src/shared/api/**",
+        "src/shared/db/**",
         "src/shared/lib/**",
+        "src/shared/types/**",
         "docs/planning/**"
       ],
       "required_context": [
@@ -599,7 +603,7 @@
         "Focused tests cover personal/shared scope switching, suggestion behavior, and privacy boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Discuss exact autocategorization behavior, then promote to ready."
+      "next_action": "Review PR, then merge and apply the shared keyword mapping migration."
     },
     {
       "id": "T-014",

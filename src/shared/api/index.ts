@@ -11,6 +11,10 @@ export {
   saveKeywordMapping,
   deleteKeywordMapping,
 } from './keyword-actions'
+export {
+  getSharedKeywordMappings,
+  saveSharedKeywordMapping,
+} from './shared-keyword-actions'
 export { getProjects, addProject, deleteProject } from './project-actions'
 export { getBuckets, updateBuckets } from './bucket-actions'
 export {

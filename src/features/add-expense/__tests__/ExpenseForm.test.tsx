@@ -6,7 +6,9 @@ import type { SharedBudget } from '@/shared/types'
 
 const mockAddExpense = jest.fn()
 const mockCategorize = jest.fn()
+const mockCategorizeShared = jest.fn()
 const mockSaveMapping = jest.fn()
+const mockSaveSharedMapping = jest.fn()
 
 const mockCategories = [
   { id: '1', name: 'Продукты', emoji: '🛒' },
@@ -74,11 +76,19 @@ jest.mock('../model/use-categorize', () => ({
     mappingsLoaded: true,
     isSavingMapping: false,
   }),
+  useSharedCategorize: () => ({
+    categorize: mockCategorizeShared,
+    saveMappingAndGetResult: mockSaveSharedMapping,
+    mappingsLoaded: true,
+    isSavingMapping: false,
+  }),
 }))
 
 describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockCategorizeShared.mockReturnValue({ found: false })
+    mockSaveSharedMapping.mockResolvedValue(undefined)
     mockSharedBudgets = [
       {
         id: 'shared-1',
@@ -215,6 +225,9 @@ describe('ExpenseForm', () => {
   })
 
   it('creates a shared expense with a shared budget category', async () => {
+    mockCategorizeShared.mockReturnValue({ found: false })
+    mockSaveSharedMapping.mockResolvedValueOnce(undefined)
+
     render(<ExpenseForm />)
 
     fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
@@ -234,6 +247,10 @@ describe('ExpenseForm', () => {
     await waitFor(() => {
       expect(mockCategorize).not.toHaveBeenCalled()
       expect(mockSaveMapping).not.toHaveBeenCalled()
+      expect(mockSaveSharedMapping).toHaveBeenCalledWith(
+        'ужин',
+        'shared-category-1'
+      )
       expect(mockAddExpense).toHaveBeenCalledWith(
         expect.objectContaining({
           description: 'ужин',
@@ -244,6 +261,180 @@ describe('ExpenseForm', () => {
           sharedBudgetCategoryId: 'shared-category-1',
           sharedBudgetName: 'Дом',
           operationType: 'expense',
+        })
+      )
+    })
+  })
+
+  it('shows suggested shared category on description blur when match is found', async () => {
+    mockCategorizeShared.mockReturnValueOnce({
+      found: true,
+      categoryId: 'shared-category-1',
+      categoryName: 'Продукты общие',
+      categoryEmoji: '🧺',
+    })
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'shared_expense' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+
+    await waitFor(() => {
+      expect(screen.getByText(/🧺 Продукты общие/i)).toBeInTheDocument()
+      expect(
+        screen.queryByLabelText(/категория общего бюджета/i)
+      ).not.toBeInTheDocument()
+    })
+  })
+
+  it('submits shared expense with suggested category without saving mapping', async () => {
+    mockCategorizeShared.mockReturnValueOnce({
+      found: true,
+      categoryId: 'shared-category-1',
+      categoryName: 'Продукты общие',
+      categoryEmoji: '🧺',
+    })
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'shared_expense' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '300' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockSaveSharedMapping).not.toHaveBeenCalled()
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          description: 'молоко',
+          amount: 300,
+          category: 'Продукты общие',
+          emoji: '🧺',
+          sharedBudgetCategoryId: 'shared-category-1',
+        })
+      )
+    })
+  })
+
+  it('saves shared mapping when user changes suggested shared category', async () => {
+    mockSharedCategories = [
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты общие',
+        emoji: '🧺',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'shared-category-2',
+        sharedBudgetId: 'shared-1',
+        name: 'Кафе',
+        emoji: '☕',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]
+    mockCategorizeShared.mockReturnValueOnce({
+      found: true,
+      categoryId: 'shared-category-1',
+      categoryName: 'Продукты общие',
+      categoryEmoji: '🧺',
+    })
+    mockSaveSharedMapping.mockResolvedValueOnce(undefined)
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'shared_expense' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'кофе' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+
+    await screen.findByText(/🧺 Продукты общие/i)
+    fireEvent.click(screen.getByRole('button', { name: /изменить/i }))
+    fireEvent.change(screen.getByLabelText(/категория общего бюджета/i), {
+      target: { value: 'shared-category-2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '450' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockSaveSharedMapping).toHaveBeenCalledWith(
+        'кофе',
+        'shared-category-2'
+      )
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'Кафе',
+          emoji: '☕',
+          sharedBudgetCategoryId: 'shared-category-2',
+        })
+      )
+    })
+  })
+
+  it('does not overwrite a manual shared category after description blur', async () => {
+    mockSharedCategories = [
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты общие',
+        emoji: '🧺',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      {
+        id: 'shared-category-2',
+        sharedBudgetId: 'shared-1',
+        name: 'Кафе',
+        emoji: '☕',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ]
+    mockCategorizeShared.mockReturnValue({
+      found: true,
+      categoryId: 'shared-category-1',
+      categoryName: 'Продукты общие',
+      categoryEmoji: '🧺',
+    })
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+      target: { value: 'shared_expense' },
+    })
+    fireEvent.change(screen.getByLabelText(/категория общего бюджета/i), {
+      target: { value: 'shared-category-2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'кофе' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '450' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    await waitFor(() => {
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          category: 'Кафе',
+          emoji: '☕',
+          sharedBudgetCategoryId: 'shared-category-2',
         })
       )
     })

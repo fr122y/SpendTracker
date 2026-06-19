@@ -179,6 +179,29 @@ export const sharedBudgetCategories = pgTable(
   ]
 )
 
+export const sharedBudgetKeywordMappings = pgTable(
+  'shared_budget_keyword_mapping',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    sharedBudgetId: text('sharedBudgetId')
+      .notNull()
+      .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
+    keyword: text('keyword').notNull(),
+    sharedBudgetCategoryId: text('sharedBudgetCategoryId')
+      .notNull()
+      .references(() => sharedBudgetCategories.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index('shared_budget_keyword_mapping_budget_idx').on(table.sharedBudgetId),
+    unique().on(table.sharedBudgetId, table.keyword),
+  ]
+)
+
 export const expenses = pgTable('expense', {
   id: text('id')
     .primaryKey()

@@ -4,11 +4,11 @@ Last updated: 2026-06-19
 
 ## Current Focus
 
-- None. Shared budget v1 QA is closed; choose the next task.
+- `T-013` - Autoselect categories for shared expenses.
 
 ## Active Branch
 
-- None. Next implementation branch should be `task/T-011-shared-budget-qa`.
+- `task/T-013-shared-expense-autocategorization`
 
 ## Stable Branch
 
@@ -16,9 +16,8 @@ Last updated: 2026-06-19
 
 ## Next Action
 
-Pick the next task: `T-002` stale-tab refresh, `T-013` shared expense
-autocategorization, `T-014` shared budget category management, or `T-003`
-analysis category drilldown.
+Review and merge `T-013`, then apply the new database migration in the target
+environment.
 
 ## Validation
 

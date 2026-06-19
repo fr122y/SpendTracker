@@ -7,9 +7,15 @@ import { showMutationRollbackToast } from '@/shared/lib'
 import {
   useDeleteKeywordMapping,
   useSaveKeywordMapping,
+  useSaveSharedKeywordMapping,
 } from '../model/queries'
 
-import type { Category, KeywordMapping } from '@/shared/types'
+import type {
+  Category,
+  KeywordMapping,
+  SharedBudgetCategory,
+  SharedKeywordMapping,
+} from '@/shared/types'
 
 let shouldRejectSave = false
 let shouldRejectDelete = false
@@ -21,10 +27,28 @@ jest.mock('@/shared/lib', () => ({
 jest.mock('@/shared/api', () => ({
   queryKeys: {
     keywordMappings: { all: ['keyword-mappings'] },
+    sharedKeywordMappings: {
+      list: (sharedBudgetId: string) => [
+        'shared-keyword-mappings',
+        sharedBudgetId,
+      ],
+    },
     categories: { all: ['categories'] },
+    sharedBudgetCategories: {
+      list: (sharedBudgetId: string) => [
+        'shared-budget-categories',
+        sharedBudgetId,
+      ],
+    },
   },
   getKeywordMappings: jest.fn(),
+  getSharedKeywordMappings: jest.fn(),
   saveKeywordMapping: jest.fn(async () => {
+    if (shouldRejectSave) {
+      throw new Error('save failed')
+    }
+  }),
+  saveSharedKeywordMapping: jest.fn(async () => {
     if (shouldRejectSave) {
       throw new Error('save failed')
     }
@@ -54,6 +78,33 @@ const initialMappings: KeywordMapping[] = [
 const categories: Category[] = [
   { id: 'c1', name: 'Продукты', emoji: '🛒' },
   { id: 'c2', name: 'Транспорт', emoji: '🚕' },
+]
+
+const sharedMappings: SharedKeywordMapping[] = [
+  {
+    id: 'shared-mapping-1',
+    keyword: 'молоко',
+    categoryId: 'shared-category-1',
+    categoryName: 'Продукты общие',
+    categoryEmoji: '🧺',
+  },
+]
+
+const sharedCategories: SharedBudgetCategory[] = [
+  {
+    id: 'shared-category-1',
+    sharedBudgetId: 'shared-1',
+    name: 'Продукты общие',
+    emoji: '🧺',
+    createdAt: '2026-06-19T00:00:00.000Z',
+  },
+  {
+    id: 'shared-category-2',
+    sharedBudgetId: 'shared-1',
+    name: 'Кафе',
+    emoji: '☕',
+    createdAt: '2026-06-19T00:00:00.000Z',
+  },
 ]
 
 describe('keyword mapping optimistic mutations', () => {
@@ -157,6 +208,94 @@ describe('keyword mapping optimistic mutations', () => {
       expect(queryClient.getQueryData(['keyword-mappings'])).toEqual(
         initialMappings
       )
+      expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('adds shared mapping optimistically per shared budget', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+
+    queryClient.setQueryData(
+      ['shared-keyword-mappings', 'shared-1'],
+      sharedMappings
+    )
+    queryClient.setQueryData(
+      ['shared-budget-categories', 'shared-1'],
+      sharedCategories
+    )
+
+    const { result } = renderHook(
+      () => useSaveSharedKeywordMapping('shared-1'),
+      {
+        wrapper: createWrapper(queryClient),
+      }
+    )
+
+    act(() => {
+      result.current.mutate({
+        keyword: 'кофе',
+        categoryId: 'shared-category-2',
+      })
+    })
+
+    await waitFor(() => {
+      const optimistic = queryClient.getQueryData<SharedKeywordMapping[]>([
+        'shared-keyword-mappings',
+        'shared-1',
+      ])
+      expect(optimistic).toHaveLength(2)
+      expect(optimistic?.[1]).toEqual(
+        expect.objectContaining({
+          keyword: 'кофе',
+          categoryName: 'Кафе',
+          categoryEmoji: '☕',
+        })
+      )
+    })
+  })
+
+  it('rolls back shared mapping save on error and shows toast', async () => {
+    shouldRejectSave = true
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+
+    queryClient.setQueryData(
+      ['shared-keyword-mappings', 'shared-1'],
+      sharedMappings
+    )
+    queryClient.setQueryData(
+      ['shared-budget-categories', 'shared-1'],
+      sharedCategories
+    )
+
+    const { result } = renderHook(
+      () => useSaveSharedKeywordMapping('shared-1'),
+      {
+        wrapper: createWrapper(queryClient),
+      }
+    )
+
+    act(() => {
+      result.current.mutate({
+        keyword: 'кофе',
+        categoryId: 'shared-category-2',
+      })
+    })
+
+    await waitFor(() => {
+      expect(
+        queryClient.getQueryData(['shared-keyword-mappings', 'shared-1'])
+      ).toEqual(sharedMappings)
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
     })
   })
