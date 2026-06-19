@@ -38,7 +38,7 @@ Task-run report:
 - Priority: high
 - Branch: `task/T-002-refresh-stale-tabs`
 - GitHub issue: #3
-- PR: none
+- PR: #25
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

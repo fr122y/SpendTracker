@@ -6,7 +6,7 @@ Branch: `task/T-002-refresh-stale-tabs`
 
 Issue: #3
 
-PR: TBD
+PR: #25
 
 ## Summary
 
@@ -57,7 +57,7 @@ today, and preserves manually selected dates.
   were not changed.
 - Tracker consistency checked: Yes, task tracker validation passed.
 - Docs checked: Yes.
-- CI or PR status: Local validation passed; PR not opened yet.
+- CI or PR status: Local validation passed; PR #25 opened.
 
 ## Follow-Ups
 
@@ -69,4 +69,4 @@ today, and preserves manually selected dates.
 
 ## Registry Update Requested
 
-- `T-002` moved to `review`; PR still needs to be opened.
+- `T-002` moved to `review`; PR #25 opened.
