@@ -4,11 +4,11 @@ Last updated: 2026-06-19
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-002` - Refresh stale long-running app tabs.
 
 ## Active Branch
 
-- None.
+- `task/T-002-refresh-stale-tabs`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-19
 
 ## Next Action
 
-Choose the next task: `T-002` or `T-003`.
+Commit, push, and open a pull request for `T-002`.
 
 ## Validation
 
@@ -64,3 +64,7 @@ Choose the next task: `T-002` or `T-003`.
 - Passed: `npm run validate` for `T-014` (64 suites, 820 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-014`.
 - PR #24 merged for `T-014` with merge commit `3c0acfa`.
+- Passed: focused Jest tests for `T-002` session store and app freshness
+  controller.
+- Passed: `npm run validate` for `T-002` (65 suites, 830 tests).
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-002`.

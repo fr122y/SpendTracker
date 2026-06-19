@@ -5,6 +5,14 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
 
+function isSameCalendarDay(date1: Date, date2: Date) {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  )
+}
+
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate()
 }
@@ -31,42 +39,59 @@ export function setDateMonth(date: Date, year: number, month: number) {
 
 // Atoms
 export const selectedDateAtom = atom(startOfDay(new Date()), 'selectedDateAtom')
+export const isFollowingTodayAtom = atom(true, 'isFollowingTodayAtom')
 
 // Actions
-export const setSelectedDate = action(
-  (date: Date) => selectedDateAtom.set(startOfDay(date)),
-  'setSelectedDate'
-)
+export const setSelectedDate = action((date: Date) => {
+  selectedDateAtom.set(startOfDay(date))
+  isFollowingTodayAtom.set(false)
+}, 'setSelectedDate')
 
 export const nextDay = action(() => {
   selectedDateAtom.set(shiftDateByDays(selectedDateAtom(), 1))
+  isFollowingTodayAtom.set(false)
 }, 'nextDay')
 
 export const prevDay = action(() => {
   selectedDateAtom.set(shiftDateByDays(selectedDateAtom(), -1))
+  isFollowingTodayAtom.set(false)
 }, 'prevDay')
 
 export const nextMonth = action(() => {
   selectedDateAtom.set(shiftDateByMonths(selectedDateAtom(), 1))
+  isFollowingTodayAtom.set(false)
 }, 'nextMonth')
 
 export const prevMonth = action(() => {
   selectedDateAtom.set(shiftDateByMonths(selectedDateAtom(), -1))
+  isFollowingTodayAtom.set(false)
 }, 'prevMonth')
 
 export const setToday = action(() => {
   selectedDateAtom.set(startOfDay(new Date()))
+  isFollowingTodayAtom.set(true)
 }, 'setToday')
+
+export const syncTodayIfFollowing = action(() => {
+  if (!isFollowingTodayAtom()) return
+
+  const today = startOfDay(new Date())
+  if (isSameCalendarDay(selectedDateAtom(), today)) return
+
+  selectedDateAtom.set(today)
+}, 'syncTodayIfFollowing')
 
 // Store state type
 interface SessionState {
   selectedDate: Date
+  isFollowingToday: boolean
   setSelectedDate: (date: Date) => void
   nextDay: () => void
   prevDay: () => void
   nextMonth: () => void
   prevMonth: () => void
   setToday: () => void
+  syncTodayIfFollowing: () => void
 }
 
 // Stable action references
@@ -77,19 +102,28 @@ const actions = {
   nextMonth: () => wrap(nextMonth)(),
   prevMonth: () => wrap(prevMonth)(),
   setToday: () => wrap(setToday)(),
+  syncTodayIfFollowing: () => wrap(syncTodayIfFollowing)(),
 }
 
 // Cached snapshot for useSyncExternalStore
 let cachedState: SessionState | null = null
 let cachedSelectedDate: Date | null = null
+let cachedIsFollowingToday: boolean | null = null
 
 const getState = (): SessionState => {
   const currentSelectedDate = selectedDateAtom()
+  const currentIsFollowingToday = isFollowingTodayAtom()
 
-  if (cachedState === null || cachedSelectedDate !== currentSelectedDate) {
+  if (
+    cachedState === null ||
+    cachedSelectedDate !== currentSelectedDate ||
+    cachedIsFollowingToday !== currentIsFollowingToday
+  ) {
     cachedSelectedDate = currentSelectedDate
+    cachedIsFollowingToday = currentIsFollowingToday
     cachedState = {
       selectedDate: currentSelectedDate,
+      isFollowingToday: currentIsFollowingToday,
       ...actions,
     }
   }
@@ -98,11 +132,19 @@ const getState = (): SessionState => {
 }
 
 const subscribe = (callback: () => void) => {
-  const unsubscribe = selectedDateAtom.subscribe(() => {
+  const resetCacheAndNotify = () => {
     cachedState = null
     callback()
-  })
-  return () => unsubscribe()
+  }
+  const unsubscribeSelectedDate =
+    selectedDateAtom.subscribe(resetCacheAndNotify)
+  const unsubscribeIsFollowingToday =
+    isFollowingTodayAtom.subscribe(resetCacheAndNotify)
+
+  return () => {
+    unsubscribeSelectedDate()
+    unsubscribeIsFollowingToday()
+  }
 }
 
 // Adapter Hook (Matches old Zustand API with selector support)
