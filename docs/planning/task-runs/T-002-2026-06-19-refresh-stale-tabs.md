@@ -57,7 +57,7 @@ today, and preserves manually selected dates.
   were not changed.
 - Tracker consistency checked: Yes, task tracker validation passed.
 - Docs checked: Yes.
-- CI or PR status: Local validation passed; PR #25 opened.
+- CI or PR status: PR #25 merged with merge commit `88fecbd`.
 
 ## Follow-Ups
 
@@ -69,5 +69,5 @@ today, and preserves manually selected dates.
 
 ## Registry Update Requested
 
-- `T-002` moved to `review`; PR #25 opened.
+- `T-002` moved to `done` after PR #25 merged.
 - Review follow-up fixed stale next-action text before merge.

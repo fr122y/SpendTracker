@@ -32,13 +32,14 @@ Task-run report:
 
 ## T-002 - Refresh stale long-running app tabs
 
-- Status: `review`
+- Status: `done`
 - Phase: Reliability
 - Type: fix
 - Priority: high
 - Branch: `task/T-002-refresh-stale-tabs`
 - GitHub issue: #3
 - PR: #25
+- Merge commit: `88fecbd`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

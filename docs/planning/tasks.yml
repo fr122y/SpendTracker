@@ -49,7 +49,7 @@
     {
       "id": "T-002",
       "title": "Refresh stale long-running app tabs",
-      "status": "review",
+      "status": "done",
       "phase": "Reliability",
       "type": "fix",
       "priority": "high",
@@ -85,7 +85,7 @@
         "Behavior is covered by focused tests where practical.",
         "npm run validate passes."
       ],
-      "next_action": "Review and merge PR #25 for T-002."
+      "next_action": "No further action."
     },
     {
       "id": "T-003",

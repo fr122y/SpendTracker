@@ -7,6 +7,8 @@
   follow-today date rollover, local midnight scheduling, long-resume toast
   feedback, manual date preservation, focused tests, and full
   `npm run validate`.
+- Merged PR #25 for `T-002` into `main` as `88fecbd` and reconciled the task
+  to `done`.
 - Implemented `T-014` shared budget category management in the existing
   categories widget: personal/shared category modes, shared budget selection,
   member add/edit/archive flows, duplicate-name checks, retroactive linked
