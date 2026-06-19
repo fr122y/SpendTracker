@@ -1,5 +1,14 @@
 # Project Log
 
+## 2026-06-19
+
+- Closed `T-011` shared budget release QA from manual owner verification:
+  shared budget creation, invitation, shared expense usage, visibility, and
+  analytics behavior are broadly working in real use.
+- Captured shared budget category UX follow-ups as `T-013` and `T-014`:
+  automatic category selection for shared expenses and management of shared
+  budget categories.
+
 ## 2026-06-18
 
 - Implemented `T-010` shared budget analytics scopes on

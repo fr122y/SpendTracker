@@ -483,7 +483,7 @@
     {
       "id": "T-011",
       "title": "Run end-to-end shared budget QA and tracker sync",
-      "status": "captured",
+      "status": "done",
       "phase": "Shared Budget Release",
       "type": "process",
       "priority": "medium",
@@ -520,7 +520,7 @@
         "npm run validate passes.",
         "python3 scripts/validate_task_tracker.py passes."
       ],
-      "next_action": "Schedule after the implementation tasks reach review."
+      "next_action": "No further action."
     },
     {
       "id": "T-012",
@@ -555,6 +555,101 @@
         "Task tracker validation passes."
       ],
       "next_action": "No further action."
+    },
+    {
+      "id": "T-013",
+      "title": "Autoselect categories for shared expenses",
+      "status": "backlog",
+      "phase": "Shared Budget UX",
+      "type": "feature",
+      "priority": "medium",
+      "github_issue": null,
+      "branch": "task/T-013-shared-expense-autocategorization",
+      "detail": "Bring shared expense category selection closer to the personal expense flow by automatically selecting the likely shared category where possible.",
+      "depends_on": [
+        "T-009",
+        "T-011"
+      ],
+      "blocks": [],
+      "parallel": true,
+      "owner_mode": "agent-led",
+      "human_gate": "Manual shared budget QA found that shared expenses currently require manual category selection.",
+      "write_scope": [
+        "src/features/add-expense/**",
+        "src/entities/category/**",
+        "src/entities/shared-budget/**",
+        "src/shared/api/**",
+        "src/shared/lib/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/features/add-expense/ui/expense-form.tsx",
+        "src/shared/api/expense-actions.ts",
+        "src/entities/category/README.md"
+      ],
+      "acceptance": [
+        "When the user enters a shared expense, the form suggests or preselects a shared budget category using behavior consistent with personal expenses.",
+        "Autoselection uses only categories available in the selected shared budget.",
+        "Changing between personal and shared budget scopes refreshes the category suggestion without leaking private partner categories.",
+        "Manual category selection remains possible and is not unexpectedly overwritten after the user changes it.",
+        "Focused tests cover personal/shared scope switching, suggestion behavior, and privacy boundaries.",
+        "npm run validate passes."
+      ],
+      "next_action": "Discuss exact autocategorization behavior, then promote to ready."
+    },
+    {
+      "id": "T-014",
+      "title": "Manage shared budget categories",
+      "status": "backlog",
+      "phase": "Shared Budget UX",
+      "type": "feature",
+      "priority": "medium",
+      "github_issue": null,
+      "branch": "task/T-014-shared-category-management",
+      "detail": "Add a user-facing way to manage the category set that belongs to a shared budget.",
+      "depends_on": [
+        "T-006",
+        "T-011"
+      ],
+      "blocks": [],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Manual shared budget QA found that shared budget category management is currently missing.",
+      "write_scope": [
+        "src/entities/category/**",
+        "src/entities/shared-budget/**",
+        "src/features/**",
+        "src/widgets/weekly-budget/**",
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/types/**",
+        "docs/planning/**",
+        "docs/context/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "src/entities/category/README.md",
+        "src/entities/shared-budget/README.md",
+        "src/shared/db/schema.ts"
+      ],
+      "acceptance": [
+        "Members can view the category list for a shared budget.",
+        "The UI supports adding and editing shared budget categories.",
+        "Delete or archive behavior is defined for categories that are already used by shared expenses.",
+        "Shared category changes are visible to every member of the shared budget.",
+        "Private personal categories remain private and are not exposed through shared category management.",
+        "Ownership/permission rules for category management are explicit before implementation starts.",
+        "Focused tests cover category creation, editing, used-category behavior, and access boundaries.",
+        "npm run validate passes."
+      ],
+      "next_action": "Clarify permission and delete/archive rules before promoting to ready."
     }
   ]
 }

@@ -398,13 +398,14 @@ Task-run report:
 
 ## T-011 - Run end-to-end shared budget QA and tracker sync
 
-- Status: `captured`
+- Status: `done`
 - Phase: Shared Budget Release
 - Type: process
 - Priority: medium
 - Branch: `task/T-011-shared-budget-qa`
 - GitHub issue: none
 - PR: none
+- Merge commit: none - owner-approved docs-only tracker close on `main`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -429,6 +430,10 @@ Acceptance criteria:
   are reconciled.
 - `npm run validate` passes.
 - `python3 scripts/validate_task_tracker.py` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-011-2026-06-19-shared-budget-qa.md`
 
 ## T-012 - Optimize merge and tracker reconciliation process
 
@@ -462,3 +467,75 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-012-2026-06-16-compact-merge-process.md`
+
+## T-013 - Autoselect categories for shared expenses
+
+- Status: `backlog`
+- Phase: Shared Budget UX
+- Type: feature
+- Priority: medium
+- Branch: `task/T-013-shared-expense-autocategorization`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/features/add-expense/ui/expense-form.tsx`
+  - `src/shared/api/expense-actions.ts`
+  - `src/entities/category/README.md`
+
+Bring shared expense category selection closer to the personal expense flow by
+automatically selecting the likely shared category where possible.
+
+Acceptance criteria:
+
+- When the user enters a shared expense, the form suggests or preselects a
+  shared budget category using behavior consistent with personal expenses.
+- Autoselection uses only categories available in the selected shared budget.
+- Changing between personal and shared budget scopes refreshes the category
+  suggestion without leaking private partner categories.
+- Manual category selection remains possible and is not unexpectedly
+  overwritten after the user changes it.
+- Focused tests cover personal/shared scope switching, suggestion behavior,
+  and privacy boundaries.
+- `npm run validate` passes.
+
+## T-014 - Manage shared budget categories
+
+- Status: `backlog`
+- Phase: Shared Budget UX
+- Type: feature
+- Priority: medium
+- Branch: `task/T-014-shared-category-management`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/entities/category/README.md`
+  - `src/entities/shared-budget/README.md`
+  - `src/shared/db/schema.ts`
+
+Add a user-facing way to manage the category set that belongs to a shared
+budget.
+
+Acceptance criteria:
+
+- Members can view the category list for a shared budget.
+- The UI supports adding and editing shared budget categories.
+- Delete or archive behavior is defined for categories that are already used by
+  shared expenses.
+- Shared category changes are visible to every member of the shared budget.
+- Private personal categories remain private and are not exposed through shared
+  category management.
+- Ownership/permission rules for category management are explicit before
+  implementation starts.
+- Focused tests cover category creation, editing, used-category behavior, and
+  access boundaries.
+- `npm run validate` passes.
