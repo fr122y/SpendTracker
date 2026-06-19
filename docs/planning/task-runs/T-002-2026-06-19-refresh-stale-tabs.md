@@ -70,3 +70,4 @@ today, and preserves manually selected dates.
 ## Registry Update Requested
 
 - `T-002` moved to `review`; PR #25 opened.
+- Review follow-up fixed stale next-action text before merge.

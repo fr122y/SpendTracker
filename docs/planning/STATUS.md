@@ -16,7 +16,7 @@ Last updated: 2026-06-19
 
 ## Next Action
 
-Commit, push, and open a pull request for `T-002`.
+Review and merge PR #25 for `T-002`.
 
 ## Validation
 

@@ -85,7 +85,7 @@
         "Behavior is covered by focused tests where practical.",
         "npm run validate passes."
       ],
-      "next_action": "Commit, push, and open a pull request for T-002."
+      "next_action": "Review and merge PR #25 for T-002."
     },
     {
       "id": "T-003",
