@@ -470,13 +470,14 @@ Task-run report:
 
 ## T-013 - Autoselect categories for shared expenses
 
-- Status: `review`
+- Status: `done`
 - Phase: Shared Budget UX
 - Type: feature
 - Priority: medium
 - Branch: `task/T-013-shared-expense-autocategorization`
 - GitHub issue: none
-- PR: none
+- PR: #23
+- Merge commit: `9199d4b`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -508,6 +509,10 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-013-2026-06-19-shared-expense-autocategorization.md`
+
+Merge:
+
+- PR #23 merged to `main` with merge commit `9199d4b`.
 
 ## T-014 - Manage shared budget categories
 

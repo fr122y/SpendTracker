@@ -6,7 +6,9 @@ Branch: `task/T-013-shared-expense-autocategorization`
 
 Issue: none
 
-PR: pending
+PR: #23
+
+Merge commit: `9199d4b`
 
 ## Summary
 
@@ -47,6 +49,8 @@ personal and shared category data.
 ## Follow-Ups
 
 - `T-014` will add user-facing shared budget category management.
+- Apply `drizzle/0007_shared_budget_keyword_mappings.sql` in the target
+  database with `npm run db:migrate`.
 
 ## Open Questions
 

@@ -559,12 +559,14 @@
     {
       "id": "T-013",
       "title": "Autoselect categories for shared expenses",
-      "status": "review",
+      "status": "done",
       "phase": "Shared Budget UX",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-013-shared-expense-autocategorization",
+      "pull_request": 23,
+      "merge_commit": "9199d4b",
       "detail": "Bring shared expense category selection closer to the personal expense flow by automatically selecting the likely shared category where possible.",
       "depends_on": [
         "T-009",
@@ -603,7 +605,7 @@
         "Focused tests cover personal/shared scope switching, suggestion behavior, and privacy boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Review PR, then merge and apply the shared keyword mapping migration."
+      "next_action": "Apply the shared keyword mapping migration in the target database."
     },
     {
       "id": "T-014",

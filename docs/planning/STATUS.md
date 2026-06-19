@@ -4,11 +4,11 @@ Last updated: 2026-06-19
 
 ## Current Focus
 
-- `T-013` - Autoselect categories for shared expenses.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-013-shared-expense-autocategorization`
+- None.
 
 ## Stable Branch
 
@@ -16,8 +16,8 @@ Last updated: 2026-06-19
 
 ## Next Action
 
-Review and merge `T-013`, then apply the new database migration in the target
-environment.
+Apply the `T-013` database migration in the target environment, then choose
+the next task: `T-014`, `T-002`, or `T-003`.
 
 ## Validation
 
@@ -61,3 +61,4 @@ environment.
 - PR #22 merged for `T-010` with merge commit `d2d2a2a`.
 - Manual QA closed `T-011`: shared budget v1 mechanics are usable, with
   category UX follow-ups captured as `T-013` and `T-014`.
+- PR #23 merged for `T-013` with merge commit `9199d4b`.

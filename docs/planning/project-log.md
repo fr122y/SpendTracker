@@ -6,6 +6,8 @@
   `task/T-013-shared-expense-autocategorization`: shared budget keyword mapping
   schema, Server Actions, optimistic query hooks, shared expense suggestions,
   manual choice learning, and focused tests.
+- Merged PR #23 for `T-013` into `main` as `9199d4b`; target databases now
+  need the `0007_shared_budget_keyword_mappings.sql` migration.
 - Closed `T-011` shared budget release QA from manual owner verification:
   shared budget creation, invitation, shared expense usage, visibility, and
   analytics behavior are broadly working in real use.
