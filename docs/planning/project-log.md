@@ -6,6 +6,8 @@
   `task/T-020-money-math-precision`: evaluated values now round to at most two
   decimal places, whole-number results drop trailing zeroes, floating-point
   tails are covered by regression tests, and full `npm run validate` passed.
+- Merged PR #27 for `T-020` into `main` as `862670b` and reconciled the task to
+  `done`.
 
 ## 2026-06-19
 

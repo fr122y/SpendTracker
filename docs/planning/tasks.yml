@@ -882,12 +882,14 @@
     {
       "id": "T-020",
       "title": "Normalize money math input precision",
-      "status": "review",
+      "status": "done",
       "phase": "Reliability",
       "type": "fix",
       "priority": "high",
       "github_issue": null,
       "branch": "task/T-020-money-math-precision",
+      "pr": 27,
+      "merge_commit": "862670b",
       "detail": "Fix money math input and formatting behavior so evaluated amounts do not display long floating-point tails after simple calculations.",
       "depends_on": [],
       "blocks": [],
@@ -920,7 +922,7 @@
         "Affected add-expense, bucket, and weekly budget money inputs use the normalized behavior consistently.",
         "npm run validate passes."
       ],
-      "next_action": "Review PR and merge after checks pass."
+      "next_action": "No further action."
     }
   ]
 }

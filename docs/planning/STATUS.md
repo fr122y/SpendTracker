@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- `T-020` - Normalize money math input precision.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-020-money-math-precision`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Review and merge `T-020` after PR checks pass.
+Choose the next task.
 
 ## Validation
 
@@ -79,3 +79,6 @@ Review and merge `T-020` after PR checks pass.
 - Passed: `npm run validate` for `T-020` (65 suites, 836 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-020`.
 - PR #27 opened for `T-020`.
+- PR #27 merged for `T-020` with merge commit `862670b`.
+- Passed: `python3 scripts/validate_task_tracker.py` after reconciling
+  `T-020`.

@@ -750,13 +750,14 @@ Acceptance criteria:
 
 ## T-020 - Normalize money math input precision
 
-- Status: `review`
+- Status: `done`
 - Phase: Reliability
 - Type: fix
 - Priority: high
 - Branch: `task/T-020-money-math-precision`
 - GitHub issue: none
 - PR: #27
+- Merge commit: `862670b`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

@@ -55,7 +55,7 @@ zeroes, and the numeric callback receives the same normalized value.
   handlers were not changed.
 - Tracker consistency checked: Yes, task tracker validation passed.
 - Docs checked: Yes.
-- CI or PR status: PR #27 opened.
+- CI or PR status: PR #27 merged with merge commit `862670b`.
 
 ## Follow-Ups
 
@@ -67,5 +67,4 @@ zeroes, and the numeric callback receives the same normalized value.
 
 ## Registry Update Requested
 
-- Move `T-020` to `done` after review, merge, and stable-branch
-  reconciliation.
+- `T-020` moved to `done` after PR #27 merged.
