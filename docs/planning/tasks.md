@@ -564,3 +564,222 @@ Task-run report:
 Merge:
 
 - PR #24 merged to `main` with merge commit `3c0acfa`.
+
+## T-015 - Improve credentials auth form UX
+
+- Status: `backlog`
+- Phase: Account & Auth
+- Type: feature
+- Priority: medium
+- Branch: `task/T-015-auth-form-ux`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/features/auth/ui/credentials-sign-in-form.tsx`
+  - `src/features/auth/ui/register-form.tsx`
+  - `src/features/auth/README.md`
+
+Improve the existing Auth.js credentials login and registration forms with
+password visibility controls while preserving the current credentials and
+Google sign-in flows.
+
+Acceptance criteria:
+
+- Login password input can be toggled between hidden and visible without losing
+  the current value.
+- Registration password and confirmation inputs can be toggled between hidden
+  and visible without losing current values.
+- Password visibility controls have accessible labels and keyboard focus
+  states.
+- Existing credentials sign-in, registration, callback URL, and Google sign-in
+  behavior remains unchanged.
+- Focused auth form tests cover password visibility toggles and existing submit
+  flows.
+- `npm run validate` passes.
+
+## T-016 - Choose and integrate account email delivery
+
+- Status: `captured`
+- Phase: Account & Auth
+- Type: feature
+- Priority: medium
+- Branch: `task/T-016-account-email-delivery`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/shared/auth/README.md`
+  - `src/shared/api/README.md`
+
+Choose and integrate the server-side email delivery foundation needed for
+account emails such as password reset and email verification.
+
+Acceptance criteria:
+
+- The project has a chosen account-email delivery strategy or provider
+  documented in durable context or an ADR.
+- Server-only email configuration is documented, including required environment
+  variables and local development behavior.
+- A testable server-side email sending abstraction exists for account emails.
+- No email provider secret is exposed through `NEXT_PUBLIC` variables or client
+  code.
+- Focused tests cover the email sender success path and failure handling where
+  practical.
+- `npm run validate` passes.
+
+## T-017 - Add forgot password flow for credentials users
+
+- Status: `backlog`
+- Phase: Account & Auth
+- Type: feature
+- Priority: high
+- Branch: `task/T-017-forgot-password`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Depends on: `T-016`
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/shared/auth/README.md`
+  - `src/shared/db/schema.ts`
+  - `src/features/auth/ui/credentials-sign-in-form.tsx`
+
+Add a forgot-password flow for credentials users using one-time expiring reset
+tokens and the account email delivery foundation.
+
+Acceptance criteria:
+
+- The login form links to a forgot-password request flow.
+- A credentials user can request a password reset without exposing whether an
+  email exists.
+- Password reset tokens are generated securely, expire, and are invalidated
+  after successful use.
+- A valid reset link lets the user set a new password that is stored with the
+  existing bcrypt hashing approach.
+- Expired, used, invalid, OAuth-only, and missing-token cases show explicit
+  safe states and do not update passwords.
+- Focused server and UI tests cover request, reset, token reuse, expiry, and
+  invalid-token behavior.
+- `npm run validate` passes.
+
+## T-018 - Add email verification for credentials registration
+
+- Status: `captured`
+- Phase: Account & Auth
+- Type: feature
+- Priority: medium
+- Branch: `task/T-018-email-verification`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Depends on: `T-016`
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/shared/auth/README.md`
+  - `src/shared/db/schema.ts`
+  - `src/features/auth/ui/register-form.tsx`
+
+Add email verification for credentials registration after the account email
+delivery foundation exists.
+
+Acceptance criteria:
+
+- Credentials registration sends an email verification message through the
+  account email delivery foundation.
+- Unverified credentials accounts have an explicit UI state after registration
+  and sign-in attempts.
+- A valid verification link sets `users.emailVerified` for the credentials
+  account.
+- Verification tokens are generated securely, expire, and cannot be reused.
+- A resend verification path exists for unverified credentials users.
+- OAuth users keep their existing provider-driven verification behavior.
+- Focused server and UI tests cover registration, verification, resend, expiry,
+  reuse, and OAuth regression behavior.
+- `npm run validate` passes.
+
+## T-019 - Add account profile and logout
+
+- Status: `backlog`
+- Phase: Account & Auth
+- Type: feature
+- Priority: medium
+- Branch: `task/T-019-account-profile-logout`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/shared/auth/README.md`
+  - `src/widgets/dashboard-header/README.md`
+  - `src/widgets/dashboard-header/ui/dashboard-header.tsx`
+
+Add a minimal account profile area and a visible logout path for authenticated
+users.
+
+Acceptance criteria:
+
+- Authenticated users can open a personal account/profile page from the
+  dashboard UI.
+- The profile page shows the current user's name, email, and sign-in provider
+  information where available.
+- Authenticated users can sign out from the profile or account UI.
+- Signing out ends the session and redirects the user to `/login`.
+- The profile and logout UI works on mobile and desktop without breaking the
+  existing dashboard header layout.
+- Focused UI tests cover profile rendering, dashboard navigation entry, and
+  logout action behavior.
+- `npm run validate` passes.
+
+## T-020 - Normalize money math input precision
+
+- Status: `backlog`
+- Phase: Reliability
+- Type: fix
+- Priority: high
+- Branch: `task/T-020-money-math-precision`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `src/shared/ui/math-input.tsx`
+  - `src/shared/lib/math-eval.ts`
+  - `src/shared/ui/__tests__/math-input.test.tsx`
+
+Fix money math input and formatting behavior so evaluated amounts do not
+display long floating-point tails after simple calculations.
+
+Acceptance criteria:
+
+- Money math inputs normalize evaluated display values to at most two decimal
+  places.
+- Whole-number results display without a decimal separator or trailing zeroes.
+- Fractional results preserve up to two meaningful decimal places.
+- Simple calculations that currently produce long floating-point tails are
+  covered by regression tests.
+- Existing expression parsing, min/max clamping, comma decimal input, and
+  invalid-expression behavior remain unchanged.
+- Affected add-expense, bucket, and weekly budget money inputs use the
+  normalized behavior consistently.
+- `npm run validate` passes.
