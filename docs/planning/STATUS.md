@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-020` - Normalize money math input precision.
 
 ## Active Branch
 
-- None.
+- `task/T-020-money-math-precision`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Choose the next task: `T-020`.
+Review and merge `T-020` after PR checks pass.
 
 ## Validation
 
@@ -74,3 +74,8 @@ Choose the next task: `T-020`.
   `T-020`; `T-020` is the recommended next high-priority bugfix.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing `T-015`
   through `T-020`.
+- Passed: focused Jest tests for `T-020` MathInput precision normalization
+  (40 tests).
+- Passed: `npm run validate` for `T-020` (65 suites, 836 tests).
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-020`.
+- PR #27 opened for `T-020`.

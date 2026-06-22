@@ -882,7 +882,7 @@
     {
       "id": "T-020",
       "title": "Normalize money math input precision",
-      "status": "backlog",
+      "status": "review",
       "phase": "Reliability",
       "type": "fix",
       "priority": "high",
@@ -920,7 +920,7 @@
         "Affected add-expense, bucket, and weekly budget money inputs use the normalized behavior consistently.",
         "npm run validate passes."
       ],
-      "next_action": "Promote to ready as the recommended next high-priority bugfix."
+      "next_action": "Review PR and merge after checks pass."
     }
   ]
 }

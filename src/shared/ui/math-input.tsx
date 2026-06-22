@@ -6,6 +6,26 @@ import { evaluateMathExpression } from '@/shared/lib/math-eval'
 
 import { Input, type InputProps } from './input'
 
+const DISPLAY_DECIMAL_PLACES = 2
+
+function normalizeEvaluatedValue(value: number): {
+  displayValue: string
+  evaluatedValue: number
+} {
+  const precisionMultiplier = 10 ** DISPLAY_DECIMAL_PLACES
+  const rounded =
+    Math.round((value + Number.EPSILON) * precisionMultiplier) /
+    precisionMultiplier
+  const evaluatedValue = Object.is(rounded, -0) ? 0 : rounded
+
+  return {
+    displayValue: evaluatedValue
+      .toFixed(DISPLAY_DECIMAL_PLACES)
+      .replace(/\.?0+$/, ''),
+    evaluatedValue,
+  }
+}
+
 export interface MathInputProps extends Omit<
   InputProps,
   'type' | 'onChange' | 'value'
@@ -60,7 +80,8 @@ export const MathInput = forwardRef<HTMLInputElement, MathInputProps>(
           let finalValue = num
           if (min !== undefined && finalValue < min) finalValue = min
           if (max !== undefined && finalValue > max) finalValue = max
-          onValueChange(String(finalValue), finalValue)
+          const normalized = normalizeEvaluatedValue(finalValue)
+          onValueChange(normalized.displayValue, normalized.evaluatedValue)
         }
         return
       }
@@ -72,7 +93,8 @@ export const MathInput = forwardRef<HTMLInputElement, MathInputProps>(
         let finalValue = result
         if (min !== undefined && finalValue < min) finalValue = min
         if (max !== undefined && finalValue > max) finalValue = max
-        onValueChange(String(finalValue), finalValue)
+        const normalized = normalizeEvaluatedValue(finalValue)
+        onValueChange(normalized.displayValue, normalized.evaluatedValue)
       }
       // If invalid, keep the current value (user can fix it)
     }, [value, min, max, onValueChange])

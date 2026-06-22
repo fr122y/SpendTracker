@@ -146,6 +146,62 @@ describe('MathInput', () => {
 
       expect(mockOnValueChange).toHaveBeenCalledWith('123.45', 123.45)
     })
+
+    it('normalizes plain decimal number to meaningful decimal places', () => {
+      render(<MathInput value="123.40" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('123.4', 123.4)
+    })
+
+    it('rounds plain decimal number to two decimal places', () => {
+      render(<MathInput value="123.456" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('123.46', 123.46)
+    })
+  })
+
+  describe('Precision normalization', () => {
+    it('removes floating point tails from simple addition', () => {
+      render(<MathInput value="0.1+0.2" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('0.3', 0.3)
+    })
+
+    it('rounds evaluated fractional results to two decimal places', () => {
+      render(<MathInput value="100/3" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('33.33', 33.33)
+    })
+
+    it('displays whole-number results without decimal separator', () => {
+      render(<MathInput value="10.5+0.5" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('11', 11)
+    })
+
+    it('normalizes negative zero to zero', () => {
+      render(<MathInput value="-0.004" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('0', 0)
+    })
   })
 
   describe('Expression evaluation on Enter key', () => {
