@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Complete validation, self-review, task-run report, commit, and PR for `T-016`.
+Review PR #29 for `T-016` and merge when checks are green.
 
 ## Validation
 
@@ -92,3 +92,4 @@ Complete validation, self-review, task-run report, commit, and PR for `T-016`.
 - Passed: `npm run validate` for `T-016` (66 suites, 851 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing `T-021`
   through `T-023` and moving `T-016` to review.
+- PR #29 opened for `T-016`.

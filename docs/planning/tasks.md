@@ -619,7 +619,7 @@ Merge:
 - Priority: medium
 - Branch: `task/T-016-account-email-delivery`
 - GitHub issue: none
-- PR: none
+- PR: #29
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

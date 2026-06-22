@@ -6,7 +6,7 @@ Branch: `task/T-016-account-email-delivery`
 
 Issue: none
 
-PR: TBD
+PR: #29
 
 ## Summary
 
@@ -79,7 +79,7 @@ production-hardening work is captured as follow-up tasks.
   from the client-used shared barrel.
 - Tracker consistency checked: yes; tracker validation passes with 23 tasks.
 - Docs checked: yes; ADR, shared docs, project log, and task registry updated.
-- CI or PR status: local validation passed; PR pending.
+- CI or PR status: local validation passed; PR #29 opened.
 
 ## Follow-Ups
 
@@ -97,4 +97,4 @@ production-hardening work is captured as follow-up tasks.
 
 ## Registry Update Requested
 
-- Link the PR number after opening the pull request.
+- PR #29 linked in the task registry.
