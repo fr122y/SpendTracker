@@ -78,3 +78,4 @@ Review and merge `T-020` after PR checks pass.
   (40 tests).
 - Passed: `npm run validate` for `T-020` (65 suites, 836 tests).
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-020`.
+- PR #27 opened for `T-020`.

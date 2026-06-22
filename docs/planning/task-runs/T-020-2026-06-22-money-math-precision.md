@@ -6,7 +6,7 @@ Branch: `task/T-020-money-math-precision`
 
 Issue: #TBD
 
-PR: TBD
+PR: #27
 
 ## Summary
 
@@ -55,7 +55,7 @@ zeroes, and the numeric callback receives the same normalized value.
   handlers were not changed.
 - Tracker consistency checked: Yes, task tracker validation passed.
 - Docs checked: Yes.
-- CI or PR status: PR TBD.
+- CI or PR status: PR #27 opened.
 
 ## Follow-Ups
 

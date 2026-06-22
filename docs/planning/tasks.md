@@ -756,7 +756,7 @@ Acceptance criteria:
 - Priority: high
 - Branch: `task/T-020-money-math-precision`
 - GitHub issue: none
-- PR: none
+- PR: #27
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
