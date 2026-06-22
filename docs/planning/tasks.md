@@ -750,7 +750,7 @@ Acceptance criteria:
 
 ## T-020 - Normalize money math input precision
 
-- Status: `backlog`
+- Status: `review`
 - Phase: Reliability
 - Type: fix
 - Priority: high
@@ -783,3 +783,7 @@ Acceptance criteria:
 - Affected add-expense, bucket, and weekly budget money inputs use the
   normalized behavior consistently.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-020-2026-06-22-money-math-precision.md`

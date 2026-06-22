@@ -1,5 +1,12 @@
 # Project Log
 
+## 2026-06-22
+
+- Implemented `T-020` MathInput precision normalization on
+  `task/T-020-money-math-precision`: evaluated values now round to at most two
+  decimal places, whole-number results drop trailing zeroes, floating-point
+  tails are covered by regression tests, and full `npm run validate` passed.
+
 ## 2026-06-19
 
 - Implemented `T-002` app-resume freshness on
