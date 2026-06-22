@@ -605,7 +605,7 @@
         "Focused tests cover personal/shared scope switching, suggestion behavior, and privacy boundaries.",
         "npm run validate passes."
       ],
-      "next_action": "Apply the shared keyword mapping migration in the target database."
+      "next_action": "No further action."
     },
     {
       "id": "T-014",
