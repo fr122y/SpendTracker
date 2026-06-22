@@ -55,3 +55,22 @@ Server Actions and shared query infrastructure for the application.
 - Shared budget actions throw authorization errors before mutating data
 - Invite acceptance returns explicit invalid/expired/used/archived/duplicate
   states instead of mutating on failure
+- Account email delivery errors are normalized by the server-only shared email
+  wrapper before password reset or email verification flows consume them.
+
+## Account Email Delivery
+
+Account-related Server Actions should call `sendAccountEmail` from
+`@/shared/lib/account-email` instead of using Resend directly. Import the module
+only from server code; it is intentionally not exported from the general
+`@/shared/lib` barrel. The wrapper requires typed email payloads, text and HTML
+bodies, and an idempotency key so future retry or outbox work can reuse the
+same contract.
+
+Production environment:
+
+- `RESEND_API_KEY`
+- `ACCOUNT_EMAIL_FROM`
+- `ACCOUNT_EMAIL_REPLY_TO` (optional)
+
+Development and tests without `RESEND_API_KEY` use console preview mode.

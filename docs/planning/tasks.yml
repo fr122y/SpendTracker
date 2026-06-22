@@ -703,17 +703,21 @@
     {
       "id": "T-016",
       "title": "Choose and integrate account email delivery",
-      "status": "captured",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-016-account-email-delivery",
+      "pr": 29,
       "detail": "Choose and integrate the server-side email delivery foundation needed for account emails such as password reset and email verification.",
       "depends_on": [],
       "blocks": [
         "T-017",
-        "T-018"
+        "T-018",
+        "T-021",
+        "T-022",
+        "T-023"
       ],
       "parallel": true,
       "owner_mode": "agent-led",
@@ -731,18 +735,22 @@
         "docs/context/PROJECT_BRIEF.md",
         "docs/planning/task-tracking.md",
         "docs/planning/tasks.yml",
+        "docs/decisions/0002-account-email-delivery.md",
         "src/shared/auth/README.md",
-        "src/shared/api/README.md"
+        "src/shared/api/README.md",
+        "src/shared/lib/README.md"
       ],
       "acceptance": [
         "The project has a chosen account-email delivery strategy or provider documented in durable context or an ADR.",
         "Server-only email configuration is documented, including required environment variables and local development behavior.",
         "A testable server-side email sending abstraction exists for account emails.",
+        "The account email abstraction supports typed account email payloads and Resend idempotency keys.",
         "No email provider secret is exposed through NEXT_PUBLIC variables or client code.",
         "Focused tests cover the email sender success path and failure handling where practical.",
         "npm run validate passes."
       ],
-      "next_action": "Resolve provider and environment decision before implementation."
+      "task_run": "docs/planning/task-runs/T-016-2026-06-22-account-email-delivery.md",
+      "next_action": "Review PR #29 and merge when checks are green."
     },
     {
       "id": "T-017",
@@ -925,6 +933,181 @@
         "npm run validate passes."
       ],
       "next_action": "No further action."
+    },
+    {
+      "id": "T-021",
+      "title": "Add email outbox and retries",
+      "status": "captured",
+      "phase": "Account & Auth",
+      "type": "feature",
+      "priority": "medium",
+      "github_issue": null,
+      "branch": "task/T-021-email-outbox-retries",
+      "detail": "Persist outbound account email messages and process them through a retryable outbox so provider delays, rate limits, and transient failures do not block user-facing flows.",
+      "depends_on": [
+        "T-016"
+      ],
+      "blocks": [],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner chose to defer queue and retry infrastructure from T-016 while preserving it as a follow-up for production hardening.",
+      "write_scope": [
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/lib/**",
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "docs/decisions/0002-account-email-delivery.md",
+        "src/shared/lib/account-email.ts",
+        "src/shared/db/schema.ts"
+      ],
+      "acceptance": [
+        "Outbound account emails can be persisted before provider send attempts.",
+        "Email message records track type, recipient, status, provider id, idempotency key, attempts, last error, and next retry time.",
+        "A worker or scheduled process sends pending account emails without requiring the original user request to wait on provider delivery.",
+        "Retry behavior handles rate limits, transient provider failures, and network errors with bounded backoff.",
+        "Permanent validation or configuration errors are not retried indefinitely.",
+        "Focused tests cover outbox persistence, retry scheduling, success, and terminal failure behavior.",
+        "npm run validate passes."
+      ],
+      "next_action": "Refine worker or cron mechanism when production email reliability becomes the next priority."
+    },
+    {
+      "id": "T-022",
+      "title": "Add Resend webhooks and suppression",
+      "status": "captured",
+      "phase": "Account & Auth",
+      "type": "feature",
+      "priority": "medium",
+      "github_issue": null,
+      "branch": "task/T-022-resend-webhooks-suppression",
+      "detail": "Process signed Resend delivery webhooks and maintain suppression records for bounced or complained email addresses.",
+      "depends_on": [
+        "T-016"
+      ],
+      "blocks": [],
+      "parallel": false,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner chose to defer webhook and suppression handling from T-016 while preserving it as a production-hardening follow-up.",
+      "write_scope": [
+        "src/app/**",
+        "src/shared/api/**",
+        "src/shared/db/**",
+        "src/shared/lib/**",
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "docs/decisions/0002-account-email-delivery.md",
+        "src/shared/lib/account-email.ts",
+        "src/shared/db/schema.ts"
+      ],
+      "acceptance": [
+        "A Resend webhook endpoint verifies signatures using the raw request body and server-only webhook secret.",
+        "Relevant delivery events are stored or otherwise made auditable for account emails.",
+        "Webhook events update account email delivery state where matching provider message records exist.",
+        "Bounced and complained recipients are added to a suppression list.",
+        "Future account email sends check suppression state before provider delivery.",
+        "Focused tests cover signature rejection, event persistence, delivery updates, and suppression behavior.",
+        "npm run validate passes."
+      ],
+      "next_action": "Refine endpoint shape and persistence after email outbox needs are clearer."
+    },
+    {
+      "id": "T-023",
+      "title": "Add account email templates and production checklist",
+      "status": "backlog",
+      "phase": "Account & Auth",
+      "type": "feature",
+      "priority": "low",
+      "github_issue": null,
+      "branch": "task/T-023-account-email-templates",
+      "detail": "Add reusable account email templates and a production readiness checklist for verified sending domains, sender addresses, and Resend key permissions.",
+      "depends_on": [
+        "T-016"
+      ],
+      "blocks": [],
+      "parallel": true,
+      "owner_mode": "agent-led",
+      "human_gate": "Human owner chose to defer React Email or richer template work from the delivery foundation so T-016 stays focused.",
+      "write_scope": [
+        "src/shared/lib/**",
+        "src/shared/ui/**",
+        "docs/context/**",
+        "docs/decisions/**",
+        "docs/planning/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "docs/decisions/0002-account-email-delivery.md",
+        "src/shared/lib/account-email.ts"
+      ],
+      "acceptance": [
+        "Account email templates provide both HTML and text output for password reset and email verification.",
+        "The implementation decision for plain templates versus React Email is documented.",
+        "Templates avoid sensitive data and clearly state link expiry and ignore-if-unrequested guidance.",
+        "A production checklist documents verified sending subdomain, SPF, DKIM, DMARC, sender address, reply-to address, and minimum Resend API key permissions.",
+        "Focused tests cover template rendering for supported account email types.",
+        "npm run validate passes."
+      ],
+      "next_action": "Schedule when account email content or production readiness needs refinement beyond the basic T-016 transport."
+    },
+    {
+      "id": "T-024",
+      "title": "Configure Resend account email secrets",
+      "status": "captured",
+      "phase": "Account & Auth",
+      "type": "chore",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-024-configure-resend-email-secrets",
+      "detail": "Configure the real Resend and deployment environment secrets required for production account email delivery without committing any secret values to the repository.",
+      "depends_on": [
+        "T-016"
+      ],
+      "blocks": [],
+      "parallel": true,
+      "owner_mode": "human-led",
+      "human_gate": "Human owner must create or provide Resend credentials, verify the sending domain, and configure deployment secrets outside the repository.",
+      "write_scope": [
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "docs/decisions/0002-account-email-delivery.md",
+        "src/shared/lib/account-email.ts"
+      ],
+      "acceptance": [
+        "A Resend account or project exists for SmartSpend account emails.",
+        "A sending domain or subdomain is verified in Resend for account emails.",
+        "Required DNS records for sending are configured outside the repository.",
+        "A Resend API key with minimum practical sending permissions is stored only in deployment or local secret storage.",
+        "Deployment environment variables are configured: RESEND_API_KEY and ACCOUNT_EMAIL_FROM, plus ACCOUNT_EMAIL_REPLY_TO if needed.",
+        "No email secret value is committed to the repository and no NEXT_PUBLIC email secret is introduced.",
+        "A real account email send is smoke-tested after T-017 or T-018 provides a user-facing send path, or with an approved temporary server-only script.",
+        "Operational notes are recorded in project memory without exposing secrets."
+      ],
+      "next_action": "Owner should configure Resend, DNS, and deployment env before production verification of account email flows."
     }
   ]
 }

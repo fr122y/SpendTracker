@@ -103,3 +103,32 @@ evaluateMathExpression('5/0') // Infinity
 - Handles negative numbers
 - Supports Russian decimal separator (comma)
 - Returns `NaN` for invalid expressions
+
+### Account Email Delivery
+
+Server-only wrapper around Resend for account emails. Import this module
+directly from server code; do not re-export it from the general `@/shared/lib`
+barrel because that barrel is used by client components.
+
+```typescript
+import { sendAccountEmail } from '@/shared/lib/account-email'
+
+await sendAccountEmail({
+  type: 'auth.reset_password',
+  to: 'user@example.com',
+  subject: 'Сброс пароля',
+  text: 'Откройте ссылку для сброса пароля',
+  html: '<p>Откройте ссылку для сброса пароля</p>',
+  idempotencyKey: 'auth.reset_password:user-id:token-id',
+})
+```
+
+Required production environment:
+
+- `RESEND_API_KEY`
+- `ACCOUNT_EMAIL_FROM`
+- `ACCOUNT_EMAIL_REPLY_TO` (optional)
+
+In development and tests, missing `RESEND_API_KEY` logs a safe preview instead
+of sending a real email. Email provider secrets must stay server-only and must
+not use `NEXT_PUBLIC_*`.

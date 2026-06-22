@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-016` - Choose and integrate account email delivery.
 
 ## Active Branch
 
-- None.
+- `task/T-016-account-email-delivery`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Choose the next task.
+Review PR #29 for `T-016` and merge when checks are green.
 
 ## Validation
 
@@ -88,3 +88,10 @@ Choose the next task.
 - PR #28 merged for `T-015` with merge commit `73b22c4`.
 - Passed: `python3 scripts/validate_task_tracker.py` after reconciling
   `T-015`.
+- Passed: focused Jest tests for `T-016` account email delivery (13 tests).
+- Passed: `npm run validate` for `T-016` (66 suites, 851 tests).
+- Passed: `python3 scripts/validate_task_tracker.py` after capturing `T-021`
+  through `T-023` and moving `T-016` to review.
+- PR #29 opened for `T-016`.
+- Captured `T-024` for owner-led Resend secret, DNS, and deployment environment
+  setup.
