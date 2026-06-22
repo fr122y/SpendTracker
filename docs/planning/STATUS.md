@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Run full validation for `T-019`, open a pull request, and complete review.
+Review PR #31 for `T-019` and merge when checks pass.
 
 ## Validation
 
@@ -112,3 +112,4 @@ Run full validation for `T-019`, open a pull request, and complete review.
   `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-019`.
+- PR #31 opened for `T-019`.

@@ -858,6 +858,7 @@
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-019-account-profile-logout",
+      "pr": 31,
       "detail": "Add a minimal account profile area and a visible logout path for authenticated users.",
       "depends_on": [],
       "blocks": [],
@@ -892,7 +893,7 @@
         "npm run validate passes."
       ],
       "task_run": "docs/planning/task-runs/T-019-2026-06-22-account-profile-logout.md",
-      "next_action": "Run full validation, open a pull request, and complete review."
+      "next_action": "Review PR #31 and merge when checks pass."
     },
     {
       "id": "T-020",

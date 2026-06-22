@@ -743,7 +743,7 @@ Acceptance criteria:
 - Priority: medium
 - Branch: `task/T-019-account-profile-logout`
 - GitHub issue: none
-- PR: none
+- PR: #31
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

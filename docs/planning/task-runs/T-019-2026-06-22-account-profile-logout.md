@@ -6,7 +6,7 @@ Branch: `task/T-019-account-profile-logout`
 
 Issue: none
 
-PR: none yet
+PR: #31
 
 Merge commit: none yet
 
@@ -54,7 +54,7 @@ sign out through a server action that redirects to `/login`.
 - Regression risk checked: yes; dashboard header tests were included.
 - Tracker consistency checked: yes; tracker validation passes.
 - Docs checked: yes; auth and dashboard header slice docs updated.
-- CI or PR status: PR not opened yet.
+- CI or PR status: PR #31 opened.
 
 ## Follow-Ups
 
