@@ -8,6 +8,8 @@ Issue: none
 
 PR: #30
 
+Merge commit: `f18cc77`
+
 ## Summary
 
 Implemented the credentials forgot-password flow. Users can request a reset
@@ -74,7 +76,7 @@ unknown-email cases are handled safely.
   in the focused suite.
 - Tracker consistency checked: yes; tracker validation passes.
 - Docs checked: yes; auth/shared slice docs updated.
-- CI or PR status: PR #30 opened and checks passed.
+- CI or PR status: PR #30 merged to `main` as `f18cc77`.
 
 ## Follow-Ups
 
@@ -89,4 +91,4 @@ unknown-email cases are handled safely.
 
 ## Registry Update Requested
 
-- Link merge commit after review/merge.
+- No further action.

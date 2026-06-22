@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- `T-017` forgot password flow is implemented locally and ready for PR review.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-017-forgot-password`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Review and merge PR #30 for `T-017`.
+Choose the next task.
 
 ## Validation
 
@@ -105,3 +105,4 @@ Review and merge PR #30 for `T-017`.
 - PR #30 opened for `T-017`.
 - PR #30 checks passed for `T-017`: Vercel, Vercel Preview Comments,
   commitlint, and validate-task-tracker.
+- PR #30 merged for `T-017` with merge commit `f18cc77`.

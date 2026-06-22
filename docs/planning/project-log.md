@@ -7,6 +7,9 @@
   reset requests, Resend-backed account email delivery, reset-token status UI,
   atomic token claiming before password update, focused tests, and full
   `npm run validate`.
+- Merged PR #30 for `T-017` into `main` as `f18cc77`; the
+  `0008_password_reset_tokens.sql` migration has been applied to the configured
+  Supabase database.
 - Started `T-016` account email delivery on
   `task/T-016-account-email-delivery`: chose Resend, added a server-only
   account email contract with idempotency keys, documented production email

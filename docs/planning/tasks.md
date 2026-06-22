@@ -71,7 +71,7 @@ Task-run report:
 
 ## T-003 - Open monthly category expenses from analysis chart
 
-- Status: `review`
+- Status: `done`
 - Phase: Analytics UX
 - Type: feature
 - Priority: medium
@@ -667,6 +667,7 @@ Task-run report:
 - Branch: `task/T-017-forgot-password`
 - GitHub issue: none
 - PR: #30
+- Merge commit: `f18cc77`
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:
