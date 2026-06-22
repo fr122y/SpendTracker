@@ -1066,6 +1066,48 @@
         "npm run validate passes."
       ],
       "next_action": "Schedule when account email content or production readiness needs refinement beyond the basic T-016 transport."
+    },
+    {
+      "id": "T-024",
+      "title": "Configure Resend account email secrets",
+      "status": "captured",
+      "phase": "Account & Auth",
+      "type": "chore",
+      "priority": "high",
+      "github_issue": null,
+      "branch": "task/T-024-configure-resend-email-secrets",
+      "detail": "Configure the real Resend and deployment environment secrets required for production account email delivery without committing any secret values to the repository.",
+      "depends_on": [
+        "T-016"
+      ],
+      "blocks": [],
+      "parallel": true,
+      "owner_mode": "human-led",
+      "human_gate": "Human owner must create or provide Resend credentials, verify the sending domain, and configure deployment secrets outside the repository.",
+      "write_scope": [
+        "docs/planning/**",
+        "docs/context/**",
+        "docs/decisions/**"
+      ],
+      "required_context": [
+        "AGENTS.md",
+        "docs/context/PROJECT_BRIEF.md",
+        "docs/planning/task-tracking.md",
+        "docs/planning/tasks.yml",
+        "docs/decisions/0002-account-email-delivery.md",
+        "src/shared/lib/account-email.ts"
+      ],
+      "acceptance": [
+        "A Resend account or project exists for SmartSpend account emails.",
+        "A sending domain or subdomain is verified in Resend for account emails.",
+        "Required DNS records for sending are configured outside the repository.",
+        "A Resend API key with minimum practical sending permissions is stored only in deployment or local secret storage.",
+        "Deployment environment variables are configured: RESEND_API_KEY and ACCOUNT_EMAIL_FROM, plus ACCOUNT_EMAIL_REPLY_TO if needed.",
+        "No email secret value is committed to the repository and no NEXT_PUBLIC email secret is introduced.",
+        "A real account email send is smoke-tested after T-017 or T-018 provides a user-facing send path, or with an approved temporary server-only script.",
+        "Operational notes are recorded in project memory without exposing secrets."
+      ],
+      "next_action": "Owner should configure Resend, DNS, and deployment env before production verification of account email flows."
     }
   ]
 }

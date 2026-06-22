@@ -916,3 +916,41 @@ Acceptance criteria:
   permissions.
 - Focused tests cover template rendering for supported account email types.
 - `npm run validate` passes.
+
+## T-024 - Configure Resend account email secrets
+
+- Status: `captured`
+- Phase: Account & Auth
+- Type: chore
+- Priority: high
+- Branch: `task/T-024-configure-resend-email-secrets`
+- GitHub issue: none
+- PR: none
+- Owner mode: human-led
+- Depends on: `T-016`
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `docs/decisions/0002-account-email-delivery.md`
+  - `src/shared/lib/account-email.ts`
+
+Configure the real Resend and deployment environment secrets required for
+production account email delivery without committing any secret values to the
+repository.
+
+Acceptance criteria:
+
+- A Resend account or project exists for SmartSpend account emails.
+- A sending domain or subdomain is verified in Resend for account emails.
+- Required DNS records for sending are configured outside the repository.
+- A Resend API key with minimum practical sending permissions is stored only in
+  deployment or local secret storage.
+- Deployment environment variables are configured: `RESEND_API_KEY` and
+  `ACCOUNT_EMAIL_FROM`, plus `ACCOUNT_EMAIL_REPLY_TO` if needed.
+- No email secret value is committed to the repository and no `NEXT_PUBLIC`
+  email secret is introduced.
+- A real account email send is smoke-tested after `T-017` or `T-018` provides a
+  user-facing send path, or with an approved temporary server-only script.
+- Operational notes are recorded in project memory without exposing secrets.

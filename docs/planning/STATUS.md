@@ -93,3 +93,5 @@ Review PR #29 for `T-016` and merge when checks are green.
 - Passed: `python3 scripts/validate_task_tracker.py` after capturing `T-021`
   through `T-023` and moving `T-016` to review.
 - PR #29 opened for `T-016`.
+- Captured `T-024` for owner-led Resend secret, DNS, and deployment environment
+  setup.

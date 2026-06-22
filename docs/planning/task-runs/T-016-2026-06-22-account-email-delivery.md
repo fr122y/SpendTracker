@@ -41,6 +41,8 @@ production-hardening work is captured as follow-up tasks.
   local behavior, verified sending domain requirements, and deferred hardening.
 - Captured `T-021` email outbox/retries, `T-022` Resend webhooks/suppression,
   and `T-023` account email templates/production checklist.
+- Captured `T-024` as the owner-led task for real Resend keys, DNS, and
+  deployment env setup.
 
 ## Files Touched
 
@@ -90,6 +92,8 @@ production-hardening work is captured as follow-up tasks.
 - `T-022` should add signed Resend webhooks and suppression handling.
 - `T-023` should add reusable account email templates and production checklist
   refinement.
+- `T-024` should configure Resend credentials, verified sending domain, DNS,
+  and deployment env before production email verification.
 
 ## Open Questions
 

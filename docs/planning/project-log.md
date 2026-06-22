@@ -7,6 +7,8 @@
   account email contract with idempotency keys, documented production email
   requirements, and captured deferred email outbox, webhook/suppression, and
   template follow-ups as `T-021` through `T-023`.
+- Captured `T-024` as the owner-led Resend secret, DNS, and deployment
+  environment setup task so production email credentials are not forgotten.
 - Implemented `T-015` auth form password visibility controls on
   `task/T-015-auth-form-ux`: login and registration password fields now have
   accessible show/hide toggles, existing Auth.js credentials and callback URL
