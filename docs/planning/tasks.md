@@ -666,7 +666,7 @@ Task-run report:
 - Priority: high
 - Branch: `task/T-017-forgot-password`
 - GitHub issue: none
-- PR: none
+- PR: #30
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:

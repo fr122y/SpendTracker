@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Open a PR for `T-017` and wait for checks.
+Wait for PR #30 checks and review for `T-017`.
 
 ## Validation
 
@@ -102,3 +102,4 @@ Open a PR for `T-017` and wait for checks.
   `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-017`.
+- PR #30 opened for `T-017`.

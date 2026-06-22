@@ -762,6 +762,7 @@
       "priority": "high",
       "github_issue": null,
       "branch": "task/T-017-forgot-password",
+      "pr": 30,
       "detail": "Add a forgot-password flow for credentials users using one-time expiring reset tokens and the account email delivery foundation.",
       "depends_on": [
         "T-016"
@@ -798,7 +799,7 @@
         "npm run validate passes."
       ],
       "task_run": "docs/planning/task-runs/T-017-2026-06-22-forgot-password.md",
-      "next_action": "Open PR for review and wait for checks."
+      "next_action": "Wait for PR #30 checks and review."
     },
     {
       "id": "T-018",

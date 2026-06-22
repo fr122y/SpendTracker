@@ -6,7 +6,7 @@ Branch: `task/T-017-forgot-password`
 
 Issue: none
 
-PR: TBD
+PR: #30
 
 ## Summary
 
@@ -74,7 +74,7 @@ unknown-email cases are handled safely.
   in the focused suite.
 - Tracker consistency checked: yes; tracker validation passes.
 - Docs checked: yes; auth/shared slice docs updated.
-- CI or PR status: pending.
+- CI or PR status: PR #30 opened; checks pending.
 
 ## Follow-Ups
 
@@ -89,4 +89,4 @@ unknown-email cases are handled safely.
 
 ## Registry Update Requested
 
-- Link PR and merge commit after review/merge.
+- Link merge commit after review/merge.
