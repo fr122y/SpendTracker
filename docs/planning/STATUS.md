@@ -1,6 +1,6 @@
 # Status
 
-Last updated: 2026-06-19
+Last updated: 2026-06-22
 
 ## Current Focus
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-19
 
 ## Next Action
 
-Choose the next task: `T-003`.
+Choose the next task: `T-020`.
 
 ## Validation
 
@@ -70,3 +70,7 @@ Choose the next task: `T-003`.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-002`.
 - PR #25 opened for `T-002`.
 - PR #25 merged for `T-002` with merge commit `88fecbd`.
+- Captured account/auth and money precision backlog tasks `T-015` through
+  `T-020`; `T-020` is the recommended next high-priority bugfix.
+- Passed: `python3 scripts/validate_task_tracker.py` after capturing `T-015`
+  through `T-020`.
