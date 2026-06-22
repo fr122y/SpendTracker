@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 
+import { PasswordInput } from './password-input'
+
 interface CredentialsSignInFormProps {
   onSwitchToRegister?: () => void
   defaultError?: string
@@ -54,13 +56,12 @@ export function CredentialsSignInForm({
         className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
       />
 
-      <input
-        type="password"
+      <PasswordInput
         placeholder="Пароль"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        required
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+        showLabel="Показать пароль"
+        hideLabel="Скрыть пароль"
       />
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
