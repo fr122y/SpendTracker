@@ -9,6 +9,7 @@
   template follow-ups as `T-021` through `T-023`.
 - Captured `T-024` as the owner-led Resend secret, DNS, and deployment
   environment setup task so production email credentials are not forgotten.
+- Merged PR #29 for `T-016` into `main` as `ed7dfe6`.
 - Implemented `T-015` auth form password visibility controls on
   `task/T-015-auth-form-ux`: login and registration password fields now have
   accessible show/hide toggles, existing Auth.js credentials and callback URL

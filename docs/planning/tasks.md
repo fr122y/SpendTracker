@@ -613,13 +613,14 @@ Merge:
 
 ## T-016 - Choose and integrate account email delivery
 
-- Status: `review`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-016-account-email-delivery`
 - GitHub issue: none
 - PR: #29
+- Merge commit: `ed7dfe6`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

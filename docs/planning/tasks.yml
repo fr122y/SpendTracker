@@ -703,13 +703,14 @@
     {
       "id": "T-016",
       "title": "Choose and integrate account email delivery",
-      "status": "review",
+      "status": "done",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-016-account-email-delivery",
       "pr": 29,
+      "merge_commit": "ed7dfe6",
       "detail": "Choose and integrate the server-side email delivery foundation needed for account emails such as password reset and email verification.",
       "depends_on": [],
       "blocks": [
@@ -750,7 +751,7 @@
         "npm run validate passes."
       ],
       "task_run": "docs/planning/task-runs/T-016-2026-06-22-account-email-delivery.md",
-      "next_action": "Review PR #29 and merge when checks are green."
+      "next_action": "No further action."
     },
     {
       "id": "T-017",

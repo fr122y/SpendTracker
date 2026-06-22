@@ -8,6 +8,8 @@ Issue: none
 
 PR: #29
 
+Merge commit: `ed7dfe6`
+
 ## Summary
 
 Implemented the account email delivery foundation for credentials account
@@ -81,7 +83,7 @@ production-hardening work is captured as follow-up tasks.
   from the client-used shared barrel.
 - Tracker consistency checked: yes; tracker validation passes with 23 tasks.
 - Docs checked: yes; ADR, shared docs, project log, and task registry updated.
-- CI or PR status: local validation passed; PR #29 opened.
+- CI or PR status: PR #29 merged to `main` as `ed7dfe6`.
 
 ## Follow-Ups
 

@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- `T-016` - Choose and integrate account email delivery.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-016-account-email-delivery`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Review PR #29 for `T-016` and merge when checks are green.
+Choose the next task.
 
 ## Validation
 
@@ -95,3 +95,4 @@ Review PR #29 for `T-016` and merge when checks are green.
 - PR #29 opened for `T-016`.
 - Captured `T-024` for owner-led Resend secret, DNS, and deployment environment
   setup.
+- PR #29 merged for `T-016` with merge commit `ed7dfe6`.
