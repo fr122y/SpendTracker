@@ -662,12 +662,13 @@
     {
       "id": "T-015",
       "title": "Improve credentials auth form UX",
-      "status": "review",
+      "status": "done",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "pr": 28,
+      "merge_commit": "73b22c4",
       "branch": "task/T-015-auth-form-ux",
       "detail": "Improve the existing Auth.js credentials login and registration forms with password visibility controls while preserving the current credentials and Google sign-in flows.",
       "depends_on": [],
@@ -697,7 +698,7 @@
         "Focused auth form tests cover password visibility toggles and existing submit flows.",
         "npm run validate passes."
       ],
-      "next_action": "Open a pull request for T-015 and review the auth form UX diff."
+      "next_action": "No further action."
     },
     {
       "id": "T-016",

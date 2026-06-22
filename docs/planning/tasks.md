@@ -567,13 +567,14 @@ Merge:
 
 ## T-015 - Improve credentials auth form UX
 
-- Status: `review`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-015-auth-form-ux`
 - GitHub issue: none
 - PR: #28
+- Merge commit: `73b22c4`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -605,6 +606,10 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-015-2026-06-22-auth-form-ux.md`
+
+Merge:
+
+- PR #28 merged to `main` with merge commit `73b22c4`.
 
 ## T-016 - Choose and integrate account email delivery
 

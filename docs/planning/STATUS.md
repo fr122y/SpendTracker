@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- `T-015` - Improve credentials auth form UX is ready for PR review.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-015-auth-form-ux`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Open a pull request for `T-015` and review the auth form UX diff.
+Choose the next task.
 
 ## Validation
 
@@ -85,3 +85,6 @@ Open a pull request for `T-015` and review the auth form UX diff.
 - Passed: focused Jest tests for `T-015` credentials and registration auth
   forms (15 tests).
 - Passed: `npm run validate` for `T-015` (65 suites, 838 tests).
+- PR #28 merged for `T-015` with merge commit `73b22c4`.
+- Passed: `python3 scripts/validate_task_tracker.py` after reconciling
+  `T-015`.

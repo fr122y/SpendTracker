@@ -6,6 +6,8 @@
   `task/T-015-auth-form-ux`: login and registration password fields now have
   accessible show/hide toggles, existing Auth.js credentials and callback URL
   behavior is covered by focused tests, and full `npm run validate` passed.
+- Merged PR #28 for `T-015` into `main` as `73b22c4` and reconciled the task to
+  `done`.
 - Implemented `T-020` MathInput precision normalization on
   `task/T-020-money-math-precision`: evaluated values now round to at most two
   decimal places, whole-number results drop trailing zeroes, floating-point
