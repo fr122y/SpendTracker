@@ -25,6 +25,8 @@ Drizzle ORM database layer for the app's PostgreSQL backend.
 - Auth users table stores:
   - OAuth profile fields (`name`, `email`, `image`, `emailVerified`)
   - Nullable `password` for credentials auth users
+- `password_reset_token` stores one-time credentials password reset token
+  hashes, expiry, and use state
 
 ## Dependencies
 

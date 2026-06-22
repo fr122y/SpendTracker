@@ -71,6 +71,28 @@ export const verificationTokens = pgTable(
   ]
 )
 
+export const passwordResetTokens = pgTable(
+  'password_reset_token',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    tokenHash: text('tokenHash').notNull().unique(),
+    expiresAt: timestamp('expiresAt', { mode: 'date' }).notNull(),
+    usedAt: timestamp('usedAt', { mode: 'date' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index('password_reset_token_user_idx').on(table.userId),
+    index('password_reset_token_expires_idx').on(table.expiresAt),
+  ]
+)
+
 export const sharedBudgets = pgTable('shared_budget', {
   id: text('id')
     .primaryKey()

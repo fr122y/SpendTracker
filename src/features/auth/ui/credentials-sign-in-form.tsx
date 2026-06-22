@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
@@ -63,6 +64,15 @@ export function CredentialsSignInForm({
         showLabel="Показать пароль"
         hideLabel="Скрыть пароль"
       />
+
+      <div className="text-right">
+        <Link
+          href="/forgot-password"
+          className="text-sm text-emerald-400 transition-colors hover:text-emerald-300"
+        >
+          Забыли пароль?
+        </Link>
+      </div>
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
 

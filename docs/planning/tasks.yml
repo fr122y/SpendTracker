@@ -756,7 +756,7 @@
     {
       "id": "T-017",
       "title": "Add forgot password flow for credentials users",
-      "status": "backlog",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "high",
@@ -797,7 +797,8 @@
         "Focused server and UI tests cover request, reset, token reuse, expiry, and invalid-token behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Start after T-016 chooses and integrates account email delivery."
+      "task_run": "docs/planning/task-runs/T-017-2026-06-22-forgot-password.md",
+      "next_action": "Open PR for review and wait for checks."
     },
     {
       "id": "T-018",

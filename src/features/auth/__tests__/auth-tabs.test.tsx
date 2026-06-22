@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event'
 
 const mockSignInSwitch = jest.fn()
 const mockRegisterSwitch = jest.fn()
+const mockSearchParamsGet = jest.fn<string | null, [string]>(() => null)
 
 jest.mock('next/navigation', () => ({
   useSearchParams: () => ({
-    get: jest.fn(() => null),
+    get: (key: string) => mockSearchParamsGet(key),
   }),
 }))
 
@@ -57,6 +58,7 @@ import { AuthTabs } from '@/features/auth/ui/auth-tabs'
 describe('AuthTabs', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockSearchParamsGet.mockReturnValue(null)
   })
 
   it('shows sign-in tab as active by default', () => {
@@ -108,5 +110,21 @@ describe('AuthTabs', () => {
 
     expect(mockRegisterSwitch).toHaveBeenCalledTimes(1)
     expect(screen.getByText('signin-form')).toBeInTheDocument()
+  })
+
+  it('shows reset success message on login redirect', () => {
+    mockSearchParamsGet.mockImplementation((key: string) => {
+      if (key === 'reset') {
+        return 'success'
+      }
+
+      return null
+    })
+
+    render(<AuthTabs />)
+
+    expect(
+      screen.getByText('Пароль обновлён. Войдите с новым паролем.')
+    ).toBeInTheDocument()
   })
 })

@@ -5,6 +5,11 @@ Server Actions and shared query infrastructure for the application.
 ## Public API (`index.ts`)
 
 - `registerUser({ name, email, password })`: credentials registration with validation and default seeding
+- `requestPasswordReset({ email })`: start a neutral credentials password reset
+  flow without exposing whether the email exists
+- `getPasswordResetTokenStatus(token)`: resolve reset-token page state
+- `resetPassword({ token, password })`: set a new bcrypt-hashed password for a
+  valid one-time reset token
 - `getKeywordMappings()`: get user keyword mappings joined with category metadata
 - `saveKeywordMapping(keyword, categoryId)`: upsert keyword mapping for user
 - `deleteKeywordMapping(id)`: delete mapping
@@ -47,11 +52,15 @@ Server Actions and shared query infrastructure for the application.
   private task-scoped behavior until a later product decision
 - Shared budget invite tokens are stored as hashes and accepted through Server
   Actions only
+- Password reset tokens are stored as hashes, expire after 15 minutes, and are
+  invalidated after successful use
 
 ## Error Handling
 
 - Mutations rely on optimistic updates in entity layer with rollback toast on failure
 - Registration returns user-facing validation and duplicate-email messages
+- Password reset requests return neutral success for existing credentials users,
+  OAuth-only users, and unknown email addresses
 - Shared budget actions throw authorization errors before mutating data
 - Invite acceptance returns explicit invalid/expired/used/archived/duplicate
   states instead of mutating on failure

@@ -1,0 +1,341 @@
+const mockHashPassword = jest.fn()
+const mockSendAccountEmail = jest.fn()
+const mockEq = jest.fn((left: unknown, right: unknown) => {
+  void left
+  void right
+  return 'eq'
+})
+const mockAnd = jest.fn((...conditions: unknown[]) => conditions)
+const mockIsNull = jest.fn((value: unknown) => ['isNull', value])
+
+const mockLimit = jest.fn()
+const mockWhere = jest.fn(() => ({ limit: mockLimit }))
+const mockInnerJoin = jest.fn(() => ({ where: mockWhere }))
+const mockFrom = jest.fn(() => ({
+  innerJoin: mockInnerJoin,
+  where: mockWhere,
+}))
+const mockSelect = jest.fn(() => ({ from: mockFrom }))
+
+const mockUpdateWhere = jest.fn()
+const mockReturning = jest.fn()
+const mockUpdateSet = jest.fn(() => ({ where: mockUpdateWhere }))
+const mockUpdate = jest.fn(() => ({ set: mockUpdateSet }))
+const mockInsertValues = jest.fn()
+const mockInsert = jest.fn(() => ({ values: mockInsertValues }))
+const mockTransaction = jest.fn()
+
+jest.mock('bcryptjs', () => ({
+  __esModule: true,
+  default: {
+    hash: (password: string, rounds: number) =>
+      mockHashPassword(password, rounds),
+  },
+}))
+
+jest.mock('drizzle-orm', () => ({
+  and: (...conditions: unknown[]) => mockAnd(...conditions),
+  eq: (left: unknown, right: unknown) => mockEq(left, right),
+  isNull: (value: unknown) => mockIsNull(value),
+}))
+
+jest.mock('@/shared/lib/account-email', () => ({
+  sendAccountEmail: (...args: unknown[]) => mockSendAccountEmail(...args),
+}))
+
+jest.mock('@/shared/auth/seed-defaults', () => ({
+  seedUserDefaults: jest.fn(),
+}))
+
+jest.mock('@/shared/db', () => ({
+  db: {
+    select: () => mockSelect(),
+    transaction: (callback: (tx: unknown) => Promise<void>) =>
+      mockTransaction(callback),
+  },
+  passwordResetTokens: {
+    id: 'passwordResetTokens.id',
+    userId: 'passwordResetTokens.userId',
+    tokenHash: 'passwordResetTokens.tokenHash',
+    expiresAt: 'passwordResetTokens.expiresAt',
+    usedAt: 'passwordResetTokens.usedAt',
+  },
+  users: {
+    id: 'users.id',
+    email: 'users.email',
+    password: 'users.password',
+  },
+}))
+
+import {
+  getPasswordResetTokenStatus,
+  requestPasswordReset,
+  resetPassword,
+} from '@/shared/api/auth-actions'
+
+describe('password reset actions', () => {
+  const originalEnv = process.env
+  const originalConsoleError = console.error
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    process.env = { ...originalEnv, APP_ORIGIN: 'https://app.example.com' }
+    console.error = jest.fn()
+
+    mockHashPassword.mockResolvedValue('hashed-new-password')
+    mockLimit.mockResolvedValue([])
+    mockSendAccountEmail.mockResolvedValue({
+      status: 'sent',
+      provider: 'resend',
+      providerMessageId: 'email-1',
+    })
+    mockReturning.mockResolvedValue([{ id: 'token-1' }])
+    mockUpdateWhere.mockReturnValue({ returning: mockReturning })
+    mockInsertValues.mockResolvedValue(undefined)
+    mockTransaction.mockImplementation(
+      async (callback: (tx: unknown) => void) => {
+        return callback({
+          update: mockUpdate,
+          insert: mockInsert,
+        })
+      }
+    )
+  })
+
+  afterEach(() => {
+    process.env = originalEnv
+    console.error = originalConsoleError
+  })
+
+  it('creates a token and sends reset email for credentials users', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'user-1',
+        email: 'USER@example.com',
+        password: 'hashed-password',
+      },
+    ])
+
+    const result = await requestPasswordReset({ email: 'USER@example.com' })
+
+    expect(result.success).toBe(true)
+    expect(mockTransaction).toHaveBeenCalledTimes(1)
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        tokenHash: expect.any(String),
+        expiresAt: expect.any(Date),
+      })
+    )
+    expect(mockSendAccountEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'auth.reset_password',
+        to: 'USER@example.com',
+        subject: 'Сброс пароля SmartSpend',
+        text: expect.stringContaining(
+          'https://app.example.com/reset-password/'
+        ),
+        html: expect.stringContaining(
+          'https://app.example.com/reset-password/'
+        ),
+        idempotencyKey: expect.stringMatching(
+          /^auth\.reset_password:user-1:[a-f0-9]{64}$/
+        ),
+      })
+    )
+  })
+
+  it('returns neutral success without email for unknown addresses', async () => {
+    mockLimit.mockResolvedValueOnce([])
+
+    const result = await requestPasswordReset({ email: 'missing@example.com' })
+
+    expect(result.success).toBe(true)
+    expect(mockTransaction).not.toHaveBeenCalled()
+    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+  })
+
+  it('returns neutral success without email for OAuth-only users', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'user-1',
+        email: 'oauth@example.com',
+        password: null,
+      },
+    ])
+
+    const result = await requestPasswordReset({ email: 'oauth@example.com' })
+
+    expect(result.success).toBe(true)
+    expect(mockTransaction).not.toHaveBeenCalled()
+    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+  })
+
+  it('returns neutral success when production origin is missing', async () => {
+    process.env = { ...originalEnv, NODE_ENV: 'production' }
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'user-1',
+        email: 'user@example.com',
+        password: 'hashed-password',
+      },
+    ])
+
+    const result = await requestPasswordReset({ email: 'user@example.com' })
+
+    expect(result.success).toBe(true)
+    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+  })
+
+  it('reports valid token status', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        userEmail: 'user@example.com',
+        userPassword: 'hashed-password',
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+      },
+    ])
+
+    await expect(getPasswordResetTokenStatus('token')).resolves.toBe('valid')
+  })
+
+  it('reports expired, used, and invalid token statuses', async () => {
+    mockLimit
+      .mockResolvedValueOnce([
+        {
+          id: 'token-1',
+          userId: 'user-1',
+          userEmail: 'user@example.com',
+          userPassword: 'hashed-password',
+          expiresAt: new Date(Date.now() - 60_000),
+          usedAt: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'token-2',
+          userId: 'user-1',
+          userEmail: 'user@example.com',
+          userPassword: 'hashed-password',
+          expiresAt: new Date(Date.now() + 60_000),
+          usedAt: new Date(),
+        },
+      ])
+      .mockResolvedValueOnce([])
+
+    await expect(getPasswordResetTokenStatus('expired')).resolves.toBe(
+      'expired'
+    )
+    await expect(getPasswordResetTokenStatus('used')).resolves.toBe('used')
+    await expect(getPasswordResetTokenStatus('invalid')).resolves.toBe(
+      'invalid'
+    )
+  })
+
+  it('updates password and marks token as used for valid reset', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        userEmail: 'user@example.com',
+        userPassword: 'hashed-password',
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+      },
+    ])
+
+    const result = await resetPassword({
+      token: 'token',
+      password: 'new-password',
+    })
+
+    expect(result).toEqual({ success: true })
+    expect(mockHashPassword).toHaveBeenCalledWith('new-password', 12)
+    expect(mockUpdate).toHaveBeenCalledTimes(2)
+    expect(mockUpdateSet).toHaveBeenCalledWith({
+      usedAt: expect.any(Date),
+    })
+    expect(mockUpdateSet).toHaveBeenCalledWith({
+      password: 'hashed-new-password',
+    })
+    expect(mockReturning).toHaveBeenCalledWith({ id: 'passwordResetTokens.id' })
+  })
+
+  it('rejects a reset if the token was claimed concurrently', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        userEmail: 'user@example.com',
+        userPassword: 'hashed-password',
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+      },
+    ])
+    mockReturning.mockResolvedValueOnce([])
+
+    const result = await resetPassword({
+      token: 'token',
+      password: 'new-password',
+    })
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Ссылка уже была использована',
+    })
+  })
+
+  it('rejects used, expired, invalid, and short-password resets', async () => {
+    mockLimit
+      .mockResolvedValueOnce([
+        {
+          id: 'token-1',
+          userId: 'user-1',
+          userEmail: 'user@example.com',
+          userPassword: 'hashed-password',
+          expiresAt: new Date(Date.now() + 60_000),
+          usedAt: new Date(),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'token-2',
+          userId: 'user-1',
+          userEmail: 'user@example.com',
+          userPassword: 'hashed-password',
+          expiresAt: new Date(Date.now() - 60_000),
+          usedAt: null,
+        },
+      ])
+      .mockResolvedValueOnce([])
+
+    await expect(
+      resetPassword({ token: 'used', password: 'new-password' })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Ссылка уже была использована',
+    })
+    await expect(
+      resetPassword({ token: 'expired', password: 'new-password' })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Срок действия ссылки истёк',
+    })
+    await expect(
+      resetPassword({ token: 'invalid', password: 'new-password' })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Ссылка для сброса пароля недействительна',
+    })
+    await expect(
+      resetPassword({ token: 'token', password: 'short' })
+    ).resolves.toEqual({
+      success: false,
+      error: 'Пароль должен содержать минимум 8 символов',
+    })
+    expect(mockHashPassword).not.toHaveBeenCalled()
+  })
+})

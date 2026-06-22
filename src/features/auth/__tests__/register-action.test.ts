@@ -23,7 +23,13 @@ jest.mock('bcryptjs', () => ({
 }))
 
 jest.mock('drizzle-orm', () => ({
+  and: (...conditions: unknown[]) => conditions,
   eq: (left: unknown, right: unknown) => mockEq(left, right),
+  isNull: (value: unknown) => ['isNull', value],
+}))
+
+jest.mock('@/shared/lib/account-email', () => ({
+  sendAccountEmail: jest.fn(),
 }))
 
 jest.mock('@/shared/auth/seed-defaults', () => ({
