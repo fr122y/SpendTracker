@@ -2,6 +2,10 @@
 
 ## 2026-06-22
 
+- Implemented `T-019` account profile and logout on
+  `task/T-019-account-profile-logout`: added `/account`, server-side account
+  provider lookup, form-based logout redirecting to `/login`, dashboard header
+  account navigation, focused tests, and slice docs.
 - Implemented `T-017` forgot password flow on
   `task/T-017-forgot-password`: added hashed one-time reset tokens, neutral
   reset requests, Resend-backed account email delivery, reset-token status UI,

@@ -75,6 +75,16 @@ describe('DashboardHeader', () => {
     expect(screen.getByLabelText('Следующий день')).toBeInTheDocument()
   })
 
+  it('renders account navigation actions', () => {
+    render(<DashboardHeader />)
+
+    const accountLinks = screen.getAllByRole('link', { name: 'Аккаунт' })
+
+    expect(accountLinks).toHaveLength(2)
+    expect(accountLinks[0]).toHaveAttribute('href', '/account')
+    expect(accountLinks[1]).toHaveAttribute('href', '/account')
+  })
+
   it('calls prevDay when clicking previous button', () => {
     render(<DashboardHeader />)
 
@@ -153,6 +163,10 @@ describe('DashboardHeader', () => {
     expect(
       screen.getAllByRole('button', { name: 'Редактировать' })[0]
     ).toHaveClass('min-h-11', 'min-w-[44px]')
+    expect(screen.getAllByRole('link', { name: 'Аккаунт' })[0]).toHaveClass(
+      'min-h-11',
+      'min-w-[44px]'
+    )
   })
 
   it('keeps desktop date navigation centered independently from actions', () => {
