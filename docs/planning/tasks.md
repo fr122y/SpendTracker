@@ -613,7 +613,7 @@ Merge:
 
 ## T-016 - Choose and integrate account email delivery
 
-- Status: `captured`
+- Status: `review`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
@@ -626,8 +626,10 @@ Merge:
   - `docs/context/PROJECT_BRIEF.md`
   - `docs/planning/task-tracking.md`
   - `docs/planning/tasks.yml`
+  - `docs/decisions/0002-account-email-delivery.md`
   - `src/shared/auth/README.md`
   - `src/shared/api/README.md`
+  - `src/shared/lib/README.md`
 
 Choose and integrate the server-side email delivery foundation needed for
 account emails such as password reset and email verification.
@@ -639,11 +641,17 @@ Acceptance criteria:
 - Server-only email configuration is documented, including required environment
   variables and local development behavior.
 - A testable server-side email sending abstraction exists for account emails.
+- The account email abstraction supports typed account email payloads and
+  Resend idempotency keys.
 - No email provider secret is exposed through `NEXT_PUBLIC` variables or client
   code.
 - Focused tests cover the email sender success path and failure handling where
   practical.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-016-2026-06-22-account-email-delivery.md`
 
 ## T-017 - Add forgot password flow for credentials users
 
@@ -797,3 +805,114 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-020-2026-06-22-money-math-precision.md`
+
+## T-021 - Add email outbox and retries
+
+- Status: `captured`
+- Phase: Account & Auth
+- Type: feature
+- Priority: medium
+- Branch: `task/T-021-email-outbox-retries`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Depends on: `T-016`
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `docs/decisions/0002-account-email-delivery.md`
+  - `src/shared/lib/account-email.ts`
+  - `src/shared/db/schema.ts`
+
+Persist outbound account email messages and process them through a retryable
+outbox so provider delays, rate limits, and transient failures do not block
+user-facing flows.
+
+Acceptance criteria:
+
+- Outbound account emails can be persisted before provider send attempts.
+- Email message records track type, recipient, status, provider id,
+  idempotency key, attempts, last error, and next retry time.
+- A worker or scheduled process sends pending account emails without requiring
+  the original user request to wait on provider delivery.
+- Retry behavior handles rate limits, transient provider failures, and network
+  errors with bounded backoff.
+- Permanent validation or configuration errors are not retried indefinitely.
+- Focused tests cover outbox persistence, retry scheduling, success, and
+  terminal failure behavior.
+- `npm run validate` passes.
+
+## T-022 - Add Resend webhooks and suppression
+
+- Status: `captured`
+- Phase: Account & Auth
+- Type: feature
+- Priority: medium
+- Branch: `task/T-022-resend-webhooks-suppression`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Depends on: `T-016`
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `docs/decisions/0002-account-email-delivery.md`
+  - `src/shared/lib/account-email.ts`
+  - `src/shared/db/schema.ts`
+
+Process signed Resend delivery webhooks and maintain suppression records for
+bounced or complained email addresses.
+
+Acceptance criteria:
+
+- A Resend webhook endpoint verifies signatures using the raw request body and
+  server-only webhook secret.
+- Relevant delivery events are stored or otherwise made auditable for account
+  emails.
+- Webhook events update account email delivery state where matching provider
+  message records exist.
+- Bounced and complained recipients are added to a suppression list.
+- Future account email sends check suppression state before provider delivery.
+- Focused tests cover signature rejection, event persistence, delivery updates,
+  and suppression behavior.
+- `npm run validate` passes.
+
+## T-023 - Add account email templates and production checklist
+
+- Status: `backlog`
+- Phase: Account & Auth
+- Type: feature
+- Priority: low
+- Branch: `task/T-023-account-email-templates`
+- GitHub issue: none
+- PR: none
+- Owner mode: agent-led
+- Depends on: `T-016`
+- Required context:
+  - `AGENTS.md`
+  - `docs/context/PROJECT_BRIEF.md`
+  - `docs/planning/task-tracking.md`
+  - `docs/planning/tasks.yml`
+  - `docs/decisions/0002-account-email-delivery.md`
+  - `src/shared/lib/account-email.ts`
+
+Add reusable account email templates and a production readiness checklist for
+verified sending domains, sender addresses, and Resend key permissions.
+
+Acceptance criteria:
+
+- Account email templates provide both HTML and text output for password reset
+  and email verification.
+- The implementation decision for plain templates versus React Email is
+  documented.
+- Templates avoid sensitive data and clearly state link expiry and
+  ignore-if-unrequested guidance.
+- A production checklist documents verified sending subdomain, SPF, DKIM,
+  DMARC, sender address, reply-to address, and minimum Resend API key
+  permissions.
+- Focused tests cover template rendering for supported account email types.
+- `npm run validate` passes.

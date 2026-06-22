@@ -6,7 +6,8 @@ Reusable utilities, UI components, and API clients. No business logic.
 
 - `ui/` - UI Kit components (Button, Input, TerminalPanel, ProgressBar)
 - `api/` - Server Actions for app data (expenses, categories, keyword mappings)
-- `lib/` - Utility functions (cn, finance selectors)
+- `lib/` - Utility functions, finance selectors, and server-only account email
+  delivery
 - `types/` - Shared TypeScript types
 
 ## API
@@ -56,3 +57,10 @@ import { Button, Input, TerminalPanel, ProgressBar } from '@/shared/ui'
 2. All Server Actions live here
 3. No `NEXT_PUBLIC_` environment variables
 4. All components support ref forwarding
+
+## Account Email
+
+Account emails use the server-only `sendAccountEmail` wrapper in
+`@/shared/lib/account-email`. Production sends use Resend and require
+`RESEND_API_KEY` plus `ACCOUNT_EMAIL_FROM`; local development without
+`RESEND_API_KEY` logs a safe preview instead of sending real mail.

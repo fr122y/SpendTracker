@@ -2,6 +2,11 @@
 
 ## 2026-06-22
 
+- Started `T-016` account email delivery on
+  `task/T-016-account-email-delivery`: chose Resend, added a server-only
+  account email contract with idempotency keys, documented production email
+  requirements, and captured deferred email outbox, webhook/suppression, and
+  template follow-ups as `T-021` through `T-023`.
 - Implemented `T-015` auth form password visibility controls on
   `task/T-015-auth-form-ux`: login and registration password fields now have
   accessible show/hide toggles, existing Auth.js credentials and callback URL
