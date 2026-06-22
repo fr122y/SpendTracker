@@ -662,7 +662,7 @@
     {
       "id": "T-015",
       "title": "Improve credentials auth form UX",
-      "status": "backlog",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
@@ -696,7 +696,7 @@
         "Focused auth form tests cover password visibility toggles and existing submit flows.",
         "npm run validate passes."
       ],
-      "next_action": "Promote to ready when selected for implementation."
+      "next_action": "Open a pull request for T-015 and review the auth form UX diff."
     },
     {
       "id": "T-016",

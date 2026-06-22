@@ -32,6 +32,45 @@ describe('RegisterForm', () => {
     ).toBeInTheDocument()
   })
 
+  it('toggles password fields independently without clearing values', async () => {
+    const user = userEvent.setup()
+    render(<RegisterForm />)
+
+    const passwordInput = screen.getByPlaceholderText('Пароль')
+    const confirmPasswordInput =
+      screen.getByPlaceholderText('Подтвердите пароль')
+
+    await user.type(passwordInput, 'password123')
+    await user.type(confirmPasswordInput, 'password124')
+
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    expect(confirmPasswordInput).toHaveAttribute('type', 'password')
+
+    await user.click(screen.getByRole('button', { name: 'Показать пароль' }))
+
+    expect(passwordInput).toHaveAttribute('type', 'text')
+    expect(confirmPasswordInput).toHaveAttribute('type', 'password')
+    expect(passwordInput).toHaveValue('password123')
+    expect(confirmPasswordInput).toHaveValue('password124')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Показать подтверждение пароля' })
+    )
+
+    expect(passwordInput).toHaveAttribute('type', 'text')
+    expect(confirmPasswordInput).toHaveAttribute('type', 'text')
+
+    await user.click(screen.getByRole('button', { name: 'Скрыть пароль' }))
+    await user.click(
+      screen.getByRole('button', { name: 'Скрыть подтверждение пароля' })
+    )
+
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    expect(confirmPasswordInput).toHaveAttribute('type', 'password')
+    expect(passwordInput).toHaveValue('password123')
+    expect(confirmPasswordInput).toHaveValue('password124')
+  })
+
   it('shows mismatch error and does not call register action', async () => {
     const user = userEvent.setup()
     render(<RegisterForm />)

@@ -30,6 +30,28 @@ describe('CredentialsSignInForm', () => {
     expect(screen.getByPlaceholderText('Пароль')).toBeInTheDocument()
   })
 
+  it('toggles password visibility without clearing the value', async () => {
+    const user = userEvent.setup()
+    render(<CredentialsSignInForm />)
+
+    const passwordInput = screen.getByPlaceholderText('Пароль')
+
+    await user.type(passwordInput, 'password123')
+
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    expect(passwordInput).toHaveValue('password123')
+
+    await user.click(screen.getByRole('button', { name: 'Показать пароль' }))
+
+    expect(passwordInput).toHaveAttribute('type', 'text')
+    expect(passwordInput).toHaveValue('password123')
+
+    await user.click(screen.getByRole('button', { name: 'Скрыть пароль' }))
+
+    expect(passwordInput).toHaveAttribute('type', 'password')
+    expect(passwordInput).toHaveValue('password123')
+  })
+
   it('shows error on failed sign-in', async () => {
     mockSignIn.mockResolvedValueOnce({ error: 'CredentialsSignin', ok: false })
 

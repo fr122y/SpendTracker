@@ -5,6 +5,8 @@ import { useState } from 'react'
 
 import { registerUser } from '@/shared/api'
 
+import { PasswordInput } from './password-input'
+
 interface RegisterFormProps {
   onSwitchToSignIn?: () => void
   callbackUrl?: string
@@ -72,22 +74,20 @@ export function RegisterForm({
         className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
       />
 
-      <input
-        type="password"
+      <PasswordInput
         placeholder="Пароль"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        required
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+        showLabel="Показать пароль"
+        hideLabel="Скрыть пароль"
       />
 
-      <input
-        type="password"
+      <PasswordInput
         placeholder="Подтвердите пароль"
         value={confirmPassword}
         onChange={(event) => setConfirmPassword(event.target.value)}
-        required
-        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+        showLabel="Показать подтверждение пароля"
+        hideLabel="Скрыть подтверждение пароля"
       />
 
       {error ? <p className="text-sm text-red-400">{error}</p> : null}
