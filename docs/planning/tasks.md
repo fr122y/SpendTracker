@@ -71,7 +71,7 @@ Task-run report:
 
 ## T-003 - Open monthly category expenses from analysis chart
 
-- Status: `done`
+- Status: `backlog`
 - Phase: Analytics UX
 - Type: feature
 - Priority: medium
@@ -99,10 +99,6 @@ Acceptance criteria:
   current month context.
 - The feature is covered by focused UI/unit tests where practical.
 - `npm run validate` passes.
-
-Task-run report:
-
-- `docs/planning/task-runs/T-017-2026-06-22-forgot-password.md`
 
 ## T-004 - Add historical weekly personal budget limits
 
@@ -660,7 +656,7 @@ Task-run report:
 
 ## T-017 - Add forgot password flow for credentials users
 
-- Status: `backlog`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: high
@@ -696,6 +692,10 @@ Acceptance criteria:
 - Focused server and UI tests cover request, reset, token reuse, expiry, and
   invalid-token behavior.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-017-2026-06-22-forgot-password.md`
 
 ## T-018 - Add email verification for credentials registration
 
