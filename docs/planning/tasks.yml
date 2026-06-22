@@ -799,7 +799,7 @@
         "npm run validate passes."
       ],
       "task_run": "docs/planning/task-runs/T-017-2026-06-22-forgot-password.md",
-      "next_action": "Wait for PR #30 checks and review."
+      "next_action": "Review and merge PR #30."
     },
     {
       "id": "T-018",

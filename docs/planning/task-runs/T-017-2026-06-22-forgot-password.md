@@ -74,7 +74,7 @@ unknown-email cases are handled safely.
   in the focused suite.
 - Tracker consistency checked: yes; tracker validation passes.
 - Docs checked: yes; auth/shared slice docs updated.
-- CI or PR status: PR #30 opened; checks pending.
+- CI or PR status: PR #30 opened and checks passed.
 
 ## Follow-Ups
 

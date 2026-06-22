@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Wait for PR #30 checks and review for `T-017`.
+Review and merge PR #30 for `T-017`.
 
 ## Validation
 
@@ -103,3 +103,5 @@ Wait for PR #30 checks and review for `T-017`.
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-017`.
 - PR #30 opened for `T-017`.
+- PR #30 checks passed for `T-017`: Vercel, Vercel Preview Comments,
+  commitlint, and validate-task-tracker.
