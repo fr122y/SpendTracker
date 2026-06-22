@@ -667,6 +667,7 @@
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
+      "pr": 28,
       "branch": "task/T-015-auth-form-ux",
       "detail": "Improve the existing Auth.js credentials login and registration forms with password visibility controls while preserving the current credentials and Google sign-in flows.",
       "depends_on": [],

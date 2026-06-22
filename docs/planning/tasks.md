@@ -573,7 +573,7 @@ Merge:
 - Priority: medium
 - Branch: `task/T-015-auth-form-ux`
 - GitHub issue: none
-- PR: none
+- PR: #28
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
