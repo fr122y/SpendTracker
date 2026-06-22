@@ -41,7 +41,17 @@ export {
   updateSharedBudgetCategory,
 } from './shared-category-actions'
 export { getLayoutConfig, updateLayoutConfig } from './layout-actions'
-export { registerUser } from './auth-actions'
+export {
+  getPasswordResetTokenStatus,
+  registerUser,
+  requestPasswordReset,
+  resetPassword,
+} from './auth-actions'
+export type {
+  PasswordResetTokenStatus,
+  RequestPasswordResetResult,
+  ResetPasswordResult,
+} from './auth-actions'
 export { queryKeys } from './query-keys'
 
 // Query Client

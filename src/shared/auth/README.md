@@ -29,6 +29,10 @@ instead of sending real mail. Production must configure a verified sending
 domain or subdomain with SPF, DKIM, and DMARC before real account emails are
 enabled.
 
+Credentials password reset uses one-time hashed tokens stored in the database.
+Request actions return neutral success so unknown addresses and OAuth-only
+accounts are not exposed.
+
 ## Dependencies
 
 - Uses: `next-auth`, `@auth/drizzle-adapter`, `bcryptjs`, `@/shared/db`,

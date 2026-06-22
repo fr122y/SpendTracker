@@ -31,6 +31,13 @@ export function AuthTabs() {
     () => getAuthErrorMessage(searchParams.get('error')),
     [searchParams]
   )
+  const resetSuccessMessage = useMemo(() => {
+    if (searchParams.get('reset') === 'success') {
+      return 'Пароль обновлён. Войдите с новым паролем.'
+    }
+
+    return ''
+  }, [searchParams])
   const callbackUrl = useMemo(
     () => getSafeCallbackUrl(searchParams.get('callbackUrl')),
     [searchParams]
@@ -64,11 +71,18 @@ export function AuthTabs() {
       </div>
 
       {activeTab === 'signin' ? (
-        <CredentialsSignInForm
-          callbackUrl={callbackUrl}
-          defaultError={authErrorMessage}
-          onSwitchToRegister={() => setActiveTab('register')}
-        />
+        <>
+          {resetSuccessMessage ? (
+            <p className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm leading-6 text-emerald-200">
+              {resetSuccessMessage}
+            </p>
+          ) : null}
+          <CredentialsSignInForm
+            callbackUrl={callbackUrl}
+            defaultError={authErrorMessage}
+            onSwitchToRegister={() => setActiveTab('register')}
+          />
+        </>
       ) : (
         <RegisterForm
           callbackUrl={callbackUrl}

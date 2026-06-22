@@ -2,6 +2,11 @@
 
 ## 2026-06-22
 
+- Implemented `T-017` forgot password flow on
+  `task/T-017-forgot-password`: added hashed one-time reset tokens, neutral
+  reset requests, Resend-backed account email delivery, reset-token status UI,
+  atomic token claiming before password update, focused tests, and full
+  `npm run validate`.
 - Started `T-016` account email delivery on
   `task/T-016-account-email-delivery`: chose Resend, added a server-only
   account email contract with idempotency keys, documented production email

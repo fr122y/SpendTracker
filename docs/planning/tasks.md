@@ -71,7 +71,7 @@ Task-run report:
 
 ## T-003 - Open monthly category expenses from analysis chart
 
-- Status: `backlog`
+- Status: `review`
 - Phase: Analytics UX
 - Type: feature
 - Priority: medium
@@ -99,6 +99,10 @@ Acceptance criteria:
   current month context.
 - The feature is covered by focused UI/unit tests where practical.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-017-2026-06-22-forgot-password.md`
 
 ## T-004 - Add historical weekly personal budget limits
 
@@ -662,7 +666,7 @@ Task-run report:
 - Priority: high
 - Branch: `task/T-017-forgot-password`
 - GitHub issue: none
-- PR: none
+- PR: #30
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:

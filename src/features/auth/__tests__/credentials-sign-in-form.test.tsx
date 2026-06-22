@@ -28,6 +28,9 @@ describe('CredentialsSignInForm', () => {
 
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('Пароль')).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Забыли пароль?' })
+    ).toHaveAttribute('href', '/forgot-password')
   })
 
   it('toggles password visibility without clearing the value', async () => {

@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-017` forgot password flow is implemented locally and ready for PR review.
 
 ## Active Branch
 
-- None.
+- `task/T-017-forgot-password`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Choose the next task.
+Review and merge PR #30 for `T-017`.
 
 ## Validation
 
@@ -96,3 +96,12 @@ Choose the next task.
 - Captured `T-024` for owner-led Resend secret, DNS, and deployment environment
   setup.
 - PR #29 merged for `T-016` with merge commit `ed7dfe6`.
+- Passed: focused Jest tests for `T-017` password reset actions and auth UI
+  forms (6 suites, 36 tests).
+- Passed: `npm run validate` for `T-017` (69 suites, 868 tests). Existing
+  `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
+  to this task.
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-017`.
+- PR #30 opened for `T-017`.
+- PR #30 checks passed for `T-017`: Vercel, Vercel Preview Comments,
+  commitlint, and validate-task-tracker.
