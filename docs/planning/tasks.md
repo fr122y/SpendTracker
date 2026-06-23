@@ -737,13 +737,14 @@ Acceptance criteria:
 
 ## T-019 - Add account profile and logout
 
-- Status: `backlog`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-019-account-profile-logout`
 - GitHub issue: none
 - PR: #31
+- Merge commit: `440f463`
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`

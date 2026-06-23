@@ -852,13 +852,14 @@
     {
       "id": "T-019",
       "title": "Add account profile and logout",
-      "status": "backlog",
+      "status": "done",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-019-account-profile-logout",
       "pr": 31,
+      "merge_commit": "440f463",
       "detail": "Add a minimal account profile area and a visible logout path for authenticated users.",
       "depends_on": [],
       "blocks": [],
@@ -893,7 +894,7 @@
         "npm run validate passes."
       ],
       "task_run": "docs/planning/task-runs/T-019-2026-06-22-account-profile-logout.md",
-      "next_action": "Review PR #31 and merge when checks pass."
+      "next_action": "No further action."
     },
     {
       "id": "T-020",

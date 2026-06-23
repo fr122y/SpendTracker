@@ -8,7 +8,7 @@ Issue: none
 
 PR: #31
 
-Merge commit: none yet
+Merge commit: `440f463`
 
 ## Summary
 
@@ -54,7 +54,7 @@ sign out through a server action that redirects to `/login`.
 - Regression risk checked: yes; dashboard header tests were included.
 - Tracker consistency checked: yes; tracker validation passes.
 - Docs checked: yes; auth and dashboard header slice docs updated.
-- CI or PR status: PR #31 opened.
+- CI or PR status: PR #31 merged to `main` as `440f463`.
 
 ## Follow-Ups
 

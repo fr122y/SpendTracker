@@ -1,14 +1,14 @@
 # Status
 
-Last updated: 2026-06-22
+Last updated: 2026-06-23
 
 ## Current Focus
 
-- `T-019` - Add account profile and logout.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-019-account-profile-logout`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Review PR #31 for `T-019` and merge when checks pass.
+Choose the next task.
 
 ## Validation
 
@@ -113,3 +113,4 @@ Review PR #31 for `T-019` and merge when checks pass.
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-019`.
 - PR #31 opened for `T-019`.
+- PR #31 merged for `T-019` with merge commit `440f463`.
