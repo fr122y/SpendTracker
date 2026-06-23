@@ -6,7 +6,7 @@ Branch: `task/T-024-configure-resend-email-secrets`
 
 Issue: none
 
-PR: pending
+PR: #33
 
 ## Summary
 

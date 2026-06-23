@@ -941,7 +941,7 @@ Acceptance criteria:
 - Priority: high
 - Branch: `task/T-024-configure-resend-email-secrets`
 - GitHub issue: none
-- PR: none
+- PR: #33
 - Owner mode: human-led
 - Depends on: `T-016`
 - Required context:

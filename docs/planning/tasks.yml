@@ -1086,6 +1086,7 @@
       "priority": "high",
       "github_issue": null,
       "branch": "task/T-024-configure-resend-email-secrets",
+      "pr": 33,
       "detail": "Configure the real Resend and deployment environment secrets required for production account email delivery without committing any secret values to the repository.",
       "depends_on": [
         "T-016"
