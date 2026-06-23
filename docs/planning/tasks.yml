@@ -811,6 +811,7 @@
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-018-email-verification",
+      "pr": 32,
       "detail": "Add email verification for credentials registration after the account email delivery foundation exists.",
       "depends_on": [
         "T-016"
@@ -848,7 +849,7 @@
         "npm run validate passes."
       ],
       "task_run": "docs/planning/task-runs/T-018-2026-06-23-email-verification.md",
-      "next_action": "Run full validation, open a pull request, and complete review."
+      "next_action": "Review PR #32 and merge when checks pass."
     },
     {
       "id": "T-019",

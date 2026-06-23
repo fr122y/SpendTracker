@@ -16,7 +16,7 @@ Last updated: 2026-06-23
 
 ## Next Action
 
-Run full validation, open a pull request, and complete review for `T-018`.
+Review PR #32 and merge when checks pass for `T-018`.
 
 ## Validation
 
@@ -124,3 +124,4 @@ Run full validation, open a pull request, and complete review for `T-018`.
 - Passed: `npm run validate` for `T-018` (74 suites, 887 tests). Existing
   `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
   to this task.
+- PR #32 opened for `T-018`.

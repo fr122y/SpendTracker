@@ -8,6 +8,7 @@
   credentials users see a dashboard resend banner without being blocked from
   the app, `/verify-email/[token]` consumes one-time hashed tokens, and the
   `0009_email_verification_tokens.sql` migration is required.
+- Opened PR #32 for `T-018`.
 - Reconciled open task status text directly on `main`: restored `T-003` to
   `backlog` and clarified that `T-016` is already complete for dependent email
   follow-ups.

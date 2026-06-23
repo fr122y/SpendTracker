@@ -705,7 +705,7 @@ Task-run report:
 - Priority: medium
 - Branch: `task/T-018-email-verification`
 - GitHub issue: none
-- PR: none
+- PR: #32
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:

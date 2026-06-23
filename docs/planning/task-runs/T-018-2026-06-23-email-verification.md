@@ -6,7 +6,7 @@ Branch: `task/T-018-email-verification`
 
 Issue: none
 
-PR: TBD
+PR: #32
 
 ## Summary
 
@@ -68,7 +68,7 @@ shows a resend banner until `users.emailVerified` is set through
   remain covered by existing form tests.
 - Tracker consistency checked: yes.
 - Docs checked: slice docs and planning docs updated.
-- CI or PR status: PR not opened yet.
+- CI or PR status: PR #32 opened.
 
 ## Follow-Ups
 
