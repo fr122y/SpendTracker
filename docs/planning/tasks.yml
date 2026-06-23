@@ -1080,7 +1080,7 @@
     {
       "id": "T-024",
       "title": "Configure Resend account email secrets",
-      "status": "captured",
+      "status": "in_progress",
       "phase": "Account & Auth",
       "type": "chore",
       "priority": "high",
@@ -1117,7 +1117,8 @@
         "A real account email send is smoke-tested after T-017 or T-018 provides a user-facing send path, or with an approved temporary server-only script.",
         "Operational notes are recorded in project memory without exposing secrets."
       ],
-      "next_action": "Owner should configure Resend, DNS, and deployment env before production verification of account email flows."
+      "next_action": "Owner should configure Resend domain DNS and Vercel Preview/Production env using the T-024 runbook, then smoke-test account email delivery through the existing UI flow.",
+      "task_run": "docs/planning/task-runs/T-024-2026-06-23-configure-resend-email-secrets.md"
     }
   ]
 }

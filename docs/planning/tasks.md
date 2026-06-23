@@ -935,7 +935,7 @@ Acceptance criteria:
 
 ## T-024 - Configure Resend account email secrets
 
-- Status: `captured`
+- Status: `in_progress`
 - Phase: Account & Auth
 - Type: chore
 - Priority: high
@@ -970,3 +970,7 @@ Acceptance criteria:
 - A real account email send is smoke-tested after `T-017` or `T-018` provides a
   user-facing send path, or with an approved temporary server-only script.
 - Operational notes are recorded in project memory without exposing secrets.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-024-2026-06-23-configure-resend-email-secrets.md`
