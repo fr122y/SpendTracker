@@ -805,12 +805,13 @@
     {
       "id": "T-018",
       "title": "Add email verification for credentials registration",
-      "status": "captured",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-018-email-verification",
+      "pr": 32,
       "detail": "Add email verification for credentials registration after the account email delivery foundation exists.",
       "depends_on": [
         "T-016"
@@ -847,7 +848,8 @@
         "Focused server and UI tests cover registration, verification, resend, expiry, reuse, and OAuth regression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Run ready-check when selected; account email delivery foundation is already merged in T-016."
+      "task_run": "docs/planning/task-runs/T-018-2026-06-23-email-verification.md",
+      "next_action": "Review PR #32 and merge when checks pass."
     },
     {
       "id": "T-019",

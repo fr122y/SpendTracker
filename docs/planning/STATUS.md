@@ -4,11 +4,11 @@ Last updated: 2026-06-23
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-018` - Add email verification for credentials registration.
 
 ## Active Branch
 
-- None.
+- `task/T-018-email-verification`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-23
 
 ## Next Action
 
-Choose the next task.
+Review PR #32 and merge when checks pass for `T-018`.
 
 ## Validation
 
@@ -116,3 +116,12 @@ Choose the next task.
 - PR #31 merged for `T-019` with merge commit `440f463`.
 - Passed: `python3 scripts/validate_task_tracker.py` after reconciling open
   task statuses and stale `T-016` follow-up text.
+- Passed: focused Jest tests for `T-018` registration, email verification,
+  resend banner, verify page, and registration form behavior (5 suites,
+  35 tests).
+- Passed: `npm run typecheck` for `T-018`.
+- Passed: `npm run lint` for `T-018`.
+- Passed: `npm run validate` for `T-018` (74 suites, 887 tests). Existing
+  `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
+  to this task.
+- PR #32 opened for `T-018`.

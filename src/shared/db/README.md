@@ -27,6 +27,8 @@ Drizzle ORM database layer for the app's PostgreSQL backend.
   - Nullable `password` for credentials auth users
 - `password_reset_token` stores one-time credentials password reset token
   hashes, expiry, and use state
+- `email_verification_token` stores one-time credentials email verification
+  token hashes, expiry, and use state
 
 ## Dependencies
 

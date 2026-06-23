@@ -699,13 +699,13 @@ Task-run report:
 
 ## T-018 - Add email verification for credentials registration
 
-- Status: `captured`
+- Status: `review`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-018-email-verification`
 - GitHub issue: none
-- PR: none
+- PR: #32
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:
@@ -734,6 +734,10 @@ Acceptance criteria:
 - Focused server and UI tests cover registration, verification, resend, expiry,
   reuse, and OAuth regression behavior.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-018-2026-06-23-email-verification.md`
 
 ## T-019 - Add account profile and logout
 

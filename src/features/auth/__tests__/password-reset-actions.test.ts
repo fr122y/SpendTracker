@@ -1,5 +1,6 @@
 const mockHashPassword = jest.fn()
 const mockSendAccountEmail = jest.fn()
+const mockAuth = jest.fn()
 const mockEq = jest.fn((left: unknown, right: unknown) => {
   void left
   void right
@@ -43,6 +44,10 @@ jest.mock('@/shared/lib/account-email', () => ({
   sendAccountEmail: (...args: unknown[]) => mockSendAccountEmail(...args),
 }))
 
+jest.mock('@/shared/auth', () => ({
+  auth: () => mockAuth(),
+}))
+
 jest.mock('@/shared/auth/seed-defaults', () => ({
   seedUserDefaults: jest.fn(),
 }))
@@ -50,6 +55,7 @@ jest.mock('@/shared/auth/seed-defaults', () => ({
 jest.mock('@/shared/db', () => ({
   db: {
     select: () => mockSelect(),
+    update: () => mockUpdate(),
     transaction: (callback: (tx: unknown) => Promise<void>) =>
       mockTransaction(callback),
   },
@@ -60,17 +66,28 @@ jest.mock('@/shared/db', () => ({
     expiresAt: 'passwordResetTokens.expiresAt',
     usedAt: 'passwordResetTokens.usedAt',
   },
+  emailVerificationTokens: {
+    id: 'emailVerificationTokens.id',
+    userId: 'emailVerificationTokens.userId',
+    tokenHash: 'emailVerificationTokens.tokenHash',
+    expiresAt: 'emailVerificationTokens.expiresAt',
+    usedAt: 'emailVerificationTokens.usedAt',
+  },
   users: {
     id: 'users.id',
     email: 'users.email',
     password: 'users.password',
+    emailVerified: 'users.emailVerified',
   },
 }))
 
 import {
+  getCurrentEmailVerificationStatus,
   getPasswordResetTokenStatus,
   requestPasswordReset,
+  resendEmailVerification,
   resetPassword,
+  verifyEmail,
 } from '@/shared/api/auth-actions'
 
 describe('password reset actions', () => {
@@ -83,6 +100,7 @@ describe('password reset actions', () => {
     console.error = jest.fn()
 
     mockHashPassword.mockResolvedValue('hashed-new-password')
+    mockAuth.mockResolvedValue(null)
     mockLimit.mockResolvedValue([])
     mockSendAccountEmail.mockResolvedValue({
       status: 'sent',
@@ -100,6 +118,175 @@ describe('password reset actions', () => {
         })
       }
     )
+  })
+
+  it('reports current credentials email verification status', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { id: 'user-1' } })
+    mockLimit.mockResolvedValueOnce([
+      {
+        email: 'user@example.com',
+        password: 'hashed-password',
+        emailVerified: null,
+      },
+    ])
+
+    await expect(getCurrentEmailVerificationStatus()).resolves.toEqual({
+      requiresVerification: true,
+      email: 'user@example.com',
+    })
+  })
+
+  it('does not require verification for OAuth-only or verified users', async () => {
+    mockAuth.mockResolvedValue({ user: { id: 'user-1' } })
+    mockLimit
+      .mockResolvedValueOnce([
+        {
+          email: 'oauth@example.com',
+          password: null,
+          emailVerified: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          email: 'verified@example.com',
+          password: 'hashed-password',
+          emailVerified: new Date(),
+        },
+      ])
+
+    await expect(getCurrentEmailVerificationStatus()).resolves.toEqual({
+      requiresVerification: false,
+      email: 'oauth@example.com',
+    })
+    await expect(getCurrentEmailVerificationStatus()).resolves.toEqual({
+      requiresVerification: false,
+      email: 'verified@example.com',
+    })
+  })
+
+  it('resends verification email for unverified credentials users', async () => {
+    mockAuth.mockResolvedValueOnce({ user: { id: 'user-1' } })
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'user-1',
+        email: 'user@example.com',
+        password: 'hashed-password',
+        emailVerified: null,
+      },
+    ])
+
+    const result = await resendEmailVerification()
+
+    expect(result).toEqual({
+      success: true,
+      message: 'Мы отправили письмо для подтверждения email.',
+    })
+    expect(mockTransaction).toHaveBeenCalledTimes(1)
+    expect(mockInsertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        tokenHash: expect.any(String),
+        expiresAt: expect.any(Date),
+      })
+    )
+    expect(mockSendAccountEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'auth.verify_email',
+        to: 'user@example.com',
+        subject: 'Подтвердите email SmartSpend',
+        text: expect.stringContaining('https://app.example.com/verify-email/'),
+        html: expect.stringContaining('https://app.example.com/verify-email/'),
+        idempotencyKey: expect.stringMatching(
+          /^auth\.verify_email:user-1:[a-f0-9]{64}$/
+        ),
+      })
+    )
+  })
+
+  it('verifies a valid email token and marks it as used', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        userEmail: 'user@example.com',
+        userPassword: 'hashed-password',
+        userEmailVerified: null,
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+      },
+    ])
+
+    const result = await verifyEmail('token')
+
+    expect(result).toBe('success')
+    expect(mockUpdate).toHaveBeenCalledTimes(2)
+    expect(mockUpdateSet).toHaveBeenCalledWith({ usedAt: expect.any(Date) })
+    expect(mockUpdateSet).toHaveBeenCalledWith({
+      emailVerified: expect.any(Date),
+    })
+    expect(mockReturning).toHaveBeenCalledWith({
+      id: 'emailVerificationTokens.id',
+    })
+  })
+
+  it('marks an already verified email token as used', async () => {
+    mockLimit.mockResolvedValueOnce([
+      {
+        id: 'token-1',
+        userId: 'user-1',
+        userEmail: 'user@example.com',
+        userPassword: 'hashed-password',
+        userEmailVerified: new Date(),
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+      },
+    ])
+
+    const result = await verifyEmail('token')
+
+    expect(result).toBe('success')
+    expect(mockUpdateSet).toHaveBeenCalledWith({ usedAt: expect.any(Date) })
+  })
+
+  it('reports invalid, expired, used, and concurrent email token states', async () => {
+    mockLimit
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        {
+          id: 'token-1',
+          userId: 'user-1',
+          userPassword: 'hashed-password',
+          userEmailVerified: null,
+          expiresAt: new Date(Date.now() - 60_000),
+          usedAt: null,
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'token-2',
+          userId: 'user-1',
+          userPassword: 'hashed-password',
+          userEmailVerified: null,
+          expiresAt: new Date(Date.now() + 60_000),
+          usedAt: new Date(),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 'token-3',
+          userId: 'user-1',
+          userPassword: 'hashed-password',
+          userEmailVerified: null,
+          expiresAt: new Date(Date.now() + 60_000),
+          usedAt: null,
+        },
+      ])
+    mockReturning.mockResolvedValueOnce([])
+
+    await expect(verifyEmail('invalid')).resolves.toBe('invalid')
+    await expect(verifyEmail('expired')).resolves.toBe('expired')
+    await expect(verifyEmail('used')).resolves.toBe('used')
+    await expect(verifyEmail('concurrent')).resolves.toBe('used')
   })
 
   afterEach(() => {

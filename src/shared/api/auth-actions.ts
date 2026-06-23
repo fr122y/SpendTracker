@@ -6,8 +6,14 @@ import bcrypt from 'bcryptjs'
 import { and, eq, isNull } from 'drizzle-orm'
 import { z } from 'zod'
 
+import { auth } from '@/shared/auth'
 import { seedUserDefaults } from '@/shared/auth/seed-defaults'
-import { db, passwordResetTokens, users } from '@/shared/db'
+import {
+  db,
+  emailVerificationTokens,
+  passwordResetTokens,
+  users,
+} from '@/shared/db'
 import { sendAccountEmail } from '@/shared/lib/account-email'
 
 const registerSchema = z.object({
@@ -36,8 +42,11 @@ const passwordResetSchema = z.object({
 })
 
 const PASSWORD_RESET_TTL_MINUTES = 15
+const EMAIL_VERIFICATION_TTL_HOURS = 24
 const PASSWORD_RESET_SUCCESS_MESSAGE =
   'Если аккаунт с таким email существует, мы отправили ссылку для сброса пароля.'
+const EMAIL_VERIFICATION_RESEND_MESSAGE =
+  'Мы отправили письмо для подтверждения email.'
 
 export type RegisterUserResult =
   | { success: true }
@@ -52,6 +61,25 @@ export type ResetPasswordResult =
   | { success: false; error: string }
 
 export type PasswordResetTokenStatus = 'valid' | 'invalid' | 'expired' | 'used'
+export type EmailVerificationTokenStatus =
+  | 'success'
+  | 'invalid'
+  | 'expired'
+  | 'used'
+
+export type EmailVerificationStatus =
+  | {
+      requiresVerification: true
+      email: string
+    }
+  | {
+      requiresVerification: false
+      email?: string
+    }
+
+export type ResendEmailVerificationResult =
+  | { success: true; message: string }
+  | { success: false; error: string }
 
 function getErrorCode(error: unknown): string | undefined {
   if (!error || typeof error !== 'object' || !('code' in error)) {
@@ -71,12 +99,24 @@ function hashPasswordResetToken(token: string): string {
   return createHash('sha256').update(token).digest('hex')
 }
 
+function hashEmailVerificationToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex')
+}
+
 function createPasswordResetToken(): string {
+  return randomBytes(32).toString('base64url')
+}
+
+function createEmailVerificationToken(): string {
   return randomBytes(32).toString('base64url')
 }
 
 function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60 * 1000)
+}
+
+function addHours(date: Date, hours: number): Date {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000)
 }
 
 function getAppOrigin(): string {
@@ -95,6 +135,10 @@ function getAppOrigin(): string {
 
 function createPasswordResetUrl(token: string): string {
   return `${getAppOrigin()}/reset-password/${encodeURIComponent(token)}`
+}
+
+function createEmailVerificationUrl(token: string): string {
+  return `${getAppOrigin()}/verify-email/${encodeURIComponent(token)}`
 }
 
 function createPasswordResetEmail(input: {
@@ -116,6 +160,70 @@ function createPasswordResetEmail(input: {
   ].join('')
 
   return { subject, text, html }
+}
+
+function createEmailVerificationEmail(input: {
+  verifyUrl: string
+  expiresInHours: number
+}) {
+  const subject = 'Подтвердите email SmartSpend'
+  const text = [
+    'Подтвердите email для аккаунта SmartSpend.',
+    `Откройте ссылку: ${input.verifyUrl}`,
+    `Ссылка действует ${input.expiresInHours} часа.`,
+    'Если это были не вы, просто проигнорируйте письмо.',
+  ].join('\n\n')
+  const html = [
+    '<p>Подтвердите email для аккаунта SmartSpend.</p>',
+    `<p><a href="${input.verifyUrl}">Подтвердить email</a></p>`,
+    `<p>Ссылка действует ${input.expiresInHours} часа.</p>`,
+    '<p>Если это были не вы, просто проигнорируйте письмо.</p>',
+  ].join('')
+
+  return { subject, text, html }
+}
+
+async function issueEmailVerificationToken(input: {
+  userId: string
+  email: string
+}) {
+  const token = createEmailVerificationToken()
+  const tokenHash = hashEmailVerificationToken(token)
+  const now = new Date()
+  const expiresAt = addHours(now, EMAIL_VERIFICATION_TTL_HOURS)
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(emailVerificationTokens)
+      .set({ usedAt: now })
+      .where(
+        and(
+          eq(emailVerificationTokens.userId, input.userId),
+          isNull(emailVerificationTokens.usedAt)
+        )
+      )
+
+    await tx.insert(emailVerificationTokens).values({
+      userId: input.userId,
+      tokenHash,
+      expiresAt,
+    })
+  })
+
+  const verifyUrl = createEmailVerificationUrl(token)
+  const emailPayload = createEmailVerificationEmail({
+    verifyUrl,
+    expiresInHours: EMAIL_VERIFICATION_TTL_HOURS,
+  })
+
+  await sendAccountEmail({
+    type: 'auth.verify_email',
+    to: input.email,
+    subject: emailPayload.subject,
+    text: emailPayload.text,
+    html: emailPayload.html,
+    idempotencyKey: `auth.verify_email:${input.userId}:${tokenHash}`,
+  })
 }
 
 async function getPasswordResetRecord(token: string): Promise<
@@ -142,6 +250,37 @@ async function getPasswordResetRecord(token: string): Promise<
     .from(passwordResetTokens)
     .innerJoin(users, eq(passwordResetTokens.userId, users.id))
     .where(eq(passwordResetTokens.tokenHash, tokenHash))
+    .limit(1)
+
+  return record
+}
+
+async function getEmailVerificationRecord(token: string): Promise<
+  | {
+      id: string
+      userId: string
+      userEmail: string | null
+      userPassword: string | null
+      userEmailVerified: Date | null
+      expiresAt: Date
+      usedAt: Date | null
+    }
+  | undefined
+> {
+  const tokenHash = hashEmailVerificationToken(token)
+  const [record] = await db
+    .select({
+      id: emailVerificationTokens.id,
+      userId: emailVerificationTokens.userId,
+      userEmail: users.email,
+      userPassword: users.password,
+      userEmailVerified: users.emailVerified,
+      expiresAt: emailVerificationTokens.expiresAt,
+      usedAt: emailVerificationTokens.usedAt,
+    })
+    .from(emailVerificationTokens)
+    .innerJoin(users, eq(emailVerificationTokens.userId, users.id))
+    .where(eq(emailVerificationTokens.tokenHash, tokenHash))
     .limit(1)
 
   return record
@@ -189,6 +328,12 @@ export async function registerUser(formData: {
         await seedUserDefaults(tx, userId)
       })
 
+      try {
+        await issueEmailVerificationToken({ userId, email })
+      } catch (error) {
+        console.error('Email verification request failed', error)
+      }
+
       return { success: true }
     } catch (error) {
       const code = getErrorCode(error)
@@ -209,6 +354,134 @@ export async function registerUser(formData: {
   }
 
   return { success: false, error: 'Произошла ошибка. Попробуйте ещё раз' }
+}
+
+export async function getCurrentEmailVerificationStatus(): Promise<EmailVerificationStatus> {
+  const session = await auth()
+  const userId = session?.user?.id
+
+  if (!userId) {
+    return { requiresVerification: false }
+  }
+
+  const [user] = await db
+    .select({
+      email: users.email,
+      password: users.password,
+      emailVerified: users.emailVerified,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (!user?.email || !user.password || user.emailVerified) {
+    return { requiresVerification: false, email: user?.email ?? undefined }
+  }
+
+  return { requiresVerification: true, email: user.email }
+}
+
+export async function resendEmailVerification(): Promise<ResendEmailVerificationResult> {
+  const session = await auth()
+  const userId = session?.user?.id
+
+  if (!userId) {
+    return { success: false, error: 'Войдите, чтобы подтвердить email' }
+  }
+
+  const [user] = await db
+    .select({
+      id: users.id,
+      email: users.email,
+      password: users.password,
+      emailVerified: users.emailVerified,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (!user?.email || !user.password) {
+    return { success: false, error: 'Подтверждение email недоступно' }
+  }
+
+  if (user.emailVerified) {
+    return { success: true, message: 'Email уже подтверждён.' }
+  }
+
+  try {
+    await issueEmailVerificationToken({ userId: user.id, email: user.email })
+    return { success: true, message: EMAIL_VERIFICATION_RESEND_MESSAGE }
+  } catch (error) {
+    console.error('Email verification resend failed', error)
+    return {
+      success: false,
+      error: 'Не удалось отправить письмо. Попробуйте ещё раз',
+    }
+  }
+}
+
+export async function verifyEmail(
+  token: string
+): Promise<EmailVerificationTokenStatus> {
+  if (!token) {
+    return 'invalid'
+  }
+
+  const record = await getEmailVerificationRecord(token)
+
+  if (!record?.userPassword) {
+    return 'invalid'
+  }
+
+  if (record.usedAt) {
+    return 'used'
+  }
+
+  if (record.expiresAt.getTime() <= Date.now()) {
+    return 'expired'
+  }
+
+  const verifiedAt = new Date()
+
+  if (record.userEmailVerified) {
+    await db
+      .update(emailVerificationTokens)
+      .set({ usedAt: verifiedAt })
+      .where(
+        and(
+          eq(emailVerificationTokens.id, record.id),
+          isNull(emailVerificationTokens.usedAt)
+        )
+      )
+
+    return 'success'
+  }
+
+  const wasUpdated = await db.transaction(async (tx) => {
+    const claimedTokens = await tx
+      .update(emailVerificationTokens)
+      .set({ usedAt: verifiedAt })
+      .where(
+        and(
+          eq(emailVerificationTokens.id, record.id),
+          isNull(emailVerificationTokens.usedAt)
+        )
+      )
+      .returning({ id: emailVerificationTokens.id })
+
+    if (claimedTokens.length === 0) {
+      return false
+    }
+
+    await tx
+      .update(users)
+      .set({ emailVerified: verifiedAt })
+      .where(eq(users.id, record.userId))
+
+    return true
+  })
+
+  return wasUpdated ? 'success' : 'used'
 }
 
 export async function requestPasswordReset(formData: {

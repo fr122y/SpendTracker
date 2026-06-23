@@ -13,6 +13,9 @@ const mockSelect = jest.fn(() => ({ from: mockFrom }))
 
 const mockInsertValues = jest.fn()
 const mockInsert = jest.fn(() => ({ values: mockInsertValues }))
+const mockUpdateWhere = jest.fn()
+const mockUpdateSet = jest.fn(() => ({ where: mockUpdateWhere }))
+const mockUpdate = jest.fn(() => ({ set: mockUpdateSet }))
 const mockTransaction = jest.fn()
 
 jest.mock('bcryptjs', () => ({
@@ -32,6 +35,10 @@ jest.mock('@/shared/lib/account-email', () => ({
   sendAccountEmail: jest.fn(),
 }))
 
+jest.mock('@/shared/auth', () => ({
+  auth: jest.fn(),
+}))
+
 jest.mock('@/shared/auth/seed-defaults', () => ({
   seedUserDefaults: (tx: unknown, userId: string) =>
     mockSeedUserDefaults(tx, userId),
@@ -46,6 +53,13 @@ jest.mock('@/shared/db', () => ({
   users: {
     id: 'id',
     email: 'email',
+    emailVerified: 'emailVerified',
+  },
+  emailVerificationTokens: {
+    userId: 'emailVerificationTokens.userId',
+    tokenHash: 'emailVerificationTokens.tokenHash',
+    expiresAt: 'emailVerificationTokens.expiresAt',
+    usedAt: 'emailVerificationTokens.usedAt',
   },
 }))
 
@@ -58,11 +72,13 @@ describe('registerUser', () => {
     mockHash.mockResolvedValue('hashed-password')
     mockLimit.mockResolvedValue([])
     mockInsertValues.mockResolvedValue(undefined)
+    mockUpdateWhere.mockResolvedValue(undefined)
     mockSeedUserDefaults.mockResolvedValue(undefined)
     mockTransaction.mockImplementation(
       async (callback: (tx: unknown) => void) => {
         await callback({
           insert: mockInsert,
+          update: mockUpdate,
         })
       }
     )
@@ -76,8 +92,8 @@ describe('registerUser', () => {
     })
 
     expect(mockHash).toHaveBeenCalledWith('password123', 12)
-    expect(mockTransaction).toHaveBeenCalledTimes(1)
-    expect(mockInsert).toHaveBeenCalledTimes(1)
+    expect(mockTransaction).toHaveBeenCalledTimes(2)
+    expect(mockInsert).toHaveBeenCalledTimes(2)
     expect(mockSeedUserDefaults).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ success: true })
   })

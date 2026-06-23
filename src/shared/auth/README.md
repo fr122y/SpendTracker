@@ -31,9 +31,11 @@ instead of sending real mail. Production must configure a verified sending
 domain or subdomain with SPF, DKIM, and DMARC before real account emails are
 enabled.
 
-Credentials password reset uses one-time hashed tokens stored in the database.
-Request actions return neutral success so unknown addresses and OAuth-only
-accounts are not exposed.
+Credentials password reset and email verification use one-time hashed tokens
+stored in the database. Password reset requests return neutral success so
+unknown addresses and OAuth-only accounts are not exposed. Email verification is
+advisory in v1: credentials users can sign in before verification, but
+unverified users see a dashboard banner with resend.
 
 ## Account Profile
 

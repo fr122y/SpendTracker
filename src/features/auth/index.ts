@@ -1,6 +1,7 @@
 export { SignInButton } from './ui/sign-in-button'
 export { AuthTabs } from './ui/auth-tabs'
 export { CredentialsSignInForm } from './ui/credentials-sign-in-form'
+export { EmailVerificationBanner } from './ui/email-verification-banner'
 export { ForgotPasswordForm } from './ui/forgot-password-form'
 export { RegisterForm } from './ui/register-form'
 export { ResetPasswordForm } from './ui/reset-password-form'
