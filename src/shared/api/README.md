@@ -5,6 +5,12 @@ Server Actions and shared query infrastructure for the application.
 ## Public API (`index.ts`)
 
 - `registerUser({ name, email, password })`: credentials registration with validation and default seeding
+- `getCurrentEmailVerificationStatus()`: read the current user's credentials
+  email verification banner state
+- `resendEmailVerification()`: send a fresh credentials email verification link
+  for the current unverified user
+- `verifyEmail(token)`: consume a valid email verification token and set
+  `users.emailVerified`
 - `requestPasswordReset({ email })`: start a neutral credentials password reset
   flow without exposing whether the email exists
 - `getPasswordResetTokenStatus(token)`: resolve reset-token page state
@@ -54,11 +60,15 @@ Server Actions and shared query infrastructure for the application.
   Actions only
 - Password reset tokens are stored as hashes, expire after 15 minutes, and are
   invalidated after successful use
+- Email verification tokens are stored as hashes, expire after 24 hours, and are
+  invalidated after successful use
 
 ## Error Handling
 
 - Mutations rely on optimistic updates in entity layer with rollback toast on failure
 - Registration returns user-facing validation and duplicate-email messages
+- Registration sends credentials verification email when possible, but remains
+  successful if delivery fails so the user can resend from the dashboard banner
 - Password reset requests return neutral success for existing credentials users,
   OAuth-only users, and unknown email addresses
 - Shared budget actions throw authorization errors before mutating data

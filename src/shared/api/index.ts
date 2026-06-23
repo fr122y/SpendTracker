@@ -42,14 +42,20 @@ export {
 } from './shared-category-actions'
 export { getLayoutConfig, updateLayoutConfig } from './layout-actions'
 export {
+  getCurrentEmailVerificationStatus,
   getPasswordResetTokenStatus,
   registerUser,
   requestPasswordReset,
+  resendEmailVerification,
   resetPassword,
+  verifyEmail,
 } from './auth-actions'
 export type {
+  EmailVerificationStatus,
+  EmailVerificationTokenStatus,
   PasswordResetTokenStatus,
   RequestPasswordResetResult,
+  ResendEmailVerificationResult,
   ResetPasswordResult,
 } from './auth-actions'
 export { queryKeys } from './query-keys'
