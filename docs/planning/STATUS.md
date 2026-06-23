@@ -4,11 +4,11 @@ Last updated: 2026-06-23
 
 ## Current Focus
 
-- `T-018` - Add email verification for credentials registration.
+- None. Choose the next task.
 
 ## Active Branch
 
-- `task/T-018-email-verification`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-23
 
 ## Next Action
 
-Review PR #32 and merge when checks pass for `T-018`.
+Choose the next task.
 
 ## Validation
 
@@ -125,3 +125,4 @@ Review PR #32 and merge when checks pass for `T-018`.
   `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
   to this task.
 - PR #32 opened for `T-018`.
+- PR #32 merged for `T-018` with merge commit `63f4bf8`.

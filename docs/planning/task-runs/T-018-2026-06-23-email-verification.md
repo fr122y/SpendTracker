@@ -8,6 +8,8 @@ Issue: none
 
 PR: #32
 
+Merge commit: `63f4bf8`
+
 ## Summary
 
 Implemented advisory credentials email verification. Registration now creates a
@@ -68,7 +70,7 @@ shows a resend banner until `users.emailVerified` is set through
   remain covered by existing form tests.
 - Tracker consistency checked: yes.
 - Docs checked: slice docs and planning docs updated.
-- CI or PR status: PR #32 opened.
+- CI or PR status: PR #32 merged.
 
 ## Follow-Ups
 

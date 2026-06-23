@@ -699,13 +699,14 @@ Task-run report:
 
 ## T-018 - Add email verification for credentials registration
 
-- Status: `review`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-018-email-verification`
 - GitHub issue: none
 - PR: #32
+- Merge commit: `63f4bf8`
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:
