@@ -942,6 +942,7 @@ Acceptance criteria:
 - Branch: `task/T-024-configure-resend-email-secrets`
 - GitHub issue: none
 - PR: #33
+- Merge commit: `af895c1`
 - Owner mode: human-led
 - Depends on: `T-016`
 - Required context:
@@ -974,3 +975,9 @@ Acceptance criteria:
 Task-run report:
 
 - `docs/planning/task-runs/T-024-2026-06-23-configure-resend-email-secrets.md`
+
+Remaining work:
+
+- Configure the actual Resend project/service, verified sending subdomain,
+  DNS records, Vercel Preview/Production environment variables, redeploy, and
+  real UI smoke-test outside the repository.

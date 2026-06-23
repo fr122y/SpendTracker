@@ -4,11 +4,12 @@ Last updated: 2026-06-23
 
 ## Current Focus
 
-- `T-024` - Configure Resend account email secrets.
+- `T-024` - Configure Resend account email secrets; repository runbook is
+  merged, external Resend/DNS/Vercel setup remains.
 
 ## Active Branch
 
-- `task/T-024-configure-resend-email-secrets`
+- None.
 
 ## Stable Branch
 
@@ -128,3 +129,7 @@ through the existing UI flow.
   to this task.
 - PR #32 opened for `T-018`.
 - PR #32 merged for `T-018` with merge commit `63f4bf8`.
+- Passed: `python3 scripts/validate_task_tracker.py` for the `T-024` runbook.
+- PR #33 merged for the `T-024` runbook with merge commit `af895c1`; real
+  Resend service, DNS, Vercel env, redeploy, and UI smoke-test are still
+  pending owner setup.

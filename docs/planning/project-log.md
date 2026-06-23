@@ -6,6 +6,10 @@
   `task/T-024-configure-resend-email-secrets`: documented the owner-led
   Resend domain, DNS, Vercel environment variable, redeploy, and UI smoke-test
   runbook without exposing secret values.
+- Merged PR #33 for the `T-024` runbook into `main` as `af895c1`; `T-024`
+  remains open until the actual Resend service, DNS, Vercel environment
+  variables, redeploy, and real UI smoke-test are completed outside the
+  repository.
 - Implemented `T-018` email verification on
   `task/T-018-email-verification`: credentials registration now issues
   24-hour verification links through the account email wrapper, unverified

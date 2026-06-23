@@ -8,6 +8,8 @@ Issue: none
 
 PR: #33
 
+Merge commit: `af895c1`
+
 ## Summary
 
 Prepared the owner-led production setup runbook for account email delivery.
@@ -46,6 +48,7 @@ secrets outside the repository.
 
 ## Verification
 
+- PR #33 merged the repository runbook into `main`.
 - Not yet verified: Resend account/project, verified domain, DNS records, and
   Vercel secret values require owner access outside this repository.
 - Required smoke-test: trigger a real account email from the deployed UI,
@@ -76,5 +79,7 @@ secrets outside the repository.
 
 ## Registry Update Requested
 
-- Keep `T-024` in progress until the external owner setup and smoke-test are
-  confirmed.
+- Keep `T-024` open until the external owner setup and smoke-test are
+  confirmed: actual Resend service/project, verified sending subdomain, DNS
+  records, Vercel Preview/Production environment variables, redeploy, and real
+  account email UI smoke-test.

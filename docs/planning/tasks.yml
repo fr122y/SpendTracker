@@ -1087,6 +1087,7 @@
       "github_issue": null,
       "branch": "task/T-024-configure-resend-email-secrets",
       "pr": 33,
+      "merge_commit": "af895c1",
       "detail": "Configure the real Resend and deployment environment secrets required for production account email delivery without committing any secret values to the repository.",
       "depends_on": [
         "T-016"
@@ -1118,7 +1119,7 @@
         "A real account email send is smoke-tested after T-017 or T-018 provides a user-facing send path, or with an approved temporary server-only script.",
         "Operational notes are recorded in project memory without exposing secrets."
       ],
-      "next_action": "Owner should configure Resend domain DNS and Vercel Preview/Production env using the T-024 runbook, then smoke-test account email delivery through the existing UI flow.",
+      "next_action": "Repository runbook is merged. Owner still needs to configure the actual Resend project/service, verified sending subdomain, DNS records, Vercel Preview/Production env, redeploy, and smoke-test account email delivery through the existing UI flow.",
       "task_run": "docs/planning/task-runs/T-024-2026-06-23-configure-resend-email-secrets.md"
     }
   ]
