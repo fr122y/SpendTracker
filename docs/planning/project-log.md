@@ -2,6 +2,10 @@
 
 ## 2026-06-23
 
+- Started `T-024` Resend account email secret setup on
+  `task/T-024-configure-resend-email-secrets`: documented the owner-led
+  Resend domain, DNS, Vercel environment variable, redeploy, and UI smoke-test
+  runbook without exposing secret values.
 - Implemented `T-018` email verification on
   `task/T-018-email-verification`: credentials registration now issues
   24-hour verification links through the account email wrapper, unverified

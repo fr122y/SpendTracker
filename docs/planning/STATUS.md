@@ -4,11 +4,11 @@ Last updated: 2026-06-23
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-024` - Configure Resend account email secrets.
 
 ## Active Branch
 
-- None.
+- `task/T-024-configure-resend-email-secrets`
 
 ## Stable Branch
 
@@ -16,7 +16,9 @@ Last updated: 2026-06-23
 
 ## Next Action
 
-Choose the next task.
+Owner should configure Resend, DNS, and Vercel Preview/Production environment
+variables from the `T-024` runbook, then smoke-test account email delivery
+through the existing UI flow.
 
 ## Validation
 
