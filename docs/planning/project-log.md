@@ -2,6 +2,9 @@
 
 ## 2026-06-23
 
+- Reconciled open task status text directly on `main`: restored `T-003` to
+  `backlog` and clarified that `T-016` is already complete for dependent email
+  follow-ups.
 - Merged PR #31 for `T-019` into `main` as `440f463` and reconciled the task
   to `done`.
 

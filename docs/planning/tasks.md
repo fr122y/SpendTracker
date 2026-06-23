@@ -71,7 +71,7 @@ Task-run report:
 
 ## T-003 - Open monthly category expenses from analysis chart
 
-- Status: `review`
+- Status: `backlog`
 - Phase: Analytics UX
 - Type: feature
 - Priority: medium

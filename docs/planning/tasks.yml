@@ -90,7 +90,7 @@
     {
       "id": "T-003",
       "title": "Open monthly category expenses from analysis chart",
-      "status": "review",
+      "status": "backlog",
       "phase": "Analytics UX",
       "type": "feature",
       "priority": "medium",
@@ -124,7 +124,7 @@
         "The feature is covered by focused UI/unit tests where practical.",
         "npm run validate passes."
       ],
-      "next_action": "Schedule after the current reliability focus or promote to ready when selected for implementation."
+      "next_action": "Promote to ready when selected for implementation."
     },
     {
       "id": "T-004",
@@ -847,7 +847,7 @@
         "Focused server and UI tests cover registration, verification, resend, expiry, reuse, and OAuth regression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Refine readiness after T-016 chooses and integrates account email delivery."
+      "next_action": "Run ready-check when selected; account email delivery foundation is already merged in T-016."
     },
     {
       "id": "T-019",
@@ -984,7 +984,7 @@
         "Focused tests cover outbox persistence, retry scheduling, success, and terminal failure behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Refine worker or cron mechanism when production email reliability becomes the next priority."
+      "next_action": "Run ready-check and choose the worker or cron mechanism when production email reliability becomes the next priority."
     },
     {
       "id": "T-022",
@@ -1030,7 +1030,7 @@
         "Focused tests cover signature rejection, event persistence, delivery updates, and suppression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Refine endpoint shape and persistence after email outbox needs are clearer."
+      "next_action": "Run ready-check after T-021 is scoped or choose whether webhook persistence can ship independently."
     },
     {
       "id": "T-023",
@@ -1072,7 +1072,7 @@
         "Focused tests cover template rendering for supported account email types.",
         "npm run validate passes."
       ],
-      "next_action": "Schedule when account email content or production readiness needs refinement beyond the basic T-016 transport."
+      "next_action": "Schedule when account email content or production readiness needs refinement; account email delivery foundation is already merged in T-016."
     },
     {
       "id": "T-024",

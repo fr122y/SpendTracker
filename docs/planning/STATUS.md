@@ -114,3 +114,5 @@ Choose the next task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-019`.
 - PR #31 opened for `T-019`.
 - PR #31 merged for `T-019` with merge commit `440f463`.
+- Passed: `python3 scripts/validate_task_tracker.py` after reconciling open
+  task statuses and stale `T-016` follow-up text.
