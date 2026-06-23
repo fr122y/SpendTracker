@@ -90,7 +90,7 @@
     {
       "id": "T-003",
       "title": "Open monthly category expenses from analysis chart",
-      "status": "backlog",
+      "status": "review",
       "phase": "Analytics UX",
       "type": "feature",
       "priority": "medium",
@@ -858,6 +858,7 @@
       "priority": "medium",
       "github_issue": null,
       "branch": "task/T-019-account-profile-logout",
+      "pr": 31,
       "detail": "Add a minimal account profile area and a visible logout path for authenticated users.",
       "depends_on": [],
       "blocks": [],
@@ -891,7 +892,8 @@
         "Focused UI tests cover profile rendering, dashboard navigation entry, and logout action behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Promote to ready when selected for implementation."
+      "task_run": "docs/planning/task-runs/T-019-2026-06-22-account-profile-logout.md",
+      "next_action": "Review PR #31 and merge when checks pass."
     },
     {
       "id": "T-020",

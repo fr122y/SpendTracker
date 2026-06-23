@@ -71,7 +71,7 @@ Task-run report:
 
 ## T-003 - Open monthly category expenses from analysis chart
 
-- Status: `backlog`
+- Status: `review`
 - Phase: Analytics UX
 - Type: feature
 - Priority: medium
@@ -743,7 +743,7 @@ Acceptance criteria:
 - Priority: medium
 - Branch: `task/T-019-account-profile-logout`
 - GitHub issue: none
-- PR: none
+- PR: #31
 - Owner mode: agent-led
 - Required context:
   - `AGENTS.md`
@@ -770,6 +770,10 @@ Acceptance criteria:
 - Focused UI tests cover profile rendering, dashboard navigation entry, and
   logout action behavior.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-019-2026-06-22-account-profile-logout.md`
 
 ## T-020 - Normalize money math input precision
 

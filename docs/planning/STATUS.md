@@ -4,11 +4,11 @@ Last updated: 2026-06-22
 
 ## Current Focus
 
-- None. Choose the next task.
+- `T-019` - Add account profile and logout.
 
 ## Active Branch
 
-- None.
+- `task/T-019-account-profile-logout`
 
 ## Stable Branch
 
@@ -16,7 +16,7 @@ Last updated: 2026-06-22
 
 ## Next Action
 
-Choose the next task.
+Review PR #31 for `T-019` and merge when checks pass.
 
 ## Validation
 
@@ -106,3 +106,10 @@ Choose the next task.
 - PR #30 checks passed for `T-017`: Vercel, Vercel Preview Comments,
   commitlint, and validate-task-tracker.
 - PR #30 merged for `T-017` with merge commit `f18cc77`.
+- Passed: focused Jest tests for `T-019` account profile and logout
+  (4 suites, 21 tests).
+- Passed: `npm run validate` for `T-019` (72 suites, 876 tests). Existing
+  `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
+  to this task.
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-019`.
+- PR #31 opened for `T-019`.

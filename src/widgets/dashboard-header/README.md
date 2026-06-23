@@ -1,7 +1,7 @@
 # Dashboard Header Widget
 
 Dashboard page header widget for branding, date navigation, month selection,
-and dashboard edit-mode entry.
+account navigation, and dashboard edit-mode entry.
 
 ## Public API (`index.ts`)
 
@@ -27,6 +27,7 @@ and dashboard edit-mode entry.
 ## Behavior
 
 - Renders the dashboard brand/title area
+- Links authenticated users to `/account`
 - Displays the selected date using localized formatting
 - Supports previous/next day navigation
 - Opens `MonthPickerModal` from the date trigger
@@ -37,7 +38,7 @@ and dashboard edit-mode entry.
 
 ## Dependencies
 
-- Uses: `@/entities/session`, `@/features/layout-editor`,
+- Uses: `next/link`, `@/entities/session`, `@/features/layout-editor`,
   `@/features/month-picker`, `@/shared/ui`
 - Does not depend on `useLayoutStore` for edit mode
 - Does not require `useViewport` in the header container
