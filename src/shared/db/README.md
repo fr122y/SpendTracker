@@ -29,6 +29,8 @@ Drizzle ORM database layer for the app's PostgreSQL backend.
   hashes, expiry, and use state
 - `email_verification_token` stores one-time credentials email verification
   token hashes, expiry, and use state
+- `account_email_message` stores queued account email bodies, delivery status,
+  provider ids, idempotency keys, and retry metadata
 
 ## Dependencies
 

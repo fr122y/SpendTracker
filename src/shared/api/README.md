@@ -79,12 +79,11 @@ Server Actions and shared query infrastructure for the application.
 
 ## Account Email Delivery
 
-Account-related Server Actions should call `sendAccountEmail` from
-`@/shared/lib/account-email` instead of using Resend directly. Import the module
-only from server code; it is intentionally not exported from the general
-`@/shared/lib` barrel. The wrapper requires typed email payloads, text and HTML
-bodies, and an idempotency key so future retry or outbox work can reuse the
-same contract.
+Account-related Server Actions should call `enqueueAccountEmail` from
+`@/shared/lib/account-email-outbox` instead of using Resend directly. Import the
+module only from server code; it is intentionally not exported from the general
+`@/shared/lib` barrel. The outbox requires typed email payloads, text and HTML
+bodies, and an idempotency key so the cron processor can retry sends safely.
 
 Production environment:
 

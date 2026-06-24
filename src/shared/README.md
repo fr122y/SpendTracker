@@ -60,7 +60,9 @@ import { Button, Input, TerminalPanel, ProgressBar } from '@/shared/ui'
 
 ## Account Email
 
-Account emails use the server-only `sendAccountEmail` wrapper in
-`@/shared/lib/account-email`. Production sends use Resend and require
-`RESEND_API_KEY` plus `ACCOUNT_EMAIL_FROM`; local development without
-`RESEND_API_KEY` logs a safe preview instead of sending real mail.
+Account emails are queued through the server-only `enqueueAccountEmail` outbox
+in `@/shared/lib/account-email-outbox`. The outbox processor sends queued
+messages through the `sendAccountEmail` Resend wrapper. Production sends use
+Resend and require `RESEND_API_KEY` plus `ACCOUNT_EMAIL_FROM`; local
+development without `RESEND_API_KEY` logs a safe preview instead of sending
+real mail.

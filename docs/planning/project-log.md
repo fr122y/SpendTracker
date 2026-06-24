@@ -1,5 +1,16 @@
 # Project Log
 
+## 2026-06-24
+
+- Implemented `T-021` email outbox and retries on
+  `task/T-021-email-outbox-retries`: account emails are now persisted to an
+  outbox, password reset and verification flows enqueue instead of sending
+  synchronously, Next.js `after()` triggers post-response processing, and a
+  protected daily Vercel Cron route provides a Hobby-compatible retry safety
+  net. Target databases need
+  `drizzle/0010_account_email_messages.sql`, and Vercel needs `CRON_SECRET`
+  before the cron processor can run in Production.
+
 ## 2026-06-23
 
 - Completed external `T-024` setup after the runbook merge: connected

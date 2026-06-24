@@ -4,12 +4,13 @@ Last updated: 2026-06-24
 
 ## Current Focus
 
-- `T-021` - Add email outbox and retries is the recommended next technical
-  email reliability task.
+- `T-021` - Add email outbox and retries is implemented on
+  `task/T-021-email-outbox-retries` and is awaiting review, migration, and
+  cron secret setup.
 
 ## Active Branch
 
-- None.
+- `task/T-021-email-outbox-retries`
 
 ## Stable Branch
 
@@ -17,8 +18,8 @@ Last updated: 2026-06-24
 
 ## Next Action
 
-Run a ready-check for `T-021` when email reliability becomes the next priority,
-or pick `T-003` for analytics UX work.
+Review `T-021`, apply `drizzle/0010_account_email_messages.sql`, configure
+`CRON_SECRET` in Vercel, and smoke-test outbox-backed account email delivery.
 
 ## Validation
 
@@ -137,3 +138,14 @@ or pick `T-003` for analytics UX work.
   `APP_ORIGIN`, `ACCOUNT_EMAIL_FROM`, and `RESEND_API_KEY` are configured in
   Vercel, Production was redeployed, and the owner confirmed a real email
   verification message arrived.
+- Passed: focused Jest tests for `T-021` account email outbox, cron route,
+  password reset, and registration auth actions (4 suites, 30 tests).
+- Passed: `npm run typecheck` for `T-021`.
+- Passed: `npm run lint` for `T-021`.
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-021`.
+- Passed: `npm run validate` for `T-021` (76 suites, 895 tests). Existing
+  `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
+  to this task.
+- Passed: manual Vercel Preview deploy for `T-021`
+  (`dpl_CXc4kWPyMorimxpCeEo8M67LP9pB`) after switching the cron schedule to a
+  Hobby-compatible daily safety net.
