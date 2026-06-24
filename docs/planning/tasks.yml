@@ -947,7 +947,7 @@
     {
       "id": "T-021",
       "title": "Add email outbox and retries",
-      "status": "captured",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
@@ -962,9 +962,11 @@
       "owner_mode": "agent-led",
       "human_gate": "Human owner chose to defer queue and retry infrastructure from T-016 while preserving it as a follow-up for production hardening.",
       "write_scope": [
+        "src/app/api/cron/**",
         "src/shared/api/**",
-        "src/shared/db/**",
-        "src/shared/lib/**",
+        "src/shared/**",
+        "drizzle/**",
+        "vercel.json",
         "docs/planning/**",
         "docs/context/**",
         "docs/decisions/**"
@@ -987,7 +989,8 @@
         "Focused tests cover outbox persistence, retry scheduling, success, and terminal failure behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Run ready-check and choose the worker or cron mechanism when production email reliability becomes the next priority."
+      "next_action": "Review PR, apply drizzle/0010_account_email_messages.sql to target databases, configure CRON_SECRET in Vercel, and verify outbox-backed account email delivery.",
+      "task_run": "docs/planning/task-runs/T-021-2026-06-24-email-outbox-retries.md"
     },
     {
       "id": "T-022",

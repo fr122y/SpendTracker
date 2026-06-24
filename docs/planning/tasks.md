@@ -824,7 +824,7 @@ Task-run report:
 
 ## T-021 - Add email outbox and retries
 
-- Status: `captured`
+- Status: `review`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
@@ -859,6 +859,10 @@ Acceptance criteria:
 - Focused tests cover outbox persistence, retry scheduling, success, and
   terminal failure behavior.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-021-2026-06-24-email-outbox-retries.md`
 
 ## T-022 - Add Resend webhooks and suppression
 

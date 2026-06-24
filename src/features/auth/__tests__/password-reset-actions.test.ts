@@ -1,5 +1,9 @@
 const mockHashPassword = jest.fn()
-const mockSendAccountEmail = jest.fn()
+const mockEnqueueAccountEmail = jest.fn()
+const mockProcessAccountEmailOutbox = jest.fn()
+const mockAfter = jest.fn((callback: () => unknown) => {
+  void callback
+})
 const mockAuth = jest.fn()
 const mockEq = jest.fn((left: unknown, right: unknown) => {
   void left
@@ -40,8 +44,14 @@ jest.mock('drizzle-orm', () => ({
   isNull: (value: unknown) => mockIsNull(value),
 }))
 
-jest.mock('@/shared/lib/account-email', () => ({
-  sendAccountEmail: (...args: unknown[]) => mockSendAccountEmail(...args),
+jest.mock('@/shared/lib/account-email-outbox', () => ({
+  enqueueAccountEmail: (...args: unknown[]) => mockEnqueueAccountEmail(...args),
+  processAccountEmailOutbox: (...args: unknown[]) =>
+    mockProcessAccountEmailOutbox(...args),
+}))
+
+jest.mock('next/server', () => ({
+  after: (callback: () => unknown) => mockAfter(callback),
 }))
 
 jest.mock('@/shared/auth', () => ({
@@ -102,10 +112,13 @@ describe('password reset actions', () => {
     mockHashPassword.mockResolvedValue('hashed-new-password')
     mockAuth.mockResolvedValue(null)
     mockLimit.mockResolvedValue([])
-    mockSendAccountEmail.mockResolvedValue({
-      status: 'sent',
-      provider: 'resend',
-      providerMessageId: 'email-1',
+    mockEnqueueAccountEmail.mockResolvedValue(undefined)
+    mockProcessAccountEmailOutbox.mockResolvedValue({
+      processed: 0,
+      sent: 0,
+      retried: 0,
+      failed: 0,
+      skipped: 0,
     })
     mockReturning.mockResolvedValue([{ id: 'token-1' }])
     mockUpdateWhere.mockReturnValue({ returning: mockReturning })
@@ -189,10 +202,11 @@ describe('password reset actions', () => {
         expiresAt: expect.any(Date),
       })
     )
-    expect(mockSendAccountEmail).toHaveBeenCalledWith(
+    expect(mockEnqueueAccountEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'auth.verify_email',
         to: 'user@example.com',
+        userId: 'user-1',
         subject: 'Подтвердите email SmartSpend',
         text: expect.stringContaining('https://app.example.com/verify-email/'),
         html: expect.stringContaining('https://app.example.com/verify-email/'),
@@ -201,6 +215,7 @@ describe('password reset actions', () => {
         ),
       })
     )
+    expect(mockAfter).toHaveBeenCalledTimes(1)
   })
 
   it('verifies a valid email token and marks it as used', async () => {
@@ -314,10 +329,11 @@ describe('password reset actions', () => {
         expiresAt: expect.any(Date),
       })
     )
-    expect(mockSendAccountEmail).toHaveBeenCalledWith(
+    expect(mockEnqueueAccountEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'auth.reset_password',
         to: 'USER@example.com',
+        userId: 'user-1',
         subject: 'Сброс пароля SmartSpend',
         text: expect.stringContaining(
           'https://app.example.com/reset-password/'
@@ -330,6 +346,7 @@ describe('password reset actions', () => {
         ),
       })
     )
+    expect(mockAfter).toHaveBeenCalledTimes(1)
   })
 
   it('returns neutral success without email for unknown addresses', async () => {
@@ -339,7 +356,7 @@ describe('password reset actions', () => {
 
     expect(result.success).toBe(true)
     expect(mockTransaction).not.toHaveBeenCalled()
-    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+    expect(mockEnqueueAccountEmail).not.toHaveBeenCalled()
   })
 
   it('returns neutral success without email for OAuth-only users', async () => {
@@ -355,7 +372,7 @@ describe('password reset actions', () => {
 
     expect(result.success).toBe(true)
     expect(mockTransaction).not.toHaveBeenCalled()
-    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+    expect(mockEnqueueAccountEmail).not.toHaveBeenCalled()
   })
 
   it('returns neutral success when production origin is missing', async () => {
@@ -371,7 +388,7 @@ describe('password reset actions', () => {
     const result = await requestPasswordReset({ email: 'user@example.com' })
 
     expect(result.success).toBe(true)
-    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+    expect(mockEnqueueAccountEmail).not.toHaveBeenCalled()
   })
 
   it('reports valid token status', async () => {

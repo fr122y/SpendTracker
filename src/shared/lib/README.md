@@ -106,16 +106,17 @@ evaluateMathExpression('5/0') // Infinity
 
 ### Account Email Delivery
 
-Server-only wrapper around Resend for account emails. Import this module
-directly from server code; do not re-export it from the general `@/shared/lib`
-barrel because that barrel is used by client components.
+Server-only outbox and Resend wrapper for account emails. Import these modules
+directly from server code; do not re-export them from the general
+`@/shared/lib` barrel because that barrel is used by client components.
 
 ```typescript
-import { sendAccountEmail } from '@/shared/lib/account-email'
+import { enqueueAccountEmail } from '@/shared/lib/account-email-outbox'
 
-await sendAccountEmail({
+await enqueueAccountEmail({
   type: 'auth.reset_password',
   to: 'user@example.com',
+  userId: 'user-id',
   subject: 'Сброс пароля',
   text: 'Откройте ссылку для сброса пароля',
   html: '<p>Откройте ссылку для сброса пароля</p>',

@@ -4,6 +4,7 @@ import { createHash, randomBytes } from 'crypto'
 
 import bcrypt from 'bcryptjs'
 import { and, eq, isNull } from 'drizzle-orm'
+import { after } from 'next/server'
 import { z } from 'zod'
 
 import { auth } from '@/shared/auth'
@@ -14,7 +15,10 @@ import {
   passwordResetTokens,
   users,
 } from '@/shared/db'
-import { sendAccountEmail } from '@/shared/lib/account-email'
+import {
+  enqueueAccountEmail,
+  processAccountEmailOutbox,
+} from '@/shared/lib/account-email-outbox'
 
 const registerSchema = z.object({
   name: z
@@ -119,6 +123,16 @@ function addHours(date: Date, hours: number): Date {
   return new Date(date.getTime() + hours * 60 * 60 * 1000)
 }
 
+function scheduleAccountEmailOutboxProcessing(): void {
+  after(async () => {
+    try {
+      await processAccountEmailOutbox({ limit: 5 })
+    } catch (error) {
+      console.error('Account email outbox processing failed', error)
+    }
+  })
+}
+
 function getAppOrigin(): string {
   const configuredOrigin = process.env.APP_ORIGIN?.trim()
 
@@ -216,14 +230,16 @@ async function issueEmailVerificationToken(input: {
     expiresInHours: EMAIL_VERIFICATION_TTL_HOURS,
   })
 
-  await sendAccountEmail({
+  await enqueueAccountEmail({
     type: 'auth.verify_email',
     to: input.email,
+    userId: input.userId,
     subject: emailPayload.subject,
     text: emailPayload.text,
     html: emailPayload.html,
     idempotencyKey: `auth.verify_email:${input.userId}:${tokenHash}`,
   })
+  scheduleAccountEmailOutboxProcessing()
 }
 
 async function getPasswordResetRecord(token: string): Promise<
@@ -539,14 +555,16 @@ export async function requestPasswordReset(formData: {
       expiresInMinutes: PASSWORD_RESET_TTL_MINUTES,
     })
 
-    await sendAccountEmail({
+    await enqueueAccountEmail({
       type: 'auth.reset_password',
       to: user.email,
+      userId: user.id,
       subject: emailPayload.subject,
       text: emailPayload.text,
       html: emailPayload.html,
       idempotencyKey: `auth.reset_password:${user.id}:${tokenHash}`,
     })
+    scheduleAccountEmailOutboxProcessing()
 
     return { success: true, message: PASSWORD_RESET_SUCCESS_MESSAGE }
   } catch (error) {

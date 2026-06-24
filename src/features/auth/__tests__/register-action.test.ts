@@ -1,4 +1,7 @@
 const mockHash = jest.fn()
+const mockAfter = jest.fn((callback: () => unknown) => {
+  void callback
+})
 const mockEq = jest.fn((left: unknown, right: unknown) => {
   void left
   void right
@@ -31,8 +34,13 @@ jest.mock('drizzle-orm', () => ({
   isNull: (value: unknown) => ['isNull', value],
 }))
 
-jest.mock('@/shared/lib/account-email', () => ({
-  sendAccountEmail: jest.fn(),
+jest.mock('@/shared/lib/account-email-outbox', () => ({
+  enqueueAccountEmail: jest.fn(),
+  processAccountEmailOutbox: jest.fn(),
+}))
+
+jest.mock('next/server', () => ({
+  after: (callback: () => unknown) => mockAfter(callback),
 }))
 
 jest.mock('@/shared/auth', () => ({

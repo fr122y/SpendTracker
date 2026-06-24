@@ -62,7 +62,7 @@ function assertNonEmptyString(
   }
 }
 
-function validateInput(input: SendAccountEmailInput): void {
+export function validateAccountEmailInput(input: SendAccountEmailInput): void {
   assertNonEmptyString(input.type, 'type')
   assertNonEmptyString(input.to, 'to')
   assertNonEmptyString(input.subject, 'subject')
@@ -118,7 +118,7 @@ function getProviderErrorMessage(error: unknown): string {
 export async function sendAccountEmail(
   input: SendAccountEmailInput
 ): Promise<SendAccountEmailResult> {
-  validateInput(input)
+  validateAccountEmailInput(input)
 
   const apiKey = process.env.RESEND_API_KEY
 

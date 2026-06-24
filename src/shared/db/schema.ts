@@ -115,6 +115,45 @@ export const emailVerificationTokens = pgTable(
   ]
 )
 
+export const accountEmailMessages = pgTable(
+  'account_email_message',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    type: text('type').notNull(),
+    recipientEmail: text('recipientEmail').notNull(),
+    userId: text('userId').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    status: text('status').notNull().default('pending'),
+    provider: text('provider'),
+    providerMessageId: text('providerMessageId'),
+    idempotencyKey: text('idempotencyKey').notNull().unique(),
+    subject: text('subject').notNull(),
+    text: text('text').notNull(),
+    html: text('html').notNull(),
+    replyTo: text('replyTo'),
+    attemptsCount: integer('attemptsCount').notNull().default(0),
+    lastError: text('lastError'),
+    nextRetryAt: timestamp('nextRetryAt', { mode: 'date' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp('updatedAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+    sentAt: timestamp('sentAt', { mode: 'date' }),
+  },
+  (table) => [
+    index('account_email_message_status_retry_idx').on(
+      table.status,
+      table.nextRetryAt
+    ),
+    index('account_email_message_user_idx').on(table.userId),
+  ]
+)
+
 export const sharedBudgets = pgTable('shared_budget', {
   id: text('id')
     .primaryKey()
