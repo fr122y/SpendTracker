@@ -10,6 +10,10 @@
   net. Target databases need
   `drizzle/0010_account_email_messages.sql`, and Vercel needs `CRON_SECRET`
   before the cron processor can run in Production.
+- Merged PR #34 for `T-021` into `main` as `bf15f81`; post-merge operational
+  work remains to apply `drizzle/0010_account_email_messages.sql`, configure
+  `CRON_SECRET`, redeploy Production, and smoke-test outbox-backed account
+  email delivery.
 
 ## 2026-06-23
 

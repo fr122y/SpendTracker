@@ -947,11 +947,13 @@
     {
       "id": "T-021",
       "title": "Add email outbox and retries",
-      "status": "review",
+      "status": "done",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
+      "pr": 34,
+      "merge_commit": "bf15f81",
       "branch": "task/T-021-email-outbox-retries",
       "detail": "Persist outbound account email messages and process them through a retryable outbox so provider delays, rate limits, and transient failures do not block user-facing flows.",
       "depends_on": [
@@ -989,7 +991,7 @@
         "Focused tests cover outbox persistence, retry scheduling, success, and terminal failure behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Review PR, apply drizzle/0010_account_email_messages.sql to target databases, configure CRON_SECRET in Vercel, and verify outbox-backed account email delivery.",
+      "next_action": "Done. Apply drizzle/0010_account_email_messages.sql, configure CRON_SECRET in Vercel, redeploy Production, and smoke-test outbox-backed account email delivery before relying on the new outbox path.",
       "task_run": "docs/planning/task-runs/T-021-2026-06-24-email-outbox-retries.md"
     },
     {

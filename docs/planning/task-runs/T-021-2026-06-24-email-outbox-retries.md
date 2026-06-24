@@ -6,9 +6,9 @@ Branch: `task/T-021-email-outbox-retries`
 
 Issue: none
 
-PR: pending
+PR: #34
 
-Merge commit: pending
+Merge commit: `bf15f81`
 
 ## Summary
 
@@ -67,4 +67,6 @@ as a daily safety net for due retries.
 
 ## Registry Update Requested
 
-- Mark `T-021` as `review` and link this task-run report.
+- Mark `T-021` as `done`; PR #34 is merged. Keep the migration, `CRON_SECRET`,
+  Production redeploy, and outbox smoke-test as operational next steps before
+  relying on the new outbox path.

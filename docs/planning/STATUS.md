@@ -4,13 +4,12 @@ Last updated: 2026-06-24
 
 ## Current Focus
 
-- `T-021` - Add email outbox and retries is implemented on
-  `task/T-021-email-outbox-retries` and is awaiting review, migration, and
-  cron secret setup.
+- `T-022` - Add Resend webhooks and suppression is the recommended next
+  technical email reliability follow-up.
 
 ## Active Branch
 
-- `task/T-021-email-outbox-retries`
+- None.
 
 ## Stable Branch
 
@@ -18,8 +17,10 @@ Last updated: 2026-06-24
 
 ## Next Action
 
-Review `T-021`, apply `drizzle/0010_account_email_messages.sql`, configure
-`CRON_SECRET` in Vercel, and smoke-test outbox-backed account email delivery.
+Apply `drizzle/0010_account_email_messages.sql`, configure `CRON_SECRET` in
+Vercel, redeploy Production, and smoke-test outbox-backed account email
+delivery. Then run a ready-check for `T-022` when webhook/suppression handling
+becomes the next priority.
 
 ## Validation
 
@@ -149,3 +150,4 @@ Review `T-021`, apply `drizzle/0010_account_email_messages.sql`, configure
 - Passed: manual Vercel Preview deploy for `T-021`
   (`dpl_CXc4kWPyMorimxpCeEo8M67LP9pB`) after switching the cron schedule to a
   Hobby-compatible daily safety net.
+- PR #34 merged for `T-021` with merge commit `bf15f81`.

@@ -824,13 +824,14 @@ Task-run report:
 
 ## T-021 - Add email outbox and retries
 
-- Status: `review`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-021-email-outbox-retries`
 - GitHub issue: none
-- PR: none
+- PR: #34
+- Merge commit: `bf15f81`
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:
