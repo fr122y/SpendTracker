@@ -1,11 +1,11 @@
 # Status
 
-Last updated: 2026-06-23
+Last updated: 2026-06-24
 
 ## Current Focus
 
-- `T-024` - Configure Resend account email secrets; repository runbook is
-  merged, external Resend/DNS/Vercel setup remains.
+- `T-021` - Add email outbox and retries is the recommended next technical
+  email reliability task.
 
 ## Active Branch
 
@@ -17,9 +17,8 @@ Last updated: 2026-06-23
 
 ## Next Action
 
-Owner should configure Resend, DNS, and Vercel Preview/Production environment
-variables from the `T-024` runbook, then smoke-test account email delivery
-through the existing UI flow.
+Run a ready-check for `T-021` when email reliability becomes the next priority,
+or pick `T-003` for analytics UX work.
 
 ## Validation
 
@@ -133,3 +132,8 @@ through the existing UI flow.
 - PR #33 merged for the `T-024` runbook with merge commit `af895c1`; real
   Resend service, DNS, Vercel env, redeploy, and UI smoke-test are still
   pending owner setup.
+- Completed external `T-024` setup: `spendtracker.online` is connected to
+  Vercel, `mail.spendtracker.online` is verified in Resend, Production
+  `APP_ORIGIN`, `ACCOUNT_EMAIL_FROM`, and `RESEND_API_KEY` are configured in
+  Vercel, Production was redeployed, and the owner confirmed a real email
+  verification message arrived.

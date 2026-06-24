@@ -49,11 +49,15 @@ secrets outside the repository.
 ## Verification
 
 - PR #33 merged the repository runbook into `main`.
-- Not yet verified: Resend account/project, verified domain, DNS records, and
-  Vercel secret values require owner access outside this repository.
-- Required smoke-test: trigger a real account email from the deployed UI,
-  confirm the message arrives, open the link, verify it resolves to the
-  expected Preview or Production origin, and confirm Resend logs show the send.
+- Verified on 2026-06-24: `spendtracker.online` is connected to the Vercel
+  `spend-tracker` project and serves the production app over HTTPS.
+- Verified on 2026-06-24: Timeweb DNS publishes the Resend records for
+  `mail.spendtracker.online`, and Resend reports the domain as verified.
+- Verified on 2026-06-24: Vercel Production has `APP_ORIGIN`,
+  `ACCOUNT_EMAIL_FROM`, and `RESEND_API_KEY` configured, then Production was
+  redeployed.
+- Smoke-test confirmed by owner on 2026-06-24: a real email verification
+  message arrived from the deployed UI flow.
 - Repository validation required for this runbook:
   `python3 scripts/validate_task_tracker.py`.
 
@@ -67,19 +71,19 @@ secrets outside the repository.
 
 ## Acceptance Status
 
-- Resend account/project exists: pending owner confirmation.
-- Sending subdomain verified: pending owner confirmation.
-- DNS records configured: pending owner confirmation.
-- Resend API key stored only in secret storage: pending owner confirmation.
-- Vercel env configured: pending owner confirmation.
+- Resend account/project exists: confirmed by owner.
+- Sending subdomain verified: confirmed in Resend.
+- DNS records configured: confirmed in Timeweb DNS.
+- Resend API key stored only in secret storage: confirmed in Vercel
+  Production env.
+- Vercel env configured: confirmed for Production.
 - No secret committed: satisfied by repository changes in this run.
-- Real account email smoke-tested: pending owner confirmation.
+- Real account email smoke-tested: confirmed by owner.
 - Operational notes recorded without secrets: satisfied by this task-run
   report.
 
 ## Registry Update Requested
 
-- Keep `T-024` open until the external owner setup and smoke-test are
-  confirmed: actual Resend service/project, verified sending subdomain, DNS
-  records, Vercel Preview/Production environment variables, redeploy, and real
-  account email UI smoke-test.
+- Mark `T-024` done. Production account email delivery is configured and
+  smoke-tested. Future Preview smoke-tests should use branch-specific
+  `APP_ORIGIN` values instead of a global Preview value.

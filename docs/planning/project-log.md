@@ -2,6 +2,10 @@
 
 ## 2026-06-23
 
+- Completed external `T-024` setup after the runbook merge: connected
+  `spendtracker.online` to Vercel, verified `mail.spendtracker.online` in
+  Resend, configured Production account email environment variables, redeployed
+  Production, and confirmed a real email verification message arrived.
 - Started `T-024` Resend account email secret setup on
   `task/T-024-configure-resend-email-secrets`: documented the owner-led
   Resend domain, DNS, Vercel environment variable, redeploy, and UI smoke-test

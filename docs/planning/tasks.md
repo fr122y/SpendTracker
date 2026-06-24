@@ -935,7 +935,7 @@ Acceptance criteria:
 
 ## T-024 - Configure Resend account email secrets
 
-- Status: `in_progress`
+- Status: `done`
 - Phase: Account & Auth
 - Type: chore
 - Priority: high
@@ -976,8 +976,15 @@ Task-run report:
 
 - `docs/planning/task-runs/T-024-2026-06-23-configure-resend-email-secrets.md`
 
-Remaining work:
+Completion notes:
 
-- Configure the actual Resend project/service, verified sending subdomain,
-  DNS records, Vercel Preview/Production environment variables, redeploy, and
-  real UI smoke-test outside the repository.
+- `spendtracker.online` is connected to the Vercel `spend-tracker` project.
+- `mail.spendtracker.online` is verified in Resend for account email sending.
+- Resend DNS records are configured in Timeweb DNS.
+- Production Vercel env is configured with `APP_ORIGIN`,
+  `ACCOUNT_EMAIL_FROM`, and `RESEND_API_KEY`; no secret value is committed.
+- Production was redeployed after environment changes.
+- Owner confirmed a real email verification message arrived through the
+  deployed UI flow.
+- Preview `APP_ORIGIN` remains intentionally branch-specific for future preview
+  smoke-tests instead of a global Preview value.
