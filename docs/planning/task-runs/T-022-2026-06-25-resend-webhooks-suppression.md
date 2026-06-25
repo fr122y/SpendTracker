@@ -8,6 +8,8 @@ Issue: none
 
 PR: #36
 
+Merge commit: `e5e5e89`
+
 ## Summary
 
 Implemented signed Resend webhook handling for account emails, auditable
@@ -53,8 +55,7 @@ before provider sends.
   passed with 79 suites and 909 tests; task tracker validation passed; diff
   whitespace check passed; migration `0011` is applied and a rerun reports
   nothing to apply.
-- Not run yet: Resend Dashboard webhook setup, Vercel `RESEND_WEBHOOK_SECRET`
-  redeploy, and deployed smoke-test.
+- Not run yet: Production redeploy after merge and deployed smoke-test.
 
 ## Review Checkpoint
 
@@ -66,12 +67,10 @@ before provider sends.
 - Tracker consistency checked: local validation passed.
 - Docs checked: production checklist, ADR, shared lib/db docs, and task-run
   report updated.
-- CI or PR status: PR #36 opened.
+- CI or PR status: PR #36 passed checks and merged.
 
 ## Follow-Ups
 
-- Create the Resend webhook pointing at `/api/webhooks/resend` if it was not
-  created during secret setup.
 - Redeploy Production and confirm real delivery events appear in the database.
 
 ## Open Questions
@@ -80,4 +79,4 @@ before provider sends.
 
 ## Registry Update Requested
 
-- Keep `T-022` in `review` until the PR is reviewed and merged.
+- Mark `T-022` done after post-merge tracker reconciliation.

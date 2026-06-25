@@ -867,13 +867,14 @@ Task-run report:
 
 ## T-022 - Add Resend webhooks and suppression
 
-- Status: `review`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-022-resend-webhooks-suppression`
 - GitHub issue: none
 - PR: #36
+- Merge commit: `e5e5e89`
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:
@@ -901,6 +902,10 @@ Acceptance criteria:
 - Focused tests cover signature rejection, event persistence, delivery updates,
   and suppression behavior.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-022-2026-06-25-resend-webhooks-suppression.md`
 
 ## T-023 - Add account email templates and production checklist
 

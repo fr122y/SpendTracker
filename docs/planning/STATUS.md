@@ -4,11 +4,12 @@ Last updated: 2026-06-25
 
 ## Current Focus
 
-- `T-022` - Add Resend webhooks and suppression is in review.
+- `T-003` - Open monthly category expenses from analysis chart is the only
+  remaining open backlog task.
 
 ## Active Branch
 
-- `task/T-022-resend-webhooks-suppression`
+- None.
 
 ## Stable Branch
 
@@ -16,7 +17,8 @@ Last updated: 2026-06-25
 
 ## Next Action
 
-Monitor PR #36 checks and review for `T-022`.
+Choose whether to take `T-003` next, or perform the post-merge `T-022`
+Production redeploy and real Resend webhook smoke-test.
 
 ## Validation
 
@@ -180,3 +182,4 @@ Monitor PR #36 checks and review for `T-022`.
   apply.
 - Configured: `RESEND_WEBHOOK_SECRET` exists in Vercel Production for
   `T-022`.
+- PR #36 merged for `T-022` with squash commit `e5e5e89`.
