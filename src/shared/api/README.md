@@ -84,6 +84,8 @@ Account-related Server Actions should call `enqueueAccountEmail` from
 module only from server code; it is intentionally not exported from the general
 `@/shared/lib` barrel. The outbox requires typed email payloads, text and HTML
 bodies, and an idempotency key so the cron processor can retry sends safely.
+Password reset and email verification actions should build those payloads with
+`@/shared/lib/account-email-templates` so text and HTML stay consistent.
 
 Production environment:
 

@@ -23,6 +23,11 @@ The wrapper accepts typed account email payloads with text and HTML bodies plus
 an idempotency key. It returns normalized results and errors so account flows do
 not depend on raw provider responses.
 
+Use plain TypeScript account email templates for the current password reset and
+email verification messages instead of adding React Email. The current account
+email surface is small, and plain templates keep dependencies, build behavior,
+and tests simple while still allowing reusable text and inline-CSS HTML output.
+
 Production sends require:
 
 - `RESEND_API_KEY`
@@ -44,5 +49,6 @@ outside the application code.
 - Provider secrets stay out of client code and `NEXT_PUBLIC_*` variables.
 - Idempotency is part of the contract now, so retries or an outbox can be added
   later without changing callers.
-- Email outbox, retries, Resend webhooks, suppression lists, and account email
-  templates remain separate follow-up tasks.
+- Email outbox and retries can process the same typed payloads without knowing
+  how templates are rendered.
+- Resend webhooks and suppression lists remain separate follow-up tasks.
