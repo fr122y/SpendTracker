@@ -910,7 +910,7 @@ Acceptance criteria:
 - Priority: medium
 - Branch: `task/T-023-account-email-templates`
 - GitHub issue: none
-- PR: none
+- PR: #35
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:

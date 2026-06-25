@@ -6,7 +6,7 @@ Branch: `task/T-023-account-email-templates`
 
 Issue: none
 
-PR: TBD
+PR: #35
 
 ## Summary
 
@@ -70,7 +70,7 @@ production readiness checklist for Resend-backed sending.
 - Tracker consistency checked: local validation passed.
 - Docs checked: checklist, ADR, shared API/lib docs, and task-run report were
   updated.
-- CI or PR status: local branch only; PR not opened yet.
+- CI or PR status: PR #35 opened.
 
 ## Follow-Ups
 

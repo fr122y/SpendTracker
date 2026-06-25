@@ -21,8 +21,7 @@ Last updated: 2026-06-25
 
 ## Next Action
 
-Complete self-review for `T-023`, commit and push
-`task/T-023-account-email-templates`, then open the pull request.
+Review PR #35 for `T-023` and merge when checks are successful.
 
 ## Validation
 

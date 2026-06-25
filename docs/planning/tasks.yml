@@ -1048,6 +1048,7 @@
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
+      "pr": 35,
       "branch": "task/T-023-account-email-templates",
       "detail": "Add reusable account email templates and a production readiness checklist for verified sending domains, sender addresses, and Resend key permissions.",
       "depends_on": [
@@ -1081,7 +1082,7 @@
         "Focused tests cover template rendering for supported account email types.",
         "npm run validate passes."
       ],
-      "next_action": "Run full validation, complete self-review, commit and push task/T-023-account-email-templates, then open the pull request.",
+      "next_action": "Review PR #35 and merge when checks are successful.",
       "task_run": "docs/planning/task-runs/T-023-2026-06-25-account-email-templates.md"
     },
     {
