@@ -8,8 +8,9 @@
   bounce/complaint/provider suppression records, outbox suppression checks,
   focused tests, and full `npm run validate`.
 - Applied `drizzle/0011_account_email_webhooks.sql` to the configured database
-  for `T-022`; Vercel/Resend still need `RESEND_WEBHOOK_SECRET` plus the
-  webhook URL before Production events are processed.
+  for `T-022`; `RESEND_WEBHOOK_SECRET` is configured in Vercel Production.
+  Production still needs the PR merge/redeploy and real webhook delivery
+  smoke-test before events are processed end to end.
 
 ## 2026-06-24
 

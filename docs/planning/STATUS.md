@@ -178,3 +178,5 @@ Monitor PR #36 checks and review for `T-022`.
 - Applied: `drizzle/0011_account_email_webhooks.sql` to the configured
   database for `T-022`; rerunning `npm run db:migrate` reports nothing to
   apply.
+- Configured: `RESEND_WEBHOOK_SECRET` exists in Vercel Production for
+  `T-022`.

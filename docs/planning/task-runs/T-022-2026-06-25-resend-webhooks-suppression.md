@@ -54,7 +54,7 @@ before provider sends.
   whitespace check passed; migration `0011` is applied and a rerun reports
   nothing to apply.
 - Not run yet: Resend Dashboard webhook setup, Vercel `RESEND_WEBHOOK_SECRET`
-  setup, redeploy, and deployed smoke-test.
+  redeploy, and deployed smoke-test.
 
 ## Review Checkpoint
 
@@ -70,8 +70,8 @@ before provider sends.
 
 ## Follow-Ups
 
-- Configure `RESEND_WEBHOOK_SECRET` in Vercel and create the Resend webhook
-  pointing at `/api/webhooks/resend`.
+- Create the Resend webhook pointing at `/api/webhooks/resend` if it was not
+  created during secret setup.
 - Redeploy Production and confirm real delivery events appear in the database.
 
 ## Open Questions
