@@ -1,11 +1,15 @@
 # Status
 
-Last updated: 2026-06-24
+Last updated: 2026-06-25
 
 ## Current Focus
 
-- `T-022` - Add Resend webhooks and suppression is the recommended next
-  technical email reliability follow-up.
+- `T-023` - Add account email templates and production checklist is the
+  recommended immediate email-quality follow-up after real reset-password
+  messages reached Gmail but landed in spam.
+- `T-022` - Add Resend webhooks and suppression remains the next technical
+  email reliability follow-up so delivery outcomes are visible beyond
+  provider `sent`.
 
 ## Active Branch
 
@@ -17,10 +21,9 @@ Last updated: 2026-06-24
 
 ## Next Action
 
-Apply `drizzle/0010_account_email_messages.sql`, configure `CRON_SECRET` in
-Vercel, redeploy Production, and smoke-test outbox-backed account email
-delivery. Then run a ready-check for `T-022` when webhook/suppression handling
-becomes the next priority.
+Run a ready-check for `T-023` if improving email design and deliverability is
+selected next. Otherwise run a ready-check for `T-022` to add Resend webhook
+delivery events and suppression handling.
 
 ## Validation
 
@@ -151,3 +154,14 @@ becomes the next priority.
   (`dpl_CXc4kWPyMorimxpCeEo8M67LP9pB`) after switching the cron schedule to a
   Hobby-compatible daily safety net.
 - PR #34 merged for `T-021` with merge commit `bf15f81`.
+- Post-merge `T-021` operational setup completed on Production:
+  `drizzle/0010_account_email_messages.sql` is applied,
+  `CRON_SECRET` is configured in Vercel, Production was redeployed, and
+  outbox-backed account email delivery was smoke-tested.
+- Direct owner-approved `main` hotfix `43fddf4` allowed unauthenticated access
+  to `/forgot-password`, `/reset-password/[token]`, and
+  `/verify-email/[token]`; Production redeploy
+  `dpl_6a5YALmt5BsHK9AUS6Bxztnz1NAs` returned `200` for all three routes.
+- Real reset-password requests created `auth.reset_password` outbox messages
+  and Resend accepted them with provider status `sent`; one Gmail delivery
+  landed in spam, reinforcing `T-023` and `T-022` as the next email follow-ups.
