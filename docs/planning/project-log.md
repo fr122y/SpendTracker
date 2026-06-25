@@ -1,5 +1,16 @@
 # Project Log
 
+## 2026-06-25
+
+- Implemented `T-022` Resend webhook and suppression handling on
+  `task/T-022-resend-webhooks-suppression`: signed Resend webhook processing,
+  account email delivery event persistence, message delivery status updates,
+  bounce/complaint/provider suppression records, outbox suppression checks,
+  focused tests, and full `npm run validate`. Target databases need
+  `drizzle/0011_account_email_webhooks.sql`, and Vercel/Resend need
+  `RESEND_WEBHOOK_SECRET` plus the webhook URL before Production events are
+  processed.
+
 ## 2026-06-24
 
 - Implemented `T-021` email outbox and retries on

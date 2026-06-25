@@ -4,13 +4,11 @@ Last updated: 2026-06-25
 
 ## Current Focus
 
-- `T-022` - Add Resend webhooks and suppression remains the next technical
-  email reliability follow-up so delivery outcomes are visible beyond
-  provider `sent`.
+- `T-022` - Add Resend webhooks and suppression is in review.
 
 ## Active Branch
 
-- None.
+- `task/T-022-resend-webhooks-suppression`
 
 ## Stable Branch
 
@@ -18,8 +16,7 @@ Last updated: 2026-06-25
 
 ## Next Action
 
-Run a ready-check for `T-022` when webhook/suppression handling becomes the
-next email reliability priority.
+Open the `T-022` pull request after committing and pushing the scoped branch.
 
 ## Validation
 
@@ -170,3 +167,11 @@ next email reliability priority.
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-023`.
 - PR #35 merged for `T-023` with squash commit `fe3a002`.
+- Passed: focused Jest tests for `T-022` account email webhooks, outbox
+  suppression, and webhook/cron routes (4 suites, 19 tests).
+- Passed: `npm run typecheck` for `T-022`.
+- Passed: `npm run lint` for `T-022`.
+- Passed: `npm run validate` for `T-022` (79 suites, 909 tests). Existing
+  `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
+  to this task.
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-022`.

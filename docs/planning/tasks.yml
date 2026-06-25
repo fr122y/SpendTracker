@@ -997,7 +997,7 @@
     {
       "id": "T-022",
       "title": "Add Resend webhooks and suppression",
-      "status": "captured",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
@@ -1038,7 +1038,7 @@
         "Focused tests cover signature rejection, event persistence, delivery updates, and suppression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Run ready-check after T-021 is scoped or choose whether webhook persistence can ship independently."
+      "next_action": "Review PR after branch push; after merge, apply drizzle/0011_account_email_webhooks.sql, configure RESEND_WEBHOOK_SECRET and Resend webhook URL, redeploy Production, and smoke-test real delivery events."
     },
     {
       "id": "T-023",

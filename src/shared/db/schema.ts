@@ -154,6 +154,60 @@ export const accountEmailMessages = pgTable(
   ]
 )
 
+export const accountEmailEvents = pgTable(
+  'account_email_event',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    provider: text('provider').notNull(),
+    providerEventId: text('providerEventId').notNull().unique(),
+    type: text('type').notNull(),
+    providerMessageId: text('providerMessageId').notNull(),
+    recipientEmail: text('recipientEmail').notNull(),
+    accountEmailMessageId: text('accountEmailMessageId').references(
+      () => accountEmailMessages.id,
+      { onDelete: 'set null' }
+    ),
+    payloadJson: jsonb('payloadJson').notNull(),
+    reason: text('reason'),
+    createdAt: timestamp('createdAt', { mode: 'date' }).notNull(),
+    receivedAt: timestamp('receivedAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index('account_email_event_message_idx').on(table.accountEmailMessageId),
+    index('account_email_event_provider_message_idx').on(
+      table.providerMessageId
+    ),
+    index('account_email_event_recipient_idx').on(table.recipientEmail),
+    index('account_email_event_type_idx').on(table.type),
+  ]
+)
+
+export const accountEmailSuppressions = pgTable(
+  'account_email_suppression',
+  {
+    email: text('email').primaryKey(),
+    reason: text('reason').notNull(),
+    source: text('source').notNull(),
+    providerMessageId: text('providerMessageId'),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+    updatedAt: timestamp('updatedAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    index('account_email_suppression_reason_idx').on(table.reason),
+    index('account_email_suppression_provider_message_idx').on(
+      table.providerMessageId
+    ),
+  ]
+)
+
 export const sharedBudgets = pgTable('shared_budget', {
   id: text('id')
     .primaryKey()

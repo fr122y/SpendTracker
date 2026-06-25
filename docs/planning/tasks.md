@@ -867,7 +867,7 @@ Task-run report:
 
 ## T-022 - Add Resend webhooks and suppression
 
-- Status: `captured`
+- Status: `review`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium

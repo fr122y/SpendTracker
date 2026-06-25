@@ -10,6 +10,7 @@ import {
   validateAccountEmailInput,
   type SendAccountEmailInput,
 } from './account-email'
+import { isAccountEmailSuppressed } from './account-email-suppression'
 
 type AccountEmailMessage = typeof accountEmailMessages.$inferSelect
 
@@ -22,6 +23,7 @@ export type ProcessAccountEmailOutboxResult = {
   sent: number
   retried: number
   failed: number
+  suppressed: number
   skipped: number
 }
 
@@ -125,6 +127,21 @@ async function markMessageSent(
     .where(eq(accountEmailMessages.id, message.id))
 }
 
+async function markMessageSuppressed(
+  message: AccountEmailMessage,
+  now: Date
+): Promise<void> {
+  await db
+    .update(accountEmailMessages)
+    .set({
+      status: 'suppressed',
+      lastError: 'Account email recipient is suppressed',
+      nextRetryAt: null,
+      updatedAt: now,
+    })
+    .where(eq(accountEmailMessages.id, message.id))
+}
+
 async function markMessageFailed(
   message: AccountEmailMessage,
   error: unknown,
@@ -204,6 +221,7 @@ export async function processAccountEmailOutbox(input?: {
     sent: 0,
     retried: 0,
     failed: 0,
+    suppressed: 0,
     skipped: 0,
   }
 
@@ -218,6 +236,12 @@ export async function processAccountEmailOutbox(input?: {
     result.processed += 1
 
     try {
+      if (await isAccountEmailSuppressed(message.recipientEmail)) {
+        await markMessageSuppressed(message, now)
+        result.suppressed += 1
+        continue
+      }
+
       await markMessageSent(message, now)
       result.sent += 1
     } catch (error) {
