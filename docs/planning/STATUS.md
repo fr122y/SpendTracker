@@ -4,16 +4,13 @@ Last updated: 2026-06-25
 
 ## Current Focus
 
-- `T-023` - Add account email templates and production checklist is the
-  recommended immediate email-quality follow-up after real reset-password
-  messages reached Gmail but landed in spam.
 - `T-022` - Add Resend webhooks and suppression remains the next technical
   email reliability follow-up so delivery outcomes are visible beyond
   provider `sent`.
 
 ## Active Branch
 
-- `task/T-023-account-email-templates`
+- None.
 
 ## Stable Branch
 
@@ -21,7 +18,8 @@ Last updated: 2026-06-25
 
 ## Next Action
 
-Review PR #35 for `T-023` and merge when checks are successful.
+Run a ready-check for `T-022` when webhook/suppression handling becomes the
+next email reliability priority.
 
 ## Validation
 
@@ -171,3 +169,4 @@ Review PR #35 for `T-023` and merge when checks are successful.
   `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-023`.
+- PR #35 merged for `T-023` with squash commit `fe3a002`.

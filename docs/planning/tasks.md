@@ -904,13 +904,14 @@ Acceptance criteria:
 
 ## T-023 - Add account email templates and production checklist
 
-- Status: `review`
+- Status: `done`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-023-account-email-templates`
 - GitHub issue: none
 - PR: #35
+- Merge commit: `fe3a002`
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:

@@ -8,6 +8,8 @@ Issue: none
 
 PR: #35
 
+Merge commit: `fe3a002`
+
 ## Summary
 
 Added reusable plain TypeScript templates for account emails and documented the
@@ -70,7 +72,7 @@ production readiness checklist for Resend-backed sending.
 - Tracker consistency checked: local validation passed.
 - Docs checked: checklist, ADR, shared API/lib docs, and task-run report were
   updated.
-- CI or PR status: PR #35 opened.
+- CI or PR status: PR #35 passed checks and merged.
 
 ## Follow-Ups
 
@@ -83,5 +85,4 @@ production readiness checklist for Resend-backed sending.
 
 ## Registry Update Requested
 
-- Keep `T-023` in `review` until PR review, merge, and post-merge
-  reconciliation are complete.
+- Mark `T-023` done after post-merge tracker reconciliation.
