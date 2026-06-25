@@ -48,11 +48,13 @@ before provider sends.
   - `npm run validate`
   - `python3 scripts/validate_task_tracker.py`
   - `git diff --check`
+  - `npm run db:migrate`
 - Result: focused tests passed; typecheck passed; lint passed; full validation
   passed with 79 suites and 909 tests; task tracker validation passed; diff
-  whitespace check passed.
-- Not run yet: CI, production migration, Resend Dashboard webhook setup, and
-  deployed smoke-test.
+  whitespace check passed; migration `0011` is applied and a rerun reports
+  nothing to apply.
+- Not run yet: Resend Dashboard webhook setup, Vercel `RESEND_WEBHOOK_SECRET`
+  setup, redeploy, and deployed smoke-test.
 
 ## Review Checkpoint
 
@@ -68,7 +70,6 @@ before provider sends.
 
 ## Follow-Ups
 
-- After merge, apply `drizzle/0011_account_email_webhooks.sql` to Production.
 - Configure `RESEND_WEBHOOK_SECRET` in Vercel and create the Resend webhook
   pointing at `/api/webhooks/resend`.
 - Redeploy Production and confirm real delivery events appear in the database.

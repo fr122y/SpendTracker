@@ -175,3 +175,6 @@ Monitor PR #36 checks and review for `T-022`.
   `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
   to this task.
 - Passed: `python3 scripts/validate_task_tracker.py` for `T-022`.
+- Applied: `drizzle/0011_account_email_webhooks.sql` to the configured
+  database for `T-022`; rerunning `npm run db:migrate` reports nothing to
+  apply.

@@ -6,10 +6,10 @@
   `task/T-022-resend-webhooks-suppression`: signed Resend webhook processing,
   account email delivery event persistence, message delivery status updates,
   bounce/complaint/provider suppression records, outbox suppression checks,
-  focused tests, and full `npm run validate`. Target databases need
-  `drizzle/0011_account_email_webhooks.sql`, and Vercel/Resend need
-  `RESEND_WEBHOOK_SECRET` plus the webhook URL before Production events are
-  processed.
+  focused tests, and full `npm run validate`.
+- Applied `drizzle/0011_account_email_webhooks.sql` to the configured database
+  for `T-022`; Vercel/Resend still need `RESEND_WEBHOOK_SECRET` plus the
+  webhook URL before Production events are processed.
 
 ## 2026-06-24
 
