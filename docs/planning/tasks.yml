@@ -1002,6 +1002,7 @@
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
+      "pr": 36,
       "branch": "task/T-022-resend-webhooks-suppression",
       "detail": "Process signed Resend delivery webhooks and maintain suppression records for bounced or complained email addresses.",
       "depends_on": [
@@ -1038,7 +1039,7 @@
         "Focused tests cover signature rejection, event persistence, delivery updates, and suppression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Review PR after branch push; after merge, apply drizzle/0011_account_email_webhooks.sql, configure RESEND_WEBHOOK_SECRET and Resend webhook URL, redeploy Production, and smoke-test real delivery events."
+      "next_action": "Monitor PR #36 checks and review; after merge, apply drizzle/0011_account_email_webhooks.sql, configure RESEND_WEBHOOK_SECRET and Resend webhook URL, redeploy Production, and smoke-test real delivery events."
     },
     {
       "id": "T-023",

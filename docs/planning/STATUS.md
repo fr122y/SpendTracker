@@ -16,7 +16,7 @@ Last updated: 2026-06-25
 
 ## Next Action
 
-Open the `T-022` pull request after committing and pushing the scoped branch.
+Monitor PR #36 checks and review for `T-022`.
 
 ## Validation
 

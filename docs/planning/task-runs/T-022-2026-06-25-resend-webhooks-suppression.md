@@ -6,7 +6,7 @@ Branch: `task/T-022-resend-webhooks-suppression`
 
 Issue: none
 
-PR: TBD
+PR: #36
 
 ## Summary
 
@@ -64,7 +64,7 @@ before provider sends.
 - Tracker consistency checked: local validation passed.
 - Docs checked: production checklist, ADR, shared lib/db docs, and task-run
   report updated.
-- CI or PR status: PR pending.
+- CI or PR status: PR #36 opened.
 
 ## Follow-Ups
 
