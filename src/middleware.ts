@@ -5,10 +5,19 @@ import { getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
 
 const { auth } = NextAuth(authConfig)
 
+function isPublicAuthRoute(pathname: string): boolean {
+  return (
+    pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname.startsWith('/reset-password/') ||
+    pathname.startsWith('/verify-email/') ||
+    pathname.startsWith('/invite/')
+  )
+}
+
 export default auth((req) => {
   const isLoggedIn = !!req.auth
   const { pathname } = req.nextUrl
-  const isInvitePage = pathname.startsWith('/invite/')
 
   if (pathname === '/login' && isLoggedIn) {
     const callbackUrl = getSafeCallbackUrl(
@@ -18,7 +27,7 @@ export default auth((req) => {
     return Response.redirect(new URL(callbackUrl, req.nextUrl))
   }
 
-  if (pathname !== '/login' && !isInvitePage && !isLoggedIn) {
+  if (!isPublicAuthRoute(pathname) && !isLoggedIn) {
     return Response.redirect(new URL('/login', req.nextUrl))
   }
 })
