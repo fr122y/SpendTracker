@@ -997,11 +997,12 @@
     {
       "id": "T-022",
       "title": "Add Resend webhooks and suppression",
-      "status": "captured",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
       "priority": "medium",
       "github_issue": null,
+      "pr": 36,
       "branch": "task/T-022-resend-webhooks-suppression",
       "detail": "Process signed Resend delivery webhooks and maintain suppression records for bounced or complained email addresses.",
       "depends_on": [
@@ -1038,7 +1039,7 @@
         "Focused tests cover signature rejection, event persistence, delivery updates, and suppression behavior.",
         "npm run validate passes."
       ],
-      "next_action": "Run ready-check after T-021 is scoped or choose whether webhook persistence can ship independently."
+      "next_action": "Monitor PR #36 checks and review; after merge, redeploy Production and smoke-test real Resend webhook delivery events."
     },
     {
       "id": "T-023",

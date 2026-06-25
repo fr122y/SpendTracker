@@ -33,6 +33,7 @@ describe('account email outbox cron route', () => {
       sent: 1,
       retried: 0,
       failed: 0,
+      suppressed: 0,
       skipped: 0,
     })
   })
@@ -63,6 +64,7 @@ describe('account email outbox cron route', () => {
       sent: 1,
       retried: 0,
       failed: 0,
+      suppressed: 0,
       skipped: 0,
     })
   })

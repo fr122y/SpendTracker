@@ -134,6 +134,7 @@ Required production environment:
 
 - `RESEND_API_KEY`
 - `ACCOUNT_EMAIL_FROM`
+- `RESEND_WEBHOOK_SECRET`
 - `ACCOUNT_EMAIL_REPLY_TO` (optional)
 
 In development and tests, missing `RESEND_API_KEY` logs a safe preview instead
@@ -142,3 +143,14 @@ not use `NEXT_PUBLIC_*`.
 
 Production readiness checklist:
 `docs/context/ACCOUNT_EMAIL_PRODUCTION_CHECKLIST.md`.
+
+### Account Email Webhooks And Suppression
+
+Resend delivery webhooks are handled by
+`@/shared/lib/account-email-webhooks`. The processor verifies the raw webhook
+payload with `RESEND_WEBHOOK_SECRET`, stores auditable delivery events, updates
+account email message status, and suppresses bounced, complained, or
+provider-suppressed recipients.
+
+`processAccountEmailOutbox` checks the suppression list before provider sends.
+Suppressed recipients are marked as `suppressed` without calling Resend.

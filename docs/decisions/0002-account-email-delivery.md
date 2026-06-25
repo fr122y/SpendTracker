@@ -51,4 +51,6 @@ outside the application code.
   later without changing callers.
 - Email outbox and retries can process the same typed payloads without knowing
   how templates are rendered.
-- Resend webhooks and suppression lists remain separate follow-up tasks.
+- Resend webhooks and suppression lists are handled as a separate reliability
+  layer so delivery outcomes, bounce/complaint handling, and suppression checks
+  do not complicate initial account email sending.

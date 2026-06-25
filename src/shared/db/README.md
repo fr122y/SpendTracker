@@ -31,6 +31,10 @@ Drizzle ORM database layer for the app's PostgreSQL backend.
   token hashes, expiry, and use state
 - `account_email_message` stores queued account email bodies, delivery status,
   provider ids, idempotency keys, and retry metadata
+- `account_email_event` stores normalized Resend webhook delivery events plus
+  full JSON payloads for account email audit/debugging
+- `account_email_suppression` stores recipients that should no longer receive
+  account emails after bounce, complaint, or provider suppression events
 
 ## Dependencies
 

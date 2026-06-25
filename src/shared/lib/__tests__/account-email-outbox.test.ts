@@ -1,5 +1,6 @@
 const mockSendAccountEmail = jest.fn()
 const mockValidateAccountEmailInput = jest.fn()
+const mockIsAccountEmailSuppressed = jest.fn()
 const mockAsc = jest.fn((value: unknown) => ['asc', value])
 const mockEq = jest.fn((left: unknown, right: unknown) => ['eq', left, right])
 const mockAnd = jest.fn((...conditions: unknown[]) => ['and', conditions])
@@ -80,6 +81,11 @@ jest.mock('../account-email', () => {
   }
 })
 
+jest.mock('../account-email-suppression', () => ({
+  isAccountEmailSuppressed: (...args: unknown[]) =>
+    mockIsAccountEmailSuppressed(...args),
+}))
+
 import { AccountEmailError } from '../account-email'
 import {
   enqueueAccountEmail,
@@ -120,6 +126,7 @@ describe('account email outbox', () => {
       provider: 'resend',
       providerMessageId: 'resend-message-1',
     })
+    mockIsAccountEmailSuppressed.mockResolvedValue(false)
   })
 
   it('persists account emails with idempotency protection', async () => {
@@ -162,6 +169,7 @@ describe('account email outbox', () => {
       sent: 1,
       retried: 0,
       failed: 0,
+      suppressed: 0,
       skipped: 0,
     })
     expect(mockSendAccountEmail).toHaveBeenCalledWith({
@@ -196,6 +204,31 @@ describe('account email outbox', () => {
         attemptsCount: 1,
         lastError: 'Network timeout',
         nextRetryAt: new Date('2026-06-24T12:01:00.000Z'),
+      })
+    )
+  })
+
+  it('marks suppressed recipients without calling the provider', async () => {
+    mockLimit.mockResolvedValueOnce([message])
+    mockIsAccountEmailSuppressed.mockResolvedValueOnce(true)
+
+    const result = await processAccountEmailOutbox({ now, limit: 1 })
+
+    expect(result).toEqual({
+      processed: 1,
+      sent: 0,
+      retried: 0,
+      failed: 0,
+      suppressed: 1,
+      skipped: 0,
+    })
+    expect(mockSendAccountEmail).not.toHaveBeenCalled()
+    expect(mockUpdateSet).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'suppressed',
+        lastError: 'Account email recipient is suppressed',
+        nextRetryAt: null,
+        updatedAt: now,
       })
     )
   })
@@ -247,6 +280,7 @@ describe('account email outbox', () => {
       sent: 0,
       retried: 0,
       failed: 0,
+      suppressed: 0,
       skipped: 1,
     })
     expect(mockSendAccountEmail).not.toHaveBeenCalled()

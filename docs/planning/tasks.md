@@ -867,13 +867,13 @@ Task-run report:
 
 ## T-022 - Add Resend webhooks and suppression
 
-- Status: `captured`
+- Status: `review`
 - Phase: Account & Auth
 - Type: feature
 - Priority: medium
 - Branch: `task/T-022-resend-webhooks-suppression`
 - GitHub issue: none
-- PR: none
+- PR: #36
 - Owner mode: agent-led
 - Depends on: `T-016`
 - Required context:
