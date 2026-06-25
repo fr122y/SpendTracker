@@ -1043,10 +1043,10 @@
     {
       "id": "T-023",
       "title": "Add account email templates and production checklist",
-      "status": "backlog",
+      "status": "review",
       "phase": "Account & Auth",
       "type": "feature",
-      "priority": "low",
+      "priority": "medium",
       "github_issue": null,
       "branch": "task/T-023-account-email-templates",
       "detail": "Add reusable account email templates and a production readiness checklist for verified sending domains, sender addresses, and Resend key permissions.",
@@ -1070,7 +1070,8 @@
         "docs/planning/task-tracking.md",
         "docs/planning/tasks.yml",
         "docs/decisions/0002-account-email-delivery.md",
-        "src/shared/lib/account-email.ts"
+        "src/shared/lib/account-email.ts",
+        "docs/context/ACCOUNT_EMAIL_PRODUCTION_CHECKLIST.md"
       ],
       "acceptance": [
         "Account email templates provide both HTML and text output for password reset and email verification.",
@@ -1080,7 +1081,8 @@
         "Focused tests cover template rendering for supported account email types.",
         "npm run validate passes."
       ],
-      "next_action": "Schedule when account email content or production readiness needs refinement; account email delivery foundation is already merged in T-016."
+      "next_action": "Run full validation, complete self-review, commit and push task/T-023-account-email-templates, then open the pull request.",
+      "task_run": "docs/planning/task-runs/T-023-2026-06-25-account-email-templates.md"
     },
     {
       "id": "T-024",

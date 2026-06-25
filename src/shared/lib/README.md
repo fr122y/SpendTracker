@@ -106,20 +106,26 @@ evaluateMathExpression('5/0') // Infinity
 
 ### Account Email Delivery
 
-Server-only outbox and Resend wrapper for account emails. Import these modules
-directly from server code; do not re-export them from the general
+Server-only templates, outbox, and Resend wrapper for account emails. Import
+these modules directly from server code; do not re-export them from the general
 `@/shared/lib` barrel because that barrel is used by client components.
 
 ```typescript
+import { createPasswordResetEmail } from '@/shared/lib/account-email-templates'
 import { enqueueAccountEmail } from '@/shared/lib/account-email-outbox'
+
+const emailPayload = createPasswordResetEmail({
+  resetUrl: 'https://spendtracker.online/reset-password/token',
+  expiresInMinutes: 15,
+})
 
 await enqueueAccountEmail({
   type: 'auth.reset_password',
   to: 'user@example.com',
   userId: 'user-id',
-  subject: 'Сброс пароля',
-  text: 'Откройте ссылку для сброса пароля',
-  html: '<p>Откройте ссылку для сброса пароля</p>',
+  subject: emailPayload.subject,
+  text: emailPayload.text,
+  html: emailPayload.html,
   idempotencyKey: 'auth.reset_password:user-id:token-id',
 })
 ```
@@ -133,3 +139,6 @@ Required production environment:
 In development and tests, missing `RESEND_API_KEY` logs a safe preview instead
 of sending a real email. Email provider secrets must stay server-only and must
 not use `NEXT_PUBLIC_*`.
+
+Production readiness checklist:
+`docs/context/ACCOUNT_EMAIL_PRODUCTION_CHECKLIST.md`.

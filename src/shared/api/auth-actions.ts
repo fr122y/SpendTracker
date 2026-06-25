@@ -19,6 +19,10 @@ import {
   enqueueAccountEmail,
   processAccountEmailOutbox,
 } from '@/shared/lib/account-email-outbox'
+import {
+  createEmailVerificationEmail,
+  createPasswordResetEmail,
+} from '@/shared/lib/account-email-templates'
 
 const registerSchema = z.object({
   name: z
@@ -153,48 +157,6 @@ function createPasswordResetUrl(token: string): string {
 
 function createEmailVerificationUrl(token: string): string {
   return `${getAppOrigin()}/verify-email/${encodeURIComponent(token)}`
-}
-
-function createPasswordResetEmail(input: {
-  resetUrl: string
-  expiresInMinutes: number
-}) {
-  const subject = 'Сброс пароля SmartSpend'
-  const text = [
-    'Вы запросили сброс пароля SmartSpend.',
-    `Откройте ссылку и задайте новый пароль: ${input.resetUrl}`,
-    `Ссылка действует ${input.expiresInMinutes} минут.`,
-    'Если это были не вы, просто проигнорируйте письмо.',
-  ].join('\n\n')
-  const html = [
-    '<p>Вы запросили сброс пароля SmartSpend.</p>',
-    `<p><a href="${input.resetUrl}">Задать новый пароль</a></p>`,
-    `<p>Ссылка действует ${input.expiresInMinutes} минут.</p>`,
-    '<p>Если это были не вы, просто проигнорируйте письмо.</p>',
-  ].join('')
-
-  return { subject, text, html }
-}
-
-function createEmailVerificationEmail(input: {
-  verifyUrl: string
-  expiresInHours: number
-}) {
-  const subject = 'Подтвердите email SmartSpend'
-  const text = [
-    'Подтвердите email для аккаунта SmartSpend.',
-    `Откройте ссылку: ${input.verifyUrl}`,
-    `Ссылка действует ${input.expiresInHours} часа.`,
-    'Если это были не вы, просто проигнорируйте письмо.',
-  ].join('\n\n')
-  const html = [
-    '<p>Подтвердите email для аккаунта SmartSpend.</p>',
-    `<p><a href="${input.verifyUrl}">Подтвердить email</a></p>`,
-    `<p>Ссылка действует ${input.expiresInHours} часа.</p>`,
-    '<p>Если это были не вы, просто проигнорируйте письмо.</p>',
-  ].join('')
-
-  return { subject, text, html }
 }
 
 async function issueEmailVerificationToken(input: {

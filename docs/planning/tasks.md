@@ -904,10 +904,10 @@ Acceptance criteria:
 
 ## T-023 - Add account email templates and production checklist
 
-- Status: `backlog`
+- Status: `review`
 - Phase: Account & Auth
 - Type: feature
-- Priority: low
+- Priority: medium
 - Branch: `task/T-023-account-email-templates`
 - GitHub issue: none
 - PR: none
@@ -920,6 +920,7 @@ Acceptance criteria:
   - `docs/planning/tasks.yml`
   - `docs/decisions/0002-account-email-delivery.md`
   - `src/shared/lib/account-email.ts`
+  - `docs/context/ACCOUNT_EMAIL_PRODUCTION_CHECKLIST.md`
 
 Add reusable account email templates and a production readiness checklist for
 verified sending domains, sender addresses, and Resend key permissions.
@@ -937,6 +938,10 @@ Acceptance criteria:
   permissions.
 - Focused tests cover template rendering for supported account email types.
 - `npm run validate` passes.
+
+Task-run report:
+
+- `docs/planning/task-runs/T-023-2026-06-25-account-email-templates.md`
 
 ## T-024 - Configure Resend account email secrets
 

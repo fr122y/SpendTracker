@@ -13,7 +13,7 @@ Last updated: 2026-06-25
 
 ## Active Branch
 
-- None.
+- `task/T-023-account-email-templates`
 
 ## Stable Branch
 
@@ -21,9 +21,8 @@ Last updated: 2026-06-25
 
 ## Next Action
 
-Run a ready-check for `T-023` if improving email design and deliverability is
-selected next. Otherwise run a ready-check for `T-022` to add Resend webhook
-delivery events and suppression handling.
+Complete self-review for `T-023`, commit and push
+`task/T-023-account-email-templates`, then open the pull request.
 
 ## Validation
 
@@ -165,3 +164,11 @@ delivery events and suppression handling.
 - Real reset-password requests created `auth.reset_password` outbox messages
   and Resend accepted them with provider status `sent`; one Gmail delivery
   landed in spam, reinforcing `T-023` and `T-022` as the next email follow-ups.
+- Passed: focused Jest tests for `T-023` account email templates and password
+  reset auth actions (2 suites, 18 tests).
+- Passed: `npm run typecheck` for `T-023`.
+- Passed: `npm run lint` for `T-023`.
+- Passed: `npm run validate` for `T-023` (77 suites, 898 tests). Existing
+  `MobileWidgetModal` React `act(...)` warnings still appear and are unrelated
+  to this task.
+- Passed: `python3 scripts/validate_task_tracker.py` for `T-023`.
