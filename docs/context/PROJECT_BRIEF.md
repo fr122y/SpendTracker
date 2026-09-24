@@ -29,5 +29,4 @@ categorization workflows. The user interface is Russian.
 
 ## Validation
 
-Use `npm run validate` before PRs for application changes. Use
-`python3 scripts/validate_task_tracker.py` after task tracker changes.
+Use `npm run validate` before PRs for application changes.

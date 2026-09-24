@@ -1,5 +1,9 @@
 # Adoption Audit
 
+> Historical framework document. Repository-local task tracking was retired on
+> 2026-09-24; this file is retained only for provenance, not as current agent
+> instruction.
+
 An adoption audit is the required first gate before installing or substantially
 adapting the project-task-tracking framework in a target repository.
 

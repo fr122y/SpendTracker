@@ -1,5 +1,8 @@
 # Status
 
+> Historical snapshot as of 2026-06-25. This file is no longer maintained as
+> current task status.
+
 Last updated: 2026-06-25
 
 ## Current Focus

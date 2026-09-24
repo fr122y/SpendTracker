@@ -53,7 +53,4 @@ branch.
 ## Process
 
 - Pull Request title and body follow `docs/engineering/change-request.md`.
-- Task tracker, project log, task-run report, ADRs, and open questions were
-  updated when required.
-- `python3 scripts/validate_task_tracker.py` was run when tracker files
-  changed.
+- Relevant docs, ADRs, and open questions were updated when required.
