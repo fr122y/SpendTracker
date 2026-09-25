@@ -1,5 +1,7 @@
 # Tasks
 
+> Historical task registry. It is no longer maintained as current task status.
+
 ## T-001 - Adapt project task tracking framework
 
 - Status: `done`

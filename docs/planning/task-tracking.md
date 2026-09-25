@@ -1,5 +1,9 @@
 # Task Tracking
 
+> Historical process document. Repository-local task tracking was retired on
+> 2026-09-24; this file is retained only to explain earlier work. It is not an
+> instruction for current agents.
+
 This document defines the repository-local operating system for planning, task
 tracking, and progress control in SmartSpend Tracker.
 

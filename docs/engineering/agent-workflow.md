@@ -5,11 +5,10 @@ SmartSpend Tracker.
 
 ## Core Flow
 
-Use one logical change for one task or explicit owner-approved process
-exception:
+Use one logical change per bounded work session:
 
 ```text
-one task or approved exception
+one bounded change
 -> one bounded work session
 -> one scoped branch
 -> one GitHub Pull Request
@@ -19,12 +18,10 @@ one task or approved exception
 ```
 
 The repository uses GitHub, so a change request means a GitHub Pull Request.
-The local task tracker still uses `github_issue` fields; do not migrate them to
-generic external issue fields without a dedicated task.
 
 ## Scope Control
 
-Work only inside the current task or explicit human request.
+Work only inside the current request's scope.
 
 Do not silently:
 
@@ -36,12 +33,12 @@ Do not silently:
 - rewrite working code for subjective cleanup;
 - expand the task into other domains.
 
-Record unrelated discoveries as follow-up tasks, backlog items, or open
-questions instead of adding them to the current diff.
+Report unrelated discoveries separately instead of adding them to the current
+diff.
 
 ## Context Before Changes
 
-Before changing existing behavior, read the task, relevant instructions, nearby
+Before changing existing behavior, read the request, relevant instructions, nearby
 code, existing tests, API contracts, and targeted history for the affected
 area.
 
@@ -119,8 +116,6 @@ Use each durable container for its intended memory:
 
 - Git history and Pull Requests: technical reason, behavior, implementation,
   risk, and verification for one logical change.
-- Task tracker and task-run reports: task state and agent handoff details.
 - ADRs: durable architectural decisions.
-- Project log: meaningful completed milestones.
 
 Do not turn every technical commit into a user changelog entry.
