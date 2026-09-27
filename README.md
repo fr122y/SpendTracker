@@ -92,7 +92,7 @@ src/
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js >=20.19.0
 - npm
 
 ### Installation
@@ -100,7 +100,7 @@ src/
 ```bash
 git clone <repository-url>
 cd SpendTracker
-npm install
+npm ci
 ```
 
 ### Environment Variables
@@ -121,19 +121,24 @@ npm run dev          # Start dev server at http://localhost:3000
 
 ## Scripts
 
-| Command                | Description                                  |
-| ---------------------- | -------------------------------------------- |
-| `npm run dev`          | Start Next.js dev server                     |
-| `npm run build`        | Production build                             |
-| `npm run start`        | Start production server                      |
-| `npm run validate`     | Typecheck + Lint + Tests (run before commit) |
-| `npm run test`         | Run unit tests (Jest)                        |
-| `npm run test:watch`   | Run tests in watch mode                      |
-| `npm run test:e2e`     | Run E2E tests (Playwright)                   |
-| `npm run typecheck`    | TypeScript check (no emit)                   |
-| `npm run lint`         | ESLint check (zero warnings)                 |
-| `npm run format`       | Prettier format                              |
-| `npm run format:check` | Prettier check                               |
+| Command                | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `npm run dev`          | Start Next.js dev server                        |
+| `npm run build`        | Production build                                |
+| `npm run start`        | Start production server                         |
+| `npm run validate`     | Typecheck + Lint + Tests (run before commit)    |
+| `npm run spec:check`   | Strict validation of OpenSpec specs and changes |
+| `npm run test`         | Run unit tests (Jest)                           |
+| `npm run test:watch`   | Run tests in watch mode                         |
+| `npm run test:e2e`     | Run E2E tests (Playwright)                      |
+| `npm run typecheck`    | TypeScript check (no emit)                      |
+| `npm run lint`         | ESLint check (zero warnings)                    |
+| `npm run format`       | Prettier format                                 |
+| `npm run format:check` | Prettier check                                  |
+
+For agent work, use the [repository workflow](docs/engineering/agent-workflow.md).
+The vault task register owns task status; OpenSpec changes hold scoped
+requirements and implementation checklists.
 
 ## Testing
 

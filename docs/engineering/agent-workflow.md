@@ -119,3 +119,40 @@ Use each durable container for its intended memory:
 - ADRs: durable architectural decisions.
 
 Do not turn every technical commit into a user changelog entry.
+
+## OpenSpec Changes
+
+The vault task register remains the source of truth for project tasks, task
+status, and next steps. OpenSpec is a repository-local specification and
+execution aid: each `openspec/changes/<change-id>/tasks.md` covers only that
+change and is not copied from the vault backlog.
+
+For substantive work that changes observable behavior, an API, a schema,
+security, or architecture:
+
+1. Choose an existing vault task and use `$openspec-propose` to create one
+   scoped change with the requirements delta, design, and task checklist.
+2. Review the artifacts against the vault task and repository context. Make
+   sure the requirements state observable outcomes and identify scope,
+   exclusions, dependencies, and risks.
+3. Use `$openspec-apply-change` to implement the approved checklist. Keep the
+   delta spec aligned with behavior and existing tests.
+4. Run `npm run spec:check` for OpenSpec structure and specs, then
+   `npm run validate` for typecheck, lint, and unit/integration tests. The
+   existing PR workflow runs the separate OpenSpec check; it does not run the
+   full application validation suite.
+5. Open and merge the PR using this repository's review process. Archive the
+   change in a separate follow-up only after integration and checks are
+   confirmed, using `$openspec-archive-change`.
+
+Substantive implementation changes with no requirements change still get an
+OpenSpec change with `skip_specs: true` in `.openspec.yaml`; do not add a
+fictional spec delta. Typo, formatting, and mechanical fixes can skip a change.
+T-025 is the one-time bootstrap exception because it creates the initial
+configuration and current-behavior baseline.
+
+The generated Codex skills in `.agents/skills/openspec-*/` are adapted to call
+the project-local CLI with `npx --no-install openspec`. After `openspec init` or
+skill regeneration, review the generated diff and reapply that command prefix
+to CLI invocations. Keep the generated files otherwise intact; do not add a
+wrapper or install the CLI globally.

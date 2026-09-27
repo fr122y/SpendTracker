@@ -1,0 +1,42 @@
+schema: spec-driven
+
+context: |
+  Product: SmartSpend Tracker, a personal finance application.
+  Stack: Next.js 16 App Router, React 19, TypeScript, Tailwind CSS, Reatom,
+  TanStack Query, Drizzle ORM, Zod, Jest, React Testing Library, and Playwright.
+  Architecture: Feature-Sliced Design. Higher layers may import lower layers:
+  app/_pages -> widgets -> features -> entities -> shared. Lower layers must
+  not import higher layers. Use Reatom for global client
+  state, TanStack Query for async server state, and Server Actions for backend
+  integration; do not add API Routes or app-state Context providers.
+  Mutations visible to users use optimistic updates with rollback and refetch.
+  Validation: npm run spec:check validates OpenSpec; npm run validate runs
+  typecheck, lint, and unit/integration tests. The current PR workflow runs the
+  OpenSpec check but not the full application validation suite.
+  Task authority: the Obsidian vault owns task records and status. OpenSpec
+  changes and their tasks.md files cover one change only and do not mirror the
+  vault backlog.
+  Write artifacts in Russian by default. Keep requirements observable and
+  consistent with the current application unless a change explicitly proposes
+  new behavior.
+
+rules:
+  proposal:
+    - State the intended user-visible or contract outcome and its observable acceptance criteria.
+    - List in-scope and out-of-scope work, dependencies, and material risks.
+  specs:
+    - Describe observable behavior with concrete scenarios; do not encode implementation details as requirements.
+    - Keep each delta limited to requirements changed by this one change.
+  tasks:
+    - Keep this checklist scoped to the current change; never copy the vault backlog.
+    - Include the relevant spec check and repository validation steps.
+  design:
+    - Follow the existing FSD, Reatom, TanStack Query, and Server Actions boundaries.
+
+operations:
+  apply:
+    guidance:
+      - Follow the reviewed tasks for this change and keep its delta specs aligned with the implementation.
+  archive:
+    guidance:
+      - Archive only after PR integration and required checks are confirmed.
