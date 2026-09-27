@@ -1,7 +1,7 @@
 'use client'
 
 import { PieChart } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
@@ -13,6 +13,7 @@ import {
 import { cn } from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
 
+import { AnalysisCategoryDetailsDialog } from './analysis-category-details-dialog'
 import { AnalysisSkeleton } from './analysis-skeleton'
 
 const MONTH_NAMES = [
@@ -34,6 +35,7 @@ interface CategoryBoxProps {
   stat: CategoryStat
   maxPercent: number
   scope: ExpenseScope
+  onSelect: (stat: CategoryStat, trigger: HTMLButtonElement) => void
 }
 
 const SCOPE_OPTIONS: Array<{ value: ExpenseScope; label: string }> = [
@@ -42,7 +44,7 @@ const SCOPE_OPTIONS: Array<{ value: ExpenseScope; label: string }> = [
   { value: 'shared', label: 'Общие' },
 ]
 
-function CategoryBox({ stat, maxPercent, scope }: CategoryBoxProps) {
+function CategoryBox({ stat, maxPercent, scope, onSelect }: CategoryBoxProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
   // Calculate size based on percentage (min 60px/80px, max 120px/160px for mobile/desktop)
@@ -88,14 +90,19 @@ function CategoryBox({ stat, maxPercent, scope }: CategoryBoxProps) {
       data-testid={`analysis-category-${stat.name}`}
       onMouseEnter={() => setShowTooltip(true)}
       onMouseLeave={() => setShowTooltip(false)}
-      onTouchStart={() => setShowTooltip(true)}
-      onTouchEnd={() => setShowTooltip(false)}
     >
-      <div
+      <button
+        type="button"
+        aria-haspopup="dialog"
+        aria-label={`${stat.name}, ${stat.value.toLocaleString('ru-RU')} ₽, ${stat.percent.toFixed(0)}%. Открыть расходы`}
+        onClick={(event) => {
+          setShowTooltip(false)
+          onSelect(stat, event.currentTarget)
+        }}
         data-testid={`analysis-category-fill-${stat.name}`}
         data-fill-mode={fillMode}
         className={cn(
-          'flex cursor-default flex-col items-center justify-center rounded-lg transition-transform hover:scale-105',
+          'flex cursor-pointer flex-col items-center justify-center rounded-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500',
           'h-20 w-20 sm:h-24 sm:w-24 md:h-auto md:w-auto'
         )}
         style={{
@@ -114,7 +121,7 @@ function CategoryBox({ stat, maxPercent, scope }: CategoryBoxProps) {
         <span className="text-xs text-white/80 sm:text-sm">
           {stat.percent.toFixed(0)}%
         </span>
-      </div>
+      </button>
 
       {/* Tooltip */}
       {showTooltip && (
@@ -161,11 +168,25 @@ function CategoryBox({ stat, maxPercent, scope }: CategoryBoxProps) {
 
 export function AnalysisDashboard() {
   const [scope, setScope] = useState<ExpenseScope>('all')
+  const [activeCategory, setActiveCategory] = useState<CategoryStat | null>(
+    null
+  )
+  const activeCategoryTriggerRef = useRef<HTMLButtonElement | null>(null)
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const { expenses, isLoading } = useExpenseStore((state) => ({
     expenses: state.expenses,
     isLoading: state.isLoading,
   }))
+  const handleSelectCategory = useCallback(
+    (category: CategoryStat, trigger: HTMLButtonElement) => {
+      activeCategoryTriggerRef.current = trigger
+      setActiveCategory(category)
+    },
+    []
+  )
+  const handleCloseCategoryDetails = useCallback(() => {
+    setActiveCategory(null)
+  }, [])
 
   if (isLoading) {
     return <AnalysisSkeleton />
@@ -251,6 +272,7 @@ export function AnalysisDashboard() {
               stat={stat}
               maxPercent={maxPercent}
               scope={scope}
+              onSelect={handleSelectCategory}
             />
           ))}
         </div>
@@ -259,6 +281,22 @@ export function AnalysisDashboard() {
           icon={PieChart}
           title="Нет данных за этот месяц"
           description="Добавьте операции для анализа расходов"
+        />
+      )}
+      {activeCategory && (
+        <AnalysisCategoryDetailsDialog
+          key={JSON.stringify([
+            activeCategory.name,
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            scope,
+          ])}
+          category={activeCategory}
+          expenses={expenses}
+          selectedDate={selectedDate}
+          scope={scope}
+          triggerRef={activeCategoryTriggerRef}
+          onClose={handleCloseCategoryDetails}
         />
       )}
     </div>
