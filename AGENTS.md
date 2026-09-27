@@ -19,13 +19,37 @@ Guidance for agents working on SmartSpend Tracker code.
   `docs/engineering/change-request.md`: `<type>(<scope>): <description>`.
 - Do not leave meaningful changes uncommitted unless the owner asks for work in progress.
 
+## OpenSpec workflow
+
+- The vault task register owns project tasks and their status. OpenSpec changes
+  describe one scoped piece of work; their `tasks.md` is only its execution
+  checklist and is not a second backlog.
+- For substantive changes to observable behavior, APIs, schemas, security, or
+  architecture, start with `$openspec-propose`, review the requirements, design,
+  and tasks, then implement with `$openspec-apply-change`. Include a delta spec
+  when requirements change.
+- For substantive implementation work that does not change requirements, set
+  `skip_specs: true` in that change's `.openspec.yaml`; do not invent a spec.
+  Typo, formatting, and mechanical fixes may proceed without a change.
+- Run `npm run spec:check` and `npm run validate` before the PR. Merge the PR
+  through the repository workflow, then archive the OpenSpec change separately
+  with `$openspec-archive-change` after integration and checks are confirmed.
+- Generated OpenSpec skills use `npx --no-install openspec` for the local CLI.
+  After initialization or skill regeneration, review the generated diff and
+  reapply that project-local command prefix where needed.
+- T-025 establishes the initial config and baseline as a one-time bootstrap
+  exception to the propose-first rule. Feature work such as the T-003 pilot
+  follows the normal workflow.
+
+See [Agent Workflow](docs/engineering/agent-workflow.md) for the full sequence.
+
 ## Project Structure & Architecture Rules
 
 The codebase follows Feature-Sliced Design in `src/`: `app`, `_pages`,
 `entities`, `features`, `widgets`, `shared`, `providers`.
 
-Dependency direction is strict: `shared -> entities -> features -> widgets ->
-_pages/app`.
+Import direction is from higher to lower layers: `app/_pages -> widgets ->
+features -> entities -> shared`. Lower layers must not import higher layers.
 
 Non-negotiable rules from project context:
 
