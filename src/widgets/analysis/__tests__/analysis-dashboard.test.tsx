@@ -1,4 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { AnalysisDashboard } from '../ui/analysis-dashboard'
 
@@ -64,6 +65,28 @@ jest.mock('@/entities/session', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
+  getMonthlyExpenses: jest.fn(
+    (
+      expenses: Expense[],
+      date: Date,
+      scope: 'all' | 'personal' | 'shared' = 'all'
+    ) => {
+      const year = date.getFullYear()
+      const month = date.getMonth()
+
+      return expenses.filter((expense) => {
+        const expenseDate = new Date(expense.date)
+        return (
+          (expense.operationType ?? 'expense') === 'expense' &&
+          (scope === 'all' ||
+            (scope === 'personal' && !expense.sharedBudgetId) ||
+            (scope === 'shared' && expense.sharedBudgetId)) &&
+          expenseDate.getFullYear() === year &&
+          expenseDate.getMonth() === month
+        )
+      })
+    }
+  ),
   getCategoryStats: jest.fn(
     (
       expenses: Expense[],
@@ -326,6 +349,192 @@ describe('AnalysisDashboard', () => {
       expect(
         screen.getByTestId('analysis-category-fill-Продукты')
       ).toHaveAttribute('data-fill-mode', 'shared')
+    })
+
+    it('opens read-only category details with the current month and scope', () => {
+      mockSelectedDate = new Date(2026, 0, 15)
+      mockExpenses = [
+        {
+          id: 'personal',
+          description: 'столовка',
+          amount: 500,
+          date: '2026-01-03',
+          category: 'Кафе',
+          emoji: '☕',
+        },
+        {
+          id: 'project',
+          description: 'столовая',
+          amount: 700,
+          date: '2026-01-18',
+          category: 'Кафе',
+          emoji: '☕',
+          projectId: 'project-1',
+        },
+        {
+          id: 'shared',
+          description: 'кофе общее',
+          amount: 900,
+          date: '2026-01-20',
+          category: 'Кафе',
+          emoji: '☕',
+          sharedBudgetId: 'shared-1',
+        },
+        {
+          id: 'movement',
+          description: 'Взял из проекта',
+          amount: 300,
+          date: '2026-01-21',
+          category: 'Кафе',
+          emoji: '💼',
+          projectId: 'project-1',
+          operationType: 'project_withdrawal',
+        },
+        {
+          id: 'other-month',
+          description: 'Кофе февраль',
+          amount: 1000,
+          date: '2026-02-01',
+          category: 'Кафе',
+          emoji: '☕',
+        },
+      ]
+
+      render(<AnalysisDashboard />)
+      fireEvent.click(screen.getByRole('button', { name: 'Личные' }))
+      fireEvent.click(
+        screen.getByRole('button', { name: /Кафе.*Открыть расходы/i })
+      )
+
+      const dialog = screen.getByRole('dialog', { name: 'Расходы: Кафе' })
+      expect(dialog).toHaveTextContent(/январь 2026.*Личные/)
+      expect(screen.getByTestId('category-expense-personal')).toHaveTextContent(
+        'столовка'
+      )
+      expect(screen.getByTestId('category-expense-project')).toHaveTextContent(
+        'столовая'
+      )
+      expect(
+        screen.queryByTestId('category-expense-shared')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('category-expense-movement')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByTestId('category-expense-other-month')
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByTestId('analysis-category-details-summary')
+      ).toHaveTextContent('Найдено: 2 из 2 · 1 200 ₽ из 1 200 ₽')
+      expect(
+        within(screen.getByTestId('category-expense-personal')).queryByRole(
+          'button'
+        )
+      ).not.toBeInTheDocument()
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Закрыть расходы категории' })
+      )
+
+      expect(screen.getByText(/Анализ за Январь 2026/)).toBeInTheDocument()
+      expect(screen.getByTestId('analysis-header-total')).toHaveTextContent(
+        /1 200 ₽/
+      )
+      expect(
+        screen.getByRole('button', { name: /Кафе.*Открыть расходы/i })
+      ).toHaveFocus()
+    })
+
+    it('opens category details with keyboard activation', async () => {
+      const user = userEvent.setup()
+      render(<AnalysisDashboard />)
+
+      const category = screen.getByRole('button', {
+        name: /Продукты.*Открыть расходы/i,
+      })
+      category.focus()
+      await user.keyboard('{Enter}')
+
+      expect(
+        screen.getByRole('dialog', { name: 'Расходы: Продукты' })
+      ).toBeInTheDocument()
+    })
+
+    it('clears selected name groups when analysis moves away from and back to a month', () => {
+      mockSelectedDate = new Date(2026, 0, 15)
+      mockExpenses = [
+        {
+          id: 'january-tea',
+          description: 'чай',
+          amount: 100,
+          date: '2026-01-15',
+          category: 'Кафе',
+          emoji: '☕',
+        },
+        {
+          id: 'january-water',
+          description: 'вода',
+          amount: 200,
+          date: '2026-01-16',
+          category: 'Кафе',
+          emoji: '🥤',
+        },
+        {
+          id: 'february-tea',
+          description: 'чай',
+          amount: 300,
+          date: '2026-02-15',
+          category: 'Кафе',
+          emoji: '☕',
+        },
+      ]
+      const { rerender } = render(<AnalysisDashboard />)
+
+      fireEvent.click(
+        screen.getByRole('button', { name: /Кафе.*Открыть расходы/i })
+      )
+      fireEvent.click(screen.getByRole('button', { name: /чай/ }))
+      expect(
+        screen.getByTestId('analysis-category-details-summary')
+      ).toHaveTextContent('Найдено: 1 из 2 · 100 ₽ из 300 ₽')
+
+      mockSelectedDate = new Date(2026, 1, 15)
+      rerender(<AnalysisDashboard />)
+      expect(
+        screen.getByTestId('analysis-category-details-summary')
+      ).toHaveTextContent('Найдено: 1 из 1 · 300 ₽ из 300 ₽')
+      expect(screen.getByRole('button', { name: /чай/ })).toHaveAttribute(
+        'aria-pressed',
+        'false'
+      )
+
+      mockSelectedDate = new Date(2026, 0, 15)
+      rerender(<AnalysisDashboard />)
+      expect(
+        screen.getByTestId('analysis-category-details-summary')
+      ).toHaveTextContent('Найдено: 2 из 2 · 300 ₽ из 300 ₽')
+      expect(screen.getByRole('button', { name: /чай/ })).toHaveAttribute(
+        'aria-pressed',
+        'false'
+      )
+    })
+
+    it('opens category details after touch without showing the hover tooltip', () => {
+      render(<AnalysisDashboard />)
+
+      const category = screen.getByRole('button', {
+        name: /Продукты.*Открыть расходы/i,
+      })
+      fireEvent.touchStart(category)
+      fireEvent.touchEnd(category)
+      fireEvent.click(category)
+
+      expect(
+        screen.getByRole('dialog', { name: 'Расходы: Продукты' })
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByTestId('analysis-tooltip-Продукты')
+      ).not.toBeInTheDocument()
     })
 
     it('applies correct container styling', () => {
@@ -700,7 +909,7 @@ describe('AnalysisDashboard', () => {
       const categoryBox = screen.getByText('Продукты').parentElement
       expect(categoryBox).toHaveClass(
         'flex',
-        'cursor-default',
+        'cursor-pointer',
         'flex-col',
         'items-center',
         'justify-center',
