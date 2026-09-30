@@ -3,18 +3,32 @@ jest.mock('@/shared/auth', () => ({
 }))
 
 jest.mock('drizzle-orm', () => ({
+  and: jest.fn((...args: unknown[]) => args),
   eq: jest.fn((...args: unknown[]) => args),
 }))
 
 jest.mock('@/shared/db', () => {
   const mocks = {
     selectWhere: jest.fn(),
+    transactionLegacyRows: jest.fn(),
     deleteWhere: jest.fn(),
     insertValues: jest.fn(),
+    updateWhere: jest.fn(),
   }
   const tx = {
+    select: jest.fn(() => ({
+      from: jest.fn(() => ({
+        leftJoin: jest.fn(() => ({ where: mocks.transactionLegacyRows })),
+      })),
+    })),
     delete: jest.fn(() => ({ where: mocks.deleteWhere })),
     insert: jest.fn(() => ({ values: mocks.insertValues })),
+  }
+  const query = {
+    from: jest.fn(() => ({
+      leftJoin: jest.fn(() => ({ where: mocks.selectWhere })),
+      where: mocks.selectWhere,
+    })),
   }
 
   return {
@@ -27,13 +41,18 @@ jest.mock('@/shared/db', () => {
       percentage: 'allocation_bucket.percentage',
       amountKopecks: 'allocation_bucket.amountKopecks',
     },
+    userSettings: {
+      userId: 'user_settings.userId',
+      salary: 'user_settings.salary',
+    },
     db: {
-      select: jest.fn(() => ({
-        from: jest.fn(() => ({ where: mocks.selectWhere })),
-      })),
+      select: jest.fn(() => query),
       transaction: jest.fn((callback: (transaction: typeof tx) => unknown) =>
         callback(tx)
       ),
+      update: jest.fn(() => ({
+        set: jest.fn(() => ({ where: mocks.updateWhere })),
+      })),
     },
   }
 })
@@ -48,49 +67,74 @@ describe('bucket-actions', () => {
   const dbModule = jest.requireMock('@/shared/db') as {
     __mocks: {
       selectWhere: jest.Mock
+      transactionLegacyRows: jest.Mock
       deleteWhere: jest.Mock
       insertValues: jest.Mock
+      updateWhere: jest.Mock
     }
   }
 
   beforeEach(() => {
     jest.clearAllMocks()
+    dbModule.__mocks.selectWhere.mockResolvedValue([])
+    dbModule.__mocks.transactionLegacyRows.mockResolvedValue([])
     ;(auth as jest.Mock).mockResolvedValue({ user: { id: 'user-1' } })
   })
 
-  it('returns allocation basis and exact amount for the current user', async () => {
+  it('returns only percentage DTO fields and derives legacy amount rows precisely', async () => {
     const rows = [
       {
         id: 'bucket-1',
         label: 'Накопления',
         basis: 'amount',
         percentage: 0,
-        amountKopecks: 1234567,
+        amountKopecks: 33333333,
+        salary: 1_000_000,
       },
     ]
     dbModule.__mocks.selectWhere.mockResolvedValueOnce(rows)
 
-    await expect(getBuckets()).resolves.toEqual(rows)
+    const buckets = await getBuckets()
+
+    expect(buckets).toHaveLength(1)
+    expect(buckets[0]).toEqual(
+      expect.objectContaining({
+        id: 'bucket-1',
+        label: 'Накопления',
+      })
+    )
+    expect(buckets[0].percentage).toBeCloseTo(33.333333, 8)
     expect(dbModule.__mocks.selectWhere).toHaveBeenCalled()
   })
 
-  it('saves both allocation bases scoped to the authenticated user', async () => {
+  it('rejects reading legacy amount rows when the current income is zero', async () => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
+      {
+        id: 'bucket-1',
+        label: 'Накопления',
+        basis: 'amount',
+        percentage: 0,
+        amountKopecks: 1_500_000,
+        salary: 0,
+      },
+    ])
+
+    await expect(getBuckets()).rejects.toThrow('положительного дохода')
+  })
+
+  it('saves only percentage fields scoped to the authenticated user', async () => {
     const buckets = [
       {
         id: 'bucket-1',
         label: 'Накопления',
-        basis: 'percentage' as const,
         percentage: 20,
-        amountKopecks: null,
       },
       {
         id: 'bucket-2',
         label: 'Резерв',
-        basis: 'amount' as const,
-        percentage: 0,
-        amountKopecks: 1234567,
+        percentage: 18.75,
       },
-    ]
+    ] as AllocationBucket[]
 
     await updateBuckets(buckets)
 
@@ -103,17 +147,13 @@ describe('bucket-actions', () => {
         id: 'bucket-1',
         userId: 'user-1',
         label: 'Накопления',
-        basis: 'percentage',
         percentage: 20,
-        amountKopecks: null,
       },
       {
         id: 'bucket-2',
         userId: 'user-1',
         label: 'Резерв',
-        basis: 'amount',
-        percentage: 0,
-        amountKopecks: 1234567,
+        percentage: 18.75,
       },
     ])
   })
@@ -134,9 +174,7 @@ describe('bucket-actions', () => {
         id: 'bucket-legacy',
         userId: 'user-1',
         label: 'Накопления',
-        basis: 'percentage',
         percentage: 12.345,
-        amountKopecks: null,
       },
     ])
   })
@@ -146,9 +184,7 @@ describe('bucket-actions', () => {
       {
         id: 'bucket-draft',
         label: '',
-        basis: 'percentage',
         percentage: 0,
-        amountKopecks: null,
       },
     ])
 
@@ -157,9 +193,7 @@ describe('bucket-actions', () => {
         id: 'bucket-draft',
         userId: 'user-1',
         label: '',
-        basis: 'percentage',
         percentage: 0,
-        amountKopecks: null,
       },
     ])
   })
@@ -170,9 +204,7 @@ describe('bucket-actions', () => {
         {
           id: 'bucket-1',
           label: 'Накопления',
-          basis: 'percentage',
           percentage: 125,
-          amountKopecks: null,
         },
       ])
     ).resolves.toBeUndefined()
@@ -183,16 +215,12 @@ describe('bucket-actions', () => {
       {
         id: 'bucket-1',
         label: 'Накопления',
-        basis: 'percentage' as const,
         percentage: 0.29,
-        amountKopecks: null,
       },
       {
         id: 'bucket-2',
         label: 'Резерв',
-        basis: 'percentage' as const,
         percentage: 12.345,
-        amountKopecks: null,
       },
     ]
 
@@ -212,9 +240,7 @@ describe('bucket-actions', () => {
         {
           id: 'bucket-1',
           label: 'Накопления',
-          basis: 'percentage',
           percentage: Math.floor(Number.MAX_SAFE_INTEGER / 100) + 1,
-          amountKopecks: null,
         },
       ])
     ).rejects.toThrow('Invalid bucket percentage')
@@ -232,13 +258,81 @@ describe('bucket-actions', () => {
           percentage: 0,
           amountKopecks: Number.MAX_SAFE_INTEGER + 1,
         },
-      ])
-    ).rejects.toThrow('Invalid bucket amount')
+      ] as unknown as AllocationBucket[])
+    ).rejects.toThrow('Invalid legacy bucket amount')
 
     expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
   })
 
-  it('does not repair an explicit amount basis with a missing amount', async () => {
+  it('converts old amount payloads to percentages at the current income', async () => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([{ salary: 80_000 }])
+
+    const oldClientBuckets = [
+      {
+        id: 'bucket-old-client',
+        label: 'Накопления',
+        basis: 'amount',
+        percentage: 0,
+        amountKopecks: 1_500_000,
+      },
+    ] as unknown as AllocationBucket[]
+
+    await updateBuckets(oldClientBuckets)
+
+    expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith([
+      {
+        id: 'bucket-old-client',
+        userId: 'user-1',
+        label: 'Накопления',
+        percentage: 18.75,
+      },
+    ])
+  })
+
+  it('rejects legacy amount payloads without positive income before replacing data', async () => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([{ salary: 0 }])
+
+    const oldClientBuckets = [
+      {
+        id: 'bucket-old-client',
+        label: 'Накопления',
+        basis: 'amount',
+        percentage: 0,
+        amountKopecks: 1_500_000,
+      },
+    ] as unknown as AllocationBucket[]
+
+    await expect(updateBuckets(oldClientBuckets)).rejects.toThrow(
+      'положительного дохода'
+    )
+    expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
+  })
+
+  it('does not replace hidden legacy amounts when income is zero', async () => {
+    dbModule.__mocks.transactionLegacyRows.mockResolvedValueOnce([
+      { amountKopecks: 1_500_000, salary: 0 },
+    ])
+
+    await expect(
+      updateBuckets([{ id: 'new', label: 'Новая категория', percentage: 10 }])
+    ).rejects.toThrow('положительного дохода')
+
+    expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
+  })
+
+  it('does not replace hidden legacy amounts with missing stored values', async () => {
+    dbModule.__mocks.transactionLegacyRows.mockResolvedValueOnce([
+      { amountKopecks: null, salary: 80_000 },
+    ])
+
+    await expect(
+      updateBuckets([{ id: 'new', label: 'Новая категория', percentage: 10 }])
+    ).rejects.toThrow('Legacy amount allocation has no stored amount')
+
+    expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
+  })
+
+  it('rejects explicit amount bases with missing amounts', async () => {
     const malformedBuckets = [
       {
         id: 'bucket-1',
@@ -249,7 +343,7 @@ describe('bucket-actions', () => {
     ] as unknown as AllocationBucket[]
 
     await expect(updateBuckets(malformedBuckets)).rejects.toThrow(
-      'Invalid bucket amount'
+      'Invalid legacy bucket payload'
     )
     expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
   })

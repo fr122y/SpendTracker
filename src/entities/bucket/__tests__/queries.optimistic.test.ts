@@ -40,20 +40,8 @@ const createWrapper = (queryClient: QueryClient) =>
   }
 
 const initialBuckets: AllocationBucket[] = [
-  {
-    id: '1',
-    label: 'Накопления',
-    basis: 'percentage',
-    percentage: 20,
-    amountKopecks: null,
-  },
-  {
-    id: '2',
-    label: 'Инвестиции',
-    basis: 'percentage',
-    percentage: 10,
-    amountKopecks: null,
-  },
+  { id: '1', label: 'Накопления', percentage: 20 },
+  { id: '2', label: 'Инвестиции', percentage: 10 },
 ]
 
 describe('useUpdateBuckets optimistic', () => {
@@ -81,13 +69,7 @@ describe('useUpdateBuckets optimistic', () => {
     })
 
     const nextBuckets: AllocationBucket[] = [
-      {
-        id: '3',
-        label: 'Резерв',
-        basis: 'percentage',
-        percentage: 15,
-        amountKopecks: null,
-      },
+      { id: '3', label: 'Резерв', percentage: 15 },
     ]
 
     act(() => {
@@ -124,9 +106,7 @@ describe('useUpdateBuckets optimistic', () => {
         {
           id: '9',
           label: 'Тест',
-          basis: 'percentage',
           percentage: 100,
-          amountKopecks: null,
         },
       ])
     })
@@ -153,22 +133,10 @@ describe('useUpdateBuckets optimistic', () => {
       wrapper: createWrapper(queryClient),
     })
     const firstSnapshot: AllocationBucket[] = [
-      {
-        id: 'first',
-        label: 'Первый ввод',
-        basis: 'percentage',
-        percentage: 25,
-        amountKopecks: null,
-      },
+      { id: 'first', label: 'Первый ввод', percentage: 25 },
     ]
     const secondSnapshot: AllocationBucket[] = [
-      {
-        id: 'second',
-        label: 'Последний ввод',
-        basis: 'percentage',
-        percentage: 30,
-        amountKopecks: null,
-      },
+      { id: 'second', label: 'Последний ввод', percentage: 30 },
     ]
 
     act(() => {

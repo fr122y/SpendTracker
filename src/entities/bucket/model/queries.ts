@@ -22,9 +22,7 @@ function matchesBuckets(
       return (
         bucket.id === expectedBucket.id &&
         bucket.label === expectedBucket.label &&
-        bucket.basis === expectedBucket.basis &&
-        bucket.percentage === expectedBucket.percentage &&
-        bucket.amountKopecks === expectedBucket.amountKopecks
+        bucket.percentage === expectedBucket.percentage
       )
     })
   )

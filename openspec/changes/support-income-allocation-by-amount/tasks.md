@@ -19,3 +19,10 @@
 ## 4. Integration Verification
 
 - [x] 4.1 Run `npm run spec:check` and `npm run validate`, then visually verify the widget on mobile and desktop without mutating production data.
+
+## 5. Percentage-Canonical Revision
+
+- [x] 5.1 Remove basis and fixed-amount state from the editor and client DTO; keep the amount field as a percentage converter and update focused component/helper tests.
+- [x] 5.2 Add the precision-widening migration and server-only compatibility conversion for existing fixed-amount rows; verify salary-zero legacy rows fail closed and current rows are preserved.
+- [x] 5.3 Update feature documentation and verify the revised OpenSpec contract against implementation.
+- [x] 5.4 Run `npm run spec:check` and `npm run validate`, then visually verify the revised editor on desktop and mobile.

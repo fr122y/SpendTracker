@@ -73,16 +73,9 @@ export function amountToPercentage(
   }
   if (incomeKopecks === 0) return null
 
-  const scaled = (amountKopecks / incomeKopecks) * 100 * 100
-  const rounded = Math.round(
-    scaled + Number.EPSILON * Math.max(1, Math.abs(scaled))
-  )
-  const hundredths = assertSafeInteger(
-    rounded,
-    'Рассчитанный процент превышает поддерживаемый диапазон'
-  )
-
-  return hundredths / BASIS_POINTS_PER_PERCENT
+  const percentage = (amountKopecks / incomeKopecks) * 100
+  percentageToHundredths(percentage)
+  return percentage
 }
 
 export function formatPercentage(percentage: number): string {
@@ -128,16 +121,6 @@ export function getBucketAmountKopecks(
   bucket: AllocationBucket,
   incomeKopecks: number
 ): number {
-  if (bucket.basis === 'amount') {
-    if (bucket.amountKopecks === null) {
-      throw new RangeError('Для денежной основы не задана сумма')
-    }
-    return assertSafeInteger(
-      bucket.amountKopecks,
-      'Сумма превышает поддерживаемый диапазон'
-    )
-  }
-
   return percentageToKopecks(incomeKopecks, bucket.percentage)
 }
 
@@ -167,10 +150,6 @@ export function assertAllocationRepresentable(
 ): void {
   calculateAllocation(buckets, incomeKopecks)
   for (const bucket of buckets) {
-    if (bucket.basis === 'amount') {
-      amountToPercentage(bucket.amountKopecks ?? 0, incomeKopecks)
-    } else {
-      formatPercentage(bucket.percentage)
-    }
+    formatPercentage(bucket.percentage)
   }
 }

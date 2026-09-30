@@ -32,20 +32,8 @@ const createWrapper = () => {
 describe('useBucketStore', () => {
   beforeEach(() => {
     buckets = [
-      {
-        id: '1',
-        label: 'Накопления',
-        basis: 'percentage',
-        percentage: 20,
-        amountKopecks: null,
-      },
-      {
-        id: '2',
-        label: 'Инвестиции',
-        basis: 'percentage',
-        percentage: 10,
-        amountKopecks: null,
-      },
+      { id: '1', label: 'Накопления', percentage: 20 },
+      { id: '2', label: 'Инвестиции', percentage: 10 },
     ]
     jest.clearAllMocks()
   })
@@ -63,9 +51,7 @@ describe('useBucketStore', () => {
         {
           id: '3',
           label: 'Резерв',
-          basis: 'percentage',
           percentage: 15,
-          amountKopecks: null,
         },
       ])
     })
@@ -75,9 +61,7 @@ describe('useBucketStore', () => {
         {
           id: '3',
           label: 'Резерв',
-          basis: 'percentage',
           percentage: 15,
-          amountKopecks: null,
         },
       ])
     })

@@ -15,7 +15,10 @@ let settings: Settings = {
 }
 
 jest.mock('@/shared/api', () => ({
-  queryKeys: { settings: { all: ['settings'] } },
+  queryKeys: {
+    settings: { all: ['settings'] },
+    buckets: { all: ['buckets'] },
+  },
   getSettings: jest.fn(async () => settings),
   setWeeklyLimitForWeek: jest.fn(
     async (effectiveWeekStart: string, amount: number) => {

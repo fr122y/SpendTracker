@@ -104,9 +104,7 @@ export interface Project {
 export interface AllocationBucket {
   id: string
   label: string
-  basis: 'percentage' | 'amount'
   percentage: number
-  amountKopecks: number | null
 }
 
 // Dashboard Config

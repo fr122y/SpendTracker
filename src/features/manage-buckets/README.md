@@ -4,7 +4,7 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 
 ## Public API (`index.ts`)
 
-- `BucketEditor`: Component for editing allocation categories by percentage or amount
+- `BucketEditor`: Component for editing percentage-based allocation categories; the amount input converts a current-income amount to a percentage
 
 ## State & Data
 
@@ -16,8 +16,8 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 ## Features
 
 - Input monthly salary/income
-- Edit allocation percentage and amount for each category
-- Keep the last edited field as the category's saved basis
+- Edit allocation percentage and use an amount input to calculate the percentage for current income
+- Keep percentage as the only canonical saved allocation value
 - Calculate money and the operations remainder in kopecks
 - Show an over-budget warning without changing the entered plan
 - Edit bucket labels
@@ -25,7 +25,7 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 - Delete existing buckets
 - Validates finite, non-negative values and supported currency precision
 - Shows remaining percentage and amount for "Operations"
-- Allows amount-based categories before income is set
+- Disables amount input until a positive income is set; percentage remains editable
 - Formats calculated percentages to at most two decimal places
 
 ## Dependencies

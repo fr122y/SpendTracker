@@ -44,8 +44,11 @@ export function useUpdateSettings() {
       queryClient.setQueryData(queryKeys.settings.all, context?.previous)
       showMutationRollbackToast()
     },
-    onSettled: () => {
+    onSettled: (_data, _error, partialData) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.settings.all })
+      if (partialData.salary !== undefined) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.buckets.all })
+      }
     },
   })
 }

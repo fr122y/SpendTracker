@@ -16,7 +16,10 @@ jest.mock('@/shared/lib', () => ({
 }))
 
 jest.mock('@/shared/api', () => ({
-  queryKeys: { settings: { all: ['settings'] } },
+  queryKeys: {
+    settings: { all: ['settings'] },
+    buckets: { all: ['buckets'] },
+  },
   getSettings: jest.fn(),
   setWeeklyLimitForWeek: jest.fn(async () => {
     if (shouldReject) {
@@ -103,6 +106,31 @@ describe('useUpdateSettings optimistic', () => {
     await waitFor(() => {
       expect(queryClient.getQueryData(['settings'])).toEqual(baseSettings)
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('invalidates buckets after a salary change converts legacy allocations', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+
+    queryClient.setQueryData(['settings'], baseSettings)
+
+    const { result } = renderHook(() => useUpdateSettings(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({ salary: 0 })
+    })
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['settings'] })
+      expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['buckets'] })
     })
   })
 

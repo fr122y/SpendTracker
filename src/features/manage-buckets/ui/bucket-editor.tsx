@@ -42,9 +42,7 @@ function areBucketsEqual(
     return (
       bucket.id === other.id &&
       bucket.label === other.label &&
-      bucket.basis === other.basis &&
-      bucket.percentage === other.percentage &&
-      bucket.amountKopecks === other.amountKopecks
+      bucket.percentage === other.percentage
     )
   })
 }
@@ -174,18 +172,27 @@ export function BucketEditor() {
         if (field === 'percentage') {
           return {
             ...bucket,
-            basis: 'percentage' as const,
             percentage: evaluated,
-            amountKopecks: null,
           }
         }
 
+        if (incomeKopecks === 0) {
+          throw new RangeError(
+            'Укажите месячный доход, чтобы задать категорию суммой'
+          )
+        }
+
         const amountKopecks = rublesToKopecks(evaluated)
+        const percentage = amountToPercentage(amountKopecks, incomeKopecks)
+        if (percentage === null) {
+          throw new RangeError(
+            'Укажите месячный доход, чтобы задать категорию суммой'
+          )
+        }
+
         return {
           ...bucket,
-          basis: 'amount' as const,
-          percentage: 0,
-          amountKopecks,
+          percentage,
         }
       })
 
@@ -220,9 +227,7 @@ export function BucketEditor() {
     const newBucket: AllocationBucket = {
       id: crypto.randomUUID(),
       label: '',
-      basis: 'percentage',
       percentage: 0,
-      amountKopecks: null,
     }
     saveBuckets([...localBucketsRef.current, newBucket])
   }
@@ -253,25 +258,11 @@ export function BucketEditor() {
     }
   }
 
-  const getBucketPercentage = (bucket: AllocationBucket): number | null => {
-    if (bucket.basis === 'percentage') return bucket.percentage
-    return amountToPercentage(bucket.amountKopecks ?? 0, incomeKopecks)
-  }
-
-  const totalPercentage =
-    incomeKopecks > 0
-      ? (allocation.totalKopecks / incomeKopecks) * 100
-      : localBuckets.every((bucket) => bucket.basis === 'percentage')
-        ? localBuckets.reduce((total, bucket) => total + bucket.percentage, 0)
-        : null
-
-  let operationsPercentage: number | null = null
-  if (incomeKopecks > 0) {
-    operationsPercentage = (allocation.operationsKopecks / incomeKopecks) * 100
-  } else if (localBuckets.every((bucket) => bucket.basis === 'percentage')) {
-    operationsPercentage =
-      100 - localBuckets.reduce((total, bucket) => total + bucket.percentage, 0)
-  }
+  const totalPercentage = localBuckets.reduce(
+    (total, bucket) => total + bucket.percentage,
+    0
+  )
+  const operationsPercentage = 100 - totalPercentage
 
   const overageKopecks = Math.max(0, -allocation.operationsKopecks)
 
@@ -296,10 +287,14 @@ export function BucketEditor() {
         </div>
       </div>
 
+      <p className="text-xs text-zinc-500">
+        Процент сохраняется. Ввод суммы пересчитывает процент для текущего
+        дохода.
+      </p>
+
       <ul className="flex flex-col gap-2">
         {localBuckets.map((bucket) => {
           const amountKopecks = getBucketAmountKopecks(bucket, incomeKopecks)
-          const bucketPercentage = getBucketPercentage(bucket)
           const percentageKey = fieldKey(bucket.id, 'percentage')
           const amountKey = fieldKey(bucket.id, 'amount')
 
@@ -347,9 +342,7 @@ export function BucketEditor() {
                       aria-label={`Процент категории ${bucket.label || 'без названия'}`}
                       value={
                         inputValues[percentageKey] ??
-                        (bucketPercentage === null
-                          ? '—'
-                          : formatPercentage(bucketPercentage))
+                        formatPercentage(bucket.percentage)
                       }
                       onValueChange={(value, evaluated) =>
                         handleBucketFieldChange(
@@ -377,6 +370,7 @@ export function BucketEditor() {
                     <MathInput
                       id={`${amountKey}-input`}
                       aria-label={`Сумма категории ${bucket.label || 'без названия'}`}
+                      disabled={incomeKopecks === 0}
                       value={
                         inputValues[amountKey] ??
                         formatEditableKopecks(amountKopecks)
@@ -396,10 +390,11 @@ export function BucketEditor() {
                   </div>
                 </div>
               </div>
-
-              <p className="text-xs text-zinc-500">
-                Закреплена {bucket.basis === 'amount' ? 'сумма' : 'доля дохода'}
-              </p>
+              {incomeKopecks === 0 && (
+                <p className="text-xs text-zinc-500">
+                  Укажите месячный доход, чтобы распределять суммой.
+                </p>
+              )}
             </li>
           )
         })}
@@ -444,9 +439,7 @@ export function BucketEditor() {
         <div className="flex flex-col">
           <span className="text-xs text-zinc-400 sm:text-sm">Распределено</span>
           <span className="text-base font-medium text-zinc-200 sm:text-lg">
-            {totalPercentage === null
-              ? '—'
-              : `${formatPercentage(totalPercentage)}%`}
+            {`${formatPercentage(totalPercentage)}%`}
             <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
               ({formatKopecks(allocation.totalKopecks)} ₽)
             </span>
@@ -466,9 +459,7 @@ export function BucketEditor() {
             aria-live="polite"
             aria-atomic="true"
           >
-            {operationsPercentage === null
-              ? '—'
-              : `${formatPercentage(operationsPercentage)}%`}
+            {`${formatPercentage(operationsPercentage)}%`}
             <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
               ({formatKopecks(allocation.operationsKopecks)} ₽)
             </span>

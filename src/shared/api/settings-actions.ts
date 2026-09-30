@@ -1,14 +1,26 @@
 'use server'
 
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
-import { db, userSettings, weeklyBudgetLimits } from '@/shared/db'
+import {
+  allocationBuckets,
+  db,
+  userSettings,
+  weeklyBudgetLimits,
+} from '@/shared/db'
 import {
   getEffectiveWeeklyLimit,
   getWeekBoundaries,
   type WeeklyLimitSetting,
 } from '@/shared/lib/finance-selectors'
+
+import {
+  percentageFromAmountKopecks,
+  salaryRublesToKopecks,
+} from './allocation-compat'
+
+import type { db as dbType } from '@/shared/db'
 
 export interface Settings {
   weeklyLimit: number
@@ -27,6 +39,10 @@ const DEFAULT_SETTINGS: Settings = {
   advanceDay: 25,
   salary: 0,
 }
+
+type SettingsTransaction = Parameters<
+  Parameters<typeof dbType.transaction>[0]
+>[0]
 
 async function getUserId(): Promise<string> {
   const session = await auth()
@@ -83,7 +99,27 @@ export async function updateSettings(data: Partial<Settings>): Promise<void> {
   const { weeklyLimit, weeklyLimits, ...settingsData } = data
   void weeklyLimits
 
-  if (Object.keys(settingsData).length > 0) {
+  if (settingsData.salary !== undefined) {
+    await db.transaction(async (tx) => {
+      const [currentSettings] = await tx
+        .select({ salary: userSettings.salary })
+        .from(userSettings)
+        .where(eq(userSettings.userId, userId))
+        .for('update')
+
+      await convertLegacyAmountBuckets(
+        tx,
+        userId,
+        currentSettings?.salary ?? 0,
+        settingsData.salary as number
+      )
+
+      await tx
+        .update(userSettings)
+        .set(settingsData)
+        .where(eq(userSettings.userId, userId))
+    })
+  } else if (Object.keys(settingsData).length > 0) {
     await db
       .update(userSettings)
       .set(settingsData)
@@ -93,6 +129,60 @@ export async function updateSettings(data: Partial<Settings>): Promise<void> {
   if (weeklyLimit !== undefined) {
     const effectiveWeekStart = getWeekBoundaries(new Date()).start
     await setWeeklyLimitForWeek(effectiveWeekStart, weeklyLimit)
+  }
+}
+
+async function convertLegacyAmountBuckets(
+  tx: SettingsTransaction,
+  userId: string,
+  currentSalaryRubles: number,
+  nextSalaryRubles: number
+): Promise<void> {
+  const legacyBuckets = await tx
+    .select({
+      id: allocationBuckets.id,
+      amountKopecks: allocationBuckets.amountKopecks,
+    })
+    .from(allocationBuckets)
+    .where(
+      and(
+        eq(allocationBuckets.userId, userId),
+        eq(allocationBuckets.basis, 'amount')
+      )
+    )
+
+  if (legacyBuckets.length === 0) return
+
+  const currentIncomeKopecks = salaryRublesToKopecks(currentSalaryRubles)
+  const incomeKopecks =
+    currentIncomeKopecks > 0
+      ? currentIncomeKopecks
+      : salaryRublesToKopecks(nextSalaryRubles)
+
+  for (const bucket of legacyBuckets) {
+    if (bucket.amountKopecks === null) {
+      throw new Error('Legacy amount allocation has no stored amount')
+    }
+
+    const percentage = percentageFromAmountKopecks(
+      bucket.amountKopecks,
+      incomeKopecks
+    )
+
+    await tx
+      .update(allocationBuckets)
+      .set({
+        percentage,
+        basis: 'percentage',
+        amountKopecks: null,
+      })
+      .where(
+        and(
+          eq(allocationBuckets.id, bucket.id),
+          eq(allocationBuckets.userId, userId),
+          eq(allocationBuckets.basis, 'amount')
+        )
+      )
   }
 }
 

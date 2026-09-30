@@ -25,6 +25,8 @@ Server Actions and shared query infrastructure for the application.
   shared budget keyword mapping
 - `getSettings()`: get user settings with effective weekly limit history
 - `updateSettings(data)`: update general user settings
+- Bucket actions expose percentage-only allocation DTOs; legacy amount-based
+  rows convert to percentages before income changes or the next bucket save
 - `setWeeklyLimitForWeek(effectiveWeekStart, amount)`: upsert a personal
   weekly limit from a selected week forward
 - `getSharedBudgets()`: list shared budgets where the current user is a member
