@@ -32,13 +32,13 @@ The widget MUST keep percentage as the only canonical saved allocation value. Th
 #### Scenario: Preserve an existing fixed-amount allocation during conversion
 
 - **GIVEN** a legacy category with saved amount 15,000 ₽ and positive current income of 80,000 ₽
-- **WHEN** the server converts that category to the canonical percentage model
-- **THEN** its canonical percentage is derived from the legacy amount and current income before the old amount basis is cleared
+- **WHEN** the user opens the widget after the canonical percentage model is deployed
+- **THEN** its canonical percentage is derived from the legacy amount and current income
 - **AND** the current calculated amount remains 15,000 ₽ to the nearest kopeck
 
 ### Requirement: Preserve currency precision and format percentages for display
 
-The widget MUST accept monetary input to the nearest kopeck and round calculated money once to the nearest kopeck. The percentage derived from an amount MUST retain enough precision to reproduce that amount after persistence. A displayed percentage MUST use at most two decimal places and omit trailing zeroes. Display rounding MUST NOT alter the canonical percentage. Percentage storage MUST preserve the precision needed by the amount-to-percentage conversion.
+The widget MUST accept monetary input to the nearest kopeck and round calculated money once to the nearest kopeck. The percentage derived from an amount MUST retain enough precision to reproduce that amount after saving. A displayed percentage MUST use at most two decimal places and omit trailing zeroes. Display rounding MUST NOT alter the canonical percentage.
 
 #### Scenario: Display a rounded percentage without changing the calculated amount
 
@@ -50,7 +50,7 @@ The widget MUST accept monetary input to the nearest kopeck and round calculated
 
 - **WHEN** the user enters 333,333.33 ₽ with monthly income of 1,000,000 ₽
 - **THEN** the saved percentage retains enough precision to calculate 333,333.33 ₽ after reload
-- **AND** percentage storage does not reduce the result by a kopeck
+- **AND** saving and reloading does not reduce the result by a kopeck
 
 ### Requirement: Handle zero income and over-budget plans
 
