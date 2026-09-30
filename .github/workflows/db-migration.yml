@@ -12,7 +12,7 @@ on:
           - 'false'
           - 'true'
       expected_pending_migrations:
-        description: 'Exact comma-separated pending migration filenames to require before applying'
+        description: 'Exact pending migration filenames, or none for a metadata-only preflight'
         required: true
         type: string
       preflight_only:
