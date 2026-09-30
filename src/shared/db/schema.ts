@@ -3,6 +3,7 @@ import {
   boolean,
   bigint,
   check,
+  doublePrecision,
   integer,
   index,
   jsonb,
@@ -425,7 +426,7 @@ export const allocationBuckets = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     label: text('label').notNull(),
-    percentage: real('percentage').notNull(),
+    percentage: doublePrecision('percentage').notNull(),
     basis: text('basis')
       .$type<'percentage' | 'amount'>()
       .notNull()
