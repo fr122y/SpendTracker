@@ -1,7 +1,7 @@
 'use client'
 
 import { Trash2 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 import { useBucketStore } from '@/entities/bucket'
 import { useSettingsStore } from '@/entities/settings'
@@ -9,8 +9,20 @@ import { cn } from '@/shared/lib'
 import { Button, ConfirmDialog, Input, MathInput } from '@/shared/ui'
 
 import { BucketEditorSkeleton } from './bucket-editor-skeleton'
+import {
+  amountToPercentage,
+  assertAllocationRepresentable,
+  calculateAllocation,
+  formatEditableKopecks,
+  formatKopecks,
+  formatPercentage,
+  getBucketAmountKopecks,
+  rublesToKopecks,
+} from '../lib/allocation'
 
 import type { AllocationBucket } from '@/shared/types'
+
+type AllocationField = 'percentage' | 'amount'
 
 function areBucketsEqual(
   left: AllocationBucket[],
@@ -30,13 +42,21 @@ function areBucketsEqual(
     return (
       bucket.id === other.id &&
       bucket.label === other.label &&
-      bucket.percentage === other.percentage
+      bucket.basis === other.basis &&
+      bucket.percentage === other.percentage &&
+      bucket.amountKopecks === other.amountKopecks
     )
   })
 }
 
-function formatAmount(amount: number): string {
-  return new Intl.NumberFormat('ru-RU').format(Math.round(amount))
+function fieldKey(id: string, field: AllocationField): string {
+  return `${id}:${field}`
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : 'Не удалось рассчитать распределение'
 }
 
 export function BucketEditor() {
@@ -60,10 +80,11 @@ export function BucketEditor() {
   }))
 
   const [localBuckets, setLocalBuckets] = useState<AllocationBucket[]>(buckets)
+  const localBucketsRef = useRef(localBuckets)
   const [localSalary, setLocalSalary] = useState(salary)
   const [error, setError] = useState('')
-  // Track raw input values while typing expressions (e.g., "50+10")
   const [inputValues, setInputValues] = useState<Record<string, string>>({})
+  const dirtyInputsRef = useRef(new Set<string>())
   const [bucketPendingDelete, setBucketPendingDelete] =
     useState<AllocationBucket | null>(null)
   const [salaryInputValue, setSalaryInputValue] = useState(
@@ -79,15 +100,14 @@ export function BucketEditor() {
       }
 
       didBucketsChange = true
+      localBucketsRef.current = buckets
       return buckets
     })
 
-    // Reset input values when buckets change externally
-    setInputValues((currentValues) =>
-      didBucketsChange && Object.keys(currentValues).length > 0
-        ? {}
-        : currentValues
-    )
+    if (didBucketsChange) {
+      dirtyInputsRef.current.clear()
+      setInputValues({})
+    }
   }, [buckets])
 
   useEffect(() => {
@@ -99,96 +119,161 @@ export function BucketEditor() {
     return <BucketEditorSkeleton />
   }
 
-  const totalPercentage = localBuckets.reduce(
-    (sum, bucket) => sum + bucket.percentage,
-    0
-  )
-  const operationsPercentage = 100 - totalPercentage
+  let incomeKopecks = 0
+  let calculationError = ''
 
-  const handlePercentageChange = (
-    id: string,
-    value: string,
-    evaluated: number | null
-  ) => {
-    if (evaluated !== null) {
-      // Expression was evaluated (on blur/Enter) - update with result
-      const newBuckets = localBuckets.map((bucket) =>
-        bucket.id === id ? { ...bucket, percentage: evaluated } : bucket
-      )
-      setLocalBuckets(newBuckets)
-      // Clear the raw input value since we have a final result
-      setInputValues((prev) => {
-        const next = { ...prev }
-        delete next[id]
-        return next
-      })
-      setError('')
+  try {
+    incomeKopecks = rublesToKopecks(localSalary)
+  } catch (caughtError) {
+    calculationError = getErrorMessage(caughtError)
+  }
 
-      const newTotal = newBuckets.reduce(
-        (sum, bucket) => sum + bucket.percentage,
-        0
-      )
-      if (newTotal > 100) {
-        setError('Общая сумма превышает 100%')
-        return
-      }
-      updateBuckets(newBuckets)
-    } else {
-      // Still typing - just track the raw input value
-      setInputValues((prev) => ({ ...prev, [id]: value }))
-      setError('')
+  let allocation = { totalKopecks: 0, operationsKopecks: 0 }
+  if (!calculationError) {
+    try {
+      allocation = calculateAllocation(localBuckets, incomeKopecks)
+    } catch (caughtError) {
+      calculationError = getErrorMessage(caughtError)
     }
   }
 
-  const handlePercentageBlur = () => {
-    // Validation and saving is handled in handlePercentageChange when evaluated !== null
-    // This handler is kept for any additional blur logic if needed in the future
+  const saveBuckets = (nextBuckets: AllocationBucket[]) => {
+    localBucketsRef.current = nextBuckets
+    setLocalBuckets(nextBuckets)
+    updateBuckets(nextBuckets)
+  }
+
+  const handleBucketFieldChange = (
+    id: string,
+    field: AllocationField,
+    value: string,
+    evaluated: number | null
+  ) => {
+    const key = fieldKey(id, field)
+
+    if (evaluated === null) {
+      dirtyInputsRef.current.add(key)
+      setInputValues((previous) => ({ ...previous, [key]: value }))
+      return
+    }
+
+    // MathInput also emits a value on blur without an edit and emits twice for
+    // Enter followed by blur. Only the first commit after actual typing counts.
+    if (!dirtyInputsRef.current.has(key)) return
+    dirtyInputsRef.current.delete(key)
+
+    if (!Number.isFinite(evaluated) || evaluated < 0) {
+      setError('Введите конечное неотрицательное значение')
+      return
+    }
+
+    try {
+      const nextBuckets = localBucketsRef.current.map((bucket) => {
+        if (bucket.id !== id) return bucket
+
+        if (field === 'percentage') {
+          return {
+            ...bucket,
+            basis: 'percentage' as const,
+            percentage: evaluated,
+            amountKopecks: null,
+          }
+        }
+
+        const amountKopecks = rublesToKopecks(evaluated)
+        return {
+          ...bucket,
+          basis: 'amount' as const,
+          percentage: 0,
+          amountKopecks,
+        }
+      })
+
+      assertAllocationRepresentable(nextBuckets, incomeKopecks)
+
+      setInputValues((previous) => {
+        const next = { ...previous }
+        delete next[key]
+        return next
+      })
+      setError('')
+      saveBuckets(nextBuckets)
+    } catch (caughtError) {
+      setError(getErrorMessage(caughtError))
+      setInputValues((previous) => ({ ...previous, [key]: value }))
+    }
   }
 
   const handleLabelChange = (id: string, value: string) => {
-    const newBuckets = localBuckets.map((bucket) =>
+    const nextBuckets = localBucketsRef.current.map((bucket) =>
       bucket.id === id ? { ...bucket, label: value } : bucket
     )
-    setLocalBuckets(newBuckets)
+    localBucketsRef.current = nextBuckets
+    setLocalBuckets(nextBuckets)
   }
 
   const handleLabelBlur = () => {
-    updateBuckets(localBuckets)
+    updateBuckets(localBucketsRef.current)
   }
 
   const handleAddBucket = () => {
     const newBucket: AllocationBucket = {
       id: crypto.randomUUID(),
       label: '',
+      basis: 'percentage',
       percentage: 0,
+      amountKopecks: null,
     }
-    const newBuckets = [...localBuckets, newBucket]
-    setLocalBuckets(newBuckets)
-    updateBuckets(newBuckets)
+    saveBuckets([...localBucketsRef.current, newBucket])
   }
 
   const handleDeleteBucket = (id: string) => {
-    const newBuckets = localBuckets.filter((bucket) => bucket.id !== id)
-    setLocalBuckets(newBuckets)
-    updateBuckets(newBuckets)
+    saveBuckets(localBucketsRef.current.filter((bucket) => bucket.id !== id))
     setError('')
     setBucketPendingDelete(null)
   }
 
   const handleSalaryChange = (value: string, evaluated: number | null) => {
     if (evaluated !== null) {
-      setLocalSalary(evaluated)
-      setSalary(evaluated)
-      setSalaryInputValue(String(evaluated))
+      try {
+        const nextIncomeKopecks = rublesToKopecks(evaluated)
+        assertAllocationRepresentable(
+          localBucketsRef.current,
+          nextIncomeKopecks
+        )
+        setLocalSalary(evaluated)
+        setSalary(evaluated)
+        setSalaryInputValue(String(evaluated))
+        setError('')
+      } catch (caughtError) {
+        setError(getErrorMessage(caughtError))
+      }
     } else {
-      // Still typing - just track the raw input value
       setSalaryInputValue(value)
     }
   }
 
-  const calculateAmount = (percentage: number) => {
-    return (localSalary * percentage) / 100
+  const getBucketPercentage = (bucket: AllocationBucket): number | null => {
+    if (bucket.basis === 'percentage') return bucket.percentage
+    return amountToPercentage(bucket.amountKopecks ?? 0, incomeKopecks)
   }
+
+  const totalPercentage =
+    incomeKopecks > 0
+      ? (allocation.totalKopecks / incomeKopecks) * 100
+      : localBuckets.every((bucket) => bucket.basis === 'percentage')
+        ? localBuckets.reduce((total, bucket) => total + bucket.percentage, 0)
+        : null
+
+  let operationsPercentage: number | null = null
+  if (incomeKopecks > 0) {
+    operationsPercentage = (allocation.operationsKopecks / incomeKopecks) * 100
+  } else if (localBuckets.every((bucket) => bucket.basis === 'percentage')) {
+    operationsPercentage =
+      100 - localBuckets.reduce((total, bucket) => total + bucket.percentage, 0)
+  }
+
+  const overageKopecks = Math.max(0, -allocation.operationsKopecks)
 
   return (
     <div className="flex flex-col gap-4 sm:gap-6">
@@ -211,50 +296,28 @@ export function BucketEditor() {
         </div>
       </div>
 
-      {/* ⚡ Responsive Grid Fix: Gradual breakpoint transition prevents layout jump (Principle: Engineering + Alignment) */}
-      {/* Mobile (<640px): Single column stack */}
-      {/* Small tablet (sm 640px+): 2-column [name + controls], controls use minmax to prevent overflow */}
-      {/* Tablet (md 768px+): Full 3-column layout with explicit column constraints */}
       <ul className="flex flex-col gap-2">
-        {localBuckets.map((bucket) => (
-          <li
-            key={bucket.id}
-            className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2"
-          >
-            {/* Name input - always full width */}
-            <div className="min-w-0">
-              <Input
-                value={bucket.label}
-                onChange={(e) => handleLabelChange(bucket.id, e.target.value)}
-                onBlur={handleLabelBlur}
-                placeholder="Название"
-              />
-            </div>
-            {/* Controls row - percentage, amount, delete */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1">
-                <MathInput
-                  value={
-                    inputValues[bucket.id] !== undefined
-                      ? inputValues[bucket.id]
-                      : String(bucket.percentage)
+        {localBuckets.map((bucket) => {
+          const amountKopecks = getBucketAmountKopecks(bucket, incomeKopecks)
+          const bucketPercentage = getBucketPercentage(bucket)
+          const percentageKey = fieldKey(bucket.id, 'percentage')
+          const amountKey = fieldKey(bucket.id, 'amount')
+
+          return (
+            <li
+              key={bucket.id}
+              className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2"
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <Input
+                  value={bucket.label}
+                  onChange={(event) =>
+                    handleLabelChange(bucket.id, event.target.value)
                   }
-                  onValueChange={(value, evaluated) =>
-                    handlePercentageChange(bucket.id, value, evaluated)
-                  }
-                  onBlur={handlePercentageBlur}
-                  min={0}
-                  max={100}
-                  className="w-20"
+                  onBlur={handleLabelBlur}
+                  placeholder="Название"
+                  aria-label="Название категории"
                 />
-                <span className="shrink-0 text-zinc-400">%</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {localSalary > 0 && (
-                  <span className="shrink-0 text-right text-sm text-zinc-300">
-                    {formatAmount(calculateAmount(bucket.percentage))} ₽
-                  </span>
-                )}
                 <Button
                   variant="danger"
                   onClick={() => setBucketPendingDelete(bucket)}
@@ -269,9 +332,77 @@ export function BucketEditor() {
                   <span className="hidden lg:inline">Удалить</span>
                 </Button>
               </div>
-            </div>
-          </li>
-        ))}
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="min-w-0">
+                  <label
+                    htmlFor={`${percentageKey}-input`}
+                    className="mb-1 block text-xs text-zinc-400"
+                  >
+                    Процент
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <MathInput
+                      id={`${percentageKey}-input`}
+                      aria-label={`Процент категории ${bucket.label || 'без названия'}`}
+                      value={
+                        inputValues[percentageKey] ??
+                        (bucketPercentage === null
+                          ? '—'
+                          : formatPercentage(bucketPercentage))
+                      }
+                      onValueChange={(value, evaluated) =>
+                        handleBucketFieldChange(
+                          bucket.id,
+                          'percentage',
+                          value,
+                          evaluated
+                        )
+                      }
+                      placeholder="—"
+                      className="min-w-0"
+                    />
+                    <span className="shrink-0 text-zinc-400">%</span>
+                  </div>
+                </div>
+
+                <div className="min-w-0">
+                  <label
+                    htmlFor={`${amountKey}-input`}
+                    className="mb-1 block text-xs text-zinc-400"
+                  >
+                    Сумма
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <MathInput
+                      id={`${amountKey}-input`}
+                      aria-label={`Сумма категории ${bucket.label || 'без названия'}`}
+                      value={
+                        inputValues[amountKey] ??
+                        formatEditableKopecks(amountKopecks)
+                      }
+                      onValueChange={(value, evaluated) =>
+                        handleBucketFieldChange(
+                          bucket.id,
+                          'amount',
+                          value,
+                          evaluated
+                        )
+                      }
+                      placeholder="0"
+                      className="min-w-0"
+                    />
+                    <span className="shrink-0 text-zinc-400">₽</span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-zinc-500">
+                Закреплена {bucket.basis === 'amount' ? 'сумма' : 'доля дохода'}
+              </p>
+            </li>
+          )
+        })}
       </ul>
 
       <ConfirmDialog
@@ -291,11 +422,21 @@ export function BucketEditor() {
         onClose={() => setBucketPendingDelete(null)}
       />
 
-      {/* ⚡ Auto-fix: Added aria-live for screen reader announcement (Principle: Accessibility) */}
-      {/* ⚡ Auto-fix: Added role="alert" for critical error messaging */}
       {error && (
         <p className="text-sm text-red-500" role="alert" aria-live="polite">
           {error}
+        </p>
+      )}
+
+      {calculationError && (
+        <p className="text-sm text-red-500" role="alert" aria-live="polite">
+          {calculationError}
+        </p>
+      )}
+
+      {overageKopecks > 0 && (
+        <p className="text-sm text-red-400" role="alert" aria-live="polite">
+          Распределено больше дохода на {formatKopecks(overageKopecks)} ₽
         </p>
       )}
 
@@ -303,34 +444,34 @@ export function BucketEditor() {
         <div className="flex flex-col">
           <span className="text-xs text-zinc-400 sm:text-sm">Распределено</span>
           <span className="text-base font-medium text-zinc-200 sm:text-lg">
-            {totalPercentage}%
-            {localSalary > 0 && (
-              <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
-                ({formatAmount(calculateAmount(totalPercentage))} ₽)
-              </span>
-            )}
+            {totalPercentage === null
+              ? '—'
+              : `${formatPercentage(totalPercentage)}%`}
+            <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
+              ({formatKopecks(allocation.totalKopecks)} ₽)
+            </span>
           </span>
         </div>
         <div className="flex flex-col sm:text-right">
           <span className="text-xs text-zinc-400 sm:text-sm">
             Операции (остаток)
           </span>
-          {/* ⚡ Auto-fix: Replaced template string with cn() utility (Principle: Engineering Standards) */}
-          {/* ⚡ Auto-fix: Added aria-live for dynamic percentage updates (Principle: Accessibility) */}
           <span
             className={cn(
               'text-base font-medium sm:text-lg',
-              operationsPercentage < 0 ? 'text-red-500' : 'text-emerald-500'
+              allocation.operationsKopecks < 0
+                ? 'text-red-500'
+                : 'text-emerald-500'
             )}
             aria-live="polite"
             aria-atomic="true"
           >
-            {operationsPercentage}%
-            {localSalary > 0 && (
-              <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
-                ({formatAmount(calculateAmount(operationsPercentage))} ₽)
-              </span>
-            )}
+            {operationsPercentage === null
+              ? '—'
+              : `${formatPercentage(operationsPercentage)}%`}
+            <span className="ml-2 text-xs text-zinc-400 sm:text-sm">
+              ({formatKopecks(allocation.operationsKopecks)} ₽)
+            </span>
           </span>
         </div>
       </div>

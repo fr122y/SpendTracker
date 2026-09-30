@@ -16,7 +16,8 @@ Global TypeScript type definitions used across the application.
 - `SharedBudgetInviteResult`: Generated invite URL and expiration timestamp
 - `Category`: Category entity with id, name, emoji
 - `Project`: Project entity with id, name, budget, color, createdAt
-- `AllocationBucket`: Savings bucket with id, label, percentage
+- `AllocationBucket`: Savings bucket with id, label, allocation basis,
+  percentage, and nullable fixed amount in safe integer kopecks
 - `KeywordMapping`: Keyword-to-category mapping with joined category metadata
 
 ### Dashboard
@@ -30,4 +31,6 @@ Global TypeScript type definitions used across the application.
 - All entity types have `id: string`
 - Dates stored as ISO strings (`string`)
 - Currency amounts as `number` (in smallest unit or decimal)
+- Allocation buckets use `basis: 'percentage' | 'amount'`; only the matching
+  canonical value is persisted (`percentage` or `amountKopecks`)
 - Optional fields marked with `?`

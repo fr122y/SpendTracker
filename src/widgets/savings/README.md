@@ -13,7 +13,8 @@ Wrapper widget for income allocation bucket management.
 ## Features
 
 - Header with section title
-- Bucket percentage allocation editor
+- Bucket allocation editor with editable percentage and amount fields
+- Per-category basis hint and over-budget remainder warning
 
 ## Dependencies
 

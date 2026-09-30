@@ -8,7 +8,10 @@ import { useUpdateBuckets } from '../model/queries'
 
 import type { AllocationBucket } from '@/shared/types'
 
-let shouldReject = false
+let mockFailureId: string | null = null
+let mockHoldFirst = false
+let mockReleaseFirst: (() => void) | null = null
+let mockActionStarts: string[] = []
 
 jest.mock('@/shared/lib', () => ({
   showMutationRollbackToast: jest.fn(),
@@ -17,8 +20,15 @@ jest.mock('@/shared/lib', () => ({
 jest.mock('@/shared/api', () => ({
   queryKeys: { buckets: { all: ['buckets'] } },
   getBuckets: jest.fn(),
-  updateBuckets: jest.fn(async () => {
-    if (shouldReject) {
+  updateBuckets: jest.fn(async (buckets: AllocationBucket[]) => {
+    const firstId = buckets[0]?.id ?? ''
+    mockActionStarts.push(firstId)
+    if (mockHoldFirst && firstId === 'first') {
+      await new Promise<void>((resolve) => {
+        mockReleaseFirst = resolve
+      })
+    }
+    if (firstId === mockFailureId) {
       throw new Error('update failed')
     }
   }),
@@ -30,13 +40,28 @@ const createWrapper = (queryClient: QueryClient) =>
   }
 
 const initialBuckets: AllocationBucket[] = [
-  { id: '1', label: 'Накопления', percentage: 20 },
-  { id: '2', label: 'Инвестиции', percentage: 10 },
+  {
+    id: '1',
+    label: 'Накопления',
+    basis: 'percentage',
+    percentage: 20,
+    amountKopecks: null,
+  },
+  {
+    id: '2',
+    label: 'Инвестиции',
+    basis: 'percentage',
+    percentage: 10,
+    amountKopecks: null,
+  },
 ]
 
 describe('useUpdateBuckets optimistic', () => {
   beforeEach(() => {
-    shouldReject = false
+    mockFailureId = null
+    mockHoldFirst = false
+    mockReleaseFirst = null
+    mockActionStarts = []
     ;(showMutationRollbackToast as jest.Mock).mockReset()
   })
 
@@ -56,7 +81,13 @@ describe('useUpdateBuckets optimistic', () => {
     })
 
     const nextBuckets: AllocationBucket[] = [
-      { id: '3', label: 'Резерв', percentage: 15 },
+      {
+        id: '3',
+        label: 'Резерв',
+        basis: 'percentage',
+        percentage: 15,
+        amountKopecks: null,
+      },
     ]
 
     act(() => {
@@ -73,7 +104,7 @@ describe('useUpdateBuckets optimistic', () => {
   })
 
   it('rolls back buckets and shows toast on error', async () => {
-    shouldReject = true
+    mockFailureId = '9'
 
     const queryClient = new QueryClient({
       defaultOptions: {
@@ -89,12 +120,74 @@ describe('useUpdateBuckets optimistic', () => {
     })
 
     act(() => {
-      result.current.mutate([{ id: '9', label: 'Тест', percentage: 100 }])
+      result.current.mutate([
+        {
+          id: '9',
+          label: 'Тест',
+          basis: 'percentage',
+          percentage: 100,
+          amountKopecks: null,
+        },
+      ])
     })
 
     await waitFor(() => {
       expect(queryClient.getQueryData(['buckets'])).toEqual(initialBuckets)
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('serializes saves and keeps a newer optimistic snapshot after an older failure', async () => {
+    mockFailureId = 'first'
+    mockHoldFirst = true
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    queryClient.setQueryData(['buckets'], initialBuckets)
+
+    const { result } = renderHook(() => useUpdateBuckets(), {
+      wrapper: createWrapper(queryClient),
+    })
+    const firstSnapshot: AllocationBucket[] = [
+      {
+        id: 'first',
+        label: 'Первый ввод',
+        basis: 'percentage',
+        percentage: 25,
+        amountKopecks: null,
+      },
+    ]
+    const secondSnapshot: AllocationBucket[] = [
+      {
+        id: 'second',
+        label: 'Последний ввод',
+        basis: 'percentage',
+        percentage: 30,
+        amountKopecks: null,
+      },
+    ]
+
+    act(() => {
+      result.current.mutate(firstSnapshot)
+      result.current.mutate(secondSnapshot)
+    })
+
+    await waitFor(() => {
+      expect(mockActionStarts).toEqual(['first'])
+      expect(queryClient.getQueryData(['buckets'])).toEqual(secondSnapshot)
+    })
+
+    act(() => {
+      mockReleaseFirst?.()
+    })
+
+    await waitFor(() => {
+      expect(mockActionStarts).toEqual(['first', 'second'])
+      expect(queryClient.getQueryData(['buckets'])).toEqual(secondSnapshot)
     })
   })
 })
