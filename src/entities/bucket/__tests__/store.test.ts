@@ -32,8 +32,20 @@ const createWrapper = () => {
 describe('useBucketStore', () => {
   beforeEach(() => {
     buckets = [
-      { id: '1', label: 'Накопления', percentage: 20 },
-      { id: '2', label: 'Инвестиции', percentage: 10 },
+      {
+        id: '1',
+        label: 'Накопления',
+        basis: 'percentage',
+        percentage: 20,
+        amountKopecks: null,
+      },
+      {
+        id: '2',
+        label: 'Инвестиции',
+        basis: 'percentage',
+        percentage: 10,
+        amountKopecks: null,
+      },
     ]
     jest.clearAllMocks()
   })
@@ -48,13 +60,25 @@ describe('useBucketStore', () => {
 
     act(() => {
       result.current.updateBuckets([
-        { id: '3', label: 'Резерв', percentage: 15 },
+        {
+          id: '3',
+          label: 'Резерв',
+          basis: 'percentage',
+          percentage: 15,
+          amountKopecks: null,
+        },
       ])
     })
 
     await waitFor(() => {
       expect(result.current.buckets).toEqual([
-        { id: '3', label: 'Резерв', percentage: 15 },
+        {
+          id: '3',
+          label: 'Резерв',
+          basis: 'percentage',
+          percentage: 15,
+          amountKopecks: null,
+        },
       ])
     })
   })

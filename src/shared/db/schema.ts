@@ -1,6 +1,8 @@
 import { sql } from 'drizzle-orm'
 import {
   boolean,
+  bigint,
+  check,
   integer,
   index,
   jsonb,
@@ -413,16 +415,38 @@ export const projects = pgTable('project', {
   createdAt: text('createdAt').notNull(),
 })
 
-export const allocationBuckets = pgTable('allocation_bucket', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  label: text('label').notNull(),
-  percentage: real('percentage').notNull(),
-})
+export const allocationBuckets = pgTable(
+  'allocation_bucket',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    label: text('label').notNull(),
+    percentage: real('percentage').notNull(),
+    basis: text('basis')
+      .$type<'percentage' | 'amount'>()
+      .notNull()
+      .default('percentage'),
+    amountKopecks: bigint('amountKopecks', { mode: 'number' }),
+  },
+  (table) => [
+    check(
+      'allocation_bucket_basis_check',
+      sql`${table.basis} in ('percentage', 'amount')`
+    ),
+    check(
+      'allocation_bucket_amount_kopecks_check',
+      sql`${table.amountKopecks} is null or (${table.amountKopecks} >= 0 and ${table.amountKopecks} <= 9007199254740991)`
+    ),
+    check(
+      'allocation_bucket_amount_basis_check',
+      sql`${table.basis} <> 'amount' or ${table.amountKopecks} is not null`
+    ),
+  ]
+)
 
 export const userSettings = pgTable('user_settings', {
   id: text('id')

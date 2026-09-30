@@ -2,10 +2,25 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { BucketEditor } from '../ui/bucket-editor'
 
-const mockBuckets = [
-  { id: '1', label: 'Накопления', percentage: 20 },
-  { id: '2', label: 'Инвестиции', percentage: 10 },
+import type { AllocationBucket } from '@/shared/types'
+
+const defaultBuckets: AllocationBucket[] = [
+  {
+    id: '1',
+    label: 'Накопления',
+    basis: 'percentage' as const,
+    percentage: 20,
+    amountKopecks: null,
+  },
+  {
+    id: '2',
+    label: 'Инвестиции',
+    basis: 'percentage' as const,
+    percentage: 10,
+    amountKopecks: null,
+  },
 ]
+let mockBuckets: AllocationBucket[] = defaultBuckets
 
 const mockUpdateBuckets = jest.fn()
 const mockSetSalary = jest.fn()
@@ -59,9 +74,18 @@ jest.mock('@/entities/settings', () => ({
     }),
 }))
 
+function getOperationsSummary(): HTMLElement {
+  const summary = screen
+    .getByText('Операции (остаток)')
+    .parentElement?.querySelector<HTMLElement>('[aria-live="polite"]')
+  if (!summary) throw new Error('Operations summary is not rendered')
+  return summary
+}
+
 describe('BucketEditor', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockBuckets = defaultBuckets.map((bucket) => ({ ...bucket }))
     mockSalary = 0
     mockBucketsLoading = false
     mockSettingsLoading = false
@@ -88,8 +112,12 @@ describe('BucketEditor', () => {
 
     expect(screen.getByDisplayValue('Накопления')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Инвестиции')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('20')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('10')).toBeInTheDocument()
+    expect(screen.getByLabelText('Процент категории Накопления')).toHaveValue(
+      '20'
+    )
+    expect(screen.getByLabelText('Процент категории Инвестиции')).toHaveValue(
+      '10'
+    )
   })
 
   it('shows remaining percentage for Operations', () => {
@@ -103,31 +131,116 @@ describe('BucketEditor', () => {
   it('updates bucket percentage on change', async () => {
     render(<BucketEditor />)
 
-    const savingsInput = screen.getByDisplayValue('20')
+    const savingsInput = screen.getByLabelText('Процент категории Накопления')
     fireEvent.change(savingsInput, { target: { value: '25' } })
     fireEvent.blur(savingsInput)
 
     await waitFor(() => {
       expect(mockUpdateBuckets).toHaveBeenCalledWith([
-        { id: '1', label: 'Накопления', percentage: 25 },
-        { id: '2', label: 'Инвестиции', percentage: 10 },
+        {
+          ...defaultBuckets[0],
+          percentage: 25,
+        },
+        defaultBuckets[1],
       ])
     })
   })
 
-  it('prevents total exceeding 100%', async () => {
+  it('saves a percentage overage and shows the exact negative remainder', async () => {
+    mockSalary = 100000
     render(<BucketEditor />)
 
-    const savingsInput = screen.getByDisplayValue('20')
+    const savingsInput = screen.getByLabelText('Процент категории Накопления')
     fireEvent.change(savingsInput, { target: { value: '95' } })
     fireEvent.blur(savingsInput)
 
-    // Operations would be -5%, which is not allowed
-    // Should show error or clamp value
     await waitFor(() => {
-      expect(screen.getByText(/превышает 100%/i)).toBeInTheDocument()
+      expect(mockUpdateBuckets).toHaveBeenCalledWith([
+        {
+          ...defaultBuckets[0],
+          percentage: 95,
+        },
+        defaultBuckets[1],
+      ])
     })
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /Распределено больше дохода на 5\s*000 ₽/
+    )
+    expect(getOperationsSummary()).toHaveTextContent(/−5%[\s\S]*−5\s*000 ₽/)
+    expect(screen.queryByText(/превышает 100%/i)).not.toBeInTheDocument()
+  })
+
+  it('saves an amount and changes the category basis', async () => {
+    mockSalary = 80000
+    render(<BucketEditor />)
+
+    const savingsInput = screen.getByLabelText('Сумма категории Накопления')
+    fireEvent.change(savingsInput, { target: { value: '15000' } })
+    fireEvent.blur(savingsInput)
+
+    await waitFor(() => {
+      expect(mockUpdateBuckets).toHaveBeenCalledWith([
+        {
+          ...defaultBuckets[0],
+          basis: 'amount',
+          percentage: 0,
+          amountKopecks: 1_500_000,
+        },
+        defaultBuckets[1],
+      ])
+    })
+    expect(screen.getByText('Закреплена сумма')).toBeInTheDocument()
+    expect(screen.getByLabelText('Процент категории Накопления')).toHaveValue(
+      '18,75'
+    )
+  })
+
+  it('saves a direct amount over income and shows the exact overage', async () => {
+    mockSalary = 10000
+    mockBuckets[1] = { ...mockBuckets[1], percentage: 0 }
+    render(<BucketEditor />)
+
+    const savingsInput = screen.getByLabelText('Сумма категории Накопления')
+    fireEvent.change(savingsInput, { target: { value: '15000' } })
+    fireEvent.blur(savingsInput)
+
+    await waitFor(() => {
+      expect(mockUpdateBuckets).toHaveBeenCalledWith([
+        {
+          ...defaultBuckets[0],
+          basis: 'amount',
+          percentage: 0,
+          amountKopecks: 1_500_000,
+        },
+        { ...defaultBuckets[1], percentage: 0 },
+      ])
+    })
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /Распределено больше дохода на 5\s*000 ₽/
+    )
+    expect(getOperationsSummary()).toHaveTextContent(/−50%[\s\S]*−5\s*000 ₽/)
+  })
+
+  it('does not switch a rounded amount basis on an untouched percentage blur', () => {
+    mockSalary = 73000
+    mockBuckets[0] = {
+      ...mockBuckets[0],
+      basis: 'amount',
+      percentage: 0,
+      amountKopecks: 1_000_000,
+    }
+
+    render(<BucketEditor />)
+
+    const percentageInput = screen.getByLabelText(
+      'Процент категории Накопления'
+    )
+    expect(percentageInput).toHaveValue('13,7')
+    fireEvent.focus(percentageInput)
+    fireEvent.blur(percentageInput)
+
     expect(mockUpdateBuckets).not.toHaveBeenCalled()
+    expect(screen.getByText('Закреплена сумма')).toBeInTheDocument()
   })
 
   it('allows adding new bucket', async () => {
@@ -140,9 +253,14 @@ describe('BucketEditor', () => {
 
     await waitFor(() => {
       expect(mockUpdateBuckets).toHaveBeenCalledWith([
-        { id: '1', label: 'Накопления', percentage: 20 },
-        { id: '2', label: 'Инвестиции', percentage: 10 },
-        expect.objectContaining({ label: '', percentage: 0 }),
+        defaultBuckets[0],
+        defaultBuckets[1],
+        expect.objectContaining({
+          label: '',
+          basis: 'percentage',
+          percentage: 0,
+          amountKopecks: null,
+        }),
       ])
     })
   })
@@ -182,9 +300,7 @@ describe('BucketEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Удалить' }))
 
     await waitFor(() => {
-      expect(mockUpdateBuckets).toHaveBeenCalledWith([
-        { id: '2', label: 'Инвестиции', percentage: 10 },
-      ])
+      expect(mockUpdateBuckets).toHaveBeenCalledWith([defaultBuckets[1]])
     })
   })
 
@@ -197,8 +313,8 @@ describe('BucketEditor', () => {
 
     await waitFor(() => {
       expect(mockUpdateBuckets).toHaveBeenCalledWith([
-        { id: '1', label: 'Сбережения', percentage: 20 },
-        { id: '2', label: 'Инвестиции', percentage: 10 },
+        { ...defaultBuckets[0], label: 'Сбережения' },
+        defaultBuckets[1],
       ])
     })
   })
@@ -232,8 +348,12 @@ describe('BucketEditor', () => {
     render(<BucketEditor />)
 
     // 20% of 100000 = 20000, 10% of 100000 = 10000
-    expect(screen.getByText(/20\s?000/)).toBeInTheDocument()
-    expect(screen.getByText(/10\s?000/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Сумма категории Накопления')).toHaveValue(
+      '20000'
+    )
+    expect(screen.getByLabelText('Сумма категории Инвестиции')).toHaveValue(
+      '10000'
+    )
   })
 
   it('shows calculated amount for operations remainder', () => {
@@ -244,13 +364,119 @@ describe('BucketEditor', () => {
     expect(screen.getByText(/70\s?000/)).toBeInTheDocument()
   })
 
-  it('does not show calculated amounts when salary is zero', () => {
+  it('saves an amount without income and shows a percentage placeholder', async () => {
     mockSalary = 0
     render(<BucketEditor />)
 
-    // Should not show calculated amounts in bucket rows
-    // The only ₽ should be in the salary input label
-    const rubleElements = screen.getAllByText(/₽/)
-    expect(rubleElements).toHaveLength(1) // Only the salary input suffix
+    const amountInput = screen.getByLabelText('Сумма категории Накопления')
+    fireEvent.change(amountInput, { target: { value: '15000' } })
+    fireEvent.blur(amountInput)
+
+    await waitFor(() => {
+      expect(mockUpdateBuckets).toHaveBeenCalledWith([
+        {
+          ...defaultBuckets[0],
+          basis: 'amount',
+          percentage: 0,
+          amountKopecks: 1_500_000,
+        },
+        defaultBuckets[1],
+      ])
+    })
+    expect(screen.getByLabelText('Процент категории Накопления')).toHaveValue(
+      '—'
+    )
+    expect(screen.getByLabelText('Сумма категории Накопления')).toHaveValue(
+      '15000'
+    )
+  })
+
+  it('shows the amount basis after income is entered', () => {
+    mockSalary = 80000
+    mockBuckets[0] = {
+      ...mockBuckets[0],
+      basis: 'amount',
+      percentage: 0,
+      amountKopecks: 1_500_000,
+    }
+    render(<BucketEditor />)
+
+    expect(screen.getByLabelText('Процент категории Накопления')).toHaveValue(
+      '18,75'
+    )
+    expect(screen.getByLabelText('Сумма категории Накопления')).toHaveValue(
+      '15000'
+    )
+  })
+
+  it('preserves an amount basis when income changes', async () => {
+    mockSalary = 80000
+    mockBuckets[0] = {
+      ...mockBuckets[0],
+      basis: 'amount',
+      percentage: 0,
+      amountKopecks: 1_500_000,
+    }
+    render(<BucketEditor />)
+
+    const salaryInput = screen.getByLabelText(/доход/i)
+    fireEvent.change(salaryInput, { target: { value: '100000' } })
+    fireEvent.blur(salaryInput)
+
+    await waitFor(() => {
+      expect(mockSetSalary).toHaveBeenCalledWith(100000)
+    })
+    expect(screen.getByLabelText('Сумма категории Накопления')).toHaveValue(
+      '15000'
+    )
+    expect(screen.getByLabelText('Процент категории Накопления')).toHaveValue(
+      '15'
+    )
+    expect(screen.getByLabelText('Сумма категории Инвестиции')).toHaveValue(
+      '10000'
+    )
+  })
+
+  it('keeps a fixed amount and warns when income is reduced below it', async () => {
+    mockSalary = 80000
+    mockBuckets = [
+      {
+        ...defaultBuckets[0],
+        basis: 'amount',
+        percentage: 0,
+        amountKopecks: 1_500_000,
+      },
+      { ...defaultBuckets[1], percentage: 0 },
+    ]
+    render(<BucketEditor />)
+
+    const salaryInput = screen.getByLabelText(/доход/i)
+    fireEvent.change(salaryInput, { target: { value: '10000' } })
+    fireEvent.blur(salaryInput)
+
+    await waitFor(() => {
+      expect(mockSetSalary).toHaveBeenCalledWith(10000)
+    })
+    expect(screen.getByLabelText('Сумма категории Накопления')).toHaveValue(
+      '15000'
+    )
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /Распределено больше дохода на 5\s*000 ₽/
+    )
+    expect(getOperationsSummary()).toHaveTextContent(/−50%[\s\S]*−5\s*000 ₽/)
+  })
+
+  it('rejects an amount outside the safe kopeck range without throwing', () => {
+    mockSalary = 100000
+    render(<BucketEditor />)
+
+    const savingsInput = screen.getByLabelText('Сумма категории Накопления')
+    fireEvent.change(savingsInput, {
+      target: { value: String(Number.MAX_SAFE_INTEGER) },
+    })
+    fireEvent.blur(savingsInput)
+
+    expect(screen.getByText(/поддерживаемый диапазон/i)).toBeInTheDocument()
+    expect(mockUpdateBuckets).not.toHaveBeenCalled()
   })
 })

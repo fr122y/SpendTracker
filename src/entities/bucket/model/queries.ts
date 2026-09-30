@@ -11,6 +11,25 @@ import { showMutationRollbackToast } from '@/shared/lib'
 
 import type { AllocationBucket } from '@/shared/types'
 
+function matchesBuckets(
+  current: AllocationBucket[] | undefined,
+  expected: AllocationBucket[]
+): boolean {
+  return (
+    current?.length === expected.length &&
+    current.every((bucket, index) => {
+      const expectedBucket = expected[index]
+      return (
+        bucket.id === expectedBucket.id &&
+        bucket.label === expectedBucket.label &&
+        bucket.basis === expectedBucket.basis &&
+        bucket.percentage === expectedBucket.percentage &&
+        bucket.amountKopecks === expectedBucket.amountKopecks
+      )
+    })
+  )
+}
+
 export function useBuckets() {
   return useQuery({
     queryKey: queryKeys.buckets.all,
@@ -22,6 +41,7 @@ export function useUpdateBuckets() {
   const queryClient = useQueryClient()
 
   return useMutation({
+    scope: { id: 'bucket-allocations' },
     mutationFn: (buckets: AllocationBucket[]) => updateBucketsAction(buckets),
     onMutate: async (nextBuckets) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.buckets.all })
@@ -31,8 +51,15 @@ export function useUpdateBuckets() {
       queryClient.setQueryData(queryKeys.buckets.all, nextBuckets)
       return { previous }
     },
-    onError: (_error, _nextBuckets, context) => {
-      queryClient.setQueryData(queryKeys.buckets.all, context?.previous)
+    onError: (_error, nextBuckets, context) => {
+      if (
+        matchesBuckets(
+          queryClient.getQueryData(queryKeys.buckets.all),
+          nextBuckets
+        )
+      ) {
+        queryClient.setQueryData(queryKeys.buckets.all, context?.previous)
+      }
       showMutationRollbackToast()
     },
     onSettled: () => {
