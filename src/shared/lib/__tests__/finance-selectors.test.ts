@@ -3,6 +3,7 @@ import {
   getDailyExpenses,
   getDailyOperations,
   getDailyExpenseTotal,
+  getPocketMonthSummary,
   getScopedExpenses,
   getScopedOperations,
   getCategoryStats,
@@ -107,6 +108,96 @@ describe('getMonthlyExpenses', () => {
     const result = getMonthlyExpenses(mockExpenses, date)
 
     expect(result).toHaveLength(0)
+  })
+
+  it('includes pocket purchases in analytics but excludes transfers', () => {
+    const expenses: Expense[] = [
+      {
+        id: 'pocket-purchase',
+        description: 'Покупка из кармана',
+        amount: 1200,
+        date: '2024-01-15',
+        category: 'Дом',
+        emoji: '🏠',
+        pocketId: 'pocket-1',
+      },
+      {
+        id: 'pocket-transfer',
+        description: 'Перевод из кармана',
+        amount: 800,
+        date: '2024-01-16',
+        category: 'Перевод',
+        emoji: '↘️',
+        pocketId: 'pocket-1',
+        operationType: 'pocket_transfer',
+      },
+    ]
+
+    expect(getMonthlyExpenses(expenses, new Date('2024-01-15'))).toEqual([
+      expenses[0],
+    ])
+    expect(getCategoryStats(expenses, new Date('2024-01-15'))).toMatchObject([
+      { name: 'Дом', value: 1200 },
+    ])
+  })
+})
+
+describe('getPocketMonthSummary', () => {
+  const purchase: Expense = {
+    id: 'purchase',
+    description: 'Покупка',
+    amount: 4000,
+    date: '2024-01-31',
+    category: 'Дом',
+    emoji: '🏠',
+    pocketId: 'pocket-1',
+  }
+  const transfer: Expense = {
+    id: 'transfer',
+    description: 'Перевод',
+    amount: 7000,
+    date: '2024-01-15',
+    category: 'Перевод',
+    emoji: '↘️',
+    pocketId: 'pocket-1',
+    operationType: 'pocket_transfer',
+  }
+
+  it("sums this pocket's selected-month purchases and transfers", () => {
+    const result = getPocketMonthSummary(
+      [
+        purchase,
+        transfer,
+        { ...purchase, id: 'next-month', date: '2024-02-01', amount: 500 },
+        { ...purchase, id: 'other-pocket', pocketId: 'pocket-2' },
+      ],
+      'pocket-1',
+      new Date('2024-01-20'),
+      10000
+    )
+
+    expect(result).toEqual({
+      purchases: [purchase],
+      transfers: [transfer],
+      purchaseTotal: 4000,
+      transferTotal: 7000,
+      used: 11000,
+      remaining: -1000,
+    })
+  })
+
+  it('moves an edited operation into its new month without carrying usage', () => {
+    const movedTransfer = { ...transfer, date: '2024-02-01' }
+    const expenses = [purchase, movedTransfer]
+
+    expect(
+      getPocketMonthSummary(expenses, 'pocket-1', new Date('2024-01-20'), 10000)
+        .used
+    ).toBe(4000)
+    expect(
+      getPocketMonthSummary(expenses, 'pocket-1', new Date('2024-02-20'), 10000)
+        .used
+    ).toBe(7000)
   })
 })
 
@@ -440,6 +531,25 @@ describe('getWeeklyPersonalStats', () => {
     expect(result.limit).toBe(1000)
   })
 
+  it('excludes pocket purchases from personal operating spend', () => {
+    const result = getWeeklyPersonalStats(
+      [
+        { ...mockExpenses[0], amount: 11500, date: '2024-01-16' },
+        {
+          ...mockExpenses[0],
+          id: 'pocket-purchase',
+          amount: 5000,
+          date: '2024-01-16',
+          pocketId: 'pocket-1',
+        },
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.spent).toBe(11500)
+  })
+
   it('should keep correct week boundaries for personal expenses', () => {
     const date = new Date('2024-01-17')
     const result = getWeeklyPersonalStats(mockExpenses, date, 1000)
@@ -482,16 +592,43 @@ describe('getWeeklyBudgetCoverage', () => {
   const projectReturn = (
     id: string,
     projectId: string,
-    amount: number
+    amount: number,
+    date = '2024-01-17'
   ): Expense => ({
     id,
     description: 'Вернул в проект',
     amount,
-    date: '2024-01-17',
+    date,
     category: 'Проектные деньги',
     emoji: '💼',
     projectId,
     operationType: 'project_return',
+  })
+
+  const pocketTransfer = (
+    id: string,
+    pocketId: string,
+    amount: number,
+    date = '2024-01-15'
+  ): Expense => ({
+    id,
+    description: 'Перевод из кармана',
+    amount,
+    date,
+    category: 'Перевод',
+    emoji: '↘️',
+    pocketId,
+    operationType: 'pocket_transfer',
+  })
+
+  const pocketPurchase = (amount: number): Expense => ({
+    id: 'pocket-purchase',
+    description: 'Покупка из кармана',
+    amount,
+    date: '2024-01-16',
+    category: 'Дом',
+    emoji: '🏠',
+    pocketId: 'pocket-1',
   })
 
   it('does not use project coverage while personal spending is below limit', () => {
@@ -551,6 +688,133 @@ describe('getWeeklyBudgetCoverage', () => {
     ])
   })
 
+  it('keeps project ordering based on first withdrawal when a return is earlier', () => {
+    const result = getWeeklyBudgetCoverage(
+      [
+        personalExpense(11000),
+        projectReturn('project-a-return', 'project-a', 100, '2024-01-15'),
+        projectWithdrawal(
+          'project-a-withdrawal',
+          'project-a',
+          1000,
+          '2024-01-17'
+        ),
+        projectWithdrawal(
+          'project-b-withdrawal',
+          'project-b',
+          1000,
+          '2024-01-16'
+        ),
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.projectSegments.map((segment) => segment.projectId)).toEqual([
+      'project-b',
+      'project-a',
+    ])
+    expect(result.projectSegments.map((segment) => segment.covered)).toEqual([
+      1000, 0,
+    ])
+  })
+
+  it('allocates overspend across pocket and project sources in movement order', () => {
+    const result = getWeeklyBudgetCoverage(
+      [
+        pocketTransfer('pocket-early', 'pocket-1', 2000, '2024-01-15'),
+        projectWithdrawal('project-middle', 'project-1', 3000, '2024-01-15'),
+        pocketTransfer('pocket-late', 'pocket-2', 3000, '2024-01-16'),
+        personalExpense(15000),
+        projectReturn('project-return', 'project-1', 1000),
+      ],
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(result.personalSpent).toBe(15000)
+    expect(result.projectTopUp).toBe(2000)
+    expect(result.pocketTopUp).toBe(5000)
+    expect(result.projectCovered).toBe(2000)
+    expect(result.pocketCovered).toBe(3000)
+    expect(result.totalAvailable).toBe(17000)
+    expect(result.uncovered).toBe(0)
+    expect(result.pocketSegments).toEqual([
+      {
+        pocketId: 'pocket-1',
+        available: 2000,
+        covered: 2000,
+        transferred: 2000,
+      },
+      {
+        pocketId: 'pocket-2',
+        available: 3000,
+        covered: 1000,
+        transferred: 3000,
+      },
+    ])
+  })
+
+  it('excludes pocket purchases from spend and counts transfers only as coverage', () => {
+    const expenses = [
+      personalExpense(11500),
+      pocketPurchase(5000),
+      pocketTransfer('pocket-transfer', 'pocket-1', 2000),
+    ]
+    const result = getWeeklyBudgetCoverage(
+      expenses,
+      new Date('2024-01-15'),
+      10000
+    )
+
+    expect(getMonthlyExpenses(expenses, new Date('2024-01-15'))).toEqual([
+      expenses[0],
+      expenses[1],
+    ])
+    expect(result.personalSpent).toBe(11500)
+    expect(result.pocketTopUp).toBe(2000)
+    expect(result.pocketCovered).toBe(1500)
+    expect(result.uncovered).toBe(0)
+  })
+
+  it('moves pocket transfer coverage with an edited date across week boundary', () => {
+    const personal = { ...personalExpense(12000), date: '2024-01-19' }
+    const nextWeekPersonal = {
+      ...personal,
+      id: 'next-week-personal',
+      date: '2024-01-22',
+    }
+    const transfer = pocketTransfer(
+      'pocket-transfer',
+      'pocket-1',
+      2000,
+      '2024-01-21'
+    )
+    const movedTransfer = { ...transfer, date: '2024-01-22' }
+
+    expect(
+      getWeeklyBudgetCoverage(
+        [personal, transfer],
+        new Date('2024-01-19'),
+        10000
+      ).pocketCovered
+    ).toBe(2000)
+    expect(
+      getWeeklyBudgetCoverage(
+        [personal, movedTransfer],
+        new Date('2024-01-19'),
+        10000
+      ).pocketCovered
+    ).toBe(0)
+    expect(
+      getWeeklyBudgetCoverage(
+        [personal, nextWeekPersonal, movedTransfer],
+        new Date('2024-01-22'),
+        10000
+      ).pocketCovered
+    ).toBe(2000)
+  })
+
   it('reduces same-week project top-up by project returns', () => {
     const result = getWeeklyBudgetCoverage(
       [
@@ -579,6 +843,9 @@ describe('getWeeklyBudgetCoverage', () => {
     )
 
     expect(result.projectTopUp).toBe(0)
+    expect(result.pocketTopUp).toBe(0)
+    expect(result.pocketCovered).toBe(0)
+    expect(result.pocketSegments).toEqual([])
     expect(result.projectSegments).toEqual([])
     expect(result.uncovered).toBe(2000)
   })
@@ -640,6 +907,9 @@ describe('getSharedWeeklyBudgetCoverage', () => {
     expect(result.personalCovered).toBe(2500)
     expect(result.weeklyLimit).toBe(8000)
     expect(result.projectTopUp).toBe(0)
+    expect(result.pocketTopUp).toBe(0)
+    expect(result.pocketCovered).toBe(0)
+    expect(result.pocketSegments).toEqual([])
     expect(result.uncovered).toBe(0)
   })
 })

@@ -16,6 +16,7 @@ export {
   getWeeklyPersonalStats,
   getWeeklyBudgetCoverage,
   getSharedWeeklyBudgetCoverage,
+  getPocketMonthSummary,
   getEffectiveWeeklyLimit,
   getWeekBoundaries,
   formatDate,
@@ -25,6 +26,7 @@ export {
   type WeeklyBudgetCoverage,
   type WeeklyProjectTopUpSegment,
   type WeeklyLimitSetting,
+  type PocketMonthSummary,
 } from './finance-selectors'
 
 export { cn } from './cn'

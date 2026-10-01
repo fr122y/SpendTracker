@@ -19,7 +19,8 @@ daily real-expense totals.
 - ExpenseForm for adding new operations
 - Budget scope filters: all visible operations, personal operations, and shared
   budget operations
-- Operation filters: all, real expenses, project-linked operations, movements
+- Operation filters: all, real expenses, project-linked operations, pocket
+  operations, movements
 - Scrollable ExpenseList
 - Empty state message when no operations match the active filter
 

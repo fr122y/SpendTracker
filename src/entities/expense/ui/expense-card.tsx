@@ -31,6 +31,22 @@ function formatExpenseDate(date: string) {
 }
 
 function getOperationMeta(expense: Expense) {
+  if (expense.operationType === 'pocket_transfer') {
+    return {
+      label: 'Перевод из кармана',
+      className: 'bg-violet-500/10 text-violet-300 ring-violet-500/30',
+      Icon: ArrowUpRight,
+    }
+  }
+
+  if (expense.pocketId) {
+    return {
+      label: 'Покупка из кармана',
+      className: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
+      Icon: Receipt,
+    }
+  }
+
   if (expense.operationType === 'project_withdrawal') {
     return {
       label: 'Взято из проекта',
@@ -89,7 +105,11 @@ export function ExpenseCard({
   }, [isEditing])
 
   const handleAmountClick = () => {
-    if (onEdit && (expense.operationType ?? 'expense') === 'expense') {
+    const operationType = expense.operationType ?? 'expense'
+    if (
+      onEdit &&
+      (operationType === 'expense' || operationType === 'pocket_transfer')
+    ) {
       setEditValue(String(expense.amount))
       setIsEditing(true)
     }
@@ -117,7 +137,9 @@ export function ExpenseCard({
   const operationMeta = getOperationMeta(expense)
   const OperationIcon = operationMeta.Icon
   const canEditAmount =
-    Boolean(onEdit) && (expense.operationType ?? 'expense') === 'expense'
+    Boolean(onEdit) &&
+    ((expense.operationType ?? 'expense') === 'expense' ||
+      expense.operationType === 'pocket_transfer')
 
   // Enhanced contrast with border-zinc-700 and bg-zinc-900/70, shadow-md for depth, hover states for feedback
   return (

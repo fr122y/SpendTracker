@@ -31,6 +31,9 @@ let mockProjects = [
     createdAt: '2026-01-01',
   },
 ]
+const mockPockets = [
+  { id: 'pocket-1', name: 'Отпуск', createdAt: '2026-01-01' },
+]
 let mockExpenses: Expense[] = [
   {
     id: '1',
@@ -107,6 +110,10 @@ jest.mock('@/entities/project', () => ({
   },
 }))
 
+jest.mock('@/entities/pocket', () => ({
+  usePockets: () => ({ data: mockPockets, isLoading: false }),
+}))
+
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector?: (state: { selectedDate: Date }) => unknown) => {
     const state = { selectedDate: mockSelectedDate }
@@ -150,10 +157,16 @@ jest.mock('@/shared/lib', () => ({
   getWeeklyBudgetCoverage: jest.fn((expenses, date, weeklyLimit) => {
     // For Jan 21, 2026 (Tuesday), week is Jan 20 - Jan 26
     const weekExpenses = expenses.filter(
-      (e: { date: string; projectId?: string; operationType?: string }) =>
+      (e: {
+        date: string
+        projectId?: string
+        pocketId?: string
+        operationType?: string
+      }) =>
         e.date >= '2026-01-20' &&
         e.date <= '2026-01-26' &&
         !e.projectId &&
+        !e.pocketId &&
         (e.operationType ?? 'expense') === 'expense'
     )
     const personalSpent = weekExpenses.reduce(
@@ -181,17 +194,37 @@ jest.mock('@/shared/lib', () => ({
       0
     )
     const projectTopUp = Math.max(withdrawn - returned, 0)
+    const pocketTransfers = expenses.filter(
+      (e: { date: string; pocketId?: string; operationType?: string }) =>
+        e.date >= '2026-01-20' &&
+        e.date <= '2026-01-26' &&
+        e.pocketId &&
+        e.operationType === 'pocket_transfer'
+    )
+    const pocketTopUp = pocketTransfers.reduce(
+      (sum: number, e: { amount: number }) => sum + e.amount,
+      0
+    )
     const overPersonalLimit = Math.max(personalSpent - weeklyLimit, 0)
     const projectCovered = Math.min(overPersonalLimit, projectTopUp)
+    const pocketCovered = Math.min(
+      Math.max(overPersonalLimit - projectCovered, 0),
+      pocketTopUp
+    )
 
     return {
       personalSpent,
       weeklyLimit,
       projectTopUp,
+      pocketTopUp,
       personalCovered: Math.min(personalSpent, weeklyLimit),
       projectCovered,
-      uncovered: Math.max(personalSpent - weeklyLimit - projectTopUp, 0),
-      totalAvailable: weeklyLimit + projectTopUp,
+      pocketCovered,
+      uncovered: Math.max(
+        personalSpent - weeklyLimit - projectTopUp - pocketTopUp,
+        0
+      ),
+      totalAvailable: weeklyLimit + projectTopUp + pocketTopUp,
       start: '2026-01-20',
       end: '2026-01-26',
       projectSegments:
@@ -203,6 +236,17 @@ jest.mock('@/shared/lib', () => ({
                 covered: projectCovered,
                 withdrawn,
                 returned,
+              },
+            ]
+          : [],
+      pocketSegments:
+        pocketTopUp > 0
+          ? [
+              {
+                pocketId: 'pocket-1',
+                available: pocketTopUp,
+                covered: pocketCovered,
+                transferred: pocketTopUp,
               },
             ]
           : [],
@@ -230,13 +274,16 @@ jest.mock('@/shared/lib', () => ({
         personalSpent,
         weeklyLimit,
         projectTopUp: 0,
+        pocketTopUp: 0,
         personalCovered: Math.min(personalSpent, weeklyLimit),
         projectCovered: 0,
+        pocketCovered: 0,
         uncovered: Math.max(personalSpent - weeklyLimit, 0),
         totalAvailable: weeklyLimit,
         start: '2026-01-20',
         end: '2026-01-26',
         projectSegments: [],
+        pocketSegments: [],
       }
     }
   ),
@@ -464,6 +511,31 @@ describe('WeeklyBudget', () => {
       expect(screen.getAllByText(/1\s?000 ₽/)[1]).toHaveClass(
         'whitespace-nowrap'
       )
+    })
+
+    it('shows pocket transfer coverage separately from project coverage', () => {
+      mockWeeklyLimit = 2000
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: 'pocket-transfer',
+          description: 'Groceries',
+          amount: 500,
+          date: '2026-01-21',
+          category: 'Перевод из кармана',
+          emoji: '↗️',
+          pocketId: 'pocket-1',
+          operationType: 'pocket_transfer',
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getByText('Переводы из карманов')).toBeInTheDocument()
+      expect(screen.getByText('Покрыто карманами')).toBeInTheDocument()
+      expect(screen.getByText('Отпуск')).toBeInTheDocument()
+      expect(screen.getAllByText('500 ₽')).toHaveLength(2)
+      expect(screen.getByText('300 ₽')).toBeInTheDocument()
     })
 
     it('shows uncovered summary only when personal spending exceeds coverage', () => {

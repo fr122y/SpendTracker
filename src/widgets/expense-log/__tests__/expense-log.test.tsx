@@ -279,6 +279,40 @@ describe('ExpenseLog', () => {
       expect(expenseCount).toHaveTextContent('4')
     })
 
+    it('filters pocket purchases and transfers together', () => {
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: 'pocket-purchase',
+          description: 'Train tickets',
+          amount: 900,
+          date: '2026-01-23',
+          category: 'Путешествия',
+          emoji: '🚆',
+          pocketId: 'pocket-1',
+        },
+        {
+          id: 'pocket-transfer',
+          description: 'Groceries from pocket',
+          amount: 400,
+          date: '2026-01-23',
+          category: 'Перевод из кармана',
+          emoji: '↗️',
+          pocketId: 'pocket-1',
+          operationType: 'pocket_transfer',
+        },
+      ]
+
+      render(<ExpenseLog />)
+      fireEvent.click(
+        within(screen.getByLabelText('Фильтр операций')).getByRole('button', {
+          name: 'Карманы',
+        })
+      )
+
+      expect(screen.getByTestId('expense-count')).toHaveTextContent('2')
+    })
+
     it('calculates daily total including project expenses', () => {
       render(<ExpenseLog />)
 

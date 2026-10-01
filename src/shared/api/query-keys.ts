@@ -15,6 +15,15 @@ export const queryKeys = {
   projects: {
     all: ['projects'] as const,
   },
+  pockets: {
+    all: ['pockets'] as const,
+  },
+  pocketBudgets: {
+    all: ['pocket-budgets'] as const,
+    byPocket: (pocketId: string) => ['pocket-budgets', pocketId] as const,
+    byMonth: (pocketId: string, period: string) =>
+      ['pocket-budgets', pocketId, period] as const,
+  },
   buckets: {
     all: ['buckets'] as const,
   },

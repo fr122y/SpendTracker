@@ -2,7 +2,7 @@
 
 Manages money operation records through DB-backed query hooks and mutation
 actions. The database table is still named `expense`, but records may represent
-real expenses, project withdrawals, or project returns.
+real expenses, project withdrawals, project returns, or pocket transfers.
 
 ## Public API (`index.ts`)
 
@@ -20,12 +20,15 @@ real expenses, project withdrawals, or project returns.
 - **Source of truth:** Database via Server Actions
 - **Client cache:** TanStack Query
 - **Data shape:** Records include amount, category, date, optional project link,
-  optional shared budget link, author metadata, and `operationType`
-- **Operation types:** `expense`, `project_withdrawal`, `project_return`
+  optional pocket/shared budget links, author metadata, and `operationType`
+- **Operation types:** `expense`, `project_withdrawal`, `project_return`,
+  `pocket_transfer`
 - **Visibility:** The list contains the current user's private expenses and
   shared expenses from budgets where the current user is a member
 - **Scope rule:** Shared expenses cannot be linked to projects or project money
-  operations
+  operations. Pocket operations cannot be linked to projects or shared budgets.
+- **Pocket behavior:** Purchases remain `expense` records; transfers are
+  non-expense records with a pocket link.
 - **Shared metadata:** Shared expense cards display the shared budget name and
   author when server data includes them
 

@@ -16,6 +16,15 @@ export {
   saveSharedKeywordMapping,
 } from './shared-keyword-actions'
 export { getProjects, addProject, deleteProject } from './project-actions'
+export {
+  archivePocket,
+  createPocket,
+  getPocketMonthBudgets,
+  getPockets,
+  initializePocketMonthBudget,
+  renamePocket,
+  setPocketMonthBudget,
+} from './pocket-actions'
 export { getBuckets, updateBuckets } from './bucket-actions'
 export {
   getSettings,
@@ -59,6 +68,7 @@ export type {
   ResetPasswordResult,
 } from './auth-actions'
 export { queryKeys } from './query-keys'
+export type { AddExpenseInput } from '@/shared/types'
 
 // Query Client
 export { queryClient } from './query-client'

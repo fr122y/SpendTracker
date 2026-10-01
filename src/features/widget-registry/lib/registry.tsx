@@ -7,6 +7,7 @@ import {
   PiggyBank,
   Folder,
   Tags,
+  WalletCards,
 } from 'lucide-react'
 
 import { AnalysisDashboard } from '@/widgets/analysis'
@@ -14,6 +15,7 @@ import { Calendar } from '@/widgets/calendar'
 import { CategoriesSection } from '@/widgets/categories-settings'
 import { DailySpendingChart } from '@/widgets/dynamics-chart'
 import { ExpenseLog } from '@/widgets/expense-log'
+import { PocketsSection } from '@/widgets/pockets'
 import { ProjectsSection } from '@/widgets/projects'
 import { SavingsSection } from '@/widgets/savings'
 import { WeeklyBudget } from '@/widgets/weekly-budget'
@@ -63,6 +65,11 @@ export const WIDGET_REGISTRY: Record<WidgetId, WidgetRegistryEntry> = {
     component: ProjectsSection,
     title: 'Проекты',
     icon: Folder,
+  },
+  POCKETS: {
+    component: PocketsSection,
+    title: 'Карманы',
+    icon: WalletCards,
   },
   CATEGORIES: {
     component: CategoriesSection,

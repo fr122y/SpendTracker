@@ -35,6 +35,43 @@ describe('ExpenseCard', () => {
     expect(screen.getByText('Food')).toBeInTheDocument()
   })
 
+  it('labels pocket purchases distinctly', () => {
+    render(
+      <ExpenseCard
+        expense={{ ...mockExpense, pocketId: 'pocket-1' }}
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText('Покупка из кармана')).toBeInTheDocument()
+  })
+
+  it('labels and allows editing a pocket transfer amount', async () => {
+    const onEdit = jest.fn()
+    render(
+      <ExpenseCard
+        expense={{
+          ...mockExpense,
+          pocketId: 'pocket-1',
+          operationType: 'pocket_transfer',
+          category: 'Перевод из кармана',
+          emoji: '↗️',
+        }}
+        onDelete={jest.fn()}
+        onEdit={onEdit}
+      />
+    )
+
+    expect(screen.getAllByText('Перевод из кармана')).toHaveLength(2)
+    await userEvent.click(screen.getByRole('button', { name: /edit amount/i }))
+    const input = screen.getByRole('textbox')
+    await userEvent.clear(input)
+    await userEvent.type(input, '150')
+    fireEvent.blur(input)
+
+    expect(onEdit).toHaveBeenCalledWith('1', { amount: 150 })
+  })
+
   it('renders shared budget metadata for shared expenses', () => {
     render(
       <ExpenseCard

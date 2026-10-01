@@ -55,6 +55,11 @@ jest.mock('@/features/widget-registry', () => ({
       title: 'Проекты',
       icon: () => <div data-testid="icon-projects">ProjectsIcon</div>,
     },
+    POCKETS: {
+      component: () => <div data-testid="pockets-content">Pockets Widget</div>,
+      title: 'Карманы',
+      icon: () => <div data-testid="icon-pockets">PocketsIcon</div>,
+    },
     CATEGORIES: {
       component: () => (
         <div data-testid="categories-content">Categories Widget</div>
@@ -132,6 +137,7 @@ describe('MobileWidgetModal', () => {
         'WEEKLY_BUDGET',
         'SAVINGS',
         'PROJECTS',
+        'POCKETS',
         'CATEGORIES',
       ]
 
@@ -149,6 +155,7 @@ describe('MobileWidgetModal', () => {
           WEEKLY_BUDGET: 'Недельный бюджет',
           SAVINGS: 'Накопления',
           PROJECTS: 'Проекты',
+          POCKETS: 'Карманы',
           CATEGORIES: 'Категории',
         }
 

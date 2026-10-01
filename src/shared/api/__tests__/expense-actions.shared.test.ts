@@ -19,11 +19,21 @@ jest.mock('../shared-category-actions', () => ({
   getSharedCategoryForExpense: jest.fn(),
 }))
 
+jest.mock('../pocket-helpers', () => ({
+  assertCanUsePocket: jest.fn(),
+  assertValidOperationAmount: jest.fn(),
+  assertValidOperationDate: jest.fn(),
+  getPocketForUser: jest.fn(),
+  POCKET_TRANSFER_CATEGORY: 'Перевод из кармана',
+  POCKET_TRANSFER_EMOJI: '↗️',
+}))
+
 jest.mock('@/shared/db', () => {
   const mocks = {
     deleteWhere: jest.fn(),
     insertValues: jest.fn(),
     membershipWhere: jest.fn(),
+    categoryWhere: jest.fn(),
     expenseWhere: jest.fn(),
     updateSet: jest.fn(),
     updateWhere: jest.fn(),
@@ -75,9 +85,15 @@ jest.mock('@/shared/db', () => {
       category: 'expense.category',
       emoji: 'expense.emoji',
       projectId: 'expense.projectId',
+      pocketId: 'expense.pocketId',
       sharedBudgetId: 'expense.sharedBudgetId',
       sharedBudgetCategoryId: 'expense.sharedBudgetCategoryId',
       operationType: 'expense.operationType',
+    },
+    categories: {
+      userId: 'category.userId',
+      name: 'category.name',
+      emoji: 'category.emoji',
     },
     sharedBudgetMembers: {
       sharedBudgetId: 'member.sharedBudgetId',
@@ -102,6 +118,7 @@ import {
   getExpenses,
   updateExpense,
 } from '../expense-actions'
+import { assertCanUsePocket, getPocketForUser } from '../pocket-helpers'
 import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
@@ -116,6 +133,7 @@ describe('expense-actions shared budget access', () => {
       expenseWhere: jest.Mock
       insertValues: jest.Mock
       membershipWhere: jest.Mock
+      categoryWhere: jest.Mock
       updateSet: jest.Mock
       updateWhere: jest.Mock
     }
@@ -267,6 +285,118 @@ describe('expense-actions shared budget access', () => {
     expect(assertCanUseSharedBudget).not.toHaveBeenCalled()
   })
 
+  it('stores a pocket transfer as a non-expense operation with system metadata', async () => {
+    const result = await addExpense({
+      description: 'Вернул часть денег на расходы',
+      amount: 1500,
+      date: '2026-06-15',
+      pocketId: 'pocket-1',
+      operationType: 'pocket_transfer',
+    })
+
+    expect(assertCanUsePocket).toHaveBeenCalledWith('pocket-1', 'user-1')
+    expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        pocketId: 'pocket-1',
+        operationType: 'pocket_transfer',
+        category: 'Перевод из кармана',
+        emoji: '↗️',
+        projectId: null,
+        sharedBudgetId: null,
+      })
+    )
+    expect(result).toMatchObject({
+      pocketId: 'pocket-1',
+      operationType: 'pocket_transfer',
+      category: 'Перевод из кармана',
+      emoji: '↗️',
+    })
+  })
+
+  it('validates and stores a pocket purchase with the user category', async () => {
+    dbModule.db.select.mockImplementationOnce(() => ({
+      from: jest.fn(() => ({
+        where: dbModule.__mocks.categoryWhere,
+      })),
+    }))
+    dbModule.__mocks.categoryWhere.mockResolvedValueOnce([
+      { name: 'Продукты', emoji: '🛒' },
+    ])
+
+    const result = await addExpense({
+      description: 'Покупка из продуктового',
+      amount: 540,
+      date: '2026-06-15',
+      category: 'Продукты',
+      emoji: '❌',
+      pocketId: 'pocket-1',
+    })
+
+    expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pocketId: 'pocket-1',
+        category: 'Продукты',
+        emoji: '🛒',
+        operationType: 'expense',
+      })
+    )
+    expect(result.category).toBe('Продукты')
+    expect(result.emoji).toBe('🛒')
+  })
+
+  it('round-trips the pocket link and transfer type from getExpenses', async () => {
+    dbModule.db.select
+      .mockImplementationOnce(makeMembershipSelect)
+      .mockImplementation(makeExpenseSelect)
+    dbModule.__mocks.membershipWhere.mockResolvedValueOnce([])
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      {
+        id: 'transfer-1',
+        authorUserId: 'user-1',
+        authorName: 'Ilya',
+        description: 'Перевод',
+        amount: 500,
+        date: '2026-06-15',
+        category: 'Перевод из кармана',
+        emoji: '↗️',
+        projectId: null,
+        pocketId: 'pocket-1',
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        sharedBudgetName: null,
+        operationType: 'pocket_transfer',
+      },
+    ])
+
+    await expect(getExpenses()).resolves.toEqual([
+      expect.objectContaining({
+        id: 'transfer-1',
+        pocketId: 'pocket-1',
+        operationType: 'pocket_transfer',
+      }),
+    ])
+  })
+
+  it('rejects a pocket link mixed with project or shared-budget scope before writing', async () => {
+    await expect(
+      addExpense({
+        description: 'Несовместимая операция',
+        amount: 100,
+        date: '2026-06-15',
+        category: 'Еда',
+        emoji: '🍲',
+        pocketId: 'pocket-1',
+        projectId: 'project-1',
+      })
+    ).rejects.toThrow(
+      'Pocket operations cannot be linked to projects or shared budgets'
+    )
+
+    expect(assertCanUsePocket).not.toHaveBeenCalled()
+    expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+  })
+
   it('allows a member to update a shared expense', async () => {
     dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
       {
@@ -285,6 +415,27 @@ describe('expense-actions shared budget access', () => {
       'user-1'
     )
     expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({ amount: 1000 })
+  })
+
+  it('lets the pocket owner reduce a transfer without converting its operation type', async () => {
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-1',
+        projectId: null,
+        pocketId: 'pocket-1',
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        operationType: 'pocket_transfer',
+      },
+    ])
+
+    await updateExpense('transfer-1', { amount: 0, date: '2026-06-16' })
+
+    expect(getPocketForUser).toHaveBeenCalledWith('pocket-1', 'user-1')
+    expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({
+      amount: 0,
+      date: '2026-06-16',
+    })
   })
 
   it('prevents direct category metadata updates for shared expenses', async () => {
