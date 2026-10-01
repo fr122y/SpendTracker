@@ -16,11 +16,14 @@ const mockPockets: Pocket[] = [
 const mockBudget = { pocketId: 'pocket-1', period: '2026-01', budget: 1000 }
 const mockAddExpense = jest.fn().mockResolvedValue(undefined)
 const mockUpdateExpense = jest.fn()
+const mockDeleteExpense = jest.fn()
 const mockSetPocketMonthBudget = jest.fn()
 const mockCreatePocket = jest.fn().mockResolvedValue(undefined)
 const mockRenamePocket = jest.fn().mockResolvedValue(undefined)
 const mockArchivePocket = jest.fn().mockResolvedValue(undefined)
-const mockExpenses: Expense[] = [
+const mockCategorize = jest.fn()
+const mockSaveMapping = jest.fn().mockResolvedValue(undefined)
+const initialMockExpenses: Expense[] = [
   {
     id: 'purchase-1',
     pocketId: 'pocket-1',
@@ -41,6 +44,7 @@ const mockExpenses: Expense[] = [
     emoji: '↗️',
   },
 ]
+let mockExpenses = [...initialMockExpenses]
 
 jest.mock('@/entities/pocket', () => ({
   usePockets: () => ({ data: mockPockets, isLoading: false, isError: false }),
@@ -72,6 +76,8 @@ jest.mock('@/entities/pocket', () => ({
 }))
 
 jest.mock('@/entities/expense', () => ({
+  ExpenseCard: jest.requireActual('@/entities/expense/ui/expense-card')
+    .ExpenseCard,
   useExpenses: () => ({ data: mockExpenses, isLoading: false, isError: false }),
   useAddExpense: () => ({
     mutateAsync: mockAddExpense,
@@ -83,9 +89,20 @@ jest.mock('@/entities/expense', () => ({
     isPending: false,
     isError: false,
   }),
+  useDeleteExpense: () => ({
+    mutate: mockDeleteExpense,
+    isPending: false,
+    isError: false,
+  }),
 }))
 
 jest.mock('@/entities/category', () => ({
+  useCategorize: () => ({
+    categorize: mockCategorize,
+    saveMappingAndGetResult: mockSaveMapping,
+    mappingsLoaded: true,
+    isSavingMapping: false,
+  }),
   useCategoryStore: (selector: (state: { categories: unknown[] }) => unknown) =>
     selector({
       categories: [
@@ -137,11 +154,17 @@ jest.mock('@/shared/lib', () => ({
 describe('PocketsSection', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockExpenses = [...initialMockExpenses]
+    mockCategorize.mockReturnValue({ found: false })
+    mockSaveMapping.mockResolvedValue(undefined)
     mockPockets[0].archivedAt = undefined
     mockArchivePocket.mockImplementation(async ({ id }: { id: string }) => {
       if (id === mockPockets[0].id) {
         mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
       }
+    })
+    mockDeleteExpense.mockImplementation((id: string) => {
+      mockExpenses = mockExpenses.filter((expense) => expense.id !== id)
     })
   })
 
@@ -209,6 +232,7 @@ describe('PocketsSection', () => {
     fireEvent.change(screen.getByLabelText('Комментарий'), {
       target: { value: 'Обед' },
     })
+    fireEvent.blur(screen.getByLabelText('Комментарий'))
     fireEvent.change(screen.getByLabelText('Сумма'), {
       target: { value: '450' },
     })
@@ -230,6 +254,7 @@ describe('PocketsSection', () => {
         operationType: 'expense',
       })
     )
+    expect(mockSaveMapping).toHaveBeenCalledWith('Обед', 'food')
 
     fireEvent.click(
       screen.getAllByRole('button', { name: 'Перевести в расходы' }).at(0)!
@@ -255,14 +280,91 @@ describe('PocketsSection', () => {
     )
   })
 
+  it('shows an automatic category suggestion with a deliberate override', async () => {
+    mockCategorize.mockReturnValue({
+      found: true,
+      categoryId: 'food',
+      categoryName: 'Еда',
+      categoryEmoji: '🍲',
+    })
+    render(<PocketsSection />)
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить покупку' }))
+    fireEvent.change(screen.getByLabelText('Комментарий'), {
+      target: { value: 'Кофе' },
+    })
+    fireEvent.blur(screen.getByLabelText('Комментарий'))
+
+    expect(screen.getByText('Категория:')).toBeInTheDocument()
+    expect(screen.getByText('🍲 Еда')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Категория покупки')).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить' }))
+    fireEvent.change(screen.getByLabelText('Категория покупки'), {
+      target: { value: 'travel' },
+    })
+    fireEvent.change(screen.getByLabelText('Сумма'), {
+      target: { value: '400' },
+    })
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Добавить покупку' }).at(-1)!
+    )
+
+    await waitFor(() => {
+      expect(mockSaveMapping).toHaveBeenCalledWith('Кофе', 'travel')
+      expect(mockAddExpense).toHaveBeenCalledWith({
+        description: 'Кофе',
+        amount: 400,
+        date: '2026-01-21',
+        category: 'Путешествия',
+        emoji: '✈️',
+        pocketId: 'pocket-1',
+        operationType: 'expense',
+      })
+    })
+  })
+
+  it('uses a suggested category when submitting before the description loses focus', async () => {
+    mockCategorize.mockReturnValue({
+      found: true,
+      categoryId: 'food',
+      categoryName: 'Еда',
+      categoryEmoji: '🍲',
+    })
+    render(<PocketsSection />)
+    fireEvent.click(screen.getByRole('button', { name: 'Добавить покупку' }))
+    fireEvent.change(screen.getByLabelText('Комментарий'), {
+      target: { value: 'Кофе' },
+    })
+    fireEvent.change(screen.getByLabelText('Сумма'), {
+      target: { value: '200' },
+    })
+    fireEvent.submit(screen.getByLabelText('Комментарий').closest('form')!)
+
+    await waitFor(() =>
+      expect(mockAddExpense).toHaveBeenCalledWith({
+        description: 'Кофе',
+        amount: 200,
+        date: '2026-01-21',
+        category: 'Еда',
+        emoji: '🍲',
+        pocketId: 'pocket-1',
+        operationType: 'expense',
+      })
+    )
+  })
+
   it('allows editing transfer amount, date, and comment from history', () => {
     render(<PocketsSection />)
     fireEvent.click(screen.getByRole('button', { name: /Переводы/ }))
 
-    fireEvent.change(screen.getByLabelText('Сумма операции transfer-1'), {
+    expect(
+      screen.queryByRole('textbox', { name: /edit amount/i })
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /edit amount/i }))
+    fireEvent.change(screen.getByRole('textbox', { name: /edit amount/i }), {
       target: { value: '150' },
     })
-    fireEvent.blur(screen.getByLabelText('Сумма операции transfer-1'))
+    fireEvent.blur(screen.getByRole('textbox', { name: /edit amount/i }))
     fireEvent.change(screen.getByLabelText('Дата операции transfer-1'), {
       target: { value: '2026-01-19' },
     })
@@ -284,6 +386,69 @@ describe('PocketsSection', () => {
       data: { description: 'Часть вернулась' },
     })
   })
+
+  it('keeps purchase category compact until the user asks to edit it', () => {
+    render(<PocketsSection />)
+    fireEvent.click(screen.getByRole('button', { name: /Покупки/ }))
+
+    expect(screen.getByText('Покупка из кармана')).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Категория операции purchase-1')
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить категорию' }))
+    fireEvent.change(screen.getByLabelText('Категория операции purchase-1'), {
+      target: { value: 'food' },
+    })
+
+    expect(mockUpdateExpense).toHaveBeenCalledWith({
+      id: 'purchase-1',
+      data: { category: 'Еда', emoji: '🍲' },
+    })
+  })
+
+  it.each([
+    ['purchase', 'Покупки', 'purchase-1'],
+    ['transfer', 'Переводы', 'transfer-1'],
+  ])(
+    'allows deleting a %s after confirmation and updates the monthly total',
+    async (_kind, history, id) => {
+      const view = render(<PocketsSection />)
+      const region = screen.getByRole('region', { name: 'Карман Отпуск' })
+      expect(
+        within(region).getByTestId('pocket-used-pocket-1')
+      ).toHaveTextContent('1 500 ₽')
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(history) }))
+      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Отмена',
+        })
+      )
+
+      expect(mockDeleteExpense).not.toHaveBeenCalled()
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+      expect(
+        within(region).getByTestId('pocket-used-pocket-1')
+      ).toHaveTextContent('1 500 ₽')
+
+      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      fireEvent.click(
+        within(screen.getByRole('alertdialog')).getByRole('button', {
+          name: 'Удалить',
+        })
+      )
+
+      await waitFor(() => expect(mockDeleteExpense).toHaveBeenCalledWith(id))
+      view.rerender(<PocketsSection />)
+      expect(
+        within(region).getByTestId('pocket-used-pocket-1')
+      ).toHaveTextContent(id === 'purchase-1' ? '300 ₽' : '1 200 ₽')
+      expect(
+        within(region).getByTestId('pocket-remaining-pocket-1')
+      ).toHaveTextContent(id === 'purchase-1' ? '700 ₽' : '-200 ₽')
+    }
+  )
 
   it('keeps archived history visible and hides new-operation controls', async () => {
     const view = render(<PocketsSection />)

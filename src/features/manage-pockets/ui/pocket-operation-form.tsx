@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-import { useCategoryStore } from '@/entities/category'
+import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useAddExpense } from '@/entities/expense'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
@@ -25,31 +25,124 @@ export function PocketOperationForm({
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(formatDate(selectedDate))
-  const [category, setCategory] = useState('')
+  const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
+    null
+  )
+  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useState('')
+  const [showCategorySelect, setShowCategorySelect] = useState(false)
+  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [hasManualCategoryOverride, setHasManualCategoryOverride] =
+    useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const categories = useCategoryStore((state) => state.categories)
   const addExpense = useAddExpense()
+  const {
+    categorize,
+    saveMappingAndGetResult,
+    mappingsLoaded,
+    isSavingMapping,
+  } = useCategorize()
   const isPurchase = kind === 'purchase'
   const numericAmount = Number(amount)
+  const isBusy = addExpense.isPending || isSubmitting || isSavingMapping
   const canSubmit =
     description.trim().length > 0 &&
     numericAmount > 0 &&
-    date &&
-    (!isPurchase || Boolean(category))
+    Boolean(date) &&
+    (!isPurchase || !showCategorySelect || Boolean(selectedCategoryId))
 
   const reset = () => {
     setDescription('')
     setAmount('')
     setDate(formatDate(selectedDate))
-    setCategory('')
+    setSuggestedCategoryId(null)
+    setSuggestedCategoryLabel('')
+    setShowCategorySelect(false)
+    setSelectedCategoryId('')
+    setHasManualCategoryOverride(false)
+    setIsSubmitting(false)
     onDone?.()
+  }
+
+  const handleDescriptionBlur = () => {
+    if (!isPurchase || !mappingsLoaded || hasManualCategoryOverride) return
+    const normalizedDescription = description.trim()
+    if (!normalizedDescription) return
+
+    const result = categorize(normalizedDescription)
+    if (result.found) {
+      setSuggestedCategoryId(result.categoryId)
+      setSuggestedCategoryLabel(
+        `${result.categoryEmoji} ${result.categoryName}`
+      )
+      setSelectedCategoryId(result.categoryId)
+      setShowCategorySelect(false)
+      return
+    }
+
+    setSuggestedCategoryId(null)
+    setSuggestedCategoryLabel('')
+    setSelectedCategoryId('')
+    setShowCategorySelect(true)
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!canSubmit || addExpense.isPending) return
+    if (!canSubmit || isBusy) return
 
-    const selectedCategory = categories.find((item) => item.id === category)
-    if (isPurchase && !selectedCategory) return
+    setIsSubmitting(true)
+    let resolvedSuggestedCategoryId = suggestedCategoryId
+    let resolvedShowCategorySelect = showCategorySelect
+
+    if (
+      isPurchase &&
+      !resolvedSuggestedCategoryId &&
+      mappingsLoaded &&
+      !hasManualCategoryOverride
+    ) {
+      const result = categorize(description.trim())
+      if (result.found) {
+        resolvedSuggestedCategoryId = result.categoryId
+        setSuggestedCategoryId(result.categoryId)
+        setSuggestedCategoryLabel(
+          `${result.categoryEmoji} ${result.categoryName}`
+        )
+        setSelectedCategoryId(result.categoryId)
+        setShowCategorySelect(false)
+      } else {
+        resolvedShowCategorySelect = true
+        setShowCategorySelect(true)
+      }
+    }
+
+    const shouldUseManualCategory =
+      resolvedShowCategorySelect || !resolvedSuggestedCategoryId
+    if (isPurchase && shouldUseManualCategory && !selectedCategoryId) {
+      setIsSubmitting(false)
+      return
+    }
+
+    const selectedCategory = isPurchase
+      ? categories.find(
+          (item) =>
+            item.id ===
+            (shouldUseManualCategory
+              ? selectedCategoryId
+              : resolvedSuggestedCategoryId)
+        )
+      : undefined
+    if (isPurchase && !selectedCategory) {
+      setIsSubmitting(false)
+      return
+    }
+
+    if (isPurchase && shouldUseManualCategory && selectedCategory) {
+      try {
+        await saveMappingAndGetResult(description.trim(), selectedCategory.id)
+      } catch {
+        // Mapping mutations handle optimistic rollback and error feedback.
+      }
+    }
 
     const operationType: MoneyOperationType = isPurchase
       ? 'expense'
@@ -69,6 +162,7 @@ export function PocketOperationForm({
       })
       reset()
     } catch {
+      setIsSubmitting(false)
       // The mutation state renders the retry message below.
     }
   }
@@ -80,8 +174,9 @@ export function PocketOperationForm({
         placeholder={isPurchase ? 'Что купили?' : 'Назначение перевода'}
         value={description}
         onChange={(event) => setDescription(event.target.value)}
+        onBlur={handleDescriptionBlur}
         maxLength={240}
-        disabled={addExpense.isPending}
+        disabled={isBusy}
       />
       <MathInput
         label="Сумма"
@@ -89,7 +184,7 @@ export function PocketOperationForm({
         value={amount}
         onValueChange={(value) => setAmount(value)}
         min={0}
-        disabled={addExpense.isPending}
+        disabled={isBusy}
         className="text-base sm:text-sm"
       />
       <Input
@@ -97,9 +192,23 @@ export function PocketOperationForm({
         type="date"
         value={date}
         onChange={(event) => setDate(event.target.value)}
-        disabled={addExpense.isPending}
+        disabled={isBusy}
       />
-      {isPurchase && (
+      {suggestedCategoryId && !showCategorySelect && isPurchase && (
+        <div className="text-sm text-zinc-300">
+          <span className="mr-2">Категория:</span>
+          <span className="font-medium">{suggestedCategoryLabel}</span>
+          <button
+            type="button"
+            onClick={() => setShowCategorySelect(true)}
+            className="ml-3 text-blue-400 underline underline-offset-2"
+            disabled={isBusy}
+          >
+            Изменить
+          </button>
+        </div>
+      )}
+      {showCategorySelect && isPurchase && (
         <Select
           label="Категория"
           aria-label="Категория покупки"
@@ -107,16 +216,19 @@ export function PocketOperationForm({
             value: item.id,
             label: `${item.emoji} ${item.name}`,
           }))}
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
+          value={selectedCategoryId}
+          onChange={(event) => {
+            setSelectedCategoryId(event.target.value)
+            setHasManualCategoryOverride(true)
+          }}
           placeholder="Выберите категорию"
-          disabled={addExpense.isPending}
+          disabled={isBusy}
         />
       )}
       <Button
         type="submit"
-        disabled={!canSubmit || addExpense.isPending}
-        isLoading={addExpense.isPending}
+        disabled={!canSubmit || isBusy}
+        isLoading={isBusy}
         className="w-full sm:w-auto"
       >
         {isPurchase ? 'Добавить покупку' : 'Перевести в расходы'}

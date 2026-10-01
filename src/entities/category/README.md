@@ -11,6 +11,8 @@ Manages expense categories through DB-backed query hooks and mutation actions.
 - `useAddSharedBudgetCategory`: Mutation hook for adding a shared category
 - `useUpdateSharedBudgetCategory`: Mutation hook for renaming a shared category
 - `useArchiveSharedBudgetCategory`: Mutation hook for archiving a shared category
+- `useCategorize` and `useSharedCategorize`: keyword-based category suggestion
+  hooks for private and shared operations
 - `CategoryBadge`: Pill/badge component displaying emoji + name
 
 ## State & Data
@@ -20,6 +22,8 @@ Manages expense categories through DB-backed query hooks and mutation actions.
 - **Default categories:** Seeded in the database for new users
 - **Shared budget categories:** Copied from the creator's private categories
   when a shared budget is created, then managed as an independent shared set
+- **Suggestions:** Local keyword mappings use Fuse.js to match operation
+  descriptions to categories
 
 ## Validation
 
@@ -30,4 +34,5 @@ Manages expense categories through DB-backed query hooks and mutation actions.
 ## Dependencies
 
 - Uses: `@/shared/api` (server actions + query client)
+- Uses: `@/entities/keyword-mapping` for category suggestions
 - Uses: `@/shared/types` (Category type)

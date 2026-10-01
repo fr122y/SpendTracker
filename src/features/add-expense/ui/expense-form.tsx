@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import {
+  useCategorize,
+  useSharedCategorize,
   useCategoryStore,
   useSharedBudgetCategories,
 } from '@/entities/category'
@@ -13,10 +15,6 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import {
-  useCategorize,
-  useSharedCategorize,
-} from '@/features/add-expense/model/use-categorize'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 

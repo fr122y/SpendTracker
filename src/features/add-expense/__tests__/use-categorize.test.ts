@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react'
 
-import { useCategorize } from '../model/use-categorize'
+import { useCategorize } from '@/entities/category/model/use-categorize'
 
 const mockMutateAsync = jest.fn()
 const mockMatcher = jest.fn()
@@ -18,6 +18,14 @@ jest.mock('@/entities/keyword-mapping', () => ({
   useSaveKeywordMapping: jest.fn(() => ({
     mutateAsync: mockMutateAsync,
     isPending: false,
+  })),
+  useSaveSharedKeywordMapping: jest.fn(() => ({
+    mutateAsync: mockMutateAsync,
+    isPending: false,
+  })),
+  useSharedKeywordMappings: jest.fn(() => ({
+    data: [],
+    isLoading: false,
   })),
 }))
 

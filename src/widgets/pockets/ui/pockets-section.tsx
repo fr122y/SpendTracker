@@ -181,13 +181,17 @@ function PocketDetail({
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
           <span className="block text-xs text-zinc-500">Использовано</span>
-          <strong className="mt-1 block font-mono text-lg text-zinc-100">
+          <strong
+            data-testid={`pocket-used-${pocket.id}`}
+            className="mt-1 block font-mono text-lg text-zinc-100"
+          >
             {formatCurrency(stats.used)}
           </strong>
         </div>
         <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
           <span className="block text-xs text-zinc-500">Остаток</span>
           <strong
+            data-testid={`pocket-remaining-${pocket.id}`}
             className={`mt-1 block font-mono text-lg ${stats.remaining < 0 ? 'text-red-400' : 'text-emerald-300'}`}
           >
             {formatCurrency(stats.remaining)}

@@ -18,6 +18,12 @@ jest.mock('@/entities/expense', () => ({
 }))
 
 jest.mock('@/entities/category', () => ({
+  useCategorize: () => ({
+    categorize: mockCategorize,
+    saveMappingAndGetResult: mockSaveMapping,
+    mappingsLoaded: true,
+    isSavingMapping: false,
+  }),
   useCategoryStore: (
     selector: (state: { categories: typeof mockCategories }) => unknown
   ) => selector({ categories: mockCategories }),
@@ -26,15 +32,6 @@ jest.mock('@/entities/category', () => ({
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: new Date('2025-01-15') }),
-}))
-
-jest.mock('@/features/add-expense/model/use-categorize', () => ({
-  useCategorize: () => ({
-    categorize: mockCategorize,
-    saveMappingAndGetResult: mockSaveMapping,
-    mappingsLoaded: true,
-    isSavingMapping: false,
-  }),
 }))
 
 describe('ProjectExpenseForm', () => {

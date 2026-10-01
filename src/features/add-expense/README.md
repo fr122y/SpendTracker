@@ -16,7 +16,8 @@ real expenses.
   budget
 - `useExpenseStore`: Mutation adapter for saving expense
 - `useProjectStore`: Project list for project-linked expenses and movements
-- `useCategorize`: Shared hook over `keyword-mapping` entity and Fuse.js matcher
+- Uses `useCategorize` and `useSharedCategorize` from `@/entities/category` for
+  keyword suggestions, manual override, and mapping persistence
 
 ## Logic Flow
 
@@ -34,4 +35,4 @@ real expenses.
 
 - Uses: `@/entities/expense`, `@/entities/category`,
   `@/entities/shared-budget`, `@/entities/project`,
-  `@/entities/keyword-mapping`, `@/shared/ui`
+  `@/shared/ui`

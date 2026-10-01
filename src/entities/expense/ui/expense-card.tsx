@@ -96,6 +96,8 @@ export function ExpenseCard({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editValue, setEditValue] = useState(String(expense.amount))
   const inputRef = useRef<HTMLInputElement>(null)
+  const cancelPendingBlurRef = useRef(false)
+  const lastSavedAmountRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -110,6 +112,8 @@ export function ExpenseCard({
       onEdit &&
       (operationType === 'expense' || operationType === 'pocket_transfer')
     ) {
+      cancelPendingBlurRef.current = false
+      lastSavedAmountRef.current = null
       setEditValue(String(expense.amount))
       setIsEditing(true)
     }
@@ -117,8 +121,17 @@ export function ExpenseCard({
 
   const handleValueChange = (value: string, evaluated: number | null) => {
     if (evaluated !== null) {
+      if (cancelPendingBlurRef.current) {
+        cancelPendingBlurRef.current = false
+        return
+      }
       // Evaluation complete (blur/Enter) - save and exit edit mode
-      if (evaluated !== expense.amount && evaluated > 0) {
+      if (
+        evaluated !== expense.amount &&
+        evaluated > 0 &&
+        lastSavedAmountRef.current !== evaluated
+      ) {
+        lastSavedAmountRef.current = evaluated
         onEdit?.(expense.id, { amount: evaluated })
       }
       setIsEditing(false)
@@ -132,6 +145,15 @@ export function ExpenseCard({
     // MathInput handles evaluation on blur, but we need to exit edit mode
     // if the value is unchanged or invalid
     setIsEditing(false)
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Escape') return
+    event.preventDefault()
+    cancelPendingBlurRef.current = true
+    setEditValue(String(expense.amount))
+    setIsEditing(false)
+    event.currentTarget.blur()
   }
 
   const operationMeta = getOperationMeta(expense)
@@ -182,6 +204,7 @@ export function ExpenseCard({
               value={editValue}
               onValueChange={handleValueChange}
               onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               min={0}
               className="w-24 sm:w-20 text-right text-base sm:text-sm font-semibold min-h-11"
               aria-label="edit amount"

@@ -210,6 +210,54 @@ describe('ExpenseCard', () => {
       expect(onEdit).toHaveBeenCalledWith('1', { amount: 300 })
     })
 
+    it('saves the current value on Enter', async () => {
+      const onEdit = jest.fn()
+      render(
+        <ExpenseCard
+          expense={mockExpense}
+          onDelete={jest.fn()}
+          onEdit={onEdit}
+        />
+      )
+
+      await userEvent.click(
+        screen.getByRole('button', { name: /edit amount/i })
+      )
+      const input = screen.getByRole('textbox')
+      await userEvent.clear(input)
+      await userEvent.type(input, '325')
+      await userEvent.keyboard('{Enter}')
+
+      expect(onEdit).toHaveBeenCalledTimes(1)
+      expect(onEdit).toHaveBeenCalledWith('1', { amount: 325 })
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    })
+
+    it('cancels an amount edit on Escape', async () => {
+      const onEdit = jest.fn()
+      render(
+        <ExpenseCard
+          expense={mockExpense}
+          onDelete={jest.fn()}
+          onEdit={onEdit}
+        />
+      )
+
+      await userEvent.click(
+        screen.getByRole('button', { name: /edit amount/i })
+      )
+      const input = screen.getByRole('textbox')
+      await userEvent.clear(input)
+      await userEvent.type(input, '999')
+      await userEvent.keyboard('{Escape}')
+
+      expect(onEdit).not.toHaveBeenCalled()
+      expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /edit amount/i })
+      ).toHaveTextContent('250')
+    })
+
     it('does not call onEdit when value is unchanged', async () => {
       const onEdit = jest.fn()
       render(

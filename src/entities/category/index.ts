@@ -11,4 +11,9 @@ export {
   useSharedBudgetCategories,
   useUpdateSharedBudgetCategory,
 } from './model/queries'
+export {
+  useCategorize,
+  useSharedCategorize,
+  type UseCategorizeReturn,
+} from './model/use-categorize'
 export { CategoryBadge } from './ui/category-badge'
