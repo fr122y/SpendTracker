@@ -32,17 +32,36 @@ export interface WeeklyProjectTopUpSegment {
   returned: number
 }
 
+export interface WeeklyPocketTopUpSegment {
+  pocketId: string
+  available: number
+  covered: number
+  transferred: number
+}
+
 export interface WeeklyBudgetCoverage {
   personalSpent: number
   weeklyLimit: number
   projectTopUp: number
+  pocketTopUp: number
   personalCovered: number
   projectCovered: number
+  pocketCovered: number
   uncovered: number
   totalAvailable: number
   start: string
   end: string
   projectSegments: WeeklyProjectTopUpSegment[]
+  pocketSegments: WeeklyPocketTopUpSegment[]
+}
+
+export interface PocketMonthSummary {
+  purchases: Expense[]
+  transfers: Expense[]
+  used: number
+  remaining: number
+  purchaseTotal: number
+  transferTotal: number
 }
 
 function isExpense(expense: Expense): boolean {
@@ -86,12 +105,15 @@ export function getScopedExpenses(
 }
 
 /**
- * Returns personal expenses without a linked project
+ * Returns personal operating expenses without a linked project or pocket
  */
 export function getPersonalExpenses(expenses: Expense[]): Expense[] {
   return expenses.filter(
     (expense) =>
-      isExpense(expense) && !expense.projectId && !expense.sharedBudgetId
+      isExpense(expense) &&
+      !expense.projectId &&
+      !expense.sharedBudgetId &&
+      !expense.pocketId
   )
 }
 
@@ -154,6 +176,44 @@ export function getMonthlyExpenses(
       expenseDate.getFullYear() === year && expenseDate.getMonth() === month
     )
   })
+}
+
+/**
+ * Returns a pocket's selected-month purchases and transfers and their totals.
+ */
+export function getPocketMonthSummary(
+  expenses: Expense[],
+  pocketId: string,
+  date: Date,
+  budget: number
+): PocketMonthSummary {
+  const period = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  const operations = expenses.filter(
+    (expense) =>
+      expense.pocketId === pocketId && expense.date.slice(0, 7) === period
+  )
+  const purchases = operations.filter(isExpense)
+  const transfers = operations.filter(
+    (expense) => expense.operationType === 'pocket_transfer'
+  )
+  const purchaseTotal = purchases.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  )
+  const transferTotal = transfers.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  )
+  const used = purchaseTotal + transferTotal
+
+  return {
+    purchases,
+    transfers,
+    used,
+    remaining: budget - used,
+    purchaseTotal,
+    transferTotal,
+  }
 }
 
 /**
@@ -334,89 +394,162 @@ export function getWeeklyBudgetCoverage(
       firstWithdrawalIndex: number
     }
   >()
+  const topUpsByPocket = new Map<
+    string,
+    {
+      pocketId: string
+      transferred: number
+      firstMovementDate: string
+      firstMovementIndex: number
+    }
+  >()
 
   expenses.forEach((expense, index) => {
-    if (
-      !expense.projectId ||
-      expense.date < start ||
-      expense.date > end ||
-      (!isProjectWithdrawal(expense) && !isProjectReturn(expense))
-    ) {
+    if (expense.date < start || expense.date > end) {
       return
     }
 
-    const existing = topUpsByProject.get(expense.projectId)
-    const item = existing ?? {
-      projectId: expense.projectId,
-      withdrawn: 0,
-      returned: 0,
-      firstWithdrawalDate: expense.date,
-      firstWithdrawalIndex: index,
-    }
-
-    if (isProjectWithdrawal(expense)) {
-      if (item.withdrawn === 0) {
-        item.firstWithdrawalDate = expense.date
-        item.firstWithdrawalIndex = index
+    if (
+      expense.projectId &&
+      !expense.pocketId &&
+      (isProjectWithdrawal(expense) || isProjectReturn(expense))
+    ) {
+      const existing = topUpsByProject.get(expense.projectId)
+      const item = existing ?? {
+        projectId: expense.projectId,
+        withdrawn: 0,
+        returned: 0,
+        firstWithdrawalDate: expense.date,
+        firstWithdrawalIndex: index,
       }
-      item.withdrawn += expense.amount
+
+      if (isProjectWithdrawal(expense)) {
+        if (item.withdrawn === 0) {
+          item.firstWithdrawalDate = expense.date
+          item.firstWithdrawalIndex = index
+        }
+        item.withdrawn += expense.amount
+      }
+      if (isProjectReturn(expense)) item.returned += expense.amount
+
+      topUpsByProject.set(expense.projectId, item)
+      return
     }
 
-    if (isProjectReturn(expense)) {
-      item.returned += expense.amount
-    }
+    if (
+      expense.pocketId &&
+      !expense.projectId &&
+      !expense.sharedBudgetId &&
+      expense.operationType === 'pocket_transfer'
+    ) {
+      const existing = topUpsByPocket.get(expense.pocketId)
+      const item = existing ?? {
+        pocketId: expense.pocketId,
+        transferred: 0,
+        firstMovementDate: expense.date,
+        firstMovementIndex: index,
+      }
 
-    topUpsByProject.set(expense.projectId, item)
+      if (
+        expense.date < item.firstMovementDate ||
+        (expense.date === item.firstMovementDate &&
+          index < item.firstMovementIndex)
+      ) {
+        item.firstMovementDate = expense.date
+        item.firstMovementIndex = index
+      }
+
+      item.transferred += expense.amount
+      topUpsByPocket.set(expense.pocketId, item)
+    }
   })
 
   const overPersonalLimit = Math.max(personalSpent - weeklyLimit, 0)
-  let remainingProjectCoverage = overPersonalLimit
-
-  const projectSegments = Array.from(topUpsByProject.values())
-    .map((item) => ({
-      ...item,
+  const coverageSources = [
+    ...Array.from(topUpsByProject.values()).map((item) => ({
+      kind: 'project' as const,
+      firstMovementDate: item.firstWithdrawalDate,
+      firstMovementIndex: item.firstWithdrawalIndex,
+      item,
       available: Math.max(item.withdrawn - item.returned, 0),
-    }))
-    .filter((item) => item.available > 0)
+    })),
+    ...Array.from(topUpsByPocket.values()).map((item) => ({
+      kind: 'pocket' as const,
+      firstMovementDate: item.firstMovementDate,
+      firstMovementIndex: item.firstMovementIndex,
+      item,
+      available: Math.max(item.transferred, 0),
+    })),
+  ]
+    .filter((source) => source.available > 0)
     .sort((a, b) => {
-      const dateOrder = a.firstWithdrawalDate.localeCompare(
-        b.firstWithdrawalDate
-      )
+      const dateOrder = a.firstMovementDate.localeCompare(b.firstMovementDate)
       if (dateOrder !== 0) return dateOrder
-      return a.firstWithdrawalIndex - b.firstWithdrawalIndex
+      return a.firstMovementIndex - b.firstMovementIndex
     })
-    .map((item) => {
-      const covered = Math.min(remainingProjectCoverage, item.available)
-      remainingProjectCoverage -= covered
 
-      return {
-        projectId: item.projectId,
-        available: item.available,
+  let remainingCoverage = overPersonalLimit
+  const projectSegments: WeeklyProjectTopUpSegment[] = []
+  const pocketSegments: WeeklyPocketTopUpSegment[] = []
+
+  for (const source of coverageSources) {
+    const covered = Math.min(remainingCoverage, source.available)
+    remainingCoverage -= covered
+
+    if (source.kind === 'project') {
+      projectSegments.push({
+        projectId: source.item.projectId,
+        available: source.available,
         covered,
-        withdrawn: item.withdrawn,
-        returned: item.returned,
-      }
-    })
+        withdrawn: source.item.withdrawn,
+        returned: source.item.returned,
+      })
+    } else {
+      pocketSegments.push({
+        pocketId: source.item.pocketId,
+        available: source.available,
+        covered,
+        transferred: source.item.transferred,
+      })
+    }
+  }
 
   const projectTopUp = projectSegments.reduce(
     (sum, segment) => sum + segment.available,
     0
   )
+  const pocketTopUp = pocketSegments.reduce(
+    (sum, segment) => sum + segment.available,
+    0
+  )
   const personalCovered = Math.min(personalSpent, weeklyLimit)
-  const projectCovered = Math.min(overPersonalLimit, projectTopUp)
-  const uncovered = Math.max(personalSpent - weeklyLimit - projectTopUp, 0)
+  const projectCovered = projectSegments.reduce(
+    (sum, segment) => sum + segment.covered,
+    0
+  )
+  const pocketCovered = pocketSegments.reduce(
+    (sum, segment) => sum + segment.covered,
+    0
+  )
+  const uncovered = Math.max(
+    personalSpent - weeklyLimit - projectTopUp - pocketTopUp,
+    0
+  )
 
   return {
     personalSpent,
     weeklyLimit,
     projectTopUp,
+    pocketTopUp,
     personalCovered,
     projectCovered,
+    pocketCovered,
     uncovered,
-    totalAvailable: weeklyLimit + projectTopUp,
+    totalAvailable: weeklyLimit + projectTopUp + pocketTopUp,
     start,
     end,
     projectSegments,
+    pocketSegments,
   }
 }
 
@@ -446,13 +579,16 @@ export function getSharedWeeklyBudgetCoverage(
     personalSpent,
     weeklyLimit,
     projectTopUp: 0,
+    pocketTopUp: 0,
     personalCovered,
     projectCovered: 0,
+    pocketCovered: 0,
     uncovered,
     totalAvailable: weeklyLimit,
     start,
     end,
     projectSegments: [],
+    pocketSegments: [],
   }
 }
 

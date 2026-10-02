@@ -31,6 +31,22 @@ function formatExpenseDate(date: string) {
 }
 
 function getOperationMeta(expense: Expense) {
+  if (expense.operationType === 'pocket_transfer') {
+    return {
+      label: 'Перевод из кармана',
+      className: 'bg-violet-500/10 text-violet-300 ring-violet-500/30',
+      Icon: ArrowUpRight,
+    }
+  }
+
+  if (expense.pocketId) {
+    return {
+      label: 'Покупка из кармана',
+      className: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
+      Icon: Receipt,
+    }
+  }
+
   if (expense.operationType === 'project_withdrawal') {
     return {
       label: 'Взято из проекта',
@@ -80,6 +96,8 @@ export function ExpenseCard({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editValue, setEditValue] = useState(String(expense.amount))
   const inputRef = useRef<HTMLInputElement>(null)
+  const cancelPendingBlurRef = useRef(false)
+  const lastSavedAmountRef = useRef<number | null>(null)
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -89,7 +107,13 @@ export function ExpenseCard({
   }, [isEditing])
 
   const handleAmountClick = () => {
-    if (onEdit && (expense.operationType ?? 'expense') === 'expense') {
+    const operationType = expense.operationType ?? 'expense'
+    if (
+      onEdit &&
+      (operationType === 'expense' || operationType === 'pocket_transfer')
+    ) {
+      cancelPendingBlurRef.current = false
+      lastSavedAmountRef.current = null
       setEditValue(String(expense.amount))
       setIsEditing(true)
     }
@@ -97,8 +121,17 @@ export function ExpenseCard({
 
   const handleValueChange = (value: string, evaluated: number | null) => {
     if (evaluated !== null) {
+      if (cancelPendingBlurRef.current) {
+        cancelPendingBlurRef.current = false
+        return
+      }
       // Evaluation complete (blur/Enter) - save and exit edit mode
-      if (evaluated !== expense.amount && evaluated > 0) {
+      if (
+        evaluated !== expense.amount &&
+        evaluated > 0 &&
+        lastSavedAmountRef.current !== evaluated
+      ) {
+        lastSavedAmountRef.current = evaluated
         onEdit?.(expense.id, { amount: evaluated })
       }
       setIsEditing(false)
@@ -114,10 +147,21 @@ export function ExpenseCard({
     setIsEditing(false)
   }
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Escape') return
+    event.preventDefault()
+    cancelPendingBlurRef.current = true
+    setEditValue(String(expense.amount))
+    setIsEditing(false)
+    event.currentTarget.blur()
+  }
+
   const operationMeta = getOperationMeta(expense)
   const OperationIcon = operationMeta.Icon
   const canEditAmount =
-    Boolean(onEdit) && (expense.operationType ?? 'expense') === 'expense'
+    Boolean(onEdit) &&
+    ((expense.operationType ?? 'expense') === 'expense' ||
+      expense.operationType === 'pocket_transfer')
 
   // Enhanced contrast with border-zinc-700 and bg-zinc-900/70, shadow-md for depth, hover states for feedback
   return (
@@ -160,6 +204,7 @@ export function ExpenseCard({
               value={editValue}
               onValueChange={handleValueChange}
               onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               min={0}
               className="w-24 sm:w-20 text-right text-base sm:text-sm font-semibold min-h-11"
               aria-label="edit amount"

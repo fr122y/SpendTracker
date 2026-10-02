@@ -30,6 +30,12 @@ Server Actions and shared query infrastructure for the application.
 - `setWeeklyLimitForWeek(effectiveWeekStart, amount)`: upsert a personal
   weekly limit from a selected week forward
 - `getSharedBudgets()`: list shared budgets where the current user is a member
+- `getPockets()`, `createPocket(name)`, `renamePocket(id, name)`,
+  `archivePocket(id)`: manage the current user's persistent personal pockets
+- `getPocketMonthBudgets(pocketId)`,
+  `initializePocketMonthBudget(pocketId, period)`,
+  `setPocketMonthBudget(pocketId, period, budget)`: read, initialize from the
+  latest prior saved period, or update a pocket's monthly budget
 - `createSharedBudget(data)`: create a shared budget, owner membership, and
   initial weekly limit
 - `archiveSharedBudget(sharedBudgetId)`: archive a shared budget owned by the
@@ -56,6 +62,9 @@ Server Actions and shared query infrastructure for the application.
   active categories from that same shared budget
 - Expense reads return the current user's private expenses plus shared-budget
   expenses from budgets where the current user is a member
+- Pocket purchases and transfers use the shared expense-operation stream with
+  `pocketId`; Server Actions verify pocket ownership and reject mixed project or
+  shared-budget links
 - Shared expenses cannot be linked to project operations; project money remains
   private task-scoped behavior until a later product decision
 - Shared budget invite tokens are stored as hashes and accepted through Server

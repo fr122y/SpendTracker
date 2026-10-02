@@ -34,7 +34,7 @@ function formatDateRussian(date: Date): string {
 
 export function ExpenseLog() {
   const [operationFilter, setOperationFilter] = useState<
-    'all' | 'expenses' | 'project' | 'movement'
+    'all' | 'expenses' | 'project' | 'pocket' | 'movement'
   >('all')
   const [scopeFilter, setScopeFilter] = useState<'all' | 'personal' | 'shared'>(
     'all'
@@ -67,6 +67,9 @@ export function ExpenseLog() {
     }
     if (operationFilter === 'project') {
       return Boolean(expense.projectId)
+    }
+    if (operationFilter === 'pocket') {
+      return Boolean(expense.pocketId)
     }
     if (operationFilter === 'movement') {
       return (expense.operationType ?? 'expense') !== 'expense'
@@ -119,6 +122,7 @@ export function ExpenseLog() {
             ['all', 'Все'],
             ['expenses', 'Расходы'],
             ['project', 'Проекты'],
+            ['pocket', 'Карманы'],
             ['movement', 'Движение'],
           ] as const
         ).map(([value, label]) => (

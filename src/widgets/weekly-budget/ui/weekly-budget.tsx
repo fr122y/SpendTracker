@@ -4,6 +4,7 @@ import { Archive, Copy, Link2, Plus, Users } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useExpenseStore } from '@/entities/expense'
+import { usePockets } from '@/entities/pocket'
 import { useProjectStore } from '@/entities/project'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
@@ -61,10 +62,12 @@ function BudgetProgress({
   coverage,
   label,
   projectById,
+  pocketById,
 }: {
   coverage: WeeklyBudgetCoverage
   label: string
   projectById?: Map<string, Project>
+  pocketById?: Map<string, { id: string; name: string }>
 }) {
   const isOverBudget = coverage.uncovered > 0
   const progressMax = Math.max(
@@ -104,7 +107,7 @@ function BudgetProgress({
             }}
             title="Личный бюджет"
           />
-          {coverage.projectSegments.map((segment) => {
+          {(coverage.projectSegments ?? []).map((segment) => {
             const project = projectById?.get(segment.projectId)
             return (
               <div
@@ -115,6 +118,19 @@ function BudgetProgress({
                   backgroundColor: project?.color ?? '#38bdf8',
                 }}
                 title={project?.name ?? 'Проектная добавка'}
+              />
+            )
+          })}
+          {(coverage.pocketSegments ?? []).map((segment) => {
+            const pocket = pocketById?.get(segment.pocketId)
+            return (
+              <div
+                key={segment.pocketId}
+                className="h-full bg-violet-400 transition-all duration-500"
+                style={{
+                  width: getSegmentWidth(segment.covered, progressMax),
+                }}
+                title={pocket?.name ?? 'Перевод из кармана'}
               />
             )
           })}
@@ -179,12 +195,14 @@ function PersonalBudgetSection({
   inputValue,
   onLimitChange,
   projectById,
+  pocketById,
 }: {
   coverage: WeeklyBudgetCoverage
   weeklyLimit: number
   inputValue: string
   onLimitChange: (value: string, evaluated: number | null) => void
   projectById: Map<string, Project>
+  pocketById: Map<string, { id: string; name: string }>
 }) {
   return (
     <section className="space-y-3">
@@ -196,6 +214,7 @@ function PersonalBudgetSection({
         coverage={coverage}
         label="Покрытие недели"
         projectById={projectById}
+        pocketById={pocketById}
       />
       <BudgetSummary
         coverage={coverage}
@@ -211,12 +230,28 @@ function PersonalBudgetSection({
               {formatCurrency(coverage.projectTopUp)}
             </span>
           </span>
+          {coverage.pocketTopUp > 0 && (
+            <span className="flex flex-col gap-0.5">
+              <span className="text-zinc-500">Переводы из карманов</span>
+              <span className="whitespace-nowrap font-semibold text-violet-300">
+                {formatCurrency(coverage.pocketTopUp)}
+              </span>
+            </span>
+          )}
           <span className="flex flex-col gap-0.5">
             <span className="text-zinc-500">Покрыто проектами</span>
             <span className="whitespace-nowrap font-semibold text-sky-300">
               {formatCurrency(coverage.projectCovered)}
             </span>
           </span>
+          {coverage.pocketTopUp > 0 && (
+            <span className="flex flex-col gap-0.5">
+              <span className="text-zinc-500">Покрыто карманами</span>
+              <span className="whitespace-nowrap font-semibold text-violet-300">
+                {formatCurrency(coverage.pocketCovered)}
+              </span>
+            </span>
+          )}
           {coverage.uncovered > 0 && (
             <span className="flex flex-col gap-0.5">
               <span className="text-zinc-500">Сверх бюджета</span>
@@ -242,6 +277,27 @@ function PersonalBudgetSection({
                   />
                   <span className="min-w-0 truncate">
                     {project?.name ?? 'Проект'}
+                  </span>
+                  <span className="whitespace-nowrap text-zinc-500">
+                    {formatCurrency(segment.available)}
+                  </span>
+                </span>
+              )
+            })}
+          </div>
+        )}
+        {(coverage.pocketSegments ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1.5 text-xs sm:text-sm">
+            {coverage.pocketSegments.map((segment) => {
+              const pocket = pocketById.get(segment.pocketId)
+              return (
+                <span
+                  key={segment.pocketId}
+                  className="inline-flex max-w-full min-w-0 items-center gap-1.5 text-zinc-400"
+                >
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-violet-400" />
+                  <span className="min-w-0 truncate">
+                    {pocket?.name ?? 'Карман'}
                   </span>
                   <span className="whitespace-nowrap text-zinc-500">
                     {formatCurrency(segment.available)}
@@ -567,6 +623,7 @@ export function WeeklyBudget() {
   )
   const { data: sharedBudgets = [], isLoading: isSharedBudgetsLoading } =
     useSharedBudgets()
+  const { data: pockets = [], isLoading: arePocketsLoading } = usePockets()
   const [inputValue, setInputValue] = useState(String(weeklyLimit))
 
   useEffect(() => {
@@ -591,11 +648,16 @@ export function WeeklyBudget() {
     () => new Map(projects.map((project) => [project.id, project])),
     [projects]
   )
+  const pocketById = useMemo(
+    () => new Map(pockets.map((pocket) => [pocket.id, pocket])),
+    [pockets]
+  )
 
   if (
     isSettingsLoading ||
     isExpensesLoading ||
     isProjectsLoading ||
+    arePocketsLoading ||
     isSharedBudgetsLoading
   ) {
     return <WeeklyBudgetSkeleton />
@@ -628,6 +690,7 @@ export function WeeklyBudget() {
         inputValue={inputValue}
         onLimitChange={handleLimitChange}
         projectById={projectById}
+        pocketById={pocketById}
       />
 
       <SharedBudgetSection

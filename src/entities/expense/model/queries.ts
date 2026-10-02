@@ -11,7 +11,7 @@ import {
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
 
-import type { Expense } from '@/shared/types'
+import type { AddExpenseInput, Expense } from '@/shared/types'
 
 export function useExpenses() {
   return useQuery({
@@ -24,15 +24,19 @@ export function useAddExpense() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: Omit<Expense, 'id'>) => addExpenseAction(data),
+    mutationFn: (data: AddExpenseInput) => addExpenseAction(data),
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
       const previous = queryClient.getQueryData<Expense[]>(
         queryKeys.expenses.all
       )
+      const isPocketTransfer = data.operationType === 'pocket_transfer'
       const optimisticExpense: Expense = {
         id: `temp-${crypto.randomUUID()}`,
         ...data,
+        category:
+          data.category ?? (isPocketTransfer ? 'Перевод из кармана' : ''),
+        emoji: data.emoji ?? (isPocketTransfer ? '↗️' : ''),
       }
       queryClient.setQueryData(
         queryKeys.expenses.all,
@@ -135,6 +139,7 @@ export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
         category: expense.category,
         emoji: expense.emoji,
         projectId: expense.projectId,
+        pocketId: expense.pocketId,
         sharedBudgetId: expense.sharedBudgetId,
         sharedBudgetCategoryId: expense.sharedBudgetCategoryId,
         sharedBudgetName: expense.sharedBudgetName,

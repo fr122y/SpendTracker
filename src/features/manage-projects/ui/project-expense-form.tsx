@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 
-import { useCategoryStore } from '@/entities/category'
+import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { useCategorize } from '@/features/add-expense/model/use-categorize'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 

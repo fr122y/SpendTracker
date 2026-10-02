@@ -4,6 +4,7 @@ export type MoneyOperationType =
   | 'expense'
   | 'project_withdrawal'
   | 'project_return'
+  | 'pocket_transfer'
 
 // Expense entity
 export interface Expense {
@@ -14,6 +15,7 @@ export interface Expense {
   category: string // Name of the category
   emoji: string
   projectId?: string // Optional
+  pocketId?: string // Optional personal pocket link
   sharedBudgetId?: string
   sharedBudgetCategoryId?: string
   authorUserId?: string
@@ -21,6 +23,9 @@ export interface Expense {
   sharedBudgetName?: string
   operationType?: MoneyOperationType
 }
+
+export type AddExpenseInput = Omit<Expense, 'id' | 'category' | 'emoji'> &
+  Partial<Pick<Expense, 'category' | 'emoji'>>
 
 export type SharedBudgetRole = 'owner' | 'member'
 
@@ -100,6 +105,19 @@ export interface Project {
   createdAt: string
 }
 
+export interface Pocket {
+  id: string
+  name: string
+  archivedAt?: string
+  createdAt: string
+}
+
+export interface PocketMonthBudget {
+  pocketId: string
+  period: string // YYYY-MM
+  budget: number
+}
+
 // Savings bucket
 export interface AllocationBucket {
   id: string
@@ -116,6 +134,7 @@ export type WidgetId =
   | 'WEEKLY_BUDGET'
   | 'SAVINGS'
   | 'PROJECTS'
+  | 'POCKETS'
   | 'CATEGORIES'
 
 export interface ColumnConfig {

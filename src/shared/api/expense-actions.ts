@@ -5,6 +5,7 @@ import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 import { auth } from '@/shared/auth'
 import {
   db,
+  categories,
   expenses,
   sharedBudgetMembers,
   sharedBudgets,
@@ -12,12 +13,20 @@ import {
 } from '@/shared/db'
 
 import {
+  assertCanUsePocket,
+  assertValidOperationAmount,
+  assertValidOperationDate,
+  POCKET_TRANSFER_CATEGORY,
+  POCKET_TRANSFER_EMOJI,
+  getPocketForUser,
+} from './pocket-helpers'
+import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
 } from './shared-budget-actions'
 import { getSharedCategoryForExpense } from './shared-category-actions'
 
-import type { Expense } from '@/shared/types'
+import type { AddExpenseInput, Expense } from '@/shared/types'
 
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
 const PROJECT_MONEY_EMOJI = '💼'
@@ -60,6 +69,7 @@ export async function getExpenses(): Promise<Expense[]> {
       category: expenses.category,
       emoji: expenses.emoji,
       projectId: expenses.projectId,
+      pocketId: expenses.pocketId,
       sharedBudgetId: expenses.sharedBudgetId,
       sharedBudgetCategoryId: expenses.sharedBudgetCategoryId,
       sharedBudgetName: sharedBudgets.name,
@@ -73,6 +83,7 @@ export async function getExpenses(): Promise<Expense[]> {
   return rows.map((row) => ({
     ...row,
     projectId: row.projectId ?? undefined,
+    pocketId: row.pocketId ?? undefined,
     sharedBudgetId: row.sharedBudgetId ?? undefined,
     sharedBudgetCategoryId: row.sharedBudgetCategoryId ?? undefined,
     authorName: row.authorName ?? undefined,
@@ -81,15 +92,35 @@ export async function getExpenses(): Promise<Expense[]> {
   }))
 }
 
-export async function addExpense(data: Omit<Expense, 'id'>): Promise<Expense> {
+export async function addExpense(data: AddExpenseInput): Promise<Expense> {
   const userId = await getUserId()
+  assertValidOperationAmount(data.amount)
+  assertValidOperationDate(data.date)
+  if (!data.description.trim()) {
+    throw new Error('Operation comment is required')
+  }
   const id = crypto.randomUUID()
   const operationType = data.operationType ?? 'expense'
-  const isProjectMovement = operationType !== 'expense'
+  const isProjectMovement =
+    operationType === 'project_withdrawal' || operationType === 'project_return'
+  const isPocketTransfer = operationType === 'pocket_transfer'
   const isSharedExpense = Boolean(data.sharedBudgetId)
 
   if (isProjectMovement && !data.projectId) {
     throw new Error('Project operation requires projectId')
+  }
+
+  if (isPocketTransfer && !data.pocketId) {
+    throw new Error('Pocket transfer requires pocketId')
+  }
+
+  if (
+    data.pocketId &&
+    (data.projectId || data.sharedBudgetId || isProjectMovement)
+  ) {
+    throw new Error(
+      'Pocket operations cannot be linked to projects or shared budgets'
+    )
   }
 
   if (isSharedExpense && (data.projectId || isProjectMovement)) {
@@ -98,6 +129,10 @@ export async function addExpense(data: Omit<Expense, 'id'>): Promise<Expense> {
 
   if (data.sharedBudgetId) {
     await assertCanUseSharedBudget(data.sharedBudgetId, userId)
+  }
+
+  if (data.pocketId) {
+    await assertCanUsePocket(data.pocketId, userId)
   }
 
   if (isSharedExpense && !data.sharedBudgetCategoryId) {
@@ -113,19 +148,48 @@ export async function addExpense(data: Omit<Expense, 'id'>): Promise<Expense> {
         )
       : undefined
 
+  let pocketCategory: { name: string; emoji: string } | undefined
+  if (data.pocketId && !isPocketTransfer) {
+    if (!data.category?.trim()) {
+      throw new Error('Pocket purchases require a category')
+    }
+    const [category] = await db
+      .select({ name: categories.name, emoji: categories.emoji })
+      .from(categories)
+      .where(
+        and(eq(categories.userId, userId), eq(categories.name, data.category))
+      )
+    if (!category) {
+      throw new Error('Pocket purchase category not found')
+    }
+    pocketCategory = category
+  }
+
+  if (
+    !isProjectMovement &&
+    !isPocketTransfer &&
+    (!data.category?.trim() || !data.emoji?.trim())
+  ) {
+    throw new Error('Expense category and emoji are required')
+  }
+
+  const category = isPocketTransfer
+    ? POCKET_TRANSFER_CATEGORY
+    : (sharedCategory?.name ?? pocketCategory?.name ?? data.category!)
+  const emoji = isPocketTransfer
+    ? POCKET_TRANSFER_EMOJI
+    : (sharedCategory?.emoji ?? pocketCategory?.emoji ?? data.emoji!)
+
   await db.insert(expenses).values({
     id,
     userId,
     description: data.description,
     amount: data.amount,
     date: data.date,
-    category: isProjectMovement
-      ? PROJECT_MONEY_CATEGORY
-      : (sharedCategory?.name ?? data.category),
-    emoji: isProjectMovement
-      ? PROJECT_MONEY_EMOJI
-      : (sharedCategory?.emoji ?? data.emoji),
+    category: isProjectMovement ? PROJECT_MONEY_CATEGORY : category,
+    emoji: isProjectMovement ? PROJECT_MONEY_EMOJI : emoji,
     projectId: data.projectId ?? null,
+    pocketId: data.pocketId ?? null,
     sharedBudgetId: data.sharedBudgetId ?? null,
     sharedBudgetCategoryId: data.sharedBudgetCategoryId ?? null,
     operationType,
@@ -134,12 +198,8 @@ export async function addExpense(data: Omit<Expense, 'id'>): Promise<Expense> {
   return {
     id,
     ...data,
-    category: isProjectMovement
-      ? PROJECT_MONEY_CATEGORY
-      : (sharedCategory?.name ?? data.category),
-    emoji: isProjectMovement
-      ? PROJECT_MONEY_EMOJI
-      : (sharedCategory?.emoji ?? data.emoji),
+    category: isProjectMovement ? PROJECT_MONEY_CATEGORY : category,
+    emoji: isProjectMovement ? PROJECT_MONEY_EMOJI : emoji,
     sharedBudgetId: data.sharedBudgetId,
     sharedBudgetCategoryId: data.sharedBudgetCategoryId,
     authorUserId: userId,
@@ -177,6 +237,7 @@ export async function updateExpense(
     .select({
       userId: expenses.userId,
       projectId: expenses.projectId,
+      pocketId: expenses.pocketId,
       sharedBudgetId: expenses.sharedBudgetId,
       sharedBudgetCategoryId: expenses.sharedBudgetCategoryId,
       operationType: expenses.operationType,
@@ -190,6 +251,10 @@ export async function updateExpense(
     await assertCanManageSharedBudgetExpense(existing.sharedBudgetId, userId)
   } else if (existing.userId !== userId) {
     throw new Error('Expense not found')
+  }
+
+  if (existing.pocketId) {
+    await getPocketForUser(existing.pocketId, userId)
   }
 
   if (
@@ -220,10 +285,70 @@ export async function updateExpense(
   const nextSharedBudgetId = existing.sharedBudgetId
 
   if (
+    existing.pocketId &&
+    (data.pocketId !== undefined ||
+      data.operationType !== undefined ||
+      data.projectId !== undefined)
+  ) {
+    throw new Error('Pocket operation type and link cannot be changed')
+  }
+
+  if (
+    data.pocketId !== undefined &&
+    (data.pocketId ?? null) !== (existing.pocketId ?? null)
+  ) {
+    throw new Error('Expense pocket scope cannot be changed')
+  }
+
+  if (
+    existing.pocketId &&
+    (nextOperationType === 'pocket_transfer' ||
+      existing.operationType === 'pocket_transfer')
+  ) {
+    if (data.category !== undefined || data.emoji !== undefined) {
+      throw new Error('Pocket transfer category metadata cannot be changed')
+    }
+  }
+
+  if (data.amount !== undefined) {
+    if (
+      existing.pocketId &&
+      existing.operationType === 'pocket_transfer' &&
+      Number.isFinite(data.amount) &&
+      data.amount >= 0
+    ) {
+      // A reduced transfer is the return event; zero represents a full return.
+    } else {
+      assertValidOperationAmount(data.amount)
+    }
+  }
+  if (data.date !== undefined) assertValidOperationDate(data.date)
+  if (data.description !== undefined && !data.description.trim()) {
+    throw new Error('Operation comment is required')
+  }
+
+  if (
     nextSharedBudgetId &&
     (nextProjectId || nextOperationType !== 'expense')
   ) {
     throw new Error('Shared expenses cannot be linked to project operations')
+  }
+
+  if (data.operationType === 'pocket_transfer' && !existing.pocketId) {
+    throw new Error('Pocket transfer requires an existing pocket link')
+  }
+
+  if (existing.pocketId && data.category !== undefined) {
+    const [category] = await db
+      .select({ name: categories.name, emoji: categories.emoji })
+      .from(categories)
+      .where(
+        and(eq(categories.userId, userId), eq(categories.name, data.category))
+      )
+    if (!category) {
+      throw new Error('Pocket purchase category not found')
+    }
+    data = { ...data, category: category.name, emoji: category.emoji }
   }
 
   const patch: Partial<{

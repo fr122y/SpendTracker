@@ -17,6 +17,9 @@ jest.mock('@/widgets/expense-log', () => ({
 jest.mock('@/widgets/projects', () => ({
   ProjectsSection: () => null,
 }))
+jest.mock('@/widgets/pockets', () => ({
+  PocketsSection: () => null,
+}))
 jest.mock('@/widgets/savings', () => ({
   SavingsSection: () => null,
 }))
@@ -37,6 +40,7 @@ const ALL_WIDGET_IDS: WidgetId[] = [
   'WEEKLY_BUDGET',
   'SAVINGS',
   'PROJECTS',
+  'POCKETS',
   'CATEGORIES',
 ]
 
@@ -48,8 +52,8 @@ describe('Widget Registry', () => {
       })
     })
 
-    it('should have exactly 8 widgets registered', () => {
-      expect(Object.keys(WIDGET_REGISTRY)).toHaveLength(8)
+    it('should have exactly 9 widgets registered', () => {
+      expect(Object.keys(WIDGET_REGISTRY)).toHaveLength(9)
     })
 
     it('should only contain valid widget IDs', () => {

@@ -342,31 +342,88 @@ export const sharedBudgetKeywordMappings = pgTable(
   ]
 )
 
-export const expenses = pgTable('expense', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  description: text('description').notNull(),
-  amount: real('amount').notNull(),
-  date: text('date').notNull(),
-  category: text('category').notNull(),
-  emoji: text('emoji').notNull(),
-  projectId: text('projectId'),
-  sharedBudgetId: text('sharedBudgetId').references(() => sharedBudgets.id, {
-    onDelete: 'set null',
-  }),
-  sharedBudgetCategoryId: text('sharedBudgetCategoryId').references(
-    () => sharedBudgetCategories.id,
-    { onDelete: 'set null' }
-  ),
-  operationType: text('operationType').notNull().default('expense'),
-  createdAt: timestamp('createdAt', { mode: 'date' })
-    .notNull()
-    .default(sql`now()`),
-})
+export const pockets = pgTable(
+  'pocket',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    archivedAt: timestamp('archivedAt', { mode: 'date' }),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [index('pocket_user_idx').on(table.userId)]
+)
+
+export const pocketMonthBudgets = pgTable(
+  'pocket_month_budget',
+  {
+    pocketId: text('pocketId')
+      .notNull()
+      .references(() => pockets.id, { onDelete: 'restrict' }),
+    period: text('period').notNull(),
+    budget: real('budget').notNull(),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    primaryKey({ columns: [table.pocketId, table.period] }),
+    check(
+      'pocket_month_budget_period_check',
+      sql`${table.period} ~ '^\\d{4}-(0[1-9]|1[0-2])$'`
+    ),
+    check('pocket_month_budget_amount_check', sql`${table.budget} >= 0`),
+    index('pocket_month_budget_period_idx').on(table.period),
+  ]
+)
+
+export const expenses = pgTable(
+  'expense',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    description: text('description').notNull(),
+    amount: real('amount').notNull(),
+    date: text('date').notNull(),
+    category: text('category').notNull(),
+    emoji: text('emoji').notNull(),
+    projectId: text('projectId'),
+    pocketId: text('pocketId').references(() => pockets.id, {
+      onDelete: 'restrict',
+    }),
+    sharedBudgetId: text('sharedBudgetId').references(() => sharedBudgets.id, {
+      onDelete: 'set null',
+    }),
+    sharedBudgetCategoryId: text('sharedBudgetCategoryId').references(
+      () => sharedBudgetCategories.id,
+      { onDelete: 'set null' }
+    ),
+    operationType: text('operationType').notNull().default('expense'),
+    createdAt: timestamp('createdAt', { mode: 'date' })
+      .notNull()
+      .default(sql`now()`),
+  },
+  (table) => [
+    check(
+      'expense_pocket_scope_check',
+      sql`${table.pocketId} is null or (${table.projectId} is null and ${table.sharedBudgetId} is null and ${table.operationType} in ('expense', 'pocket_transfer'))`
+    ),
+    check(
+      'expense_pocket_transfer_link_check',
+      sql`${table.operationType} <> 'pocket_transfer' or ${table.pocketId} is not null`
+    ),
+  ]
+)
 
 export const categories = pgTable(
   'category',

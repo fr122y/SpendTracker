@@ -35,6 +35,10 @@ jest.mock('@/features/widget-registry', () => ({
       title: 'Проекты',
       icon: () => <div data-testid="icon-projects">ProjectsIcon</div>,
     },
+    POCKETS: {
+      title: 'Карманы',
+      icon: () => <div data-testid="icon-pockets">PocketsIcon</div>,
+    },
     CATEGORIES: {
       title: 'Категории',
       icon: () => <div data-testid="icon-categories">CategoriesIcon</div>,
@@ -107,6 +111,7 @@ describe('MobileWidgetList', () => {
         'WEEKLY_BUDGET',
         'SAVINGS',
         'PROJECTS',
+        'POCKETS',
         'CATEGORIES',
       ]
 
@@ -119,6 +124,7 @@ describe('MobileWidgetList', () => {
       expect(screen.getByText('Недельный бюджет')).toBeInTheDocument()
       expect(screen.getByText('Накопления')).toBeInTheDocument()
       expect(screen.getByText('Проекты')).toBeInTheDocument()
+      expect(screen.getByText('Карманы')).toBeInTheDocument()
       expect(screen.getByText('Категории')).toBeInTheDocument()
     })
 
@@ -340,13 +346,14 @@ describe('MobileWidgetList', () => {
         'WEEKLY_BUDGET',
         'SAVINGS',
         'PROJECTS',
+        'POCKETS',
         'CATEGORIES',
       ]
 
       render(<MobileWidgetList widgets={widgets} onSelect={mockOnSelect} />)
 
       const buttons = screen.getAllByRole('button')
-      expect(buttons).toHaveLength(8)
+      expect(buttons).toHaveLength(9)
     })
 
     it('maintains widget order as provided in props', () => {

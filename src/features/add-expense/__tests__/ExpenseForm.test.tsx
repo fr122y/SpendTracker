@@ -46,6 +46,18 @@ jest.mock('@/entities/expense', () => ({
 }))
 
 jest.mock('@/entities/category', () => ({
+  useCategorize: () => ({
+    categorize: mockCategorize,
+    saveMappingAndGetResult: mockSaveMapping,
+    mappingsLoaded: true,
+    isSavingMapping: false,
+  }),
+  useSharedCategorize: () => ({
+    categorize: mockCategorizeShared,
+    saveMappingAndGetResult: mockSaveSharedMapping,
+    mappingsLoaded: true,
+    isSavingMapping: false,
+  }),
   useCategoryStore: (
     selector: (state: { categories: typeof mockCategories }) => unknown
   ) => selector({ categories: mockCategories }),
@@ -67,21 +79,6 @@ jest.mock('@/entities/project', () => ({
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: new Date('2025-01-15') }),
-}))
-
-jest.mock('../model/use-categorize', () => ({
-  useCategorize: () => ({
-    categorize: mockCategorize,
-    saveMappingAndGetResult: mockSaveMapping,
-    mappingsLoaded: true,
-    isSavingMapping: false,
-  }),
-  useSharedCategorize: () => ({
-    categorize: mockCategorizeShared,
-    saveMappingAndGetResult: mockSaveSharedMapping,
-    mappingsLoaded: true,
-    isSavingMapping: false,
-  }),
 }))
 
 describe('ExpenseForm', () => {

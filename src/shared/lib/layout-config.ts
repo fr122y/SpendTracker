@@ -8,6 +8,7 @@ export const ALL_WIDGET_IDS: WidgetId[] = [
   'WEEKLY_BUDGET',
   'SAVINGS',
   'PROJECTS',
+  'POCKETS',
   'CATEGORIES',
 ]
 
@@ -22,7 +23,7 @@ export const DEFAULT_LAYOUT: LayoutConfig = {
     {
       id: 'col-3',
       width: 34,
-      widgets: ['WEEKLY_BUDGET', 'SAVINGS'],
+      widgets: ['WEEKLY_BUDGET', 'SAVINGS', 'POCKETS'],
     },
   ],
 }
