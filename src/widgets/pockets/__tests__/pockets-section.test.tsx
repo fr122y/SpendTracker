@@ -353,58 +353,54 @@ describe('PocketsSection', () => {
     )
   })
 
-  it('allows editing transfer amount, date, and comment from history', () => {
+  it('edits transfer amount in the only history card and leaves metadata read-only', () => {
     render(<PocketsSection />)
     fireEvent.click(screen.getByRole('button', { name: /Переводы/ }))
 
     expect(
       screen.queryByRole('textbox', { name: /edit amount/i })
     ).not.toBeInTheDocument()
+    expect(screen.getByText('На текущие расходы')).toBeInTheDocument()
+    expect(screen.getByText('20.01.2026')).toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Комментарий операции transfer-1')
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByLabelText('Дата операции transfer-1')
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Изменить категорию' })
+    ).not.toBeInTheDocument()
+
     fireEvent.click(screen.getByRole('button', { name: /edit amount/i }))
     fireEvent.change(screen.getByRole('textbox', { name: /edit amount/i }), {
       target: { value: '150' },
     })
     fireEvent.blur(screen.getByRole('textbox', { name: /edit amount/i }))
-    fireEvent.change(screen.getByLabelText('Дата операции transfer-1'), {
-      target: { value: '2026-01-19' },
-    })
-    fireEvent.change(screen.getByLabelText('Комментарий операции transfer-1'), {
-      target: { value: 'Часть вернулась' },
-    })
-    fireEvent.blur(screen.getByLabelText('Комментарий операции transfer-1'))
 
     expect(mockUpdateExpense).toHaveBeenCalledWith({
       id: 'transfer-1',
       data: { amount: 150 },
     })
-    expect(mockUpdateExpense).toHaveBeenCalledWith({
-      id: 'transfer-1',
-      data: { date: '2026-01-19' },
-    })
-    expect(mockUpdateExpense).toHaveBeenCalledWith({
-      id: 'transfer-1',
-      data: { description: 'Часть вернулась' },
-    })
   })
 
-  it('keeps purchase category compact until the user asks to edit it', () => {
+  it('renders purchase metadata in the single ExpenseCard without another editor', () => {
     render(<PocketsSection />)
     fireEvent.click(screen.getByRole('button', { name: /Покупки/ }))
 
     expect(screen.getByText('Покупка из кармана')).toBeInTheDocument()
+    expect(screen.getByText('Билеты')).toBeInTheDocument()
+    expect(screen.getByText('Путешествия')).toBeInTheDocument()
+    expect(screen.getByText('10.01.2026')).toBeInTheDocument()
     expect(
-      screen.queryByLabelText('Категория операции purchase-1')
+      screen.queryByLabelText('Комментарий операции purchase-1')
     ).not.toBeInTheDocument()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Изменить категорию' }))
-    fireEvent.change(screen.getByLabelText('Категория операции purchase-1'), {
-      target: { value: 'food' },
-    })
-
-    expect(mockUpdateExpense).toHaveBeenCalledWith({
-      id: 'purchase-1',
-      data: { category: 'Еда', emoji: '🍲' },
-    })
+    expect(
+      screen.queryByLabelText('Дата операции purchase-1')
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Изменить категорию' })
+    ).not.toBeInTheDocument()
   })
 
   it.each([

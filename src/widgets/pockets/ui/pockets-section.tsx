@@ -253,11 +253,7 @@ function PocketDetail({
           {selectedOperations.length > 0 ? (
             <ul className="space-y-2">
               {selectedOperations.map((operation) => (
-                <PocketOperationRow
-                  key={operation.id}
-                  operation={operation}
-                  kind={historyKind}
-                />
+                <PocketOperationRow key={operation.id} operation={operation} />
               ))}
             </ul>
           ) : (

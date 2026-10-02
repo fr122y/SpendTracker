@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useAddExpense } from '@/entities/expense'
@@ -33,6 +33,7 @@ export function PocketOperationForm({
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [hasManualCategoryOverride, setHasManualCategoryOverride] =
     useState(false)
+  const [shouldResolveCategory, setShouldResolveCategory] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const categories = useCategoryStore((state) => state.categories)
   const addExpense = useAddExpense()
@@ -60,35 +61,70 @@ export function PocketOperationForm({
     setShowCategorySelect(false)
     setSelectedCategoryId('')
     setHasManualCategoryOverride(false)
+    setShouldResolveCategory(false)
     setIsSubmitting(false)
     onDone?.()
   }
 
-  const handleDescriptionBlur = () => {
-    if (!isPurchase || !mappingsLoaded || hasManualCategoryOverride) return
-    const normalizedDescription = description.trim()
-    if (!normalizedDescription) return
+  const resolveCategory = useCallback(
+    (value: string) => {
+      const normalizedDescription = value.trim()
+      setShouldResolveCategory(false)
+      if (!normalizedDescription) return
 
-    const result = categorize(normalizedDescription)
-    if (result.found) {
-      setSuggestedCategoryId(result.categoryId)
-      setSuggestedCategoryLabel(
-        `${result.categoryEmoji} ${result.categoryName}`
-      )
-      setSelectedCategoryId(result.categoryId)
-      setShowCategorySelect(false)
+      const result = categorize(normalizedDescription)
+      if (result.found) {
+        setSuggestedCategoryId(result.categoryId)
+        setSuggestedCategoryLabel(
+          `${result.categoryEmoji} ${result.categoryName}`
+        )
+        setSelectedCategoryId(result.categoryId)
+        setShowCategorySelect(false)
+        return
+      }
+
+      setSuggestedCategoryId(null)
+      setSuggestedCategoryLabel('')
+      setSelectedCategoryId('')
+      setShowCategorySelect(true)
+    },
+    [categorize]
+  )
+
+  const handleDescriptionBlur = () => {
+    if (!isPurchase || hasManualCategoryOverride) return
+    if (!mappingsLoaded) {
+      setShouldResolveCategory(true)
       return
     }
 
-    setSuggestedCategoryId(null)
-    setSuggestedCategoryLabel('')
-    setSelectedCategoryId('')
-    setShowCategorySelect(true)
+    resolveCategory(description)
   }
+
+  useEffect(() => {
+    if (!isPurchase || !mappingsLoaded || !shouldResolveCategory) return
+    if (hasManualCategoryOverride) {
+      setShouldResolveCategory(false)
+      return
+    }
+
+    resolveCategory(description)
+  }, [
+    description,
+    hasManualCategoryOverride,
+    isPurchase,
+    mappingsLoaded,
+    resolveCategory,
+    shouldResolveCategory,
+  ])
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!canSubmit || isBusy) return
+    if (isPurchase && !mappingsLoaded && !hasManualCategoryOverride) {
+      setShouldResolveCategory(true)
+      return
+    }
 
     setIsSubmitting(true)
     let resolvedSuggestedCategoryId = suggestedCategoryId
@@ -194,6 +230,11 @@ export function PocketOperationForm({
         onChange={(event) => setDate(event.target.value)}
         disabled={isBusy}
       />
+      {isPurchase && !mappingsLoaded && description.trim() && (
+        <p aria-live="polite" className="text-xs text-zinc-500">
+          Подбираем категорию…
+        </p>
+      )}
       {suggestedCategoryId && !showCategorySelect && isPurchase && (
         <div className="text-sm text-zinc-300">
           <span className="mr-2">Категория:</span>
