@@ -22,7 +22,7 @@ import { Button, ConfirmDialog, EmptyState, MathInput } from '@/shared/ui'
 import { PocketOperationRow } from './pocket-operation-row'
 import { PocketMonthSkeleton, PocketsSkeleton } from './pockets-skeleton'
 
-import type { Expense } from '@/shared/types'
+import type { Expense, PocketMonthBudget } from '@/shared/types'
 
 type HistoryKind = 'purchase' | 'transfer'
 
@@ -38,17 +38,18 @@ function PocketDetail({
   pocket,
   selectedDate,
   expenses,
+  monthBudget,
+  isBudgetLoading,
+  isBudgetError,
 }: {
   pocket: { id: string; name: string; archivedAt?: string | null }
   selectedDate: Date
   expenses: Expense[]
+  monthBudget: PocketMonthBudget | null | undefined
+  isBudgetLoading: boolean
+  isBudgetError: boolean
 }) {
   const period = getPeriod(selectedDate)
-  const {
-    data: monthBudget,
-    isLoading,
-    isError,
-  } = usePocketMonthBudget(pocket.id, period)
   const setMonthBudget = useSetPocketMonthBudget()
   const archivePocket = useArchivePocket()
   const [budgetDraft, setBudgetDraft] = useState<{
@@ -65,6 +66,8 @@ function PocketDetail({
   }, [period])
 
   const isArchived = Boolean(pocket.archivedAt)
+  const isLoading = isBudgetLoading
+  const isError = isBudgetError
   const isMonthLoading = isLoading && !monthBudget
   const canUseMonth = Boolean(monthBudget) && !isLoading
   const budgetInput =
@@ -365,6 +368,11 @@ export function PocketsSection() {
 
   const selectedPocket =
     pockets.find((pocket) => pocket.id === selectedPocketId) ?? pockets[0]
+  const selectedPeriod = getPeriod(selectedDate)
+  const selectedMonthBudget = usePocketMonthBudget(
+    selectedPocket?.id ?? '',
+    selectedPeriod
+  )
 
   if (isLoading || areExpensesLoading) return <PocketsSkeleton />
 
@@ -439,6 +447,9 @@ export function PocketsSection() {
               pocket={selectedPocket}
               selectedDate={selectedDate}
               expenses={expenses}
+              monthBudget={selectedMonthBudget.data}
+              isBudgetLoading={selectedMonthBudget.isLoading}
+              isBudgetError={selectedMonthBudget.isError}
             />
           )}
         </>

@@ -22,6 +22,23 @@ let mockMonthBudget: PocketMonthBudget | null | undefined = mockBudget
 let mockMonthBudgetLoading = false
 let mockMonthBudgetError = false
 let mockMonthBudgetFetching = false
+const mockUsePocketMonthBudget = jest.fn((pocketId: string, period: string) => {
+  if (!pocketId || !period) {
+    return {
+      data: undefined,
+      isLoading: false,
+      isError: false,
+      isFetching: false,
+    }
+  }
+
+  return {
+    data: mockMonthBudget,
+    isLoading: mockMonthBudgetLoading,
+    isError: mockMonthBudgetError,
+    isFetching: mockMonthBudgetFetching,
+  }
+})
 const mockAddExpense = jest.fn().mockResolvedValue(undefined)
 const mockUpdateExpense = jest.fn()
 const mockDeleteExpense = jest.fn()
@@ -60,12 +77,8 @@ jest.mock('@/entities/pocket', () => ({
     isLoading: mockPocketListLoading,
     isError: mockPocketListError,
   }),
-  usePocketMonthBudget: () => ({
-    data: mockMonthBudget,
-    isLoading: mockMonthBudgetLoading,
-    isError: mockMonthBudgetError,
-    isFetching: mockMonthBudgetFetching,
-  }),
+  usePocketMonthBudget: (pocketId: string, period: string) =>
+    mockUsePocketMonthBudget(pocketId, period),
   useCreatePocket: () => ({
     mutateAsync: mockCreatePocket,
     isPending: false,
@@ -219,6 +232,14 @@ describe('PocketsSection', () => {
     expect(
       screen.queryByRole('button', { name: 'Создать карман' })
     ).not.toBeInTheDocument()
+  })
+
+  it('starts the selected pocket month query while expenses are still loading', () => {
+    mockExpensesLoading = true
+    render(<PocketsSection />)
+
+    expect(mockUsePocketMonthBudget).toHaveBeenCalledWith('pocket-1', '2026-01')
+    expect(screen.getByTestId('pockets-skeleton')).toBeInTheDocument()
   })
 
   it('keeps cached list content when its background refresh fails', () => {

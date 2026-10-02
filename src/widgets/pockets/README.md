@@ -9,7 +9,9 @@ Shows monthly pocket budgets, usage, operations, and editable history using the 
 ## State & Data
 
 - `usePockets` loads active and archived pockets.
-- `usePocketMonthBudget` reads or initializes the selected month's budget.
+- `usePocketMonthBudget` reads or initializes the selected month's budget as
+  soon as the selected pocket is known; its query does not wait for expense
+  history to finish loading.
 - `useExpenses` supplies pocket purchase and transfer history.
 - `useSessionStore` supplies the shared dashboard date.
 - Shared `SkeletonRect` and `SkeletonText` primitives represent initial widget

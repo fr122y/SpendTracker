@@ -51,7 +51,7 @@ jest.mock('../pocket-helpers', () => ({
 import { lt } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
-import { db, pocketMonthBudgets } from '@/shared/db'
+import { db, pocketMonthBudgets, pockets } from '@/shared/db'
 
 import {
   createPocket,
@@ -124,6 +124,18 @@ function setMockPocketInitialization({
   return tx
 }
 
+function setMockExistingBudgetRead(
+  rows: Array<{ pocketId: string; period: string; budget: number }>
+) {
+  const limit = jest.fn().mockResolvedValue(rows)
+  const where = jest.fn(() => ({ limit }))
+  const innerJoin = jest.fn(() => ({ where }))
+  const from = jest.fn(() => ({ innerJoin }))
+  mockDb.select.mockReturnValueOnce({ from })
+
+  return { from, innerJoin, where, limit }
+}
+
 describe('pocket-actions', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -135,6 +147,16 @@ describe('pocket-actions', () => {
 
     await expect(getPockets()).rejects.toThrow('Unauthorized')
     expect(mockDb.select).not.toHaveBeenCalled()
+  })
+
+  it('requires authentication before reading an existing monthly budget', async () => {
+    ;(auth as jest.Mock).mockResolvedValueOnce(null)
+
+    await expect(
+      initializePocketMonthBudget('pocket-1', '2026-05')
+    ).rejects.toThrow('Unauthorized')
+    expect(mockDb.select).not.toHaveBeenCalled()
+    expect(mockDb.transaction).not.toHaveBeenCalled()
   })
 
   it('creates a trimmed pocket for the current user', async () => {
@@ -162,6 +184,7 @@ describe('pocket-actions', () => {
   })
 
   it('copies the latest earlier saved budget, not a later period', async () => {
+    setMockExistingBudgetRead([])
     const tx = setMockPocketInitialization({
       pocket: { id: 'pocket-1', archivedAt: null },
       existing: [],
@@ -184,6 +207,7 @@ describe('pocket-actions', () => {
   })
 
   it('uses zero when no earlier budget exists and returns the conflict winner', async () => {
+    setMockExistingBudgetRead([])
     const tx = setMockPocketInitialization({
       pocket: { id: 'pocket-1', archivedAt: null },
       existing: [],
@@ -209,6 +233,7 @@ describe('pocket-actions', () => {
   })
 
   it('does not initialize a missing month for an archived pocket', async () => {
+    setMockExistingBudgetRead([])
     const tx = setMockPocketInitialization({
       pocket: { id: 'pocket-1', archivedAt: new Date() },
       existing: [],
@@ -218,6 +243,65 @@ describe('pocket-actions', () => {
       initializePocketMonthBudget('pocket-1', '2026-05')
     ).resolves.toBeNull()
     expect(tx.insert).not.toHaveBeenCalled()
+  })
+
+  it('returns an owner-scoped existing snapshot without starting a transaction', async () => {
+    const budget = { pocketId: 'pocket-1', period: '2026-05', budget: 20_000 }
+    const read = setMockExistingBudgetRead([budget])
+
+    await expect(
+      initializePocketMonthBudget('pocket-1', '2026-05')
+    ).resolves.toEqual(budget)
+
+    expect(read.innerJoin).toHaveBeenCalledWith(
+      pockets,
+      expect.objectContaining({
+        column: pockets.id,
+        value: pocketMonthBudgets.pocketId,
+      })
+    )
+    expect(read.where).toHaveBeenCalledWith(
+      expect.objectContaining({
+        conditions: expect.arrayContaining([
+          { column: pockets.id, value: 'pocket-1' },
+          { column: pockets.userId, value: 'user-1' },
+          { column: pocketMonthBudgets.pocketId, value: 'pocket-1' },
+          { column: pocketMonthBudgets.period, value: '2026-05' },
+        ]),
+      })
+    )
+    expect(read.limit).toHaveBeenCalledWith(1)
+    expect(mockDb.transaction).not.toHaveBeenCalled()
+  })
+
+  it('rechecks after the lock when another initializer creates the month', async () => {
+    const budget = { pocketId: 'pocket-1', period: '2026-05', budget: 20_000 }
+    setMockExistingBudgetRead([])
+    const tx = setMockPocketInitialization({
+      pocket: { id: 'pocket-1', archivedAt: null },
+      existing: [budget],
+    })
+
+    await expect(
+      initializePocketMonthBudget('pocket-1', '2026-05')
+    ).resolves.toEqual(budget)
+
+    expect(tx.lockForUpdate).toHaveBeenCalledWith('update')
+    expect(tx.select).toHaveBeenCalledTimes(2)
+    expect(tx.insert).not.toHaveBeenCalled()
+  })
+
+  it('does not reveal a snapshot for a pocket owned by another user', async () => {
+    setMockExistingBudgetRead([])
+    setMockPocketInitialization({
+      pocket: undefined,
+      existing: [],
+    })
+
+    await expect(
+      initializePocketMonthBudget('pocket-other', '2026-05')
+    ).rejects.toThrow('Pocket not found')
+    expect(mockDb.transaction).toHaveBeenCalledTimes(1)
   })
 
   it('rejects negative budgets and updates only an existing period', async () => {

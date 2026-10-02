@@ -154,6 +154,28 @@ export async function initializePocketMonthBudget(
   const userId = await getUserId()
   assertValidPocketPeriod(period)
 
+  const [existingBudget] = await db
+    .select({
+      pocketId: pocketMonthBudgets.pocketId,
+      period: pocketMonthBudgets.period,
+      budget: pocketMonthBudgets.budget,
+    })
+    .from(pocketMonthBudgets)
+    .innerJoin(pockets, eq(pockets.id, pocketMonthBudgets.pocketId))
+    .where(
+      and(
+        eq(pockets.id, pocketId),
+        eq(pockets.userId, userId),
+        eq(pocketMonthBudgets.pocketId, pocketId),
+        eq(pocketMonthBudgets.period, period)
+      )
+    )
+    .limit(1)
+
+  if (existingBudget) {
+    return mapPocketMonthBudget(existingBudget)
+  }
+
   return db.transaction(async (transaction) => {
     const [pocket] = await transaction
       .select({ id: pockets.id, archivedAt: pockets.archivedAt })
