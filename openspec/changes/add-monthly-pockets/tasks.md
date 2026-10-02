@@ -12,7 +12,7 @@
 
 ## 3. Add the dashboard widget and editable history
 
-- [x] 3.1 Implement the responsive pockets widget and management/form feature with budget, used, remaining, purchase/transfer breakdown, journal-style auto category suggestions with manual override, amount editing and deletion in one-card monthly history, create/rename/archive controls, and shared `selectedDate`; add UI tests for the specified flows, history amount edits/deletion, archive behavior, negative remainder, and transfer reduction.
+- [x] 3.1 Implement the responsive pockets widget and management/form feature with budget, used, remaining, purchase/transfer breakdown, initial/monthly skeletons with cached-data refetch behavior, journal-style auto category suggestions with manual override, amount editing and deletion in one-card monthly history, create/rename/archive controls, and shared `selectedDate`; add UI tests for loading/error/archived-empty states and specified history flows.
 - [x] 3.2 Register the new widget in the widget ID, registry, and default/normalized layouts so existing saved layouts gain it; add tests for legacy layout normalization, widget rendering, and the shared month context.
 - [ ] 3.3 Add a dashboard end-to-end scenario that creates a pocket, changes its month budget, records a purchase and transfer, checks the totals and history, and verifies mobile access.
 

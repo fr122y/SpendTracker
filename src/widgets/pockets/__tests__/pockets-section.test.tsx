@@ -8,12 +8,20 @@ import {
 
 import { PocketsSection } from '../ui/pockets-section'
 
-import type { Expense, Pocket } from '@/shared/types'
+import type { Expense, Pocket, PocketMonthBudget } from '@/shared/types'
 
 const mockPockets: Pocket[] = [
   { id: 'pocket-1', name: 'Отпуск', createdAt: '2026-01-01' },
 ]
 const mockBudget = { pocketId: 'pocket-1', period: '2026-01', budget: 1000 }
+let mockPocketListLoading = false
+let mockPocketListError = false
+let mockExpensesLoading = false
+let mockExpensesError = false
+let mockMonthBudget: PocketMonthBudget | null | undefined = mockBudget
+let mockMonthBudgetLoading = false
+let mockMonthBudgetError = false
+let mockMonthBudgetFetching = false
 const mockAddExpense = jest.fn().mockResolvedValue(undefined)
 const mockUpdateExpense = jest.fn()
 const mockDeleteExpense = jest.fn()
@@ -47,11 +55,16 @@ const initialMockExpenses: Expense[] = [
 let mockExpenses = [...initialMockExpenses]
 
 jest.mock('@/entities/pocket', () => ({
-  usePockets: () => ({ data: mockPockets, isLoading: false, isError: false }),
+  usePockets: () => ({
+    data: mockPocketListLoading ? undefined : mockPockets,
+    isLoading: mockPocketListLoading,
+    isError: mockPocketListError,
+  }),
   usePocketMonthBudget: () => ({
-    data: mockBudget,
-    isLoading: false,
-    isError: false,
+    data: mockMonthBudget,
+    isLoading: mockMonthBudgetLoading,
+    isError: mockMonthBudgetError,
+    isFetching: mockMonthBudgetFetching,
   }),
   useCreatePocket: () => ({
     mutateAsync: mockCreatePocket,
@@ -78,7 +91,11 @@ jest.mock('@/entities/pocket', () => ({
 jest.mock('@/entities/expense', () => ({
   ExpenseCard: jest.requireActual('@/entities/expense/ui/expense-card')
     .ExpenseCard,
-  useExpenses: () => ({ data: mockExpenses, isLoading: false, isError: false }),
+  useExpenses: () => ({
+    data: mockExpensesLoading ? undefined : mockExpenses,
+    isLoading: mockExpensesLoading,
+    isError: mockExpensesError,
+  }),
   useAddExpense: () => ({
     mutateAsync: mockAddExpense,
     isPending: false,
@@ -154,6 +171,14 @@ jest.mock('@/shared/lib', () => ({
 describe('PocketsSection', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockPocketListLoading = false
+    mockPocketListError = false
+    mockExpensesLoading = false
+    mockExpensesError = false
+    mockMonthBudget = mockBudget
+    mockMonthBudgetLoading = false
+    mockMonthBudgetError = false
+    mockMonthBudgetFetching = false
     mockExpenses = [...initialMockExpenses]
     mockCategorize.mockReturnValue({ found: false })
     mockSaveMapping.mockResolvedValue(undefined)
@@ -180,6 +205,133 @@ describe('PocketsSection', () => {
       screen.queryByLabelText(/выберите месяц|дата кармана/i)
     ).not.toBeInTheDocument()
     expect(screen.queryByText(/января 2026/)).not.toBeInTheDocument()
+  })
+
+  it('shows card-shaped skeletons while pockets or expenses first load', () => {
+    mockPocketListLoading = true
+    mockExpensesLoading = true
+    render(<PocketsSection />)
+
+    expect(
+      screen.getByRole('status', { name: 'Загружаем карманы' })
+    ).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByTestId('pockets-skeleton')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Создать карман' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps cached list content when its background refresh fails', () => {
+    mockPocketListError = true
+    mockExpensesError = true
+    render(<PocketsSection />)
+
+    expect(
+      screen.getByRole('region', { name: 'Карман Отпуск' })
+    ).toBeInTheDocument()
+    expect(screen.getByTestId('pocket-used-pocket-1')).toHaveTextContent(
+      '1 500 ₽'
+    )
+    expect(
+      screen.getByText(
+        'Не удалось обновить данные. Показаны сохранённые значения.'
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByTestId('pockets-skeleton')).not.toBeInTheDocument()
+  })
+
+  it('keeps the pocket header visible with disabled actions while the month loads', () => {
+    mockMonthBudget = undefined
+    mockMonthBudgetLoading = true
+    render(<PocketsSection />)
+
+    const region = screen.getByRole('region', { name: 'Карман Отпуск' })
+    expect(within(region).getByText('Отпуск')).toBeInTheDocument()
+    expect(
+      within(region).getByRole('status', { name: 'Загружаем бюджет месяца' })
+    ).toBeInTheDocument()
+    expect(
+      within(region).getByTestId('pocket-month-skeleton')
+    ).toBeInTheDocument()
+    expect(
+      within(region).getByRole('button', { name: 'Переименовать' })
+    ).toBeDisabled()
+    expect(
+      within(region).getByRole('button', { name: /Архивировать/ })
+    ).toBeDisabled()
+    expect(
+      within(region).queryByRole('button', { name: 'Добавить покупку' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps cached month data visible during background refetch', () => {
+    mockMonthBudgetFetching = true
+    render(<PocketsSection />)
+
+    const region = screen.getByRole('region', { name: 'Карман Отпуск' })
+    expect(within(region).getByLabelText('Бюджет кармана Отпуск')).toHaveValue(
+      '1000'
+    )
+    expect(
+      within(region).getByTestId('pocket-used-pocket-1')
+    ).toHaveTextContent('1 500 ₽')
+    expect(
+      within(region).queryByTestId('pocket-month-skeleton')
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps cached month data visible when a background refetch fails', () => {
+    mockMonthBudgetFetching = true
+    mockMonthBudgetError = true
+    render(<PocketsSection />)
+
+    const region = screen.getByRole('region', { name: 'Карман Отпуск' })
+    expect(within(region).getByLabelText('Бюджет кармана Отпуск')).toHaveValue(
+      '1000'
+    )
+    expect(
+      within(region).getByTestId('pocket-used-pocket-1')
+    ).toHaveTextContent('1 500 ₽')
+    expect(
+      within(region).getByText(
+        'Не удалось обновить бюджет. Показаны сохранённые данные.'
+      )
+    ).toBeInTheDocument()
+  })
+
+  it('shows a resolved empty budget for an archived month without a snapshot', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    mockMonthBudget = null
+    render(<PocketsSection />)
+
+    const region = screen.getByRole('region', { name: 'Карман Отпуск' })
+    expect(within(region).getByText('Бюджет не сохранён')).toBeInTheDocument()
+    expect(
+      within(region).getByTestId('pocket-used-pocket-1')
+    ).toHaveTextContent('1 500 ₽')
+    expect(
+      within(region).getByTestId('pocket-remaining-pocket-1')
+    ).toHaveTextContent('—')
+    expect(
+      within(region).queryByTestId('pocket-month-skeleton')
+    ).not.toBeInTheDocument()
+    expect(
+      within(region).queryByRole('button', { name: 'Добавить покупку' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows a month error instead of leaving loading placeholders indefinitely', () => {
+    mockMonthBudget = undefined
+    mockMonthBudgetError = true
+    render(<PocketsSection />)
+
+    const region = screen.getByRole('region', { name: 'Карман Отпуск' })
+    expect(
+      within(region).getByText('Не удалось загрузить бюджет выбранного месяца.')
+    ).toBeInTheDocument()
+    expect(
+      within(region).queryByTestId('pocket-month-skeleton')
+    ).not.toBeInTheDocument()
   })
 
   it('creates a new pocket from the widget', async () => {

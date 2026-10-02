@@ -20,6 +20,7 @@ import { getPocketMonthSummary } from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, MathInput } from '@/shared/ui'
 
 import { PocketOperationRow } from './pocket-operation-row'
+import { PocketMonthSkeleton, PocketsSkeleton } from './pockets-skeleton'
 
 import type { Expense } from '@/shared/types'
 
@@ -50,15 +51,28 @@ function PocketDetail({
   } = usePocketMonthBudget(pocket.id, period)
   const setMonthBudget = useSetPocketMonthBudget()
   const archivePocket = useArchivePocket()
-  const [budgetInput, setBudgetInput] = useState('')
+  const [budgetDraft, setBudgetDraft] = useState<{
+    period: string
+    value: string
+  } | null>(null)
   const [historyKind, setHistoryKind] = useState<HistoryKind | null>(null)
   const [operationKind, setOperationKind] = useState<HistoryKind | null>(null)
   const [isRenaming, setIsRenaming] = useState(false)
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false)
 
   useEffect(() => {
-    setBudgetInput(monthBudget ? String(monthBudget.budget) : '0')
-  }, [monthBudget])
+    setBudgetDraft(null)
+  }, [period])
+
+  const isArchived = Boolean(pocket.archivedAt)
+  const isMonthLoading = isLoading && !monthBudget
+  const canUseMonth = Boolean(monthBudget) && !isLoading
+  const budgetInput =
+    budgetDraft?.period === period
+      ? budgetDraft.value
+      : monthBudget
+        ? String(monthBudget.budget)
+        : ''
 
   const stats = useMemo(
     () =>
@@ -70,7 +84,6 @@ function PocketDetail({
       ),
     [expenses, monthBudget?.budget, pocket.id, selectedDate]
   )
-  const isArchived = Boolean(pocket.archivedAt)
   const selectedOperations =
     historyKind === 'purchase'
       ? stats.purchases
@@ -79,14 +92,14 @@ function PocketDetail({
         : []
 
   const saveBudget = (value: string, evaluated: number | null) => {
-    setBudgetInput(value)
+    setBudgetDraft({ period, value })
     if (evaluated === null || evaluated < 0 || !monthBudget) return
     if (evaluated === monthBudget.budget) return
     setMonthBudget.mutate({ pocketId: pocket.id, period, budget: evaluated })
-    setBudgetInput(String(evaluated))
   }
 
   const handleArchive = async () => {
+    if (!canUseMonth) return
     try {
       await archivePocket.mutateAsync({ id: pocket.id })
       setIsArchiveDialogOpen(false)
@@ -95,28 +108,10 @@ function PocketDetail({
     }
   }
 
-  if (isLoading) {
-    return (
-      <div className="rounded-lg border border-zinc-800 p-4 text-sm text-zinc-500">
-        Загружаем бюджет месяца…
-      </div>
-    )
-  }
-
-  if (isError || (!monthBudget && !isArchived)) {
-    return (
-      <p
-        role="alert"
-        className="rounded-lg border border-red-900/60 p-4 text-sm text-red-300"
-      >
-        Не удалось загрузить бюджет выбранного месяца.
-      </p>
-    )
-  }
-
   return (
     <section
       aria-label={`Карман ${pocket.name}`}
+      aria-busy={isMonthLoading}
       className="space-y-4 rounded-xl border border-zinc-700 bg-zinc-900/50 p-3 sm:p-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -139,6 +134,7 @@ function PocketDetail({
                 type="button"
                 variant="ghost"
                 onClick={() => setIsRenaming((value) => !value)}
+                disabled={!canUseMonth}
               >
                 {isRenaming ? 'Отмена' : 'Переименовать'}
               </Button>
@@ -146,6 +142,7 @@ function PocketDetail({
                 type="button"
                 variant="ghost"
                 onClick={() => setIsArchiveDialogOpen(true)}
+                disabled={!canUseMonth}
               >
                 <Archive className="mr-1 h-4 w-4" /> Архивировать
               </Button>
@@ -154,7 +151,7 @@ function PocketDetail({
         </div>
       </div>
 
-      {isRenaming && !isArchived && (
+      {isRenaming && !isArchived && canUseMonth && (
         <RenamePocketForm
           pocketId={pocket.id}
           initialName={pocket.name}
@@ -162,144 +159,177 @@ function PocketDetail({
         />
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
-          <label
-            className="mb-1 block text-xs text-zinc-500"
-            htmlFor={`pocket-budget-${pocket.id}`}
-          >
-            Бюджет
-          </label>
-          <MathInput
-            id={`pocket-budget-${pocket.id}`}
-            aria-label={`Бюджет кармана ${pocket.name}`}
-            value={budgetInput}
-            onValueChange={saveBudget}
-            min={0}
-            disabled={!monthBudget || setMonthBudget.isPending}
-          />
-        </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
-          <span className="block text-xs text-zinc-500">Использовано</span>
-          <strong
-            data-testid={`pocket-used-${pocket.id}`}
-            className="mt-1 block font-mono text-lg text-zinc-100"
-          >
-            {formatCurrency(stats.used)}
-          </strong>
-        </div>
-        <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
-          <span className="block text-xs text-zinc-500">Остаток</span>
-          <strong
-            data-testid={`pocket-remaining-${pocket.id}`}
-            className={`mt-1 block font-mono text-lg ${stats.remaining < 0 ? 'text-red-400' : 'text-emerald-300'}`}
-          >
-            {formatCurrency(stats.remaining)}
-          </strong>
-        </div>
-      </div>
-
-      {setMonthBudget.isError && (
-        <p role="alert" className="text-sm text-red-400">
-          Не удалось сохранить бюджет.
-        </p>
-      )}
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          className="flex min-h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          aria-expanded={historyKind === 'purchase'}
-          onClick={() =>
-            setHistoryKind((kind) => (kind === 'purchase' ? null : 'purchase'))
-          }
-        >
-          <span className="flex items-center gap-2 text-zinc-300">
-            <ArrowDownToLine className="h-4 w-4 text-emerald-400" /> Покупки
-          </span>
-          <span className="font-mono text-zinc-100">
-            {formatCurrency(stats.purchaseTotal)}
-          </span>
-        </button>
-        <button
-          type="button"
-          className="flex min-h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          aria-expanded={historyKind === 'transfer'}
-          onClick={() =>
-            setHistoryKind((kind) => (kind === 'transfer' ? null : 'transfer'))
-          }
-        >
-          <span className="flex items-center gap-2 text-zinc-300">
-            <ArrowUpFromLine className="h-4 w-4 text-violet-300" /> Переводы
-          </span>
-          <span className="font-mono text-zinc-100">
-            {formatCurrency(stats.transferTotal)}
-          </span>
-        </button>
-      </div>
-
-      {historyKind && (
-        <div
-          className="space-y-2"
-          aria-label={
-            historyKind === 'purchase' ? 'История покупок' : 'История переводов'
-          }
-        >
-          <h4 className="text-sm font-medium text-zinc-300">
-            {historyKind === 'purchase'
-              ? 'Покупки за месяц'
-              : 'Переводы за месяц'}
-          </h4>
-          {selectedOperations.length > 0 ? (
-            <ul className="space-y-2">
-              {selectedOperations.map((operation) => (
-                <PocketOperationRow key={operation.id} operation={operation} />
-              ))}
-            </ul>
-          ) : (
-            <p className="rounded-lg border border-dashed border-zinc-800 p-4 text-center text-sm text-zinc-500">
-              Операций за этот месяц нет.
+      {isMonthLoading ? (
+        <PocketMonthSkeleton />
+      ) : (
+        <>
+          {isError && !monthBudget && (
+            <p role="alert" className="text-sm text-red-300">
+              Не удалось загрузить бюджет выбранного месяца.
             </p>
           )}
-        </div>
-      )}
+          {isError && monthBudget && (
+            <p role="alert" className="text-xs text-amber-300">
+              Не удалось обновить бюджет. Показаны сохранённые данные.
+            </p>
+          )}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+              <label
+                className="mb-1 block text-xs text-zinc-500"
+                htmlFor={`pocket-budget-${pocket.id}`}
+              >
+                Бюджет
+              </label>
+              {monthBudget ? (
+                <MathInput
+                  id={`pocket-budget-${pocket.id}`}
+                  aria-label={`Бюджет кармана ${pocket.name}`}
+                  value={budgetInput}
+                  onValueChange={saveBudget}
+                  min={0}
+                  disabled={setMonthBudget.isPending}
+                />
+              ) : (
+                <p className="min-h-10 py-2 text-sm text-zinc-500">
+                  {isArchived ? 'Бюджет не сохранён' : 'Бюджет недоступен'}
+                </p>
+              )}
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+              <span className="block text-xs text-zinc-500">Использовано</span>
+              <strong
+                data-testid={`pocket-used-${pocket.id}`}
+                className="mt-1 block font-mono text-lg text-zinc-100"
+              >
+                {formatCurrency(stats.used)}
+              </strong>
+            </div>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3">
+              <span className="block text-xs text-zinc-500">Остаток</span>
+              <strong
+                data-testid={`pocket-remaining-${pocket.id}`}
+                className={`mt-1 block font-mono text-lg ${monthBudget ? (stats.remaining < 0 ? 'text-red-400' : 'text-emerald-300') : 'text-zinc-500'}`}
+              >
+                {monthBudget ? formatCurrency(stats.remaining) : '—'}
+              </strong>
+            </div>
+          </div>
 
-      {!isArchived && (
-        <div className="space-y-3 border-t border-zinc-800 pt-3">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button
+          {setMonthBudget.isError && (
+            <p role="alert" className="text-sm text-red-400">
+              Не удалось сохранить бюджет.
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <button
               type="button"
-              variant={operationKind === 'purchase' ? 'primary' : 'ghost'}
+              className="flex min-h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-expanded={historyKind === 'purchase'}
               onClick={() =>
-                setOperationKind((kind) =>
+                setHistoryKind((kind) =>
                   kind === 'purchase' ? null : 'purchase'
                 )
               }
             >
-              Добавить покупку
-            </Button>
-            <Button
+              <span className="flex items-center gap-2 text-zinc-300">
+                <ArrowDownToLine className="h-4 w-4 text-emerald-400" /> Покупки
+              </span>
+              <span className="font-mono text-zinc-100">
+                {formatCurrency(stats.purchaseTotal)}
+              </span>
+            </button>
+            <button
               type="button"
-              variant={operationKind === 'transfer' ? 'primary' : 'ghost'}
+              className="flex min-h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              aria-expanded={historyKind === 'transfer'}
               onClick={() =>
-                setOperationKind((kind) =>
+                setHistoryKind((kind) =>
                   kind === 'transfer' ? null : 'transfer'
                 )
               }
             >
-              Перевести в расходы
-            </Button>
+              <span className="flex items-center gap-2 text-zinc-300">
+                <ArrowUpFromLine className="h-4 w-4 text-violet-300" /> Переводы
+              </span>
+              <span className="font-mono text-zinc-100">
+                {formatCurrency(stats.transferTotal)}
+              </span>
+            </button>
           </div>
-          {operationKind && (
-            <PocketOperationForm
-              key={`${pocket.id}-${operationKind}-${period}`}
-              pocketId={pocket.id}
-              kind={operationKind}
-              selectedDate={selectedDate}
-              onDone={() => setOperationKind(null)}
-            />
+
+          {historyKind && (
+            <div
+              className="space-y-2"
+              aria-label={
+                historyKind === 'purchase'
+                  ? 'История покупок'
+                  : 'История переводов'
+              }
+            >
+              <h4 className="text-sm font-medium text-zinc-300">
+                {historyKind === 'purchase'
+                  ? 'Покупки за месяц'
+                  : 'Переводы за месяц'}
+              </h4>
+              {selectedOperations.length > 0 ? (
+                <ul className="space-y-2">
+                  {selectedOperations.map((operation) => (
+                    <PocketOperationRow
+                      key={operation.id}
+                      operation={operation}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <p className="rounded-lg border border-dashed border-zinc-800 p-4 text-center text-sm text-zinc-500">
+                  Операций за этот месяц нет.
+                </p>
+              )}
+            </div>
           )}
-        </div>
+
+          {!isArchived && (
+            <div className="space-y-3 border-t border-zinc-800 pt-3">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant={operationKind === 'purchase' ? 'primary' : 'ghost'}
+                  disabled={!canUseMonth}
+                  onClick={() =>
+                    setOperationKind((kind) =>
+                      kind === 'purchase' ? null : 'purchase'
+                    )
+                  }
+                >
+                  Добавить покупку
+                </Button>
+                <Button
+                  type="button"
+                  variant={operationKind === 'transfer' ? 'primary' : 'ghost'}
+                  disabled={!canUseMonth}
+                  onClick={() =>
+                    setOperationKind((kind) =>
+                      kind === 'transfer' ? null : 'transfer'
+                    )
+                  }
+                >
+                  Перевести в расходы
+                </Button>
+              </div>
+              {operationKind && canUseMonth && (
+                <PocketOperationForm
+                  key={`${pocket.id}-${operationKind}-${period}`}
+                  pocketId={pocket.id}
+                  kind={operationKind}
+                  selectedDate={selectedDate}
+                  onDone={() => setOperationKind(null)}
+                />
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <ConfirmDialog
@@ -322,28 +352,23 @@ function PocketDetail({
 
 export function PocketsSection() {
   const selectedDate = useSessionStore((state) => state.selectedDate)
-  const { data: pockets = [], isLoading, isError } = usePockets()
+  const { data: pocketsData, isLoading, isError } = usePockets()
   const {
-    data: expenses = [],
+    data: expensesData,
     isLoading: areExpensesLoading,
     isError: areExpensesError,
   } = useExpenses()
+  const pockets = pocketsData ?? []
+  const expenses = expensesData ?? []
   const [selectedPocketId, setSelectedPocketId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
   const selectedPocket =
     pockets.find((pocket) => pocket.id === selectedPocketId) ?? pockets[0]
 
-  if (isLoading || areExpensesLoading) {
-    return (
-      <div data-testid="pockets-skeleton" className="animate-pulse space-y-3">
-        <div className="h-7 w-1/3 rounded bg-zinc-800" />
-        <div className="h-32 rounded-xl bg-zinc-900" />
-      </div>
-    )
-  }
+  if (isLoading || areExpensesLoading) return <PocketsSkeleton />
 
-  if (isError || areExpensesError) {
+  if ((isError && !pocketsData) || (areExpensesError && !expensesData)) {
     return (
       <p
         role="alert"
@@ -370,6 +395,12 @@ export function PocketsSection() {
           {isCreating ? 'Отмена' : 'Создать карман'}
         </Button>
       </div>
+
+      {((isError && pocketsData) || (areExpensesError && expensesData)) && (
+        <p role="alert" className="text-xs text-amber-300">
+          Не удалось обновить данные. Показаны сохранённые значения.
+        </p>
+      )}
 
       {isCreating && (
         <div className="rounded-lg border border-zinc-700 bg-zinc-900/70 p-3 sm:p-4">
@@ -404,6 +435,7 @@ export function PocketsSection() {
           </div>
           {selectedPocket && (
             <PocketDetail
+              key={`${selectedPocket.id}-${getPeriod(selectedDate)}`}
               pocket={selectedPocket}
               selectedDate={selectedDate}
               expenses={expenses}
