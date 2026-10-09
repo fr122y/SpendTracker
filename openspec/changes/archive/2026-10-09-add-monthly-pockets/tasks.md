@@ -15,7 +15,7 @@
 
 - [x] 3.1 Implement the responsive pockets widget and management/form feature with budget, used, remaining, purchase/transfer breakdown, initial/monthly skeletons with cached-data refetch behavior, journal-style auto category suggestions with manual override, amount editing and deletion in one-card monthly history, create/rename/archive controls, and shared `selectedDate`; add UI tests for loading/error/archived-empty states and specified history flows.
 - [x] 3.2 Register the new widget in the widget ID, registry, and default/normalized layouts so existing saved layouts gain it; add tests for legacy layout normalization, widget rendering, and the shared month context.
-- [ ] 3.3 Add a dashboard end-to-end scenario that creates a pocket, changes its month budget, records a purchase and transfer, checks the totals and history, and verifies mobile access.
+- [x] 3.3 Add a dashboard end-to-end scenario that creates a pocket, changes its month budget, records a purchase and transfer, checks the totals and history, and verifies mobile access.
 - [x] 3.4 Initiate a selected pocket's month-budget query as soon as its ID is available, independently of expense-query completion; keep expense-derived summaries unavailable until expense data is ready, with lifecycle regression tests.
 
 ## 4. Integrate and verify
