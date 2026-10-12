@@ -68,7 +68,7 @@ Verify naming standards:
 
 ### Phase 4: Project-Specific Rules
 
-Check for CLAUDE.md compliance:
+Check for AGENTS.md compliance:
 
 1. **Forbidden Patterns**:
    - ❌ Context API for global state (use Zustand/Reatom)
@@ -131,7 +131,7 @@ Provide a structured review report:
 - [List any violations]
 
 ### Project Rules
-- [List any CLAUDE.md violations]
+- [List any AGENTS.md violations]
 
 ### Issues Found
 

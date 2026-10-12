@@ -19,8 +19,8 @@ have the required permissions.
 
 ## Automation Boundaries
 
-Do not use GitHub APIs to change repository settings without explicit
-maintainer approval and credentials for that exact action.
+Changing repository or platform settings is a protected operation; see
+[Protected Operations](protected-operations.md).
 
 The repository enforces commit message format with a local Husky `commit-msg`
 hook and validates Pull Request commits and titles in GitHub Actions. Manual

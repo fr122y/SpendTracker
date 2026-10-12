@@ -1,111 +1,87 @@
 # Repository Guidelines
 
-Guidance for agents working on SmartSpend Tracker code.
+Guidance for agents working on SmartSpend Tracker. This file is the single
+entry point for agent instructions: it holds the rules every change needs and
+points to the guides that hold the rest.
 
-## Repository workflow
+## Read Before Related Work
+
+- [Agent Workflow](docs/engineering/agent-workflow.md) — before any
+  non-trivial change: scope control, planning, testing rules, and the full
+  OpenSpec sequence.
+- [Protected Operations](docs/engineering/protected-operations.md) — before
+  touching a database, a deployment, secrets, CI, hooks, or repository and
+  platform settings: which environment holds which data, how schema changes
+  reach production, and which operations need a direct owner command.
+- [Pull Requests And Commit History](docs/engineering/change-request.md) —
+  before writing a commit message or opening a Pull Request: title format,
+  scopes, and description structure.
+- [Code Review](docs/engineering/code-review.md) — before reporting
+  non-trivial work ready: the checklist for reviewing the full diff.
+- [Reatom](docs/engineering/reatom.md) — before writing or reviewing Reatom
+  code: the v1000 API and the obsolete v3/v4 forms.
+- [Slice README](docs/engineering/slice-readme.md) — when creating a slice or
+  changing its public API, state, or dependencies.
+- [Platform Settings](docs/engineering/platform-settings.md) — when the owner
+  asks to configure GitHub.
+
+## Repository Workflow
 
 - Before changing behavior, read the relevant code, tests, contracts, local
   instructions, and targeted Git history.
-- Keep each change scoped to one logical outcome. Avoid unrelated refactoring,
-  dependency updates, and neighboring fixes.
-- Make changes on a scoped branch with the `task/` prefix and open a pull
-  request for review. Do not commit, merge, or push directly to `main` without
-  explicit owner approval.
-- Before reporting work ready for review, inspect the full diff for scope,
-  regressions, documentation, and verification gaps.
-- Run `npm run validate` for application changes. Use the repository's native
-  checks for other changes and state any skipped checks.
-- Pull request titles and squash commit titles follow
-  `docs/engineering/change-request.md`: `<type>(<scope>): <description>`.
-- Do not leave meaningful changes uncommitted unless the owner asks for work in progress.
+- Keep each change scoped to one logical outcome. Report unrelated discoveries
+  separately.
+- Work on a scoped branch with the `task/` prefix and open a Pull Request. The
+  owner merges.
+- Run `npm run validate` for application changes and `npm run spec:check` when
+  OpenSpec artifacts change. State any check that was skipped and why.
+- Commit meaningful changes unless the owner asks for work in progress.
 
-## OpenSpec workflow
+## OpenSpec
 
-- The vault task register owns project tasks and their status. OpenSpec changes
-  describe one scoped piece of work; their `tasks.md` is only its execution
-  checklist and is not a second backlog.
-- For substantive changes to observable behavior, APIs, schemas, security, or
-  architecture, start with `$openspec-propose`, review the requirements, design,
-  and tasks, then implement with `$openspec-apply-change`. Include a delta spec
-  when requirements change.
-- For substantive implementation work that does not change requirements, set
-  `skip_specs: true` in that change's `.openspec.yaml`; do not invent a spec.
-  Typo, formatting, and mechanical fixes may proceed without a change.
-- Run `npm run spec:check` and `npm run validate` before the PR. Merge the PR
-  through the repository workflow, then archive the OpenSpec change separately
-  with `$openspec-archive-change` after integration and checks are confirmed.
-- Generated OpenSpec skills use `npx --no-install openspec` for the local CLI.
-  After initialization or skill regeneration, review the generated diff and
-  reapply that project-local command prefix where needed.
-- T-025 establishes the initial config and baseline as a one-time bootstrap
-  exception to the propose-first rule. Feature work such as the T-003 pilot
-  follows the normal workflow.
+- The vault task register owns project tasks and their status. An OpenSpec
+  change describes one scoped piece of work; its `tasks.md` is that change's
+  execution checklist.
+- Substantive changes to observable behavior, APIs, schemas, security, or
+  architecture start with `$openspec-propose` and are implemented with
+  `$openspec-apply-change`.
+- Substantive work that leaves requirements unchanged still gets a change with
+  `skip_specs: true`. Typo, formatting, and mechanical fixes proceed without
+  one.
+- Archive a change with `$openspec-archive-change` in a separate follow-up
+  after the Pull Request is merged and checks are confirmed.
 
-See [Agent Workflow](docs/engineering/agent-workflow.md) for the full sequence.
-
-## Project Structure & Architecture Rules
+## Architecture
 
 The codebase follows Feature-Sliced Design in `src/`: `app`, `_pages`,
-`entities`, `features`, `widgets`, `shared`, `providers`.
+`widgets`, `features`, `entities`, `shared`, `providers`. Imports go from
+higher to lower layers: `app/_pages -> widgets -> features -> entities ->
+shared`.
 
-Import direction is from higher to lower layers: `app/_pages -> widgets ->
-features -> entities -> shared`. Lower layers must not import higher layers.
+- Global client state uses Reatom (`@reatom/react`), not React Context.
+- Async and server state uses TanStack Query. Every user-visible mutation is
+  optimistic: `onMutate`, rollback in `onError`, refetch in `onSettled`.
+- Backend and AI integration uses Server Actions (`'use server'`). The three
+  existing API Routes are callbacks for the auth framework, the Vercel cron,
+  and the email provider webhook; a new API Route is an architecture change.
+- Secrets stay server-side in environment variables, never under
+  `NEXT_PUBLIC_`.
+- UI that depends on `localStorage` loads through `next/dynamic` with
+  `{ ssr: false }`.
+- Drag and drop uses the native HTML5 API.
+- The user interface is in Russian.
 
-Non-negotiable rules from project context:
+## Naming And Tests
 
-- Global state uses **Reatom** only (`@reatom/react`); do not introduce Context
-  API for app state.
-- Async/server state uses **TanStack Query**.
-- All user-visible TanStack Query mutations must use optimistic updates
-  (`onMutate` + rollback in `onError` + refetch in `onSettled`).
-- AI/backend integration must use **Server Actions** (`'use server'`) only; no
-  API Routes.
-- Keep secrets in `.env.local` (server side only), never `NEXT_PUBLIC_` for API
-  keys.
-- For localStorage-dependent UI, prefer `next/dynamic` with `{ ssr: false }`.
+- Components are `PascalCase` (`ExpenseCard`), files are `kebab-case`
+  (`expense-card.tsx`), stores are named `use[Entity]Store`.
+- Prefer TDD: write or update the test before the implementation.
+- Unit and UI tests live in `__tests__` as `*.test.ts(x)`; end-to-end tests
+  live in `e2e/` as `*.spec.ts`.
 
-## Build, Test, And Development Commands
-
-- `npm run dev`: start local app (`http://localhost:3000`).
-- `npm run build` / `npm run start`: production build and run.
-- `npm run typecheck`: TypeScript checks.
-- `npm run lint`: ESLint with zero warnings.
-- `npm run test`: Jest unit/integration tests.
-- `npm run test:e2e`: Playwright end-to-end suite.
-- `npm run validate`: required pre-PR gate (`typecheck + lint + test`).
-
-## Coding Style & Naming
-
-- TypeScript-first; Prettier defaults: 2 spaces, single quotes, no semicolons,
-  80 cols.
-- Imports are ordered and grouped (enforced by ESLint).
-- Components: `PascalCase` (example: `ExpenseCard`).
-- Files: `kebab-case` (example: `expense-card.tsx`).
-- Stores: `use[Entity]Store` naming.
-
-## Testing Guidelines
-
-- Prefer TDD: create/update tests before implementation changes.
-- Unit/UI tests live in `__tests__` as `*.test.ts(x)`.
-- E2E tests live in `e2e/` as `*.spec.ts`.
-- Coverage threshold is 70% globally (branches/functions/lines/statements).
-
-## Slice Documentation Requirement
-
-Every FSD slice under `entities`, `features`, `widgets`, and `shared` must
-include a local `README.md` describing purpose, public API (`index.ts`),
-state/actions, and dependencies.
-
-## Documentation Rules
+## Documentation
 
 - Keep compact durable context in `docs/context/`.
 - Keep architecture and design decisions in `docs/decisions/`.
 - Update `docs/context/OPEN_QUESTIONS.md` when assumptions or unresolved
   issues appear.
-
-## Commit & Pull Request Guidelines
-
-- Use concise, imperative commits, preferably `type: description` (`fix:`,
-  `refactor:`, `test:`, `docs:`).
-- PRs should include scope summary, relevant context, UI evidence for visual
-  changes, and confirmation that `npm run validate` passes.
