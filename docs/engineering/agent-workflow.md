@@ -101,6 +101,10 @@ and preserve the expected behavior.
 Prefer behavior tests over implementation tests. Update existing tests when an
 intentional contract change makes them stale.
 
+Removing or skipping an existing test goes in its own Pull Request that says
+which tests and why. The `test-integrity` check fails such a Pull Request, and
+the owner merges it.
+
 Final reports must distinguish:
 
 - not run;
