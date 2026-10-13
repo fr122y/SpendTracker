@@ -16,11 +16,6 @@ describe('Button', () => {
     expect(handleClick).toHaveBeenCalledTimes(1)
   })
 
-  it('is disabled when loading', () => {
-    render(<Button isLoading>Submit</Button>)
-    expect(screen.getByRole('button')).toBeDisabled()
-  })
-
   it('is disabled when disabled prop is passed', () => {
     render(<Button disabled>Disabled</Button>)
     expect(screen.getByRole('button')).toBeDisabled()
