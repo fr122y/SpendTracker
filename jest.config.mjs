@@ -1,3 +1,4 @@
+// Deliberate guardrail proof (GUARDRAILS-01 step 6.2): this change must never be merged.
 import nextJest from 'next/jest.js'
 
 const createJestConfig = nextJest({
