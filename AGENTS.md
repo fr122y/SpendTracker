@@ -15,7 +15,7 @@ points to the guides that hold the rest.
   reach production, and which operations need a direct owner command.
 - [Pull Requests And Commit History](docs/engineering/change-request.md) —
   before writing a commit message or opening a Pull Request: title format,
-  scopes, and description structure.
+  scopes, `Change:` and `Refs:` trailers, and description structure.
 - [Code Review](docs/engineering/code-review.md) — before reporting
   non-trivial work ready: the checklist for reviewing the full diff.
 - [Reatom](docs/engineering/reatom.md) — before writing or reviewing Reatom
@@ -50,6 +50,9 @@ points to the guides that hold the rest.
   one.
 - Archive a change with `$openspec-archive-change` in a separate follow-up
   after the Pull Request is merged and checks are confirmed.
+- Every commit of an OpenSpec change, including the archive commit, ends with
+  the trailer `Change: <change-id>`; see
+  [Trailers](docs/engineering/change-request.md#trailers).
 
 ## Architecture
 

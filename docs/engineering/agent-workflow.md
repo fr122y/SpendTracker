@@ -140,14 +140,16 @@ security, or architecture:
    sure the requirements state observable outcomes and identify scope,
    exclusions, dependencies, and risks.
 3. Use `$openspec-apply-change` to implement the approved checklist. Keep the
-   delta spec aligned with behavior and existing tests.
+   delta spec aligned with behavior and existing tests. Each commit carries
+   the trailer `Change: <change-id>`.
 4. Run `npm run spec:check` for OpenSpec structure and specs, then
    `npm run validate` for typecheck, lint, and unit/integration tests. On
    every PR the `commitlint` job runs the OpenSpec check and the `verify` job
    runs typecheck, lint, and unit tests.
 5. Open and merge the PR using this repository's review process. Archive the
    change in a separate follow-up only after integration and checks are
-   confirmed, using `$openspec-archive-change`.
+   confirmed, using `$openspec-archive-change`; the archive commit carries
+   `Change: <change-id>` too.
 
 Substantive implementation changes with no requirements change still get an
 OpenSpec change with `skip_specs: true` in `.openspec.yaml`; do not add a
