@@ -25,7 +25,8 @@ What automated and manual checks were run?
 
 ## References
 
-Issue, documentation, or related pull request.
+Issue, documentation, or related pull request. `Change: <change-id>` and
+`Refs: <task-id>` belong in the commit message, not only here.
 
 ## Related issue (if any)
 
