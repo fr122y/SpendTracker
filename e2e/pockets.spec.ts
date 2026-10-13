@@ -20,6 +20,8 @@ const REMAINING = BUDGET - USED
 // mappings. Rows are still unambiguous because they are scoped to the pocket.
 const PURCHASE_DESCRIPTION = 'E2E покупка из кармана'
 const TRANSFER_DESCRIPTION = 'E2E перевод из кармана'
+const JOURNAL_PURCHASE_DESCRIPTION = 'E2E покупка из кармана через журнал'
+const JOURNAL_PURCHASE_AMOUNT = 300
 
 /**
  * Matches an amount as the pockets widget renders it:
@@ -267,6 +269,85 @@ test.describe('Pockets', () => {
     await expect(purchases.getByText(PURCHASE_DESCRIPTION)).toBeVisible()
     const transfers = await openHistory(region, 'Переводы', TRANSFER_AMOUNT)
     await expect(transfers.getByText(TRANSFER_DESCRIPTION)).toBeVisible()
+  })
+
+  test('should record a purchase from the journal form', async () => {
+    const region = pocketRegion()
+    const journalForm = page
+      .locator('form')
+      .filter({ has: page.getByLabel('Сценарий операции') })
+
+    await journalForm
+      .getByLabel('Сценарий операции')
+      .selectOption({ label: 'Покупка из кармана' })
+    // The account may hold other active pockets, so pick this one explicitly.
+    await journalForm
+      .getByLabel('Карман', { exact: true })
+      .selectOption({ label: pocketName })
+    await expect(journalForm.getByLabel(/дата/i)).toHaveCount(0)
+
+    await journalForm
+      .getByPlaceholder('Описание расхода')
+      .fill(JOURNAL_PURCHASE_DESCRIPTION)
+    const amountInput = journalForm.getByPlaceholder('Сумма')
+    await amountInput.fill(String(JOURNAL_PURCHASE_AMOUNT))
+    await amountInput.blur()
+
+    const categorySelect = journalForm.getByLabel('Категория', { exact: true })
+    const suggestedCategory = journalForm.getByText('Категория:', {
+      exact: true,
+    })
+    await expect(categorySelect.or(suggestedCategory)).toBeVisible(TIMEOUT)
+    if (await categorySelect.isVisible()) {
+      await categorySelect.selectOption({ index: 1 })
+      await expect(categorySelect).not.toHaveValue('')
+    }
+
+    await journalForm
+      .getByRole('button', { name: 'Добавить', exact: true })
+      .click()
+
+    // The purchases history is collapsed here (the transfers one is open), so
+    // the only place showing this description is the journal for the
+    // selected date.
+    await expect(region.getByLabel('История покупок')).toHaveCount(0)
+    await page
+      .getByLabel('Фильтр операций')
+      .getByRole('button', { name: 'Карманы', exact: true })
+      .click()
+    await expect(page.getByText(JOURNAL_PURCHASE_DESCRIPTION)).toBeVisible(
+      TIMEOUT
+    )
+
+    await expectTotals(
+      region,
+      USED + JOURNAL_PURCHASE_AMOUNT,
+      REMAINING - JOURNAL_PURCHASE_AMOUNT
+    )
+
+    const purchases = await openHistory(
+      region,
+      'Покупки',
+      PURCHASE_AMOUNT + JOURNAL_PURCHASE_AMOUNT
+    )
+    await expect(purchases.getByRole('listitem')).toHaveCount(2, TIMEOUT)
+    const journalPurchase = purchases
+      .getByRole('listitem')
+      .filter({ hasText: JOURNAL_PURCHASE_DESCRIPTION })
+    await expect(journalPurchase).toHaveCount(1)
+    await expect(
+      journalPurchase.getByRole('button', { name: 'edit amount' })
+    ).toHaveText(`${JOURNAL_PURCHASE_AMOUNT} ₽`)
+
+    // Remove the journal purchase so the following steps see the totals and
+    // the single purchase they were written for.
+    await journalPurchase.getByRole('button', { name: 'delete' }).click()
+    const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
+    await expect(dialog).toBeVisible(TIMEOUT)
+    await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
+
+    await expect(purchases.getByRole('listitem')).toHaveCount(1, TIMEOUT)
+    await expectTotals(region, USED, REMAINING)
   })
 
   test('should give access to the pocket on mobile', async () => {

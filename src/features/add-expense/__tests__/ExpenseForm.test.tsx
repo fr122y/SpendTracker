@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { ExpenseForm } from '../ui/expense-form'
 
-import type { SharedBudget } from '@/shared/types'
+import type { Pocket, SharedBudget } from '@/shared/types'
 
 const mockAddExpense = jest.fn()
 const mockCategorize = jest.fn()
@@ -40,6 +40,25 @@ let mockSharedCategories = [
 
 const mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
 
+const ACTIVE_POCKET: Pocket = {
+  id: 'pocket-1',
+  name: 'Одежда',
+  createdAt: '2026-01-01T00:00:00.000Z',
+}
+const SECOND_ACTIVE_POCKET: Pocket = {
+  id: 'pocket-2',
+  name: 'Подарки',
+  createdAt: '2026-01-02T00:00:00.000Z',
+}
+const ARCHIVED_POCKET: Pocket = {
+  id: 'pocket-archived',
+  name: 'Старый карман',
+  archivedAt: '2026-01-10T00:00:00.000Z',
+  createdAt: '2026-01-01T00:00:00.000Z',
+}
+
+let mockPockets: Pocket[] | undefined = []
+
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
     selector({ addExpense: mockAddExpense }),
@@ -76,6 +95,10 @@ jest.mock('@/entities/project', () => ({
   ) => selector({ projects: mockProjects }),
 }))
 
+jest.mock('@/entities/pocket', () => ({
+  usePockets: () => ({ data: mockPockets }),
+}))
+
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: new Date('2025-01-15') }),
@@ -84,6 +107,7 @@ jest.mock('@/entities/session', () => ({
 describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockPockets = []
     mockCategorizeShared.mockReturnValue({ found: false })
     mockSaveSharedMapping.mockResolvedValue(undefined)
     mockSharedBudgets = [
@@ -578,6 +602,268 @@ describe('ExpenseForm', () => {
           category: 'Проектные деньги',
         })
       )
+    })
+  })
+
+  describe('pocket purchase scenario', () => {
+    const POCKET_SCENARIO_LABEL = 'Покупка из кармана'
+
+    function scenarioLabels() {
+      const select = screen.getByLabelText(/сценарий операции/i)
+      return Array.from(select.querySelectorAll('option')).map(
+        (option) => option.textContent
+      )
+    }
+
+    function selectPocketScenario() {
+      fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+        target: { value: 'pocket_purchase' },
+      })
+    }
+
+    function fillPurchase(description: string, amount: string) {
+      fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+        target: { value: description },
+      })
+      fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+      fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+        target: { value: amount },
+      })
+    }
+
+    function suggestGroceries() {
+      mockCategorize.mockReturnValue({
+        found: true,
+        categoryId: '1',
+        categoryName: 'Продукты',
+        categoryEmoji: '🛒',
+      })
+    }
+
+    it('offers the scenario when a non-archived pocket exists', () => {
+      mockPockets = [ACTIVE_POCKET]
+
+      render(<ExpenseForm />)
+
+      expect(scenarioLabels()).toContain(POCKET_SCENARIO_LABEL)
+    })
+
+    it('does not offer a transfer from a pocket', () => {
+      mockPockets = [ACTIVE_POCKET]
+
+      render(<ExpenseForm />)
+
+      expect(
+        scenarioLabels().filter((label) => /перев/i.test(label ?? ''))
+      ).toEqual([])
+    })
+
+    it('does not offer the scenario without pockets', () => {
+      mockPockets = []
+
+      render(<ExpenseForm />)
+
+      expect(scenarioLabels()).not.toContain(POCKET_SCENARIO_LABEL)
+    })
+
+    it('does not offer the scenario when every pocket is archived', () => {
+      mockPockets = [ARCHIVED_POCKET]
+
+      render(<ExpenseForm />)
+
+      expect(scenarioLabels()).not.toContain(POCKET_SCENARIO_LABEL)
+    })
+
+    it('does not offer the scenario while pockets are not loaded', () => {
+      mockPockets = undefined
+
+      render(<ExpenseForm />)
+
+      expect(scenarioLabels()).not.toContain(POCKET_SCENARIO_LABEL)
+    })
+
+    it('shows the pocket select only for the pocket scenario', () => {
+      mockPockets = [ACTIVE_POCKET]
+
+      render(<ExpenseForm />)
+
+      expect(screen.queryByLabelText('Карман')).not.toBeInTheDocument()
+      selectPocketScenario()
+      expect(screen.getByLabelText('Карман')).toBeInTheDocument()
+    })
+
+    it('lists only non-archived pockets and renders no date field', () => {
+      mockPockets = [ACTIVE_POCKET, ARCHIVED_POCKET, SECOND_ACTIVE_POCKET]
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+
+      const pocketSelect = screen.getByLabelText('Карман')
+      const values = Array.from(pocketSelect.querySelectorAll('option'))
+        .map((option) => option.value)
+        .filter(Boolean)
+      expect(values).toEqual(['pocket-1', 'pocket-2'])
+      expect(screen.queryByLabelText(/дата/i)).not.toBeInTheDocument()
+      expect(document.querySelector('input[type="date"]')).toBeNull()
+    })
+
+    it('preselects the only non-archived pocket and adds without touching the select', async () => {
+      mockPockets = [ARCHIVED_POCKET, ACTIVE_POCKET]
+      suggestGroceries()
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+
+      expect(screen.getByLabelText('Карман')).toHaveValue('pocket-1')
+
+      fillPurchase('куртка', '4000')
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+      await waitFor(() => {
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({ pocketId: 'pocket-1' })
+        )
+      })
+    })
+
+    it('starts empty with several pockets and blocks adding until one is chosen', async () => {
+      mockPockets = [ACTIVE_POCKET, SECOND_ACTIVE_POCKET]
+      suggestGroceries()
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+
+      expect(screen.getByLabelText('Карман')).toHaveValue('')
+
+      fillPurchase('куртка', '4000')
+      const submit = screen.getByRole('button', { name: /добавить/i })
+      expect(submit).toBeDisabled()
+      fireEvent.submit(submit.closest('form')!)
+      await waitFor(() => expect(submit).not.toHaveAttribute('aria-busy'))
+      expect(mockAddExpense).not.toHaveBeenCalled()
+
+      fireEvent.change(screen.getByLabelText('Карман'), {
+        target: { value: 'pocket-2' },
+      })
+      expect(submit).toBeEnabled()
+      fireEvent.click(submit)
+
+      await waitFor(() => {
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({ pocketId: 'pocket-2' })
+        )
+      })
+    })
+
+    it('saves the purchase as an expense of the pocket on the selected date', async () => {
+      mockPockets = [ACTIVE_POCKET]
+      suggestGroceries()
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+      fillPurchase('  куртка  ', '4000')
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+      await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(1))
+
+      const saved = mockAddExpense.mock.calls[0][0]
+      expect(saved).toMatchObject({
+        description: 'куртка',
+        amount: 4000,
+        date: '2025-01-15',
+        category: 'Продукты',
+        emoji: '🛒',
+        pocketId: 'pocket-1',
+        operationType: 'expense',
+      })
+      expect(saved.projectId).toBeUndefined()
+      expect(saved.sharedBudgetId).toBeUndefined()
+      expect(saved.sharedBudgetCategoryId).toBeUndefined()
+      expect(saved.sharedBudgetName).toBeUndefined()
+      expect(mockSaveMapping).not.toHaveBeenCalled()
+      expect(mockCategorizeShared).not.toHaveBeenCalled()
+    })
+
+    it('saves an amount of any size without a balance check', async () => {
+      mockPockets = [ACTIVE_POCKET]
+      suggestGroceries()
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+      fillPurchase('диван', '999999')
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+      await waitFor(() => {
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({ amount: 999999, pocketId: 'pocket-1' })
+        )
+      })
+    })
+
+    it('requires a manual category when no keyword matches and remembers it', async () => {
+      mockPockets = [ACTIVE_POCKET]
+      mockCategorize.mockReturnValue({ found: false })
+      mockSaveMapping.mockResolvedValueOnce(undefined)
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+      fillPurchase('кофемашина', '5000')
+
+      const submit = screen.getByRole('button', { name: /добавить/i })
+      expect(submit).toBeDisabled()
+
+      fireEvent.change(screen.getByLabelText('Категория'), {
+        target: { value: '2' },
+      })
+      fireEvent.click(submit)
+
+      await waitFor(() => {
+        expect(mockSaveMapping).toHaveBeenCalledWith('кофемашина', '2')
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({
+            category: 'Транспорт',
+            emoji: '🚕',
+            pocketId: 'pocket-1',
+            operationType: 'expense',
+          })
+        )
+      })
+    })
+
+    it('lets the user change a suggested category', async () => {
+      mockPockets = [ACTIVE_POCKET]
+      suggestGroceries()
+      mockSaveMapping.mockResolvedValueOnce(undefined)
+
+      render(<ExpenseForm />)
+      selectPocketScenario()
+      fillPurchase('молоко', '100')
+
+      await screen.findByText(/🛒 Продукты/i)
+      fireEvent.click(screen.getByRole('button', { name: /изменить/i }))
+      fireEvent.change(screen.getByLabelText('Категория'), {
+        target: { value: '6' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+      await waitFor(() => {
+        expect(mockSaveMapping).toHaveBeenCalledWith('молоко', '6')
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({ category: 'Другое', pocketId: 'pocket-1' })
+        )
+      })
+    })
+
+    it('does not link a personal expense to a pocket', async () => {
+      mockPockets = [ACTIVE_POCKET]
+      suggestGroceries()
+
+      render(<ExpenseForm />)
+      fillPurchase('молоко', '100')
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+      await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(1))
+      expect(mockAddExpense.mock.calls[0][0].pocketId).toBeUndefined()
     })
   })
 })

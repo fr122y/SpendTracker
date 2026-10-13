@@ -6,7 +6,8 @@ real expenses.
 ## Public API (`index.ts`)
 
 - `ExpenseForm`: Form component for adding personal expenses, shared budget
-  expenses, project expenses, project withdrawals, and project returns
+  expenses, project expenses, project withdrawals, project returns, and pocket
+  purchases
 
 ## State & Data
 
@@ -16,23 +17,31 @@ real expenses.
   budget
 - `useExpenseStore`: Mutation adapter for saving expense
 - `useProjectStore`: Project list for project-linked expenses and movements
+- `usePockets`: Pocket list for the pocket purchase scenario; archived pockets
+  are filtered out
 - Uses `useCategorize` and `useSharedCategorize` from `@/entities/category` for
   keyword suggestions, manual override, and mapping persistence
 
 ## Logic Flow
 
 1. User selects a scenario: personal expense, shared expense, project expense,
-   project withdrawal, or project return
+   project withdrawal, project return, or pocket purchase
 2. Personal expense remains the default fast path
 3. Shared expense appears only when active shared budgets exist and uses shared
    budget keyword mappings to suggest a shared budget category
 4. Project scenarios require project selection
-5. Personal, project, and shared real expenses use keyword category
-   suggestions/manual override
-6. Project withdrawals and returns use the technical `Проектные деньги` category
+5. Pocket purchase appears only when the loaded pocket list has a non-archived
+   pocket. The only active pocket is preselected; with several, the select
+   starts empty and a pocket must be chosen
+6. A pocket purchase is saved as an `expense` with `pocketId` on the dashboard
+   `selectedDate`, the same record the pockets widget creates. The form has no
+   date field, no balance check, and no pocket transfer
+7. Personal, project, pocket, and shared real expenses use keyword category
+   suggestions/manual override; pocket purchases use the personal categories
+8. Project withdrawals and returns use the technical `Проектные деньги` category
 
 ## Dependencies
 
 - Uses: `@/entities/expense`, `@/entities/category`,
-  `@/entities/shared-budget`, `@/entities/project`,
-  `@/shared/ui`
+  `@/entities/shared-budget`, `@/entities/project`, `@/entities/pocket`,
+  `@/entities/session`, `@/shared/lib`, `@/shared/ui`

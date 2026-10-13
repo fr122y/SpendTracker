@@ -9,6 +9,7 @@ import {
   useSharedBudgetCategories,
 } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
+import { usePockets } from '@/entities/pocket'
 import { useProjectStore } from '@/entities/project'
 import { useSessionStore } from '@/entities/session'
 import {
@@ -28,6 +29,7 @@ type OperationScenario =
   | 'project_expense'
   | 'project_withdrawal'
   | 'project_return'
+  | 'pocket_purchase'
 
 function getSharedBudgetOptions(budgets: SharedBudget[]) {
   const activeBudget = getActiveSharedBudget(budgets)
@@ -42,9 +44,10 @@ function getSharedBudgetOptions(budgets: SharedBudget[]) {
 }
 
 export function ExpenseForm() {
-  const [scenario, setScenario] =
+  const [chosenScenario, setScenario] =
     useState<OperationScenario>('personal_expense')
   const [selectedProjectId, setSelectedProjectId] = useState('')
+  const [selectedPocketId, setSelectedPocketId] = useState('')
   const [selectedSharedBudgetId, setSelectedSharedBudgetId] = useState('')
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
@@ -63,12 +66,29 @@ export function ExpenseForm() {
   const projects = useProjectStore((state) => state.projects)
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const { data: sharedBudgets = [] } = useSharedBudgets()
+  const { data: pockets } = usePockets()
   const {
     categorize,
     saveMappingAndGetResult,
     mappingsLoaded,
     isSavingMapping,
   } = useCategorize()
+
+  const activePockets = useMemo(
+    () => (pockets ?? []).filter((pocket) => !pocket.archivedAt),
+    [pockets]
+  )
+  // The pocket scenario exists only while a non-archived pocket does; if the
+  // last one is archived elsewhere, the form falls back to a personal expense.
+  const scenario: OperationScenario =
+    chosenScenario === 'pocket_purchase' && activePockets.length === 0
+      ? 'personal_expense'
+      : chosenScenario
+  const isPocketPurchase = scenario === 'pocket_purchase'
+  // A single active pocket needs no choice; several require an explicit one.
+  const selectedPocket =
+    activePockets.find((pocket) => pocket.id === selectedPocketId) ??
+    (activePockets.length === 1 ? activePockets[0] : undefined)
 
   const sharedBudgetOptions = useMemo(
     () => getSharedBudgetOptions(sharedBudgets),
@@ -114,6 +134,10 @@ export function ExpenseForm() {
   const projectOptions = projects.map((project) => ({
     value: project.id,
     label: project.name,
+  }))
+  const pocketOptions = activePockets.map((pocket) => ({
+    value: pocket.id,
+    label: pocket.name,
   }))
   const sharedBudgetSelectOptions = sharedBudgetOptions.map((budget) => ({
     value: budget.id,
@@ -198,6 +222,7 @@ export function ExpenseForm() {
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
     if (needsProject && !selectedProjectId) return
+    if (isPocketPurchase && !selectedPocket) return
     if (isSharedExpense && !selectedSharedBudget?.id) return
 
     setIsSubmitting(true)
@@ -343,6 +368,9 @@ export function ExpenseForm() {
       category: category.name,
       emoji: category.emoji,
       projectId: scenario === 'project_expense' ? selectedProjectId : undefined,
+      ...(isPocketPurchase && selectedPocket
+        ? { pocketId: selectedPocket.id }
+        : {}),
       operationType,
     })
 
@@ -355,6 +383,7 @@ export function ExpenseForm() {
     amount &&
     Number(amount) > 0 &&
     (!needsProject || !!selectedProjectId) &&
+    (!isPocketPurchase || !!selectedPocket) &&
     (!isSharedExpense ||
       (!!selectedSharedBudget?.id && !!selectedCategoryId)) &&
     (!showCategorySelect || !!selectedCategoryId)
@@ -367,6 +396,9 @@ export function ExpenseForm() {
     { value: 'project_expense', label: 'Проектный расход' },
     { value: 'project_withdrawal', label: 'Взял из проекта' },
     { value: 'project_return', label: 'Вернул в проект' },
+    ...(activePockets.length > 0
+      ? [{ value: 'pocket_purchase', label: 'Покупка из кармана' }]
+      : []),
   ]
 
   return (
@@ -415,6 +447,16 @@ export function ExpenseForm() {
           value={selectedProjectId}
           onChange={(e) => setSelectedProjectId(e.target.value)}
           placeholder="Выберите проект"
+          disabled={isSubmitting || isSavingAnyMapping}
+        />
+      )}
+      {isPocketPurchase && (
+        <Select
+          aria-label="Карман"
+          options={pocketOptions}
+          value={selectedPocket?.id ?? ''}
+          onChange={(e) => setSelectedPocketId(e.target.value)}
+          placeholder="Выберите карман"
           disabled={isSubmitting || isSavingAnyMapping}
         />
       )}
