@@ -2,9 +2,10 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 
 import { ExpenseLog } from '../ui/expense-log'
 
-import type { Expense } from '@/shared/types'
+import type { Expense, Pocket } from '@/shared/types'
 
 // Mock data
+let mockPockets: Pocket[] | undefined = undefined
 let mockExpenses: Expense[] = [
   {
     id: '1',
@@ -88,6 +89,10 @@ jest.mock('@/entities/expense', () => ({
   ),
 }))
 
+jest.mock('@/entities/pocket', () => ({
+  usePockets: () => ({ data: mockPockets, isLoading: !mockPockets }),
+}))
+
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector?: (state: { selectedDate: Date }) => unknown) => {
     const state = { selectedDate: mockSelectedDate }
@@ -149,6 +154,7 @@ describe('ExpenseLog', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockIsLoading = false
+    mockPockets = undefined
     mockSelectedDate = new Date(2026, 0, 23) // Reset to Jan 23, 2026
     mockExpenses = [
       {
@@ -543,6 +549,75 @@ describe('ExpenseLog', () => {
 
       const deleteButton = screen.getByText('Delete Test')
       expect(deleteButton).toBeInTheDocument()
+    })
+  })
+
+  describe('pocket names', () => {
+    const pocketOperations: Expense[] = [
+      {
+        id: 'pocket-purchase',
+        description: 'Latte',
+        amount: 300,
+        date: '2026-01-23',
+        category: 'Кафе',
+        emoji: '☕',
+        pocketId: 'pocket-active',
+      },
+      {
+        id: 'pocket-transfer',
+        description: 'Groceries from pocket',
+        amount: 400,
+        date: '2026-01-23',
+        category: 'Перевод из кармана',
+        emoji: '↗️',
+        pocketId: 'pocket-archived',
+        operationType: 'pocket_transfer',
+      },
+    ]
+
+    function lastPocketNames(): unknown {
+      const { ExpenseList } = jest.requireMock('@/entities/expense') as {
+        ExpenseList: jest.Mock
+      }
+      const lastCall = ExpenseList.mock.calls.at(-1) as [
+        { pocketNames?: ReadonlyMap<string, string> },
+      ]
+      const pocketNames = lastCall[0].pocketNames
+      return pocketNames ? Object.fromEntries(pocketNames) : undefined
+    }
+
+    it('passes the names of active and archived pockets to the list', () => {
+      mockExpenses = pocketOperations
+      mockPockets = [
+        {
+          id: 'pocket-active',
+          name: 'Кафе',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'pocket-archived',
+          name: 'Отпуск',
+          archivedAt: '2026-01-20T00:00:00.000Z',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ]
+
+      render(<ExpenseLog />)
+
+      expect(lastPocketNames()).toEqual({
+        'pocket-active': 'Кафе',
+        'pocket-archived': 'Отпуск',
+      })
+    })
+
+    it('renders operations without names while pockets are not loaded', () => {
+      mockExpenses = pocketOperations
+      mockPockets = undefined
+
+      render(<ExpenseLog />)
+
+      expect(screen.getByTestId('expense-count')).toHaveTextContent('2')
+      expect(lastPocketNames() ?? {}).toEqual({})
     })
   })
 

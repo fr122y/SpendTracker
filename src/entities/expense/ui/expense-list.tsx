@@ -9,6 +9,8 @@ interface ExpenseListProps {
   onDelete: (id: string) => void
   onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
   showDate?: boolean
+  /** Pocket names by pocket id, shown on the cards of pocket operations. */
+  pocketNames?: ReadonlyMap<string, string>
 }
 
 export function ExpenseList({
@@ -16,6 +18,7 @@ export function ExpenseList({
   onDelete,
   onEdit,
   showDate = false,
+  pocketNames,
 }: ExpenseListProps) {
   if (expenses.length === 0) {
     return <div className="py-8 text-center text-zinc-500">Нет расходов</div>
@@ -34,6 +37,9 @@ export function ExpenseList({
           onDelete={onDelete}
           onEdit={onEdit}
           showDate={showDate}
+          pocketName={
+            expense.pocketId ? pocketNames?.get(expense.pocketId) : undefined
+          }
         />
       ))}
     </div>

@@ -72,6 +72,52 @@ describe('ExpenseCard', () => {
     expect(onEdit).toHaveBeenCalledWith('1', { amount: 150 })
   })
 
+  it('shows the pocket name on a pocket purchase', () => {
+    render(
+      <ExpenseCard
+        expense={{ ...mockExpense, pocketId: 'pocket-1' }}
+        pocketName="Кафе"
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText('Из кармана: Кафе')).toBeInTheDocument()
+    expect(screen.queryByText('Покупка из кармана')).not.toBeInTheDocument()
+  })
+
+  it('shows the pocket name on a pocket transfer', () => {
+    render(
+      <ExpenseCard
+        expense={{
+          ...mockExpense,
+          pocketId: 'pocket-1',
+          operationType: 'pocket_transfer',
+          category: 'Перевод из кармана',
+          emoji: '↗️',
+        }}
+        pocketName="Кафе"
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText('Перевод из кармана: Кафе')).toBeInTheDocument()
+    // The category keeps its own text; only the badge carries the name.
+    expect(screen.getAllByText('Перевод из кармана')).toHaveLength(1)
+  })
+
+  it('ignores a pocket name on an operation without a pocket', () => {
+    render(
+      <ExpenseCard
+        expense={mockExpense}
+        pocketName="Кафе"
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText('Личный расход')).toBeInTheDocument()
+    expect(screen.queryByText(/Кафе/)).not.toBeInTheDocument()
+  })
+
   it('renders shared budget metadata for shared expenses', () => {
     render(
       <ExpenseCard

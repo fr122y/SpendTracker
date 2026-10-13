@@ -1,9 +1,10 @@
 'use client'
 
 import { Wallet } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { useExpenseStore, ExpenseList } from '@/entities/expense'
+import { usePockets } from '@/entities/pocket'
 import { useSessionStore } from '@/entities/session'
 import { ExpenseForm } from '@/features/add-expense'
 import { getDailyExpenseTotal, getDailyOperations } from '@/shared/lib'
@@ -47,6 +48,14 @@ export function ExpenseLog() {
       deleteExpense: state.deleteExpense,
       updateExpense: state.updateExpense,
     })
+  )
+
+  // Archived pockets stay in the map: their operations keep the pocket name.
+  // The journal does not wait for this query; cards fall back to a generic badge.
+  const { data: pockets } = usePockets()
+  const pocketNames = useMemo(
+    () => new Map((pockets ?? []).map((pocket) => [pocket.id, pocket.name])),
+    [pockets]
   )
 
   if (isLoading) {
@@ -145,6 +154,7 @@ export function ExpenseLog() {
             expenses={filteredOperations}
             onDelete={deleteExpense}
             onEdit={updateExpense}
+            pocketNames={pocketNames}
           />
         ) : (
           <EmptyState

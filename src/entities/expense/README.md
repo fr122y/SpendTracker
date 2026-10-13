@@ -12,8 +12,13 @@ real expenses, project withdrawals, project returns, or pocket transfers.
 - `useUpdateExpense`: Mutation hook for partial expense updates
 - `ExpenseCard`: Presentational component displaying a single operation with
   optional date, type badge, shared budget metadata, and inline amount editing
-  for real expenses
-- `ExpenseList`: Component rendering a sorted list of operations with optional date display
+  for real expenses. The optional `pocketName` prop adds the pocket name to
+  the badge of a pocket operation: «Из кармана: <имя>» for a purchase and
+  «Перевод из кармана: <имя>» for a transfer; without it the badge reads
+  «Покупка из кармана» or «Перевод из кармана»
+- `ExpenseList`: Component rendering a sorted list of operations with optional
+  date display. The optional `pocketNames` prop (pocket id to name) supplies
+  `pocketName` to the cards of pocket operations
 
 ## State & Data
 
@@ -29,6 +34,8 @@ real expenses, project withdrawals, project returns, or pocket transfers.
   operations. Pocket operations cannot be linked to projects or shared budgets.
 - **Pocket behavior:** Purchases remain `expense` records; transfers are
   non-expense records with a pocket link.
+- **Pocket names:** The entity does not read pockets. A widget resolves names
+  and passes them through `pocketNames` / `pocketName`.
 - **Shared metadata:** Shared expense cards display the shared budget name and
   author when server data includes them
 
