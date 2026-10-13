@@ -58,6 +58,13 @@ Checks:
   commit-message, or OpenSpec configuration. A change to these files goes in
   its own Pull Request that names the check being changed and why.
 
+The `protected-paths` check enforces this: it fails any Pull Request that
+changes a file matched by `.github/protected-paths.txt`, or the `scripts` or
+`lint-staged` values of `package.json`. It runs the base-branch version of the
+workflow, the script, and the list, so a Pull Request cannot edit the check
+that judges it. The owner merges such a Pull Request with the `Protect main`
+ruleset bypass after confirming `verify` is green.
+
 ## When A Protected Operation Blocks The Task
 
 Stop and report:

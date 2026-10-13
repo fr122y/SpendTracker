@@ -1,0 +1,32 @@
+# Files that define the repository's checks.
+#
+# A pull request that changes any path matched below fails the
+# `protected-paths` check. One glob per line, repo-relative, case-sensitive:
+# `**` matches any depth, `*` matches within one path segment, anything else
+# is an exact name. Blank lines and lines starting with `#` are ignored.
+#
+# `package.json` is deliberately not listed: the script handles it specially
+# and flags it only when its `scripts` or `lint-staged` values change, so a
+# dependencies-only change passes.
+
+# CI workflows, this list, and the script that reads it
+.github/**
+
+# Git hooks
+.husky/**
+
+# Lint, type, and format configuration
+eslint.config.mjs
+tsconfig.json
+.prettierrc
+.prettierignore
+
+# Test configuration and shared test setup
+jest.config.mjs
+playwright.config.ts
+src/test/setup.ts
+src/test/mocks/**
+
+# Commit message and OpenSpec configuration
+commitlint.config.cjs
+openspec/config.yaml
