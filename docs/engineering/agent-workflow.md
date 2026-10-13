@@ -138,9 +138,9 @@ security, or architecture:
 3. Use `$openspec-apply-change` to implement the approved checklist. Keep the
    delta spec aligned with behavior and existing tests.
 4. Run `npm run spec:check` for OpenSpec structure and specs, then
-   `npm run validate` for typecheck, lint, and unit/integration tests. The
-   existing PR workflow runs the separate OpenSpec check; it does not run the
-   full application validation suite.
+   `npm run validate` for typecheck, lint, and unit/integration tests. On
+   every PR the `commitlint` job runs the OpenSpec check and the `verify` job
+   runs typecheck, lint, and unit tests.
 5. Open and merge the PR using this repository's review process. Archive the
    change in a separate follow-up only after integration and checks are
    confirmed, using `$openspec-archive-change`.
