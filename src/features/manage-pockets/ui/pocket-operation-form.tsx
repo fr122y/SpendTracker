@@ -24,7 +24,6 @@ export function PocketOperationForm({
 }) {
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
-  const [date, setDate] = useState(formatDate(selectedDate))
   const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
     null
   )
@@ -49,13 +48,11 @@ export function PocketOperationForm({
   const canSubmit =
     description.trim().length > 0 &&
     numericAmount > 0 &&
-    Boolean(date) &&
     (!isPurchase || !showCategorySelect || Boolean(selectedCategoryId))
 
   const reset = () => {
     setDescription('')
     setAmount('')
-    setDate(formatDate(selectedDate))
     setSuggestedCategoryId(null)
     setSuggestedCategoryLabel('')
     setShowCategorySelect(false)
@@ -188,7 +185,7 @@ export function PocketOperationForm({
       await addExpense.mutateAsync({
         description: description.trim(),
         amount: numericAmount,
-        date,
+        date: formatDate(selectedDate),
         ...(selectedCategory && {
           category: selectedCategory.name,
           emoji: selectedCategory.emoji,
@@ -222,13 +219,6 @@ export function PocketOperationForm({
         min={0}
         disabled={isBusy}
         className="text-base sm:text-sm"
-      />
-      <Input
-        label="Дата"
-        type="date"
-        value={date}
-        onChange={(event) => setDate(event.target.value)}
-        disabled={isBusy}
       />
       {isPurchase && !mappingsLoaded && description.trim() && (
         <p aria-live="polite" className="text-xs text-zinc-500">

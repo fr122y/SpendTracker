@@ -401,7 +401,7 @@ describe('PocketsSection', () => {
     render(<PocketsSection />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Добавить покупку' }))
-    expect(screen.getByLabelText('Дата')).toHaveValue('2026-01-21')
+    expect(screen.queryByLabelText('Дата')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText('Комментарий'), {
       target: { value: 'Обед' },
     })

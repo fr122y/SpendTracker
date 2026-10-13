@@ -196,7 +196,7 @@ test.describe('Pockets', () => {
     const form = region.locator('form')
     await form.getByLabel('Комментарий').fill(PURCHASE_DESCRIPTION)
     await form.getByLabel('Сумма').fill(String(PURCHASE_AMOUNT))
-    await expect(form.getByLabel('Дата')).toHaveValue(/^\d{4}-\d{2}-\d{2}$/)
+    await expect(form.getByLabel('Дата')).toHaveCount(0)
     // Blurring the description resolves the category: a known keyword
     // suggests one, otherwise the category select appears.
     await form.getByLabel('Сумма').blur()

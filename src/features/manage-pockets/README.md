@@ -12,7 +12,7 @@ Forms for creating and renaming pockets and recording pocket purchases and trans
 
 - Uses pocket mutations from `@/entities/pocket`.
 - Uses expense mutations and categories for pocket operations.
-- New operation dates default to the dashboard's shared `selectedDate`.
+- New operations have no date field; they are saved on the dashboard's shared `selectedDate`.
 
 ## Dependencies
 

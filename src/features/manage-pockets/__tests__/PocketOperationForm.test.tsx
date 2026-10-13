@@ -111,4 +111,41 @@ describe('PocketOperationForm keyword loading', () => {
     })
     expect(screen.queryByLabelText('Категория покупки')).not.toBeInTheDocument()
   })
+
+  it('has no date field and saves the operation on the current selected date', async () => {
+    const { rerender } = render(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="transfer"
+        selectedDate={new Date(2026, 0, 21)}
+      />
+    )
+
+    expect(screen.queryByLabelText('Дата')).not.toBeInTheDocument()
+
+    rerender(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="transfer"
+        selectedDate={new Date(2026, 0, 23)}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Комментарий'), {
+      target: { value: 'На продукты' },
+    })
+    fireEvent.change(screen.getByLabelText('Сумма'), {
+      target: { value: '300' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Перевести в расходы' }))
+
+    await waitFor(() =>
+      expect(mockAddExpense).toHaveBeenCalledWith({
+        description: 'На продукты',
+        amount: 300,
+        date: '2026-01-23',
+        pocketId: 'pocket-1',
+        operationType: 'pocket_transfer',
+      })
+    )
+  })
 })
