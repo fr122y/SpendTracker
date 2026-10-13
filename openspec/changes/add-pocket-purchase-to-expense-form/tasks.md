@@ -2,13 +2,13 @@
 
 ## 1. Tests first
 
-- [ ] 1.1 In `src/features/add-expense/__tests__/ExpenseForm.test.tsx`, mock `@/entities/pocket` and add failing tests: the scenario «Покупка из кармана» is offered with at least one non-archived pocket and absent with no pockets, with only archived pockets, and while the pocket list is not loaded; the pocket select lists only non-archived pockets; no date field is rendered; submit is blocked until a pocket is chosen.
+- [ ] 1.1 In `src/features/add-expense/__tests__/ExpenseForm.test.tsx`, mock `@/entities/pocket` and add failing tests: the scenario «Покупка из кармана» is offered with at least one non-archived pocket and absent with no pockets, with only archived pockets, and while the pocket list is not loaded; the pocket select lists only non-archived pockets; no date field is rendered; with exactly one non-archived pocket it is preselected and the purchase can be added without touching the select; with two or more the select starts empty and submit is blocked until a pocket is chosen.
 - [ ] 1.2 Add failing tests for the saved operation: it carries `operationType: 'expense'`, the chosen `pocketId`, the dashboard `selectedDate`, the description, the amount, and the category name and emoji, and carries no `projectId` or shared-budget fields; keyword suggestion, manual category choice, and mapping persistence work as for a personal expense; no balance check prevents the submit.
 - [ ] 1.3 Confirm the new tests fail for the expected reason and the existing `ExpenseForm` tests still pass.
 
 ## 2. Implementation
 
-- [ ] 2.1 Add the `pocket_purchase` scenario to `ExpenseForm`: read pockets through `usePockets()` from `@/entities/pocket` (FSD: `features/add-expense` now imports `@/entities/pocket`, the allowed `features -> entities` direction), offer the scenario only when a non-archived pocket exists, and show a pocket select modelled on the project select.
+- [ ] 2.1 Add the `pocket_purchase` scenario to `ExpenseForm`: read pockets through `usePockets()` from `@/entities/pocket` (FSD: `features/add-expense` now imports `@/entities/pocket`, the allowed `features -> entities` direction), offer the scenario only when a non-archived pocket exists, and show a pocket select modelled on the project select; preselect the pocket when exactly one is non-archived, otherwise start empty.
 - [ ] 2.2 Submit the purchase through the existing `useExpenseStore().addExpense` path as an `expense` with `pocketId`, reusing the personal category flow; add no date field, no balance check, and no transfer scenario. Do not change Server Actions, schema, or `src/features/manage-pockets`.
 - [ ] 2.3 Update `src/features/add-expense/README.md`: public API description, state and data, logic flow, and the new `@/entities/pocket` dependency.
 
