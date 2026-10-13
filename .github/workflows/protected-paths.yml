@@ -1,6 +1,6 @@
 name: Protected paths
 
-# Runs on `pull_request_target` so that this workflow, the script, and the path
+# Runs on `pull_request_target` so that this workflow, the scripts, and the path
 # list are always taken from the base branch and cannot be edited by the pull
 # request under check. Never check out or execute pull request head code here.
 on:
@@ -37,7 +37,7 @@ jobs:
           node-version: 22
 
       - name: Test the check script
-        run: node --test .github/scripts/*.test.mjs
+        run: node --test .github/scripts/protected-paths.test.mjs
 
       - name: Check changed files against protected paths
         env:
@@ -46,3 +46,30 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: node .github/scripts/protected-paths.mjs
+
+  test-integrity:
+    name: test-integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out base commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Test the check script
+        run: node --test .github/scripts/test-integrity.test.mjs
+
+      - name: Check that existing tests are not weakened
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node .github/scripts/test-integrity.mjs

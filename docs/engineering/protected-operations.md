@@ -65,6 +65,14 @@ workflow, the script, and the list, so a Pull Request cannot edit the check
 that judges it. The owner merges such a Pull Request with the `Protect main`
 ruleset bypass after confirming `verify` is green.
 
+The `test-integrity` check runs the same way and fails a Pull Request that
+weakens existing tests: it deletes a test file, adds a skip or only marker
+(`.skip`, `.only`, `.todo`, `.failing`, `xit`, `fit`, and the like), or lowers
+the number of test cases across the existing test files it changes. Modifying
+tests is normal and passes. A legitimate removal goes in its own Pull Request,
+which the owner merges with the `Protect main` ruleset bypass after confirming
+`verify` is green.
+
 ## When A Protected Operation Blocks The Task
 
 Stop and report:
