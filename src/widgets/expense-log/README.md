@@ -12,6 +12,8 @@ daily real-expense totals.
 - `useSessionStore`: selectedDate for filtering
 - `useExpenses`: operation list
 - `useDeleteExpense` and `useUpdateExpense`: mutations for item actions
+- `usePockets`: names of active and archived pockets for operation cards; the
+  journal does not wait for this query
 
 ## Features
 
@@ -22,8 +24,10 @@ daily real-expense totals.
 - Operation filters: all, real expenses, project-linked operations, pocket
   operations, movements
 - Scrollable ExpenseList
+- Pocket operation cards show the pocket name, including an archived pocket;
+  until pockets are loaded the cards keep the badge without a name
 - Empty state message when no operations match the active filter
 
 ## Dependencies
 
-- Uses: `@/entities/session`, `@/entities/expense`, `@/features/add-expense`, `@/shared/lib`
+- Uses: `@/entities/session`, `@/entities/expense`, `@/entities/pocket`, `@/features/add-expense`, `@/shared/lib`

@@ -19,6 +19,8 @@ interface ExpenseCardProps {
   onDelete: (id: string) => void
   onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
   showDate?: boolean
+  /** Name of the operation's pocket; the badge falls back to a generic label without it. */
+  pocketName?: string
 }
 
 function formatExpenseDate(date: string) {
@@ -30,10 +32,12 @@ function formatExpenseDate(date: string) {
   return `${day}.${month}.${year}`
 }
 
-function getOperationMeta(expense: Expense) {
+function getOperationMeta(expense: Expense, pocketName?: string) {
   if (expense.operationType === 'pocket_transfer') {
     return {
-      label: 'Перевод из кармана',
+      label: pocketName
+        ? `Перевод из кармана: ${pocketName}`
+        : 'Перевод из кармана',
       className: 'bg-violet-500/10 text-violet-300 ring-violet-500/30',
       Icon: ArrowUpRight,
     }
@@ -41,7 +45,7 @@ function getOperationMeta(expense: Expense) {
 
   if (expense.pocketId) {
     return {
-      label: 'Покупка из кармана',
+      label: pocketName ? `Из кармана: ${pocketName}` : 'Покупка из кармана',
       className: 'bg-emerald-500/10 text-emerald-300 ring-emerald-500/30',
       Icon: Receipt,
     }
@@ -91,6 +95,7 @@ export function ExpenseCard({
   onDelete,
   onEdit,
   showDate = false,
+  pocketName,
 }: ExpenseCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -156,7 +161,7 @@ export function ExpenseCard({
     event.currentTarget.blur()
   }
 
-  const operationMeta = getOperationMeta(expense)
+  const operationMeta = getOperationMeta(expense, pocketName)
   const OperationIcon = operationMeta.Icon
   const canEditAmount =
     Boolean(onEdit) &&
