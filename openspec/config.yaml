@@ -11,8 +11,9 @@ context: |
   integration; do not add API Routes or app-state Context providers.
   Mutations visible to users use optimistic updates with rollback and refetch.
   Validation: npm run spec:check validates OpenSpec; npm run validate runs
-  typecheck, lint, and unit/integration tests. The current PR workflow runs the
-  OpenSpec check but not the full application validation suite.
+  typecheck, lint, and unit/integration tests. On every PR the commitlint job
+  runs the OpenSpec check and the verify job runs typecheck, lint, and unit
+  tests.
   Task authority: the Obsidian vault owns task records and status. OpenSpec
   changes and their tasks.md files cover one change only and do not mirror the
   vault backlog.
