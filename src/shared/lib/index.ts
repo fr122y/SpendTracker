@@ -56,3 +56,17 @@ export {
   normalizeLayoutConfig,
   isLayoutEqual,
 } from './layout-config'
+
+// Income allocation math (kopecks)
+export {
+  rublesToKopecks,
+  percentageToHundredths,
+  percentageToKopecks,
+  amountToPercentage,
+  formatPercentage,
+  formatKopecks,
+  formatEditableKopecks,
+  getBucketAmountKopecks,
+  calculateAllocation,
+  assertAllocationRepresentable,
+} from './allocation'
