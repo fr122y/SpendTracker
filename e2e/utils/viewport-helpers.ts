@@ -68,10 +68,14 @@ export async function expectMinimumTouchTarget(
 
 /**
  * Verifies expected number of visible columns in grid layout.
- * Matches the `data-grid-container` markup of the dashboard grid:
- * - mobile: one scrolling container holding the widget accordion;
- * - tablet: a CSS grid with two column tracks;
- * - desktop: a flex row of column elements (plus resizers in edit mode).
+ * Counts columns geometrically from the actual placement of the widget
+ * cards inside `data-grid-container`, for every layout:
+ * - widget cards are the children of the outermost vertical flex
+ *   containers (mobile accordion list, tablet grid columns, desktop
+ *   column stacks);
+ * - cards are grouped by their left edge (4px tolerance);
+ * - columns must not overlap horizontally.
+ * Returns 0 (fails) when no visible widget cards are found.
  * Waits for the grid, since the skeleton renders while the layout loads.
  */
 export async function expectVisibleColumns(
@@ -89,17 +93,39 @@ export async function expectVisibleColumns(
           const grid = document.querySelector('[data-grid-container]')
           if (!grid) return 0
 
-          const style = window.getComputedStyle(grid)
-          if (style.display === 'grid') {
-            return style.gridTemplateColumns.split(' ').length
+          const cards: Element[] = []
+          const visit = (el: Element) => {
+            for (const child of Array.from(el.children)) {
+              const style = window.getComputedStyle(child)
+              if (
+                style.display === 'flex' &&
+                style.flexDirection === 'column'
+              ) {
+                cards.push(...Array.from(child.children))
+              } else {
+                visit(child)
+              }
+            }
+          }
+          visit(grid)
+
+          const boxes = cards
+            .map((card) => card.getBoundingClientRect())
+            .filter((box) => box.width > 0 && box.height > 0)
+          if (boxes.length === 0) return 0
+
+          const columns: { left: number; right: number }[] = []
+          for (const box of boxes) {
+            const column = columns.find((c) => Math.abs(c.left - box.left) <= 4)
+            if (column) column.right = Math.max(column.right, box.right)
+            else columns.push({ left: box.left, right: box.right })
           }
 
-          const columns = Array.from(grid.children).filter(
-            (child) =>
-              child.tagName === 'DIV' &&
-              child.getAttribute('role') !== 'separator'
-          )
-          return style.display === 'flex' ? columns.length : 1
+          columns.sort((a, b) => a.left - b.left)
+          for (let i = 1; i < columns.length; i++) {
+            if (columns[i].left < columns[i - 1].right - 1) return -1
+          }
+          return columns.length
         }),
       { timeout: 10000 }
     )
