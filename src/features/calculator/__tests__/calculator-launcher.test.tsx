@@ -352,6 +352,25 @@ describe('CalculatorLauncher', () => {
       expect(expression()).toHaveTextContent('1,25+5')
     })
 
+    it('shows the result on Enter after a mouse click on a chip', () => {
+      open()
+      typeKeys('1', '2', '*', '3', '+')
+
+      // Simulate a browser mouse click: mousedown focuses the button unless
+      // its default action is prevented.
+      const chip = screen.getByRole('button', { name: 'Подушка · 16 000 ₽' })
+      if (fireEvent.mouseDown(chip)) chip.focus()
+      fireEvent.mouseUp(chip)
+      fireEvent.click(chip)
+      expect(expression()).toHaveTextContent('12×3+Под.')
+
+      fireEvent.keyDown(document.activeElement ?? document.body, {
+        key: 'Enter',
+      })
+      expect(expression()).toHaveTextContent('16036')
+      expect(chip).not.toHaveAttribute('tabindex', '-1')
+    })
+
     it('does not also evaluate when Enter activates a focused calculator button', () => {
       open()
       typeKeys('2', '+', '3')
