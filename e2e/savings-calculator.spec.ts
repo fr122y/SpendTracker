@@ -18,7 +18,7 @@ test.describe('Savings calculator', () => {
     return
   }
 
-  test('inserts a savings value, computes, offers copying, and restores after reload', async ({
+  test('inserts a savings value, computes, offers copying, accepts keyboard input, and restores after reload', async ({
     page,
   }) => {
     await loginWithCredentials(page, credentials!)
@@ -60,6 +60,16 @@ test.describe('Savings calculator', () => {
     await expect(
       calculator.getByRole('button', { name: 'Скопировать' })
     ).toBeEnabled()
+
+    // Physical keyboard drives the same commands as the on-screen keypad.
+    await page.keyboard.press('Delete')
+    await page.keyboard.type('12*3')
+    await expect(expression).toHaveText('12×3')
+    await page.keyboard.press('Enter')
+    await expect(expression).toHaveText('36')
+    await page.keyboard.press('Delete')
+    await page.keyboard.type(String(expected).replace('.', ','))
+    await expect(expression).toHaveText(String(expected).replace('.', ','))
 
     await calculator
       .getByRole('button', { name: 'Закрыть калькулятор' })

@@ -268,4 +268,88 @@ describe('CalculatorLauncher', () => {
       'Не удалось скопировать'
     )
   })
+
+  describe('physical keyboard', () => {
+    const typeKeys = (...keys: Array<string | [string, string]>) => {
+      for (const entry of keys) {
+        const [key, code] = Array.isArray(entry) ? entry : [entry, '']
+        fireEvent.keyDown(document.body, { key, code })
+      }
+    }
+
+    it('types an expression and shows the result on Enter', () => {
+      open()
+      typeKeys('1', '2', '*', '3')
+      expect(expression()).toHaveTextContent('12×3')
+      typeKeys('Enter')
+      expect(expression()).toHaveTextContent('36')
+    })
+
+    it('accepts keypad keys, decimal keys, parentheses, and =', () => {
+      open()
+      typeKeys(
+        '(',
+        ['1', 'Numpad1'],
+        [',', 'NumpadDecimal'],
+        '5',
+        ')',
+        ['/', 'NumpadDivide'],
+        '3',
+        '='
+      )
+      expect(expression()).toHaveTextContent('0,5')
+    })
+
+    it('edits with Backspace, Delete, and arrows at the caret', () => {
+      open()
+      typeKeys('1', '2', '+', '3', 'ArrowLeft', 'ArrowLeft', '5')
+      expect(expression()).toHaveTextContent('125+3')
+      typeKeys('ArrowRight', 'Backspace')
+      expect(expression()).toHaveTextContent('1253')
+      typeKeys('Delete')
+      expect(expression()).toHaveTextContent('0')
+    })
+
+    it('leaves typing in an outside input to that input', () => {
+      render(<input aria-label="Сумма" />)
+      open()
+      const input = screen.getByRole('textbox', { name: 'Сумма' })
+      input.focus()
+      const notPrevented = fireEvent.keyDown(input, { key: '5' })
+      expect(notPrevented).toBe(true)
+      expect(expression()).toHaveTextContent('0')
+    })
+
+    it('ignores modifier shortcuts and prevents defaults only for handled keys', () => {
+      open()
+      expect(
+        fireEvent.keyDown(document.body, { key: 'c', ctrlKey: true })
+      ).toBe(true)
+      expect(
+        fireEvent.keyDown(document.body, { key: '5', metaKey: true })
+      ).toBe(true)
+      expect(fireEvent.keyDown(document.body, { key: 'a' })).toBe(true)
+      expect(expression()).toHaveTextContent('0')
+      expect(fireEvent.keyDown(document.body, { key: '/' })).toBe(false)
+      expect(fireEvent.keyDown(document.body, { key: '7' })).toBe(false)
+      expect(expression()).toHaveTextContent('7')
+    })
+
+    it('stops handling keys after the calculator closes', () => {
+      open()
+      press('Закрыть калькулятор')
+      expect(fireEvent.keyDown(document.body, { key: '5' })).toBe(true)
+      fireEvent.click(screen.getByRole('button', { name: launcherName }))
+      expect(expression()).toHaveTextContent('0')
+    })
+
+    it('does not also evaluate when Enter activates a focused calculator button', () => {
+      open()
+      typeKeys('2', '+', '3')
+      const seven = screen.getByRole('button', { name: '7' })
+      seven.focus()
+      expect(fireEvent.keyDown(seven, { key: 'Enter' })).toBe(true)
+      expect(expression()).toHaveTextContent('2+3')
+    })
+  })
 })
