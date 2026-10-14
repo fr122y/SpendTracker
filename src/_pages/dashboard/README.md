@@ -21,7 +21,7 @@ This is a **pure composition component** following FSD architecture principles. 
   <main className="flex-1 overflow-hidden">
     <DashboardGrid />
   </main>
-  <CalculatorLauncher />
+  <CalculatorLauncherDynamic />
 </div>
 ```
 
@@ -29,7 +29,7 @@ This is a **pure composition component** following FSD architecture principles. 
 
 - Uses: `@/widgets/dashboard-header` - Page header with navigation
 - Uses: `@/widgets/dashboard-grid` - Widget grid layout
-- Uses: `@/features/calculator` - Floating savings calculator button (`CalculatorLauncher`)
+- Uses: `@/features/calculator` - Floating savings calculator button (`CalculatorLauncherDynamic`, client-only)
 - Uses: `@/features/auth` - Email verification banner
 
 ## Notes

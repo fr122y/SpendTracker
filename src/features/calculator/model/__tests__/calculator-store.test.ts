@@ -1,15 +1,26 @@
-import { EMPTY_STATE, insertSavings, pressKey } from '../../lib/expression'
+import { wrap } from '@reatom/core'
+
+import {
+  EMPTY_STATE,
+  insertSavings,
+  pressKey,
+  type CalculatorState,
+} from '../../lib/expression'
+import {
+  createCalculatorAtom,
+  readCalculatorState,
+  updateCalculator,
+} from '../calculator-store'
 
 const KEY = 'smartspend-calculator-v1'
 
-type StoreModule = typeof import('../calculator-store')
+let reloads = 0
 
-function loadStore(): StoreModule {
-  let store: StoreModule | undefined
-  jest.isolateModules(() => {
-    store = jest.requireActual<StoreModule>('../calculator-store')
-  })
-  return store!
+/** A fresh persisted atom reads storage the way a page reload does. */
+function reload(): CalculatorState {
+  reloads++
+  const fresh = createCalculatorAtom(`calculatorAtomReload${reloads}`)
+  return wrap(() => fresh())()
 }
 
 function record(data: unknown): string {
@@ -28,19 +39,17 @@ beforeEach(() => {
 
 describe('calculator store persistence', () => {
   it('writes the state under a versioned key and restores it after reload', () => {
-    const store = loadStore()
     const state = insertSavings(pressKey(pressKey(EMPTY_STATE, '1'), '+'), {
       id: 'bucket:a',
       label: 'Подушка',
       kopecks: 1600000,
     })
 
-    store.updateCalculator(() => state)
-    expect(store.readCalculatorState()).toEqual(state)
+    updateCalculator(() => state)
+    expect(readCalculatorState()).toEqual(state)
     expect(localStorage.getItem(KEY)).not.toBeNull()
 
-    const reloaded = loadStore()
-    expect(reloaded.readCalculatorState()).toEqual(state)
+    expect(reload()).toEqual(state)
   })
 
   it('ignores invalid saved data', () => {
@@ -48,11 +57,11 @@ describe('calculator store persistence', () => {
       KEY,
       record({ tokens: [{ kind: 'char', value: 'eval' }], caret: 0 })
     )
-    expect(loadStore().readCalculatorState()).toEqual(EMPTY_STATE)
+    expect(reload()).toEqual(EMPTY_STATE)
   })
 
   it('ignores unparsable saved data', () => {
     localStorage.setItem(KEY, '{not json')
-    expect(loadStore().readCalculatorState()).toEqual(EMPTY_STATE)
+    expect(reload()).toEqual(EMPTY_STATE)
   })
 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { EmailVerificationBanner } from '@/features/auth'
-import { CalculatorLauncher } from '@/features/calculator'
+import { CalculatorLauncherDynamic } from '@/features/calculator'
 import { DashboardGrid } from '@/widgets/dashboard-grid'
 import { DashboardHeader } from '@/widgets/dashboard-header'
 
@@ -22,7 +22,7 @@ export function Dashboard({ emailVerification }: DashboardProps) {
       <main className="flex-1 overflow-hidden">
         <DashboardGrid />
       </main>
-      <CalculatorLauncher />
+      <CalculatorLauncherDynamic />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Copy, Delete, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Check, Copy, Delete, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
 import { useBucketStore } from '@/entities/bucket'
@@ -8,49 +8,100 @@ import { useSettingsStore } from '@/entities/settings'
 import { cn, formatKopecks } from '@/shared/lib'
 
 import {
-  appendKey,
-  backspace,
-  evaluateExpression,
-  formatExpressionForDisplay,
+  applyEquals,
+  deleteBackward,
+  displayToken,
+  EMPTY_STATE,
+  evaluateTokens,
   formatResultForCopy,
   formatResultForDisplay,
-  insertValue,
+  insertSavings,
+  moveCaret,
+  pressKey,
+  refreshAmounts,
+  setCaret,
+  type Amounts,
+  type CalculatorState,
 } from '../lib/expression'
-import { buildSavingsValues, kopecksToPlainRubles } from '../lib/savings-values'
+import { buildSavingsValues } from '../lib/savings-values'
+import { updateCalculator, useCalculatorState } from '../model/calculator-store'
 
 type CopyStatus = 'idle' | 'copied' | 'failed'
+type Tone = 'digit' | 'operator' | 'action' | 'equals'
 
 interface KeyDef {
-  label: string
+  id: string
+  label: React.ReactNode
   ariaLabel?: string
-  key: string
-  tone?: 'digit' | 'operator' | 'action' | 'equals'
+  tone?: Tone
+  span?: 2 | 3
+  apply: (state: CalculatorState, amounts: Amounts) => CalculatorState
 }
 
+const key = (value: string, extra: Partial<KeyDef> = {}): KeyDef => ({
+  id: value,
+  label: value,
+  apply: (state) => pressKey(state, value),
+  ...extra,
+})
+
 const KEYS: KeyDef[] = [
-  { label: 'C', ariaLabel: 'Очистить', key: 'clear', tone: 'action' },
-  { label: '(', key: '(', tone: 'operator' },
-  { label: ')', key: ')', tone: 'operator' },
-  { label: '÷', ariaLabel: 'Разделить', key: '/', tone: 'operator' },
-  { label: '7', key: '7' },
-  { label: '8', key: '8' },
-  { label: '9', key: '9' },
-  { label: '×', ariaLabel: 'Умножить', key: '*', tone: 'operator' },
-  { label: '4', key: '4' },
-  { label: '5', key: '5' },
-  { label: '6', key: '6' },
-  { label: '−', ariaLabel: 'Минус', key: '-', tone: 'operator' },
-  { label: '1', key: '1' },
-  { label: '2', key: '2' },
-  { label: '3', key: '3' },
-  { label: '+', ariaLabel: 'Плюс', key: '+', tone: 'operator' },
-  { label: ',', ariaLabel: 'Десятичная запятая', key: '.' },
-  { label: '0', key: '0' },
-  { label: '⌫', ariaLabel: 'Стереть', key: 'backspace', tone: 'action' },
-  { label: '=', ariaLabel: 'Равно', key: '=', tone: 'equals' },
+  {
+    id: 'left',
+    label: <ArrowLeft className="h-5 w-5" aria-hidden="true" />,
+    ariaLabel: 'Курсор влево',
+    tone: 'action',
+    apply: (state) => moveCaret(state, -1),
+  },
+  {
+    id: 'right',
+    label: <ArrowRight className="h-5 w-5" aria-hidden="true" />,
+    ariaLabel: 'Курсор вправо',
+    tone: 'action',
+    apply: (state) => moveCaret(state, 1),
+  },
+  {
+    id: 'backspace',
+    label: <Delete className="h-5 w-5" aria-hidden="true" />,
+    ariaLabel: 'Стереть',
+    tone: 'action',
+    apply: deleteBackward,
+  },
+  {
+    id: 'clear',
+    label: 'C',
+    ariaLabel: 'Очистить',
+    tone: 'action',
+    apply: () => EMPTY_STATE,
+  },
+  key('/', { label: '÷', ariaLabel: 'Разделить', tone: 'operator' }),
+  key('7'),
+  key('8'),
+  key('9'),
+  key('(', { tone: 'operator' }),
+  key('*', { label: '×', ariaLabel: 'Умножить', tone: 'operator' }),
+  key('4'),
+  key('5'),
+  key('6'),
+  key(')', { tone: 'operator' }),
+  key('-', { label: '−', ariaLabel: 'Минус', tone: 'operator' }),
+  key('1'),
+  key('2'),
+  key('3'),
+  key('.', { label: ',', ariaLabel: 'Десятичная запятая' }),
+  key('+', { ariaLabel: 'Плюс', tone: 'operator' }),
+  key('0', { span: 3 }),
+  {
+    id: 'equals',
+    label: '=',
+    ariaLabel: 'Равно',
+    tone: 'equals',
+    span: 2,
+    apply: applyEquals,
+  },
 ]
 
-const KEY_TONES: Record<NonNullable<KeyDef['tone']>, string> = {
+const KEY_TONES: Record<Tone, string> = {
   digit: 'bg-zinc-800 text-zinc-100 hover:bg-zinc-700',
   operator: 'bg-zinc-800/60 text-emerald-400 hover:bg-zinc-700',
   action: 'bg-zinc-800/60 text-zinc-300 hover:bg-zinc-700',
@@ -61,20 +112,37 @@ function money(kopecks: number): string {
   return `${formatKopecks(kopecks).replace(/[  ]/g, ' ')} ₽`
 }
 
+function Caret() {
+  return (
+    <span
+      data-testid="calculator-caret"
+      aria-hidden="true"
+      className="mx-px inline-block h-5 w-0.5 animate-pulse bg-emerald-400 align-middle"
+    />
+  )
+}
+
 interface CalculatorPanelProps {
   onClose: () => void
 }
 
 export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
-  const [expression, setExpression] = useState('')
+  const state = useCalculatorState()
   const [copyStatus, setCopyStatus] = useState<CopyStatus>('idle')
   const resetTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const salary = useSettingsStore((state) => state.salary)
-  const buckets = useBucketStore((state) => state.buckets)
-  const values = buildSavingsValues(salary, buckets)
+  const salary = useSettingsStore((settings) => settings.salary)
+  const isSettingsLoading = useSettingsStore((settings) => settings.isLoading)
+  const buckets = useBucketStore((store) => store.buckets)
+  const isBucketsLoading = useBucketStore((store) => store.isLoading)
 
-  const result = evaluateExpression(expression)
+  const values = buildSavingsValues(salary, buckets)
+  const amounts: Amounts =
+    isSettingsLoading || isBucketsLoading || values.length === 0
+      ? null
+      : new Map(values.map((value) => [value.id, value.kopecks]))
+
+  const result = evaluateTokens(state.tokens, amounts)
 
   useEffect(() => {
     return () => {
@@ -82,19 +150,19 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
     }
   }, [])
 
-  const update = (next: string) => {
-    setExpression(next)
+  const dispatch = (update: (current: CalculatorState) => CalculatorState) => {
+    updateCalculator((current) => update(refreshAmounts(current, amounts)))
     setCopyStatus('idle')
   }
 
-  const handleKey = (key: string) => {
-    if (key === 'clear') return update('')
-    if (key === 'backspace') return update(backspace(expression))
-    if (key === '=') {
-      if (result !== null) update(formatResultForCopy(result))
-      return
-    }
-    update(appendKey(expression, key))
+  const handleTokenClick = (
+    event: React.MouseEvent<HTMLSpanElement>,
+    index: number
+  ) => {
+    event.stopPropagation()
+    const rect = event.currentTarget.getBoundingClientRect()
+    const after = event.clientX >= rect.left + rect.width / 2
+    dispatch((current) => setCaret(current, index + (after ? 1 : 0)))
   }
 
   const handleCopy = async () => {
@@ -108,6 +176,27 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
     if (resetTimer.current) clearTimeout(resetTimer.current)
     resetTimer.current = setTimeout(() => setCopyStatus('idle'), 2000)
   }
+
+  const items: React.ReactNode[] = state.tokens.map((token, index) => {
+    const view = displayToken(token, amounts)
+    return (
+      <span
+        key={index}
+        data-testid="calculator-token"
+        title={view.title}
+        onClick={(event) => handleTokenClick(event, index)}
+        className={cn(
+          'cursor-text',
+          view.isValue &&
+            'mx-0.5 rounded bg-emerald-900/50 px-1 text-emerald-200',
+          token.kind === 'char' && /[+\-*/]/.test(token.value) && 'mx-0.5'
+        )}
+      >
+        {view.text}
+      </span>
+    )
+  })
+  items.splice(state.caret, 0, <Caret key="caret" />)
 
   return (
     <div className="flex flex-col gap-3">
@@ -123,49 +212,51 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
         </button>
       </div>
 
-      <div className="rounded-lg bg-zinc-950 px-3 py-2 text-right">
+      <div className="rounded-lg bg-zinc-950 px-3 py-2">
         <div
           data-testid="calculator-expression"
-          className="min-h-6 overflow-x-auto text-sm break-all whitespace-normal text-zinc-400"
+          data-caret={state.caret}
+          onClick={() => dispatch((current) => setCaret(current, Infinity))}
+          className="min-h-7 cursor-text text-right text-base break-all text-zinc-300"
         >
-          {expression === '' ? '0' : formatExpressionForDisplay(expression)}
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <output
-            data-testid="calculator-result"
-            aria-live="polite"
-            className="truncate font-mono text-2xl text-zinc-100"
-          >
-            {result === null ? '—' : formatResultForDisplay(result)}
-          </output>
+          {state.tokens.length === 0 && (
+            <span className="text-zinc-600">0</span>
+          )}
+          {items}
         </div>
         <div className="mt-1 flex items-center justify-end gap-2">
-          {copyStatus !== 'idle' && (
-            <span
-              role="status"
-              className={cn(
-                'text-xs',
-                copyStatus === 'copied' ? 'text-emerald-400' : 'text-red-400'
-              )}
-            >
-              {copyStatus === 'copied'
-                ? 'Скопировано'
-                : 'Не удалось скопировать'}
-            </span>
-          )}
+          <div
+            data-testid="calculator-result"
+            className="min-w-0 truncate font-mono text-2xl text-zinc-100"
+          >
+            {result === null ? '—' : formatResultForDisplay(result)}
+          </div>
           <button
             type="button"
+            aria-label="Скопировать"
+            title="Скопировать"
+            data-copied={copyStatus === 'copied'}
             onClick={handleCopy}
             disabled={result === null}
-            className="flex min-h-9 items-center gap-1.5 rounded-md border border-zinc-700 px-2.5 text-xs text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
+            className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-30',
+              copyStatus === 'copied' && 'text-emerald-400',
+              copyStatus === 'failed' && 'text-red-400'
+            )}
           >
             {copyStatus === 'copied' ? (
-              <Check className="h-3.5 w-3.5" aria-hidden="true" />
+              <Check className="h-5 w-5" aria-hidden="true" />
             ) : (
-              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+              <Copy className="h-5 w-5" aria-hidden="true" />
             )}
-            Скопировать
           </button>
+          <span role="status" aria-live="polite" className="sr-only">
+            {copyStatus === 'copied'
+              ? 'Скопировано'
+              : copyStatus === 'failed'
+                ? 'Не удалось скопировать'
+                : ''}
+          </span>
         </div>
       </div>
 
@@ -182,17 +273,15 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
               aria-label={`${value.label} · ${money(value.kopecks)}`}
               title={`${value.label} · ${money(value.kopecks)}`}
               onClick={() =>
-                update(
-                  insertValue(expression, kopecksToPlainRubles(value.kopecks))
-                )
+                dispatch((current) => insertSavings(current, value))
               }
-              className="flex max-w-[12rem] shrink-0 items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-xs text-zinc-200 hover:border-emerald-600"
+              className="flex shrink-0 items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-xs whitespace-nowrap text-zinc-200 hover:border-emerald-600"
             >
-              <span className="truncate">{value.label}</span>
+              <span className="max-w-[11rem] truncate">{value.label}</span>
               <span aria-hidden="true" className="text-zinc-500">
                 ·
               </span>
-              <span className="shrink-0 font-mono text-zinc-100">
+              <span className="font-mono text-zinc-100">
                 {money(value.kopecks)}
               </span>
             </button>
@@ -200,23 +289,21 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-4 gap-1.5">
+      <div className="grid grid-cols-5 gap-1.5">
         {KEYS.map((def) => (
           <button
-            key={def.key}
+            key={def.id}
             type="button"
             aria-label={def.ariaLabel}
-            onClick={() => handleKey(def.key)}
+            onClick={() => dispatch((current) => def.apply(current, amounts))}
             className={cn(
               'flex h-11 items-center justify-center rounded-lg text-lg font-medium transition-colors',
-              KEY_TONES[def.tone ?? 'digit']
+              KEY_TONES[def.tone ?? 'digit'],
+              def.span === 2 && 'col-span-2',
+              def.span === 3 && 'col-span-3'
             )}
           >
-            {def.key === 'backspace' ? (
-              <Delete className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              def.label
-            )}
+            {def.label}
           </button>
         ))}
       </div>
