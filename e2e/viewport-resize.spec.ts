@@ -1,7 +1,12 @@
-import { test, expect } from '@playwright/test'
-
 import {
-  getViewportCategory,
+  expect,
+  expenseRow,
+  journalForm,
+  reloadPage,
+  test,
+  TIMEOUT,
+} from './utils/expenses'
+import {
   expectVisibleColumns,
   expectNoHorizontalScroll,
 } from './utils/viewport-helpers'
@@ -9,8 +14,7 @@ import {
 test.describe('Viewport Resize Adaptation Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
+    await expect(page.locator('[data-grid-container]')).toBeVisible(TIMEOUT)
   })
 
   test('should adapt from mobile to tablet layout', async ({ page }) => {
@@ -70,32 +74,26 @@ test.describe('Viewport Resize Adaptation Tests', () => {
     await expectNoHorizontalScroll(page)
   })
 
-  test('should maintain functionality across breakpoints', async ({ page }) => {
-    const descriptionInput = page.getByPlaceholder('Описание расхода')
-    const amountInput = page.getByPlaceholder('Сумма')
-    const submitButton = page.getByRole('button', {
-      name: 'Добавить',
-      exact: true,
-    })
-
-    // Test on mobile
+  test('should maintain functionality across breakpoints', async ({
+    page,
+    expenses,
+  }) => {
+    // Add on mobile
     await page.setViewportSize({ width: 375, height: 667 })
-    await descriptionInput.fill('Mobile expense')
-    await amountInput.fill('100')
-    await submitButton.click()
-    await expect(page.getByText('Mobile expense')).toBeVisible({
-      timeout: 10000,
-    })
+    // Load the mobile layout from scratch, so it does not remount mid-input
+    await reloadPage(page)
+    const expense = await expenses.add('E2E расход на мобильном')
+    const row = expenseRow(page, expense.description, expense.amount)
 
     // Resize to tablet - expense should still be visible
     await page.setViewportSize({ width: 768, height: 1024 })
-    await page.waitForTimeout(200)
-    await expect(page.getByText('Mobile expense')).toBeVisible()
+    await expect(row).toBeVisible(TIMEOUT)
 
     // Resize to desktop - expense should still be visible
     await page.setViewportSize({ width: 1280, height: 720 })
-    await page.waitForTimeout(200)
-    await expect(page.getByText('Mobile expense')).toBeVisible()
+    await expect(row).toBeVisible(TIMEOUT)
+
+    await expenses.remove(expense)
   })
 
   test('should handle rapid viewport changes', async ({ page }) => {
@@ -115,8 +113,10 @@ test.describe('Viewport Resize Adaptation Tests', () => {
       await expectNoHorizontalScroll(page)
 
       // Form should remain functional
-      await expect(page.getByPlaceholder('Описание расхода')).toBeVisible()
-      await expect(page.getByPlaceholder('Сумма')).toBeVisible()
+      await expect(
+        journalForm(page).getByLabel('Описание расхода')
+      ).toBeVisible()
+      await expect(journalForm(page).getByLabel('Сумма расхода')).toBeVisible()
     }
   })
 
