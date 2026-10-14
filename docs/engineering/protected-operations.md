@@ -73,6 +73,12 @@ tests is normal and passes. A legitimate removal goes in its own Pull Request,
 which the owner merges with the `Protect main` ruleset bypass after confirming
 `verify` is green.
 
+The `e2e` check runs the Playwright specs listed in `.github/e2e-specs.txt`
+against the Pull Request's Vercel Preview, never against production, and fails
+when a listed spec is missing or any of its tests is skipped. Adding a spec to
+that list, or removing one, changes a protected file and goes through the
+owner's bypass.
+
 ## When A Protected Operation Blocks The Task
 
 Stop and report:

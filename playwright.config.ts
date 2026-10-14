@@ -14,6 +14,18 @@ export const VIEWPORTS = {
   desktop_large: { width: 1920, height: 1080 }, // Full HD desktop
 } as const
 
+/**
+ * Remote target for the e2e suite, e.g. a Vercel Preview deployment.
+ * When set, Playwright tests that URL and does not start a local dev server.
+ */
+const remoteBaseURL = process.env.PLAYWRIGHT_BASE_URL
+
+/**
+ * Vercel Deployment Protection bypass for the remote target. The header lets
+ * each request through and asks Vercel to set a bypass cookie for the session.
+ */
+const vercelBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -22,7 +34,14 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: remoteBaseURL ?? 'http://localhost:3000',
+    extraHTTPHeaders:
+      remoteBaseURL && vercelBypassSecret
+        ? {
+            'x-vercel-protection-bypass': vercelBypassSecret,
+            'x-vercel-set-bypass-cookie': 'true',
+          }
+        : undefined,
     trace: 'on-first-retry',
   },
   projects: [
@@ -96,9 +115,11 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-  },
+  webServer: remoteBaseURL
+    ? undefined
+    : {
+        command: 'npm run dev',
+        url: 'http://localhost:3000',
+        reuseExistingServer: !process.env.CI,
+      },
 })
