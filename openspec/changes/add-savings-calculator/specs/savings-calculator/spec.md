@@ -27,7 +27,7 @@ An authenticated app screen MUST show a round floating calculator button in the 
 
 ### Requirement: Calculate with on-screen buttons and a caret
 
-The calculator MUST accept input only from its on-screen buttons: digits, a decimal separator, `+ − × ÷`, parentheses, backspace, clear, `=`, and «←» «→» caret buttons placed in the backspace row. The expression line MUST show a visible caret that the user can place by tapping a position in the expression or move with the arrow buttons. Input MUST be inserted at the caret, and backspace MUST delete the element before the caret. The calculator MUST show the result rounded to kopecks; an incomplete or invalid expression, including division by zero, MUST NOT show a numeric result.
+The calculator MUST accept input from its on-screen buttons: digits, a decimal separator, `+ − × ÷`, parentheses, backspace, clear, `=`, and «←» «→» caret buttons placed in the backspace row. The expression line MUST show a visible caret that the user can place by tapping a position in the expression or move with the arrow buttons. Input MUST be inserted at the caret, and backspace MUST delete the element before the caret. The calculator MUST show the result rounded to kopecks; an incomplete or invalid expression, including division by zero, MUST NOT show a numeric result.
 
 #### Scenario: Evaluate an expression
 
@@ -44,6 +44,28 @@ The calculator MUST accept input only from its on-screen buttons: digits, a deci
 
 - **WHEN** the user enters `5 ÷ 0`
 - **THEN** no numeric result is shown
+
+### Requirement: Accept physical keyboard input
+
+While the calculator is open, a physical keyboard MUST drive it exactly like the on-screen buttons, including the caret, automatic `+`, and evaluation: digits (including the numeric keypad), `+ - * /` (including the keypad), `,` and `.` (including the keypad decimal key) as the decimal separator, `(` `)`, `Enter` and `=` for the result, `Backspace` to delete the element before the caret, `Delete` to clear the expression, `←` `→` to move the caret, and `Escape` to close. Keys typed into an editable field outside the calculator MUST go to that field. Keys with Ctrl, Meta, or Alt and keys during text composition MUST be ignored. The calculator MUST suppress the browser's default action only for keys it handles, and pressing Enter on a focused calculator button MUST activate only that button.
+
+#### Scenario: Type an expression
+
+- **GIVEN** the calculator is open
+- **WHEN** the user types `12*3` on the keyboard and presses Enter
+- **THEN** the expression shows `12×3` and then `36`
+
+#### Scenario: Type into a form while the calculator is open
+
+- **GIVEN** the calculator is open and an expense amount field outside it has focus
+- **WHEN** the user types `5`
+- **THEN** the digit goes to the field and the calculator expression does not change
+
+#### Scenario: Keep browser shortcuts
+
+- **GIVEN** the calculator is open
+- **WHEN** the user presses Ctrl+C
+- **THEN** the calculator ignores the key and the browser handles it
 
 ### Requirement: Insert live savings values
 
