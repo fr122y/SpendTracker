@@ -67,37 +67,43 @@ export async function expectMinimumTouchTarget(
 }
 
 /**
- * Verifies expected number of visible columns in grid layout
- * Used to test responsive grid behavior
+ * Verifies expected number of visible columns in grid layout.
+ * Matches the `data-grid-container` markup of the dashboard grid:
+ * - mobile: one scrolling container holding the widget accordion;
+ * - tablet: a CSS grid with two column tracks;
+ * - desktop: a flex row of column elements (plus resizers in edit mode).
+ * Waits for the grid, since the skeleton renders while the layout loads.
  */
 export async function expectVisibleColumns(
   page: Page,
   expectedCount: number
 ): Promise<void> {
-  // Look for grid container and count columns
-  const columnCount = await page.evaluate(() => {
-    const gridContainer = document.querySelector('[data-grid-container]')
-    if (!gridContainer) return 0
-
-    // For mobile, count stacked widgets (flex-col)
-    if (gridContainer.classList.contains('flex-col')) {
-      return 1
-    }
-
-    // For tablet, count grid columns
-    const gridCols = window
-      .getComputedStyle(gridContainer)
-      .gridTemplateColumns.split(' ')
-    if (gridCols.length > 1) {
-      return gridCols.length
-    }
-
-    // For desktop, count direct column children
-    const columns = gridContainer.querySelectorAll(':scope > div')
-    return columns.length
+  await expect(page.locator('[data-grid-container]')).toBeVisible({
+    timeout: 10000,
   })
 
-  expect(columnCount).toBe(expectedCount)
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const grid = document.querySelector('[data-grid-container]')
+          if (!grid) return 0
+
+          const style = window.getComputedStyle(grid)
+          if (style.display === 'grid') {
+            return style.gridTemplateColumns.split(' ').length
+          }
+
+          const columns = Array.from(grid.children).filter(
+            (child) =>
+              child.tagName === 'DIV' &&
+              child.getAttribute('role') !== 'separator'
+          )
+          return style.display === 'flex' ? columns.length : 1
+        }),
+      { timeout: 10000 }
+    )
+    .toBe(expectedCount)
 }
 
 /**
