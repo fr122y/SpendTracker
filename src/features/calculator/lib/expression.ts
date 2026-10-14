@@ -70,9 +70,27 @@ function numberAroundCaret(state: CalculatorState): Token[] {
   return state.tokens.slice(start, end)
 }
 
+/**
+ * Inserts a new number's characters, joining it to a savings value right
+ * before or after the caret with `+`, so a value never touches a digit.
+ */
+function insertNumberChars(
+  state: CalculatorState,
+  text: string
+): CalculatorState {
+  const prev = state.tokens[state.caret - 1]
+  const next = state.tokens[state.caret]
+  const before = prev?.kind === 'savings' ? '+' : ''
+  const after = next?.kind === 'savings' ? '+' : ''
+  const chars = before + text
+  return insertAt(state, charsToTokens(chars + after), chars.length)
+}
+
 export function pressKey(state: CalculatorState, key: string): CalculatorState {
   if (!CHARS.has(key) || key.length !== 1) return state
   const prev = state.tokens[state.caret - 1]
+
+  if (/\d/.test(key)) return insertNumberChars(state, key)
 
   if (key === '.') {
     if (numberAroundCaret(state).some((token) => isChar(token, '.'))) {
@@ -80,7 +98,7 @@ export function pressKey(state: CalculatorState, key: string): CalculatorState {
     }
     return isDigit(prev)
       ? insertAt(state, charsToTokens('.'))
-      : insertAt(state, charsToTokens('0.'))
+      : insertNumberChars(state, '0.')
   }
 
   if (OPERATORS.has(key)) {
@@ -174,8 +192,9 @@ export function toEvaluable(tokens: Token[], amounts: Amounts): string {
   return tokens
     .map((token) => {
       if (token.kind === 'char') return token.value
-      const rubles = kopecksToPlainRubles(amountOf(token, amounts))
-      return rubles.startsWith('-') ? `(${rubles})` : rubles
+      // Always parenthesised: an adjacent digit makes the expression
+      // invalid instead of merging into the amount.
+      return `(${kopecksToPlainRubles(amountOf(token, amounts))})`
     })
     .join('')
 }
