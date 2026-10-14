@@ -30,4 +30,4 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 
 ## Dependencies
 
-- Uses: `@/entities/bucket`, `@/entities/settings`, `@/shared/ui`
+- Uses: `@/entities/bucket`, `@/entities/settings`, `@/shared/ui`, `@/shared/lib` (allocation math; `lib/allocation.ts` re-exports `@/shared/lib/allocation`)

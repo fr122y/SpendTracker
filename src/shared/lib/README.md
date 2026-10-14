@@ -24,6 +24,12 @@ Utility functions and helpers used across the application.
 - `getWeekBoundaries(date)`: Return Monday-Sunday ISO date boundaries for a
   date
 
+### Income Allocation (`allocation.ts`)
+
+- `getBucketAmountKopecks(bucket, incomeKopecks)`, `calculateAllocation(buckets, incomeKopecks)`: bucket amounts, allocated total, and the operations remainder in kopecks
+- `rublesToKopecks`, `percentageToKopecks`, `amountToPercentage`, `formatKopecks`, `formatPercentage`, `formatEditableKopecks`: currency-safe conversions and display formatting
+- Used by `features/manage-buckets` and `features/calculator`
+
 ### Utilities
 
 - `cn(...classes)`: Class name utility (tailwind-merge + clsx)
