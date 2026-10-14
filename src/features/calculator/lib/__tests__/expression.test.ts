@@ -134,7 +134,7 @@ describe('evaluation', () => {
 
   it('falls back to the last known amount when the value is missing', () => {
     const state = insertSavings(EMPTY_STATE, cushion)
-    expect(toEvaluable(state.tokens, new Map())).toBe('16000')
+    expect(toEvaluable(state.tokens, new Map())).toBe('(16000)')
     expect(displayToken(state.tokens[0], new Map())).toEqual({
       text: '16000',
       isValue: false,
@@ -166,6 +166,52 @@ describe('evaluation', () => {
     expect(state.caret).toBe(3)
     const invalid = type(['5', '+'])
     expect(applyEquals(invalid, amounts)).toBe(invalid)
+  })
+})
+
+describe('digits next to a savings value (Preview regression)', () => {
+  const flat = { id: 'bucket:kv', label: 'Квартира', kopecks: 3000000 }
+  const flatAmounts = new Map([['bucket:kv', 3000000]])
+
+  it('inserts plus before a digit typed right after a value', () => {
+    const state = pressKey(insertSavings(type(['5', '+']), flat), '7')
+    expect(text(state.tokens)).toBe('5+[bucket:kv]+7')
+    expect(evaluateTokens(state.tokens, flatAmounts)).toBe(30012)
+  })
+
+  it('inserts plus after a digit typed right before a value', () => {
+    const state = setCaret(insertSavings(EMPTY_STATE, flat), 0)
+    const typed = pressKey(pressKey(state, '7'), '5')
+    expect(text(typed.tokens)).toBe('75+[bucket:kv]')
+    expect(typed.caret).toBe(2)
+    expect(evaluateTokens(typed.tokens, flatAmounts)).toBe(30075)
+  })
+
+  it('never merges a value with a digit when a parenthesis follows', () => {
+    const state = setCaret(pressKey(insertSavings(EMPTY_STATE, flat), '('), 1)
+    const typed = pressKey(state, '7')
+    expect(text(typed.tokens)).toBe('[bucket:kv]+7(')
+    expect(evaluateTokens(typed.tokens, flatAmounts)).toBeNull()
+  })
+
+  it('starts a decimal number after a value with plus and zero', () => {
+    const state = pressKey(insertSavings(EMPTY_STATE, flat), '.')
+    expect(text(state.tokens)).toBe('[bucket:kv]+0.')
+  })
+
+  it('serialises values in parentheses so adjacent digits stay invalid', () => {
+    const tokens: Token[] = [
+      { kind: 'char', value: '7' },
+      {
+        kind: 'savings',
+        id: 'bucket:kv',
+        label: 'Квартира',
+        lastKopecks: 3000000,
+      },
+      { kind: 'char', value: '7' },
+    ]
+    expect(toEvaluable(tokens, flatAmounts)).toBe('7(30000)7')
+    expect(evaluateTokens(tokens, flatAmounts)).toBeNull()
   })
 })
 

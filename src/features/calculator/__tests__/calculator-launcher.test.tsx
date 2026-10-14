@@ -186,6 +186,14 @@ describe('CalculatorLauncher', () => {
     expect(result()).toHaveTextContent('20 100')
   })
 
+  it('separates a digit typed after a value with plus', () => {
+    open()
+    press('5', 'Плюс', 'Подушка · 16 000 ₽', '7')
+
+    expect(expression()).toHaveTextContent('5+Под.+7')
+    expect(result()).toHaveTextContent('16 012')
+  })
+
   it('shows the last known amount when a bucket is deleted', () => {
     const { rerender } = open()
     press('Подушка · 16 000 ₽')
