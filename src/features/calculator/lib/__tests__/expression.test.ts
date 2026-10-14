@@ -215,6 +215,82 @@ describe('digits next to a savings value (Preview regression)', () => {
   })
 })
 
+describe('after equals', () => {
+  const thirtySix = () => applyEquals(type(['6', '*', '6']), null)
+
+  it('starts a new expression with a digit, decimal separator, or (', () => {
+    expect(
+      text(type(['(', '2', '+', '3', ')', '/', '4'], thirtySix()).tokens)
+    ).toBe('(2+3)/4')
+    expect(text(pressKey(thirtySix(), '7').tokens)).toBe('7')
+    expect(text(pressKey(thirtySix(), '.').tokens)).toBe('0.')
+  })
+
+  it('starts a new expression with a savings value', () => {
+    expect(text(insertSavings(thirtySix(), cushion).tokens)).toBe('[bucket:a]')
+  })
+
+  it('continues from the result with an operator', () => {
+    const state = type(['+', '5'], thirtySix())
+    expect(text(state.tokens)).toBe('36+5')
+    expect(evaluateTokens(state.tokens, null)).toBe(41)
+  })
+
+  it('edits the result as a number after backspace or caret moves', () => {
+    expect(text(pressKey(deleteBackward(thirtySix()), '1').tokens)).toBe('31')
+    expect(text(pressKey(moveCaret(thirtySix(), -1), '1').tokens)).toBe('316')
+    expect(text(pressKey(setCaret(thirtySix(), 2), '1').tokens)).toBe('361')
+  })
+})
+
+describe('deleting a savings value', () => {
+  const flat = { id: 'bucket:kv', label: 'Квартира', kopecks: 3000000 }
+
+  it('removes the right operator when two would meet', () => {
+    const state = pressKey(insertSavings(type(['5', '+']), flat), '7')
+    const next = deleteBackward(setCaret(state, 3))
+    expect(text(next.tokens)).toBe('5+7')
+    expect(next.caret).toBe(2)
+  })
+
+  it('removes a leading binary operator left at the start', () => {
+    const state = pressKey(insertSavings(EMPTY_STATE, flat), '7')
+    const next = deleteBackward(setCaret(state, 1))
+    expect(text(next.tokens)).toBe('7')
+    expect(next.caret).toBe(0)
+  })
+
+  it('keeps a leading minus', () => {
+    const state = type(
+      ['-', '7'],
+      setCaret(insertSavings(EMPTY_STATE, flat), 1)
+    )
+    expect(text(deleteBackward(setCaret(state, 1)).tokens)).toBe('-7')
+  })
+
+  it('removes a trailing operator left at the end or before )', () => {
+    expect(
+      text(deleteBackward(insertSavings(type(['5', '+']), flat)).tokens)
+    ).toBe('5')
+    const bracketed = setCaret(
+      pressKey(insertSavings(type(['(', '5', '+']), flat), ')'),
+      4
+    )
+    const next = deleteBackward(bracketed)
+    expect(text(next.tokens)).toBe('(5)')
+    expect(next.caret).toBe(2)
+  })
+
+  it('leaves empty parentheses and an empty expression as they are', () => {
+    const bracketed = setCaret(
+      pressKey(insertSavings(type(['(']), flat), ')'),
+      2
+    )
+    expect(text(deleteBackward(bracketed).tokens)).toBe('()')
+    expect(deleteBackward(insertSavings(EMPTY_STATE, flat)).tokens).toEqual([])
+  })
+})
+
 describe('formatting', () => {
   it('shows calculator symbols and a decimal comma', () => {
     expect(

@@ -343,6 +343,15 @@ describe('CalculatorLauncher', () => {
       expect(expression()).toHaveTextContent('0')
     })
 
+    it('starts a new expression after Enter unless an operator follows', () => {
+      open()
+      typeKeys('6', '*', '6', 'Enter', '(', '2', '+', '3', ')', '/', '4')
+      expect(expression()).toHaveTextContent('(2+3)÷4')
+      expect(result()).toHaveTextContent('1,25')
+      typeKeys('Enter', '+', '5')
+      expect(expression()).toHaveTextContent('1,25+5')
+    })
+
     it('does not also evaluate when Enter activates a focused calculator button', () => {
       open()
       typeKeys('2', '+', '3')
