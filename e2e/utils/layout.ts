@@ -6,7 +6,7 @@
 
 import { expect, type Locator, type Page } from '@playwright/test'
 
-const TIMEOUT = { timeout: 10000 }
+const TIMEOUT = { timeout: 15000 }
 
 /** Widget titles per desktop column, in display order. */
 export type DesktopLayout = string[][]
@@ -38,13 +38,53 @@ async function setEditMode(page: Page, on: boolean): Promise<void> {
   if (await button.isVisible()) await button.click()
   await expect(
     header.getByRole('button', { name: on ? 'Готово' : 'Редактировать' })
-  ).toBeVisible()
+  ).toBeVisible(TIMEOUT)
+  if (on) {
+    // Edit mode is ready once every widget shows its drag handle.
+    await expect(
+      page.getByRole('button', { name: 'Перетащить виджет' }).first()
+    ).toBeVisible(TIMEOUT)
+  }
 }
 
 /**
- * Swaps the first two widgets of the first column holding at least two,
- * by dragging the first onto the second in edit mode. Returns the expected
- * layout after the swap.
+ * Drops the widget at `from` onto the widget at `to` in one column and waits
+ * for the layout save server action (`updateLayoutConfig`) to succeed. The
+ * app removes the dragged widget and inserts it at `to`.
+ */
+async function moveInColumn(
+  page: Page,
+  columnIndex: number,
+  from: number,
+  to: number
+): Promise<void> {
+  const column = columns(page).nth(columnIndex)
+  // The save is a Next.js server action: a POST with a `next-action` header
+  // whose arguments hold the new `columns`. Waiting for it lets a reload
+  // right after the drop read the saved layout instead of aborting the save.
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.request().headers()['next-action'] !== undefined &&
+      (response.request().postData() ?? '').includes('"columns"'),
+    TIMEOUT
+  )
+  // Dispatch the HTML5 drag events directly: a mouse drag scrolls the
+  // overflowing column mid-drag and can miss the drop on a short viewport.
+  const source = widgets(column).nth(from)
+  const target = widgets(column).nth(to)
+  const dataTransfer = await page.evaluateHandle(() => new DataTransfer())
+  await source.dispatchEvent('dragstart', { dataTransfer })
+  await target.dispatchEvent('dragover', { dataTransfer })
+  await target.dispatchEvent('drop', { dataTransfer })
+  await source.dispatchEvent('dragend', { dataTransfer })
+  const response = await saved
+  expect(response.ok(), `layout save returned ${response.status()}`).toBe(true)
+}
+
+/**
+ * Swaps the first two widgets of the first column holding at least two.
+ * Returns the expected layout after the swap.
  */
 export async function swapFirstTwoWidgets(
   page: Page,
@@ -54,22 +94,7 @@ export async function swapFirstTwoWidgets(
   expect(columnIndex, 'a column with two widgets').toBeGreaterThanOrEqual(0)
 
   await setEditMode(page, true)
-  const column = columns(page).nth(columnIndex)
-  // The drop saves the layout through a server action; wait for it so a
-  // reload right after cannot abort the save.
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'POST' &&
-      (response.request().postData() ?? '').includes('"columns"')
-  )
-  await widgets(column)
-    .nth(0)
-    .dragTo(widgets(column).nth(1), {
-      sourcePosition: { x: 24, y: 24 },
-      targetPosition: { x: 24, y: 24 },
-    })
-
-  await saved
+  await moveInColumn(page, columnIndex, 0, 1)
 
   const expected = layout.map((titles) => [...titles])
   const [a, b] = expected[columnIndex]
@@ -81,19 +106,50 @@ export async function swapFirstTwoWidgets(
   return expected
 }
 
+function sameWidgets(a: string[], b: string[]): boolean {
+  return JSON.stringify([...a].sort()) === JSON.stringify([...b].sort())
+}
+
 /**
- * Restores a layout changed by `swapFirstTwoWidgets` and confirms the
- * restored layout is what the server returns after a reload.
+ * Restores every column of `original` by reordering widgets in edit mode,
+ * then reloads and confirms the server returns `original`. Fails with the
+ * original order in the message when it cannot.
  */
 export async function restoreDesktopLayout(
   page: Page,
   original: DesktopLayout
 ): Promise<void> {
-  await page.reload()
-  const current = await readDesktopLayout(page)
-  if (JSON.stringify(current) !== JSON.stringify(original)) {
-    await swapFirstTwoWidgets(page, current)
+  const message = `Could not restore the test account layout; restore it manually to ${JSON.stringify(original)}`
+  try {
+    await page.goto('/')
+    let current = await readDesktopLayout(page)
+    if (JSON.stringify(current) !== JSON.stringify(original)) {
+      expect(current.length, 'column count').toBe(original.length)
+      original.forEach((titles, c) =>
+        expect(
+          sameWidgets(current[c], titles),
+          `widgets of column ${c + 1}`
+        ).toBe(true)
+      )
+      await setEditMode(page, true)
+      for (let c = 0; c < original.length; c++) {
+        for (let i = 0; i < original[c].length; i++) {
+          const from = current[c].indexOf(original[c][i])
+          if (from === i) continue
+          await moveInColumn(page, c, from, i)
+          const next = [...current[c]]
+          next.splice(i, 0, ...next.splice(from, 1))
+          current = current.map((col, k) => (k === c ? next : col))
+          await expect
+            .poll(() => readDesktopLayout(page), TIMEOUT)
+            .toEqual(current)
+        }
+      }
+      await setEditMode(page, false)
+    }
     await page.reload()
+    await expect.poll(() => readDesktopLayout(page), TIMEOUT).toEqual(original)
+  } catch (error) {
+    throw new Error(`${message}\n${String(error)}`)
   }
-  await expect.poll(() => readDesktopLayout(page), TIMEOUT).toEqual(original)
 }

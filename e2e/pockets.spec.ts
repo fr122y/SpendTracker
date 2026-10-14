@@ -1,4 +1,10 @@
-import { test, expect, type Locator, type Page } from '@playwright/test'
+import {
+  test,
+  expect,
+  type Locator,
+  type Page,
+  type Response,
+} from '@playwright/test'
 
 import {
   getE2ECredentials,
@@ -166,7 +172,34 @@ test.describe('Pockets', () => {
       .locator('form')
       .filter({ has: page.getByLabel('Название кармана') })
     await createForm.getByLabel('Название кармана').fill(pocketName)
+
+    // The chip appears at once with a temporary id; the server action then
+    // returns the real pocket and the list is refetched. Selecting the chip
+    // before the refetch selects the temporary id, which vanishes, so wait
+    // for the create action and for the refetched list holding the pocket.
+    const isServerAction = (response: Response) =>
+      response.request().method() === 'POST' &&
+      response.request().headers()['next-action'] !== undefined
+    let createDone = false
+    const created = page.waitForResponse((response) => {
+      const done =
+        isServerAction(response) &&
+        (response.request().postData() ?? '').includes(pocketName)
+      if (done) createDone = true
+      return done
+    })
+    // TanStack Query refetches the pocket list through its query function
+    // server action, whose arguments carry the `pockets` query key.
+    const refetched = page.waitForResponse(
+      (response) =>
+        createDone &&
+        isServerAction(response) &&
+        (response.request().postData() ?? '').includes('"queryKey":["pockets"]')
+    )
     await createForm.getByRole('button', { name: 'Создать карман' }).click()
+    const createResponse = await created
+    expect(createResponse.ok(), 'create pocket server action').toBe(true)
+    expect((await refetched).ok(), 'pocket list refetch').toBe(true)
 
     await expect(createForm).toBeHidden(TIMEOUT)
     const chip = page

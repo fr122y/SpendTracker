@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 import {
+  type DesktopLayout,
   readDesktopLayout,
   restoreDesktopLayout,
   swapFirstTwoWidgets,
@@ -89,23 +90,36 @@ test.describe('Layout Persistence', () => {
     // Verify no edit mode drag handles
     await expect(page.getByRole('button', { name: DRAG_HANDLE })).toHaveCount(0)
   })
+})
+
+test.describe('Layout Persistence on the server', () => {
+  // The layout is stored on the server per user. The test captures the
+  // whole layout first; the cleanup restores every column of it, runs even
+  // when the test fails or times out, and has its own time budget.
+  let original: DesktopLayout | undefined
+
+  test.beforeEach(async ({ page }) => {
+    original = undefined
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await page.goto('/')
+  })
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (!original) return
+    testInfo.setTimeout(testInfo.timeout + 120000)
+    await restoreDesktopLayout(page, original)
+  })
 
   test('should persist layout configuration after reload', async ({ page }) => {
-    // The layout is stored on the server per user: change it, reload, and
-    // put the original back so the account is unchanged after the run.
-    // Drags, saves, and reloads several times.
-    test.setTimeout(60000)
-    const original = await readDesktopLayout(page)
+    // Drags, waits for the save, and reloads on a possibly slow Preview.
+    test.setTimeout(150000)
+    original = await readDesktopLayout(page)
 
-    try {
-      const swapped = await swapFirstTwoWidgets(page, original)
+    const swapped = await swapFirstTwoWidgets(page, original)
 
-      await page.reload()
-      await expect
-        .poll(() => readDesktopLayout(page), { timeout: 10000 })
-        .toEqual(swapped)
-    } finally {
-      await restoreDesktopLayout(page, original)
-    }
+    await page.reload()
+    await expect
+      .poll(() => readDesktopLayout(page), { timeout: 15000 })
+      .toEqual(swapped)
   })
 })
