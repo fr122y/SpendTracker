@@ -25,11 +25,11 @@
 
 ## 5. Physical keyboard input
 
-- [ ] 5.1 Add failing tests: key mapping for each group (digits and keypad, operators, decimal keys, parentheses, Enter/`=`, Backspace, Delete, arrows), the focus rule for outside editable fields, ignored modifiers and composition, `preventDefault` only for handled keys, no handling after close, and Enter on a focused calculator button handled once; type an expression with the keyboard in the e2e scenario.
-- [ ] 5.2 Implement `lib/keyboard.ts` and the panel's `keydown` listener through the same commands as the on-screen buttons.
+- [x] 5.1 Add failing tests: key mapping for each group (digits and keypad, operators, decimal keys, parentheses, Enter/`=`, Backspace, Delete, arrows), the focus rule for outside editable fields, ignored modifiers and composition, `preventDefault` only for handled keys, no handling after close, and Enter on a focused calculator button handled once; type an expression with the keyboard in the e2e scenario. Result: before the implementation the keyboard suite could not load and 5 UI tests failed; 4 guard tests (outside input, modifiers, after close, focused Enter) passed trivially without a listener and now guard the implementation.
+- [x] 5.2 Implement `lib/keyboard.ts` and the panel's `keydown` listener through the same commands as the on-screen buttons.
 
 ## 6. Verify
 
-- [ ] 6.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run.
-- [ ] 6.2 Review the full diff against `docs/engineering/code-review.md`.
+- [x] 6.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 99 suites, 1139 tests; 84 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
+- [x] 6.2 Review the full diff against `docs/engineering/code-review.md`. Result: keyboard input touches only `features/calculator`, its tests, the e2e scenario, and the change folder.
 - [ ] 6.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, type an expression on a hardware keyboard, compute, copy, and paste the result; reload and see the expression restored.
