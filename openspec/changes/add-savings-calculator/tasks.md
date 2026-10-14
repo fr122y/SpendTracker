@@ -33,8 +33,13 @@
 - [x] 6.1 Add failing tests: after `=` a digit, `.`, `(`, or value starts a new expression, an operator continues, backspace/arrows/tap edit the result; deleting a value removes a redundant operator (between numbers, at the start, at the end, inside parentheses, the only token). Result: 6 tests failed before the fix; 5 guard tests passed already. The existing «deletes a savings value whole» test now deletes a value after `(` because a value after `1+` now also drops the `+`.
 - [x] 6.2 Implement `justEvaluated` and the operator clean-up in `lib/expression.ts`.
 
-## 7. Verify
+## 7. Fix: Enter after a chip click (Preview of 885d39b)
 
-- [x] 7.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 99 suites, 1149 tests; 94 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
-- [x] 7.2 Review the full diff against `docs/engineering/code-review.md`. Result: this fix touches only `features/calculator/lib/expression.ts`, its tests, the README, and the change folder.
-- [ ] 7.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, type an expression on a hardware keyboard, compute, copy, and paste the result; reload and see the expression restored.
+- [x] 7.1 Add a failing UI test: a mouse click on a chip, then Enter, shows the result without inserting the value again. Result: it failed before the fix because the chip kept focus.
+- [x] 7.2 Give chips the same mouse-down focus guard as keypad buttons. Result: `npm run validate` passed (typecheck, lint, 99 suites, 1150 tests; 95 calculator tests).
+
+## 8. Verify
+
+- [x] 8.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 99 suites, 1150 tests; 95 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
+- [x] 8.2 Review the full diff against `docs/engineering/code-review.md`. Result: this fix touches only `features/calculator/lib/expression.ts`, its tests, the README, and the change folder.
+- [ ] 8.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, type an expression on a hardware keyboard, compute, copy, and paste the result; reload and see the expression restored.
