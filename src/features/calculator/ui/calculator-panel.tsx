@@ -8,21 +8,22 @@ import { useSettingsStore } from '@/entities/settings'
 import { cn, formatKopecks } from '@/shared/lib'
 
 import {
-  applyEquals,
-  deleteBackward,
   displayToken,
-  EMPTY_STATE,
   evaluateTokens,
   formatResultForCopy,
   formatResultForDisplay,
   insertSavings,
-  moveCaret,
-  pressKey,
   refreshAmounts,
   setCaret,
   type Amounts,
   type CalculatorState,
 } from '../lib/expression'
+import {
+  applyCommand,
+  keyToCommand,
+  shouldHandleKey,
+  type CalculatorCommand,
+} from '../lib/keyboard'
 import { buildSavingsValues } from '../lib/savings-values'
 import { updateCalculator, useCalculatorState } from '../model/calculator-store'
 
@@ -35,13 +36,13 @@ interface KeyDef {
   ariaLabel?: string
   tone?: Tone
   span?: 2 | 3
-  apply: (state: CalculatorState, amounts: Amounts) => CalculatorState
+  command: CalculatorCommand
 }
 
 const key = (value: string, extra: Partial<KeyDef> = {}): KeyDef => ({
   id: value,
   label: value,
-  apply: (state) => pressKey(state, value),
+  command: { type: 'char', value },
   ...extra,
 })
 
@@ -51,28 +52,28 @@ const KEYS: KeyDef[] = [
     label: <ArrowLeft className="h-5 w-5" aria-hidden="true" />,
     ariaLabel: 'Курсор влево',
     tone: 'action',
-    apply: (state) => moveCaret(state, -1),
+    command: { type: 'left' },
   },
   {
     id: 'right',
     label: <ArrowRight className="h-5 w-5" aria-hidden="true" />,
     ariaLabel: 'Курсор вправо',
     tone: 'action',
-    apply: (state) => moveCaret(state, 1),
+    command: { type: 'right' },
   },
   {
     id: 'backspace',
     label: <Delete className="h-5 w-5" aria-hidden="true" />,
     ariaLabel: 'Стереть',
     tone: 'action',
-    apply: deleteBackward,
+    command: { type: 'backspace' },
   },
   {
     id: 'clear',
     label: 'C',
     ariaLabel: 'Очистить',
     tone: 'action',
-    apply: () => EMPTY_STATE,
+    command: { type: 'clear' },
   },
   key('/', { label: '÷', ariaLabel: 'Разделить', tone: 'operator' }),
   key('7'),
@@ -97,7 +98,7 @@ const KEYS: KeyDef[] = [
     ariaLabel: 'Равно',
     tone: 'equals',
     span: 2,
-    apply: applyEquals,
+    command: { type: 'equals' },
   },
 ]
 
@@ -111,6 +112,9 @@ const KEY_TONES: Record<Tone, string> = {
 function money(kopecks: number): string {
   return `${formatKopecks(kopecks).replace(/[  ]/g, ' ')} ₽`
 }
+
+/** Mouse presses keep focus where it was, so Enter keeps meaning «=». */
+const keepFocus = (event: React.MouseEvent) => event.preventDefault()
 
 function Caret() {
   return (
@@ -154,6 +158,26 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
     updateCalculator((current) => update(refreshAmounts(current, amounts)))
     setCopyStatus('idle')
   }
+
+  const runCommand = (command: CalculatorCommand) =>
+    dispatch((current) => applyCommand(current, command, amounts))
+
+  // The listener reads the latest render's commands without re-subscribing.
+  const runCommandRef = useRef(runCommand)
+  runCommandRef.current = runCommand
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!shouldHandleKey(event, containerRef.current)) return
+      const command = keyToCommand(event)
+      if (!command) return
+      event.preventDefault()
+      runCommandRef.current(command)
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handleTokenClick = (
     event: React.MouseEvent<HTMLSpanElement>,
@@ -199,7 +223,7 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
   items.splice(state.caret, 0, <Caret key="caret" />)
 
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={containerRef} className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium text-zinc-300">Калькулятор</h2>
         <button
@@ -295,7 +319,8 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
             key={def.id}
             type="button"
             aria-label={def.ariaLabel}
-            onClick={() => dispatch((current) => def.apply(current, amounts))}
+            onMouseDown={keepFocus}
+            onClick={() => runCommand(def.command)}
             className={cn(
               'flex h-11 items-center justify-center rounded-lg text-lg font-medium transition-colors',
               KEY_TONES[def.tone ?? 'digit'],

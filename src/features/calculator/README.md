@@ -1,6 +1,6 @@
 # Calculator
 
-Floating calculator for transfer amounts. A round button in the bottom-right corner (hidden while open) opens a dialog on desktop (closes with × or Escape) or a bottom sheet on mobile (closes with ×, a downward swipe, or a backdrop tap; page scroll is locked while open). Input comes only from on-screen buttons, inserted at a visible caret that is placed by tapping the expression or moved with «←» «→». Chips insert live savings values; «Скопировать» (icon in the result line) copies the result as a plain number (`12345.67`).
+Floating calculator for transfer amounts. A round button in the bottom-right corner (hidden while open) opens a dialog on desktop (closes with × or Escape) or a bottom sheet on mobile (closes with ×, a downward swipe, or a backdrop tap; page scroll is locked while open). Input comes from on-screen buttons or a physical keyboard (same commands), inserted at a visible caret that is placed by tapping the expression or moved with «←» «→». Chips insert live savings values; «Скопировать» (icon in the result line) copies the result as a plain number (`12345.67`).
 
 ## Public API (`index.ts`)
 
@@ -15,6 +15,7 @@ Floating calculator for transfer amounts. A round button in the bottom-right cor
 - `lib/expression.ts`: token model (characters and indivisible savings values), caret moves, insertion with symmetric auto-`+` (value next to a number, digit next to a value), values serialised in parentheses so they never merge with digits, live evaluation by current amounts with last-known fallback, display and copy formats
 - `lib/abbreviate.ts`: shortest label abbreviation («Месячный доход» → «Мес. д.»)
 - `lib/savings-values.ts`: chips for income, each bucket, and «Операции (остаток)»; integer kopecks→rubles conversion
+- `lib/keyboard.ts`: one command set for buttons and keys (`applyCommand`), key mapping incl. numpad (`keyToCommand`), and the focus/modifier rule (`shouldHandleKey`); the panel listens to `keydown` only while open
 - `lib/swipe.ts`: swipe-down close threshold
 
 ## Dependencies
