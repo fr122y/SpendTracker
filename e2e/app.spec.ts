@@ -11,14 +11,33 @@ import {
 
 import type { Page } from '@playwright/test'
 
-/** The analysis value of one category, or 0 while it has no expenses. */
-async function analysisValue(page: Page, category: string): Promise<number> {
-  const stat = page.getByRole('button', {
-    name: new RegExp(`^${category}, .* ₽, \\d+%\\. Открыть расходы$`),
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** The analysis button of one category. */
+function analysisStat(page: Page, category: string) {
+  return page.getByRole('button', {
+    name: new RegExp(
+      `^${escapeRegExp(category)}, .* ₽, \\d+%\\. Открыть расходы$`
+    ),
   })
-  if ((await stat.count()) === 0) return 0
+}
+
+/** The analysis value and share of one category, or zeros without expenses. */
+async function analysisEntry(
+  page: Page,
+  category: string
+): Promise<{ value: number; percent: number }> {
+  const stat = analysisStat(page, category)
+  if ((await stat.count()) === 0) return { value: 0, percent: 0 }
   const label = (await stat.getAttribute('aria-label')) ?? ''
-  return parseRubles(label.split(',')[1])
+  const [, value = '', percent = ''] = label.split(',')
+  return { value: parseRubles(value), percent: parseRubles(percent) }
+}
+
+async function analysisValue(page: Page, category: string): Promise<number> {
+  return (await analysisEntry(page, category)).value
 }
 
 test.describe('SpendTracker', () => {
@@ -130,16 +149,25 @@ test.describe('SpendTracker', () => {
       expenses,
     }) => {
       const expense = await expenses.add('E2E тест анализа')
+      const stat = analysisStat(page, expense.category)
+      await expect(stat).toBeVisible(TIMEOUT)
 
-      await expect(
-        page.getByRole('button', {
-          name: new RegExp(
-            `^${expense.category}, .* ₽, \\d+%\\. Открыть расходы$`
-          ),
-        })
-      ).toBeVisible(TIMEOUT)
+      // The share is this category's part of the analysis total.
+      const total = page.getByTestId('analysis-header-total')
+      await expect
+        .poll(async () => {
+          const { value, percent } = await analysisEntry(page, expense.category)
+          const sum = parseRubles(await total.textContent())
+          return percent === Number(((value / sum) * 100).toFixed(0))
+        }, TIMEOUT)
+        .toBe(true)
+      const withExpense = await analysisValue(page, expense.category)
 
+      // The category value carries exactly this test's amount.
       await expenses.remove(expense)
+      await expect
+        .poll(() => analysisValue(page, expense.category), TIMEOUT)
+        .toBe(withExpense - expense.amount)
     })
 
     test('should update analysis totals when expenses are added', async ({
@@ -202,9 +230,7 @@ test.describe('SpendTracker', () => {
       await expenses.remove(second)
     })
 
-    test('should persist layout configuration after reload', async ({
-      page,
-    }) => {
+    test('should toggle layout edit mode from the header', async ({ page }) => {
       const header = page.getByRole('banner')
 
       await header.getByRole('button', { name: /Редактировать/ }).click()
@@ -219,38 +245,40 @@ test.describe('SpendTracker', () => {
 
   test.describe('Date Navigation', () => {
     test('should navigate to the previous day and month', async ({ page }) => {
-      const header = page.getByRole('banner')
-      const dateButton = header.getByRole('button', { name: 'Выбрать месяц' })
-      const today = new Date()
-      const yesterday = new Date(today)
-      yesterday.setDate(today.getDate() - 1)
+      const dateButton = page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Выбрать месяц' })
+      const shown = parseHeaderDate(await dateButton.textContent())
 
-      await header.getByRole('button', { name: 'Предыдущий день' }).click()
-      await expect(dateButton).toHaveText(formatHeaderDate(yesterday))
+      await page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Предыдущий день' })
+        .click()
+      const dayBefore = addDays(shown, -1)
+      await expect(dateButton).toHaveText(formatHeaderDate(dayBefore))
 
-      // Month switching now goes through the month picker.
-      const previousMonth = new Date(
-        today.getFullYear(),
-        today.getMonth() - 1,
-        1
-      )
-      await pickMonth(page, previousMonth)
-      await expect(dateButton).toContainText(formatMonthYear(previousMonth))
+      // The picker moves one month back from the date the day step showed.
+      const monthBefore = shiftMonth(dayBefore, -1)
+      await pickMonth(page, monthBefore)
+      await expect(dateButton).toHaveText(formatHeaderDate(monthBefore))
     })
 
     test('should navigate to the next day and month', async ({ page }) => {
-      const header = page.getByRole('banner')
-      const dateButton = header.getByRole('button', { name: 'Выбрать месяц' })
-      const today = new Date()
-      const tomorrow = new Date(today)
-      tomorrow.setDate(today.getDate() + 1)
+      const dateButton = page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Выбрать месяц' })
+      const shown = parseHeaderDate(await dateButton.textContent())
 
-      await header.getByRole('button', { name: 'Следующий день' }).click()
-      await expect(dateButton).toHaveText(formatHeaderDate(tomorrow))
+      await page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Следующий день' })
+        .click()
+      const dayAfter = addDays(shown, 1)
+      await expect(dateButton).toHaveText(formatHeaderDate(dayAfter))
 
-      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1)
-      await pickMonth(page, nextMonth)
-      await expect(dateButton).toContainText(formatMonthYear(nextMonth))
+      const monthAfter = shiftMonth(dayAfter, 1)
+      await pickMonth(page, monthAfter)
+      await expect(dateButton).toHaveText(formatHeaderDate(monthAfter))
     })
   })
 
@@ -290,9 +318,36 @@ function formatHeaderDate(date: Date): string {
   })
 }
 
-/** `октября 2026`: the genitive month and year of the header date. */
-function formatMonthYear(date: Date): string {
-  return formatHeaderDate(date).split(' ').slice(1).join(' ')
+const MONTHS_GENITIVE = Array.from(
+  { length: 12 },
+  (_, month) => formatHeaderDate(new Date(2024, month, 15)).split(' ')[1]
+)
+
+/** Parses the header date, such as `14 октября 2026 г.`. */
+function parseHeaderDate(text: string | null): Date {
+  const [day = '', month = '', year = ''] = (text ?? '').trim().split(/\s+/)
+  const monthIndex = MONTHS_GENITIVE.indexOf(month)
+  expect(monthIndex, `header date "${text}"`).toBeGreaterThanOrEqual(0)
+  return new Date(Number(year), monthIndex, Number(day))
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+}
+
+/** The same day in a neighbouring month, clamped to that month's length. */
+function shiftMonth(date: Date, months: number): Date {
+  const first = new Date(date.getFullYear(), date.getMonth() + months, 1)
+  const lastDay = new Date(
+    first.getFullYear(),
+    first.getMonth() + 1,
+    0
+  ).getDate()
+  return new Date(
+    first.getFullYear(),
+    first.getMonth(),
+    Math.min(date.getDate(), lastDay)
+  )
 }
 
 /** Opens the header month picker and selects the month of `date`. */
