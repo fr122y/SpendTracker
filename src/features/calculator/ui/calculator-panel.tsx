@@ -296,6 +296,7 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
               type="button"
               aria-label={`${value.label} · ${money(value.kopecks)}`}
               title={`${value.label} · ${money(value.kopecks)}`}
+              onMouseDown={keepFocus}
               onClick={() =>
                 dispatch((current) => insertSavings(current, value))
               }
