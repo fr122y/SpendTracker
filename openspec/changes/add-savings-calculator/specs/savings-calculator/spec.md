@@ -27,12 +27,30 @@ An authenticated app screen MUST show a round floating calculator button in the 
 
 ### Requirement: Calculate with on-screen buttons and a caret
 
-The calculator MUST accept input from its on-screen buttons: digits, a decimal separator, `+ − × ÷`, parentheses, backspace, clear, `=`, and «←» «→» caret buttons placed in the backspace row. The expression line MUST show a visible caret that the user can place by tapping a position in the expression or move with the arrow buttons. Input MUST be inserted at the caret, and backspace MUST delete the element before the caret. The calculator MUST show the result rounded to kopecks; an incomplete or invalid expression, including division by zero, MUST NOT show a numeric result.
+The calculator MUST accept input from its on-screen buttons: digits, a decimal separator, `+ − × ÷`, parentheses, backspace, clear, `=`, and «←» «→» caret buttons placed in the backspace row. The expression line MUST show a visible caret that the user can place by tapping a position in the expression or move with the arrow buttons. Input MUST be inserted at the caret, and backspace MUST delete the element before the caret. After `=` the result MUST replace the expression: a digit, decimal separator, `(`, or value then MUST start a new expression, an operator MUST continue from the result, and backspace, arrows, or a tap on the expression MUST edit the result as an ordinary number. The calculator MUST show the result rounded to kopecks; an incomplete or invalid expression, including division by zero, MUST NOT show a numeric result.
 
 #### Scenario: Evaluate an expression
 
 - **WHEN** the user enters `1000 + 250,5 × 2` and taps `=`
 - **THEN** the result is 1501
+
+#### Scenario: Start a new expression after the result
+
+- **GIVEN** the user tapped `=` and the expression shows the result `36`
+- **WHEN** the user types `(2+3)÷4`
+- **THEN** the expression becomes `(2+3)÷4` and the result is 1,25
+
+#### Scenario: Continue from the result with an operator
+
+- **GIVEN** the expression shows the result `36` after `=`
+- **WHEN** the user types `+5`
+- **THEN** the expression becomes `36+5` and the result is 41
+
+#### Scenario: Edit the result
+
+- **GIVEN** the expression shows the result `36` after `=`
+- **WHEN** the user taps backspace, an arrow, or a position in the expression
+- **THEN** the result is edited as an ordinary number (backspace gives `3`), and later input continues it
 
 #### Scenario: Edit in the middle of the expression
 
@@ -69,7 +87,7 @@ While the calculator is open, a physical keyboard MUST drive it exactly like the
 
 ### Requirement: Insert live savings values
 
-Above the keypad the calculator MUST show one horizontally scrollable row of chips «название · сумма» for the monthly income, each allocation category, and «Операции (остаток)», with the same amounts as the «Накопления» widget; short labels such as «Месячный доход» MUST be shown in full and only long labels truncated. Tapping a chip MUST insert at the caret an indivisible value element shown by an abbreviated label (for example «Мес. д.», «Под.», «Оп.»). The caret MUST jump over a value element and backspace MUST delete it whole. Inserting a value directly after a number or another value MUST insert `+` between them, and typing a digit or decimal separator directly after or before a value MUST likewise insert `+` between the value and the new number. A value's amount MUST never merge with adjacent digits; an expression that would place a number directly next to a value without an operator MUST NOT show a numeric result. The result MUST use the current amount of the value, so it updates when the amount changes in «Накопления»; if the category no longer exists, the element MUST show and use its last known amount.
+Above the keypad the calculator MUST show one horizontally scrollable row of chips «название · сумма» for the monthly income, each allocation category, and «Операции (остаток)», with the same amounts as the «Накопления» widget; short labels such as «Месячный доход» MUST be shown in full and only long labels truncated. Tapping a chip MUST insert at the caret an indivisible value element shown by an abbreviated label (for example «Мес. д.», «Под.», «Оп.»). The caret MUST jump over a value element and backspace MUST delete it whole; if the deletion leaves a redundant operator, that operator MUST be removed too: of two adjacent binary operators the right one; a binary operator other than `−` left at the start or right after `(`; a binary operator left at the end or right before `)`. Inserting a value directly after a number or another value MUST insert `+` between them, and typing a digit or decimal separator directly after or before a value MUST likewise insert `+` between the value and the new number. A value's amount MUST never merge with adjacent digits; an expression that would place a number directly next to a value without an operator MUST NOT show a numeric result. The result MUST use the current amount of the value, so it updates when the amount changes in «Накопления»; if the category no longer exists, the element MUST show and use its last known amount.
 
 #### Scenario: Insert a percentage category
 
@@ -89,6 +107,18 @@ Above the keypad the calculator MUST show one horizontally scrollable row of chi
 
 - **GIVEN** the expression contains «Подушка» and the income changes from 80,000 ₽ to 100,000 ₽
 - **THEN** the result uses 20,000 ₽ for «Подушка»
+
+#### Scenario: Delete a value between numbers
+
+- **GIVEN** the expression `5 + Кв. + 7` with the caret after «Кв.»
+- **WHEN** the user taps backspace
+- **THEN** the expression becomes `5 + 7`
+
+#### Scenario: Delete a value at the edge
+
+- **GIVEN** the expression `5 + Кв.` or `(5 + Кв.)` with the caret after «Кв.»
+- **WHEN** the user taps backspace
+- **THEN** the expression becomes `5` or `(5)`
 
 #### Scenario: Fall back for a deleted category
 
