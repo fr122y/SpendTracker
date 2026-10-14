@@ -1,15 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 
+import { EMPTY_STATE } from '../lib/expression'
+import { updateCalculator } from '../model/calculator-store'
 import { CalculatorLauncher } from '../ui/calculator-launcher'
 
 import type { AllocationBucket } from '@/shared/types'
 
 let mockViewport: 'mobile' | 'tablet' | 'desktop' = 'desktop'
 let mockSalary = 80000
-let mockBuckets: AllocationBucket[] = [
-  { id: 'a', label: 'Подушка безопасности на чёрный день', percentage: 20 },
-  { id: 'b', label: 'Инвестиции', percentage: 10 },
-]
+let mockBuckets: AllocationBucket[] = []
 
 jest.mock('@/shared/lib', () => ({
   ...jest.requireActual('@/shared/lib'),
@@ -18,13 +17,17 @@ jest.mock('@/shared/lib', () => ({
 
 jest.mock('@/entities/bucket', () => ({
   useBucketStore: (
-    selector: (state: { buckets: AllocationBucket[] }) => unknown
-  ) => selector({ buckets: mockBuckets }),
+    selector: (state: {
+      buckets: AllocationBucket[]
+      isLoading: boolean
+    }) => unknown
+  ) => selector({ buckets: mockBuckets, isLoading: false }),
 }))
 
 jest.mock('@/entities/settings', () => ({
-  useSettingsStore: (selector: (state: { salary: number }) => unknown) =>
-    selector({ salary: mockSalary }),
+  useSettingsStore: (
+    selector: (state: { salary: number; isLoading: boolean }) => unknown
+  ) => selector({ salary: mockSalary, isLoading: false }),
 }))
 
 const writeText = jest.fn<Promise<void>, [string]>()
@@ -33,9 +36,12 @@ beforeEach(() => {
   mockViewport = 'desktop'
   mockSalary = 80000
   mockBuckets = [
-    { id: 'a', label: 'Подушка безопасности на чёрный день', percentage: 20 },
+    { id: 'a', label: 'Подушка', percentage: 20 },
     { id: 'b', label: 'Инвестиции', percentage: 10 },
+    { id: 'c', label: 'Подушка безопасности на чёрный день', percentage: 0 },
   ]
+  localStorage.clear()
+  updateCalculator(() => EMPTY_STATE)
   writeText.mockReset().mockResolvedValue(undefined)
   Object.defineProperty(navigator, 'clipboard', {
     configurable: true,
@@ -43,10 +49,15 @@ beforeEach(() => {
   })
 })
 
+const launcherName = 'Открыть калькулятор'
+
 function open() {
-  render(<CalculatorLauncher />)
-  fireEvent.click(screen.getByRole('button', { name: 'Открыть калькулятор' }))
-  return screen.getByRole('dialog', { name: 'Калькулятор' })
+  const view = render(<CalculatorLauncher />)
+  fireEvent.click(screen.getByRole('button', { name: launcherName }))
+  return {
+    ...view,
+    dialog: screen.getByRole('dialog', { name: 'Калькулятор' }),
+  }
 }
 
 function press(...names: string[]) {
@@ -63,31 +74,61 @@ describe('CalculatorLauncher', () => {
     render(<CalculatorLauncher />)
 
     expect(
-      screen.getByRole('button', { name: 'Открыть калькулятор' })
+      screen.getByRole('button', { name: launcherName })
     ).toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('opens as a dialog on desktop and closes with the close control', () => {
-    const dialog = open()
+  it('hides the launcher while the desktop dialog is open and closes with ×', () => {
+    const { dialog } = open()
 
     expect(dialog).toHaveAttribute('data-presentation', 'dialog')
+    expect(
+      screen.queryByRole('button', { name: launcherName })
+    ).not.toBeInTheDocument()
+
     press('Закрыть калькулятор')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: launcherName })
+    ).toBeInTheDocument()
+  })
+
+  it('closes the desktop dialog on Escape', () => {
+    open()
+    fireEvent.keyDown(document, { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('opens as a bottom sheet on mobile and closes on swipe down', () => {
+  it('opens a bottom sheet on mobile, locks page scroll, and closes on swipe down', () => {
     mockViewport = 'mobile'
-    const sheet = open()
+    const grid = document.createElement('div')
+    grid.setAttribute('data-grid-container', '')
+    document.body.appendChild(grid)
+
+    const { dialog: sheet } = open()
 
     expect(sheet).toHaveAttribute('data-presentation', 'sheet')
+    expect(document.body.style.overflow).toBe('hidden')
+    expect(document.documentElement.style.overflow).toBe('hidden')
+    expect(grid.style.overflow).toBe('hidden')
 
     fireEvent.touchStart(sheet, { touches: [{ clientY: 100 }] })
-    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 130 }] })
+    fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 150 }] })
     expect(screen.getByRole('dialog')).toBeInTheDocument()
 
     fireEvent.touchStart(sheet, { touches: [{ clientY: 100 }] })
     fireEvent.touchEnd(sheet, { changedTouches: [{ clientY: 260 }] })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(document.body.style.overflow).toBe('')
+    expect(grid.style.overflow).toBe('')
+    grid.remove()
+  })
+
+  it('closes the mobile sheet on a backdrop tap', () => {
+    mockViewport = 'mobile'
+    open()
+    fireEvent.click(screen.getByTestId('calculator-backdrop'))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
@@ -108,7 +149,7 @@ describe('CalculatorLauncher', () => {
       '2'
     )
 
-    expect(expression()).toHaveTextContent('1000 + 250,5 × 2')
+    expect(expression()).toHaveTextContent('1000+250,5×2')
     expect(result()).toHaveTextContent('1 501')
 
     press('Равно')
@@ -121,46 +162,88 @@ describe('CalculatorLauncher', () => {
     expect(result()).toHaveTextContent('—')
 
     press('Стереть')
-    expect(expression()).toHaveTextContent('5 ÷')
+    expect(expression()).toHaveTextContent('5÷')
     press('Очистить')
     expect(expression()).toHaveTextContent('0')
   })
 
-  it('shows savings chips and inserts their amounts as plain numbers', () => {
-    open()
+  it('shows chips with full short labels and inserts live abbreviated values', () => {
+    const { rerender } = open()
 
     expect(
       screen.getByRole('button', { name: 'Месячный доход · 80 000 ₽' })
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: 'Инвестиции · 8 000 ₽' })
+      screen.getByRole('button', { name: 'Операции (остаток) · 56 000 ₽' })
     ).toBeInTheDocument()
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: 'Подушка безопасности на чёрный день · 16 000 ₽',
-      })
-    )
-    expect(expression()).toHaveTextContent('16000')
+    press('1', '0', '0', 'Подушка · 16 000 ₽')
+    expect(expression()).toHaveTextContent('100+Под.')
+    expect(result()).toHaveTextContent('16 100')
 
-    press('Плюс')
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Операции (остаток) · 56 000 ₽' })
-    )
-    press('Разделить', '2', 'Равно')
-    expect(result()).toHaveTextContent('44 000')
+    mockSalary = 100000
+    rerender(<CalculatorLauncher />)
+    expect(result()).toHaveTextContent('20 100')
   })
 
-  it('copies the result as a plain number and confirms', async () => {
+  it('shows the last known amount when a bucket is deleted', () => {
+    const { rerender } = open()
+    press('Подушка · 16 000 ₽')
+
+    mockBuckets = mockBuckets.filter((bucket) => bucket.id !== 'a')
+    rerender(<CalculatorLauncher />)
+    expect(expression()).toHaveTextContent('16000')
+    expect(result()).toHaveTextContent('16 000')
+  })
+
+  it('moves the caret with arrows and by tapping the expression', () => {
+    open()
+    press('1', '2', 'Плюс', '3')
+
+    press('Курсор влево', 'Курсор влево', '5')
+    expect(expression()).toHaveTextContent('125+3')
+    expect(expression()).toHaveAttribute('data-caret', '3')
+
+    fireEvent.click(screen.getAllByTestId('calculator-token')[0])
+    expect(expression()).toHaveAttribute('data-caret', '1')
+    press('9')
+    expect(expression()).toHaveTextContent('1925+3')
+
+    press(
+      'Курсор вправо',
+      'Курсор вправо',
+      'Курсор вправо',
+      'Курсор вправо',
+      'Курсор вправо'
+    )
+    expect(expression()).toHaveAttribute('data-caret', '6')
+    expect(screen.getByTestId('calculator-caret')).toBeInTheDocument()
+  })
+
+  it('keeps the expression after closing and remounting', () => {
+    const { unmount } = open()
+    press('4', '2')
+    press('Закрыть калькулятор')
+    unmount()
+
+    render(<CalculatorLauncher />)
+    fireEvent.click(screen.getByRole('button', { name: launcherName }))
+    expect(expression()).toHaveTextContent('42')
+  })
+
+  it('copies the result with an icon button and confirms', async () => {
     open()
     press('1', '2', '3', '4', '5', 'Десятичная запятая', '6', '7')
 
+    const copy = screen.getByRole('button', { name: 'Скопировать' })
+    expect(copy).toHaveAttribute('data-copied', 'false')
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: 'Скопировать' }))
+      fireEvent.click(copy)
     })
 
     expect(writeText).toHaveBeenCalledWith('12345.67')
-    expect(screen.getByText('Скопировано')).toBeInTheDocument()
+    expect(copy).toHaveAttribute('data-copied', 'true')
+    expect(screen.getByRole('status')).toHaveTextContent('Скопировано')
   })
 
   it('disables copying without a result and reports clipboard failures', async () => {
@@ -173,6 +256,8 @@ describe('CalculatorLauncher', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Скопировать' }))
     })
 
-    expect(screen.getByText('Не удалось скопировать')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Не удалось скопировать'
+    )
   })
 })

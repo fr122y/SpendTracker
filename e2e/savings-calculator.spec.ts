@@ -18,7 +18,7 @@ test.describe('Savings calculator', () => {
     return
   }
 
-  test('inserts a savings value, computes, and offers copying', async ({
+  test('inserts a savings value, computes, offers copying, and restores after reload', async ({
     page,
   }) => {
     await loginWithCredentials(page, credentials!)
@@ -27,21 +27,32 @@ test.describe('Savings calculator', () => {
     const calculator = page.getByRole('dialog', { name: 'Калькулятор' })
     await expect(calculator).toBeVisible(TIMEOUT)
 
+    await expect(
+      page.getByRole('button', { name: 'Открыть калькулятор' })
+    ).toBeHidden()
+
     const incomeChip = calculator.getByRole('button', {
       name: /^Месячный доход · /,
     })
     await expect(incomeChip).toBeVisible(TIMEOUT)
+    const chipName = (await incomeChip.getAttribute('aria-label')) ?? ''
+    const income = Number(
+      chipName
+        .replace(/^Месячный доход · /, '')
+        .replace(/[^\d,−-]/g, '')
+        .replace('−', '-')
+        .replace(',', '.')
+    )
+
+    await calculator.getByRole('button', { name: 'Очистить' }).click()
+    await calculator.getByRole('button', { name: '1', exact: true }).click()
     await incomeChip.click()
 
     const expression = calculator.getByTestId('calculator-expression')
-    const inserted = (await expression.textContent())?.trim() ?? ''
-    expect(inserted).toMatch(/^\d+(,\d{1,2})?$/)
+    await expect(expression).toHaveText('1+Мес. д.')
 
-    await calculator.getByRole('button', { name: 'Плюс' }).click()
-    await calculator.getByRole('button', { name: '1', exact: true }).click()
     await calculator.getByRole('button', { name: 'Равно' }).click()
-
-    const expected = Number(inserted.replace(',', '.')) + 1
+    const expected = Math.round((income + 1) * 100) / 100
     await expect(expression).toHaveText(String(expected).replace('.', ','))
     await expect(calculator.getByTestId('calculator-result')).not.toHaveText(
       '—'
@@ -54,5 +65,13 @@ test.describe('Savings calculator', () => {
       .getByRole('button', { name: 'Закрыть калькулятор' })
       .click()
     await expect(calculator).toBeHidden()
+
+    await page.reload()
+    await page.getByRole('button', { name: 'Открыть калькулятор' }).click()
+    await expect(
+      page
+        .getByRole('dialog', { name: 'Калькулятор' })
+        .getByTestId('calculator-expression')
+    ).toHaveText(String(expected).replace('.', ','), TIMEOUT)
   })
 })
