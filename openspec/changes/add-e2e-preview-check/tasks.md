@@ -16,9 +16,13 @@
 
 ## 3. Действия владельца
 
-- [ ] 3.1 Владелец: добавить секреты репозитория `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `VERCEL_AUTOMATION_BYPASS_SECRET`.
-- [ ] 3.2 Владелец: понаблюдать за первыми запусками `e2e` на Pull Request.
-- [ ] 3.3 Владелец: добавить `e2e` в обязательные проверки ruleset `Protect main`.
+- [x] 3.1 Владелец: добавить секреты репозитория `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`, `VERCEL_AUTOMATION_BYPASS_SECRET` (2026-10-14).
+- [x] 3.2 Владелец: понаблюдать за первыми запусками `e2e` на Pull Request (2026-10-14: первый зелёный запуск на PR #65, 9 passed).
+- [x] 3.3 Владелец: добавить `e2e` в обязательные проверки ruleset `Protect main` (2026-10-14).
+
+## 4. Расширение списка
+
+- [x] 4.1 Добавить `e2e/savings-calculator.spec.ts` (T-032) в `.github/e2e-specs.txt`.
 
 ## Дальнейшая работа
 

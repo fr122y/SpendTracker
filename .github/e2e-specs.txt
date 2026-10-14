@@ -5,3 +5,4 @@
 # This file is protected: adding or removing a spec needs the owner's bypass.
 
 e2e/pockets.spec.ts
+e2e/savings-calculator.spec.ts
