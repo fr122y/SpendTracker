@@ -81,8 +81,8 @@ describe('deleteBackward', () => {
   })
 
   it('deletes a savings value whole', () => {
-    const state = insertSavings(type(['1', '+']), cushion)
-    expect(text(deleteBackward(state).tokens)).toBe('1+')
+    const state = insertSavings(type(['(']), cushion)
+    expect(text(deleteBackward(state).tokens)).toBe('(')
   })
 })
 

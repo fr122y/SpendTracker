@@ -23,6 +23,8 @@ export type Token = CharToken | SavingsToken
 export interface CalculatorState {
   tokens: Token[]
   caret: number
+  /** Set by «=»: the tokens are a result that new input may replace. */
+  justEvaluated?: boolean
 }
 
 /** Current amounts by savings id; `null` while they are unknown. */
@@ -86,8 +88,23 @@ function insertNumberChars(
   return insertAt(state, charsToTokens(chars + after), chars.length)
 }
 
-export function pressKey(state: CalculatorState, key: string): CalculatorState {
-  if (!CHARS.has(key) || key.length !== 1) return state
+/** Drops the after-«=» flag: the result becomes an ordinary number. */
+function editable(state: CalculatorState): CalculatorState {
+  return state.justEvaluated
+    ? { tokens: state.tokens, caret: state.caret }
+    : state
+}
+
+export function pressKey(
+  inputState: CalculatorState,
+  key: string
+): CalculatorState {
+  if (!CHARS.has(key) || key.length !== 1) return inputState
+  // After «=», a new number or "(" replaces the result; an operator continues it.
+  const state =
+    inputState.justEvaluated && /[\d.(]/.test(key)
+      ? EMPTY_STATE
+      : editable(inputState)
   const prev = state.tokens[state.caret - 1]
 
   if (/\d/.test(key)) return insertNumberChars(state, key)
@@ -118,15 +135,36 @@ export function pressKey(state: CalculatorState, key: string): CalculatorState {
   return insertAt(state, charsToTokens(key))
 }
 
+/**
+ * Deletes the element before the caret. Deleting a savings value also drops
+ * one operator it leaves redundant: the right one of two adjacent binary
+ * operators; a non-minus operator at the start or after "("; an operator at
+ * the end or before ")".
+ */
 export function deleteBackward(state: CalculatorState): CalculatorState {
-  if (state.caret === 0) return state
-  return {
-    tokens: [
-      ...state.tokens.slice(0, state.caret - 1),
-      ...state.tokens.slice(state.caret),
-    ],
-    caret: state.caret - 1,
+  if (state.caret === 0) return editable(state)
+  const removed = state.tokens[state.caret - 1]
+  const left = state.tokens.slice(0, state.caret - 1)
+  let right = state.tokens.slice(state.caret)
+  let caret = state.caret - 1
+
+  if (removed.kind === 'savings') {
+    const prev = left[left.length - 1]
+    const next = right[0]
+    const atOpen = prev === undefined || isChar(prev, '(')
+    const atClose = next === undefined || isChar(next, ')')
+
+    if (isOperator(prev) && isOperator(next)) {
+      right = right.slice(1)
+    } else if (isOperator(next) && atOpen && !isChar(next, '-')) {
+      right = right.slice(1)
+    } else if (isOperator(prev) && atClose) {
+      left.pop()
+      caret--
+    }
   }
+
+  return { tokens: [...left, ...right], caret }
 }
 
 export function setCaret(
@@ -134,7 +172,8 @@ export function setCaret(
   index: number
 ): CalculatorState {
   const caret = Math.min(Math.max(0, Math.trunc(index)), state.tokens.length)
-  return caret === state.caret ? state : { ...state, caret }
+  if (caret === state.caret && !state.justEvaluated) return state
+  return { tokens: state.tokens, caret }
 }
 
 export function moveCaret(
@@ -149,9 +188,11 @@ export function moveCaret(
  * right before it, and to a number or value right after it.
  */
 export function insertSavings(
-  state: CalculatorState,
+  inputState: CalculatorState,
   value: SavingsValue
 ): CalculatorState {
+  // After «=», a value starts a new expression.
+  const state = inputState.justEvaluated ? EMPTY_STATE : inputState
   const prev = state.tokens[state.caret - 1]
   const next = state.tokens[state.caret]
   const plus: Token = { kind: 'char', value: '+' }
@@ -229,7 +270,7 @@ export function applyEquals(
   const result = evaluateTokens(state.tokens, amounts)
   if (result === null) return state
   const tokens = charsToTokens(formatResultForCopy(result))
-  return { tokens, caret: tokens.length }
+  return { tokens, caret: tokens.length, justEvaluated: true }
 }
 
 const SYMBOLS: Record<string, string> = {
@@ -322,5 +363,7 @@ export function sanitizeCalculatorState(value: unknown): CalculatorState {
     typeof raw.caret === 'number' && Number.isInteger(raw.caret)
       ? Math.min(Math.max(0, raw.caret), tokens.length)
       : tokens.length
-  return { tokens, caret }
+  return raw.justEvaluated === true
+    ? { tokens, caret, justEvaluated: true }
+    : { tokens, caret }
 }
