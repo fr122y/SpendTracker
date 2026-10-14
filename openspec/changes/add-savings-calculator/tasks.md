@@ -14,12 +14,12 @@
 
 ## 3. Second iteration (owner review of the Preview)
 
-- [ ] 3.1 Update failing tests first: abbreviation table and edge cases, token model (insert at caret, delete, caret moves, auto-plus, live amounts, missing category fallback), persistence round trip and corrupt data, swipe threshold, launcher hidden while open, Escape and backdrop closing, scroll lock, icon copy control, caret placement by tap and arrows; update the e2e scenario.
-- [ ] 3.2 Implement `lib/abbreviate.ts`, `lib/tokens.ts`, the Reatom `model/calculator-store.ts` with `withLocalStorage`, the caret UI and arrow keys, wider chips, the icon copy control, scroll lock, pointer/touch swipe, and the `next/dynamic` launcher.
-- [ ] 3.3 Update `src/features/calculator/README.md`.
+- [x] 3.1 Update failing tests first: abbreviation table and edge cases, token model (insert at caret, delete, caret moves, auto-plus, live amounts, missing category fallback), persistence round trip and corrupt data, swipe threshold, launcher hidden while open, Escape and backdrop closing, scroll lock, icon copy control, caret placement by tap and arrows; update the e2e scenario. Result: 33 new or rewritten tests failed before the implementation; the e2e scenario now checks the abbreviated value, the result, the copy control, and the expression after a reload.
+- [x] 3.2 Implement `lib/abbreviate.ts`, `lib/tokens.ts`, the Reatom `model/calculator-store.ts` with `withLocalStorage`, the caret UI and arrow keys, wider chips, the icon copy control, scroll lock, pointer/touch swipe, and the `next/dynamic` launcher. A digit typed right after a value gets no automatic `+` (ambiguous).
+- [x] 3.3 Update `src/features/calculator/README.md`.
 
 ## 4. Verify
 
-- [ ] 4.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run.
-- [ ] 4.2 Review the full diff against `docs/engineering/code-review.md`.
+- [x] 4.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 98 suites, 1116 tests; 61 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
+- [x] 4.2 Review the full diff against `docs/engineering/code-review.md`. Result: the second iteration touches only the change folder, `features/calculator`, `_pages/dashboard`, and the e2e spec; no schema, Server Action, or dependency change.
 - [ ] 4.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, compute, copy, and paste the result; reload and see the expression restored.
