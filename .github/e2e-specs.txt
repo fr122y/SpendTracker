@@ -4,5 +4,14 @@
 # ignored. Every listed file must exist, and none of its tests may be skipped.
 # This file is protected: adding or removing a spec needs the owner's bypass.
 
+e2e/app.spec.ts
+e2e/dashboard.spec.ts
+e2e/expenses.spec.ts
+e2e/layout.spec.ts
+e2e/mobile-forms.spec.ts
+e2e/no-horizontal-scroll.spec.ts
 e2e/pockets.spec.ts
+e2e/responsive-layout.spec.ts
 e2e/savings-calculator.spec.ts
+e2e/touch-targets.spec.ts
+e2e/viewport-resize.spec.ts
