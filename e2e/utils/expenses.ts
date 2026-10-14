@@ -203,9 +203,17 @@ export async function deleteExpense(
   const rows = expenseRows(page, description, amount)
   await expect(rows.last()).toBeVisible(TIMEOUT)
 
-  await rows.last().getByRole('button', { name: 'delete' }).click()
   const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
-  await expect(dialog).toBeVisible(TIMEOUT)
+  // On mobile the grid can remount after a reload and collapse the journal
+  // again, so re-expand it before each attempt to open the delete dialog.
+  await expect(async () => {
+    await openJournal(page)
+    await rows
+      .last()
+      .getByRole('button', { name: 'delete' })
+      .click({ timeout: 2000 })
+    await expect(dialog).toBeVisible({ timeout: 2000 })
+  }).toPass(TIMEOUT)
   // Wait for the delete server action (its only argument is the expense id)
   // so the reload below cannot abort it.
   const deleted = page.waitForResponse(
