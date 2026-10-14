@@ -12,7 +12,7 @@ Floating calculator for transfer amounts. A round button in the bottom-right cor
 - **Store:** `calculatorAtom` (Reatom, `{ tokens, caret }`), persisted with `reatomPersistWebStorage` (Persistence key: `smartspend-calculator-v1`); corrupt or unknown data is discarded by `sanitizeCalculatorState`.
 - **Actions:** `updateCalculator(update)`; read in React with `useCalculatorState()`.
 - **Data:** monthly income from `useSettingsStore` and buckets from `useBucketStore` (TanStack Query), converted with the shared allocation math in kopecks.
-- `lib/expression.ts`: token model (characters and indivisible savings values), caret moves, insertion with auto-`+`, live evaluation by current amounts with last-known fallback, display and copy formats
+- `lib/expression.ts`: token model (characters and indivisible savings values), caret moves, insertion with symmetric auto-`+` (value next to a number, digit next to a value), values serialised in parentheses so they never merge with digits, live evaluation by current amounts with last-known fallback, display and copy formats
 - `lib/abbreviate.ts`: shortest label abbreviation («Месячный доход» → «Мес. д.»)
 - `lib/savings-values.ts`: chips for income, each bucket, and «Операции (остаток)»; integer kopecks→rubles conversion
 - `lib/swipe.ts`: swipe-down close threshold

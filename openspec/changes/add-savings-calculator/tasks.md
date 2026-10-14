@@ -20,11 +20,11 @@
 
 ## 4. Fix: digit glued to a value (Preview of b47623c)
 
-- [ ] 4.1 Add failing regression tests through `pressKey`/`insertSavings` and evaluation: «5+Кв.» then «7», a digit before a value, a digit after a value followed by `(`, and adjacent number and value tokens evaluating to no result.
-- [ ] 4.2 Make auto-`+` symmetric for digits and the decimal separator next to a value, and wrap every value in parentheses when serialising.
+- [x] 4.1 Add failing regression tests through `pressKey`/`insertSavings` and evaluation: «5+Кв.» then «7», a digit before a value, a digit after a value followed by `(`, and adjacent number and value tokens evaluating to no result. Result: 7 tests failed before the fix (6 new, plus the fallback test updated for parenthesised values).
+- [x] 4.2 Make auto-`+` symmetric for digits and the decimal separator next to a value, and wrap every value in parentheses when serialising.
 
 ## 5. Verify
 
-- [ ] 5.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 98 suites, 1116 tests; 61 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
-- [ ] 5.2 Review the full diff against `docs/engineering/code-review.md`. Result: the second iteration touches only the change folder, `features/calculator`, `_pages/dashboard`, and the e2e spec; no schema, Server Action, or dependency change.
+- [x] 5.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 98 suites, 1122 tests; 67 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 98 suites, 1116 tests; 61 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
+- [x] 5.2 Review the full diff against `docs/engineering/code-review.md`. Result: the fix touches only `features/calculator/lib/expression.ts`, its tests, and the change folder. Result: the second iteration touches only the change folder, `features/calculator`, `_pages/dashboard`, and the e2e spec; no schema, Server Action, or dependency change.
 - [ ] 5.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, compute, copy, and paste the result; reload and see the expression restored.
