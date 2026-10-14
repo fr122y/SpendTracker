@@ -30,11 +30,11 @@
 
 ## 6. Result continuation and value deletion (Preview of 53e30f8)
 
-- [ ] 6.1 Add failing tests: after `=` a digit, `.`, `(`, or value starts a new expression, an operator continues, backspace/arrows/tap edit the result; deleting a value removes a redundant operator (between numbers, at the start, at the end, inside parentheses, the only token).
-- [ ] 6.2 Implement `justEvaluated` and the operator clean-up in `lib/expression.ts`.
+- [x] 6.1 Add failing tests: after `=` a digit, `.`, `(`, or value starts a new expression, an operator continues, backspace/arrows/tap edit the result; deleting a value removes a redundant operator (between numbers, at the start, at the end, inside parentheses, the only token). Result: 6 tests failed before the fix; 5 guard tests passed already. The existing «deletes a savings value whole» test now deletes a value after `(` because a value after `1+` now also drops the `+`.
+- [x] 6.2 Implement `justEvaluated` and the operator clean-up in `lib/expression.ts`.
 
 ## 7. Verify
 
-- [ ] 7.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run.
-- [ ] 7.2 Review the full diff against `docs/engineering/code-review.md`.
+- [x] 7.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 99 suites, 1149 tests; 94 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
+- [x] 7.2 Review the full diff against `docs/engineering/code-review.md`. Result: this fix touches only `features/calculator/lib/expression.ts`, its tests, the README, and the change folder.
 - [ ] 7.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, type an expression on a hardware keyboard, compute, copy, and paste the result; reload and see the expression restored.
