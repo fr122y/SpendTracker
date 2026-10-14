@@ -4,7 +4,7 @@
 
 - [x] 1.1 Add failing unit tests for `features/calculator/lib`: building the expression from keys, backspace and clear, inserting values (replace trailing number, negative in parentheses), result rounding to kopecks, invalid expression and division by zero, copy format, and chips data from income, percentage buckets, and the remainder.
 - [x] 1.2 Add failing UI tests for `CalculatorLauncher`: open and close, desktop dialog vs mobile bottom panel, swipe-down closing, chip insertion, `=` result, and «Скопировать» with confirmation.
-- [x] 1.3 Add the e2e scenario `e2e/savings-calculator.spec.ts`: open, insert a savings value, operate, see the result and the copy control.
+- [x] 1.3 Add the e2e scenario `e2e/savings-calculator.spec.ts`: open, insert a savings value, operate, see the result and the copy control. Result: first executed in CI on PR #66 on 2026-10-14 and passed.
 
 ## 2. Implementation
 
@@ -42,4 +42,4 @@
 
 - [x] 8.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 99 suites, 1150 tests; 95 calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database.
 - [x] 8.2 Review the full diff against `docs/engineering/code-review.md`. Result: this fix touches only `features/calculator/lib/expression.ts`, its tests, the README, and the change folder.
-- [ ] 8.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, type an expression on a hardware keyboard, compute, copy, and paste the result; reload and see the expression restored.
+- [x] 8.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, type an expression on a hardware keyboard, compute, copy, and paste the result; reload and see the expression restored. Result: verified on Vercel Preview on 2026-10-14 by the agent with the test account across iterations (heads 2180c82, b47623c, 5ff384e, 53e30f8, 885d39b), desktop and phone viewport; scenarios: chips match «Накопления», abbreviations, auto-«+», caret, live values, persistence, copy, keyboard input, after-«=» rules, value deletion. The last fix (68a1424, chip focus) was covered by a unit test only and not re-checked on Preview. Swipe-down closing and background scroll lock could not be verified with the browser tools. The owner tried the Preview and approved it.
