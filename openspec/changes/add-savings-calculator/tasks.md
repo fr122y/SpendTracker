@@ -14,7 +14,7 @@
 
 ## 3. Second iteration (owner review of the Preview)
 
-- [x] 3.1 Update failing tests first: abbreviation table and edge cases, token model (insert at caret, delete, caret moves, auto-plus, live amounts, missing category fallback), persistence round trip and corrupt data, swipe threshold, launcher hidden while open, Escape and backdrop closing, scroll lock, icon copy control, caret placement by tap and arrows; update the e2e scenario. Result: 33 new or rewritten tests failed before the implementation; the e2e scenario now checks the abbreviated value, the result, the copy control, and the expression after a reload.
+- [x] 3.1 Update failing tests first: abbreviation table and edge cases, token model (insert at caret, delete, caret moves, auto-plus, live amounts, missing category fallback), persistence round trip and corrupt data, swipe threshold, launcher hidden while open, Escape and backdrop closing, scroll lock, icon copy control, caret placement by tap and arrows; update the e2e scenario. Result: before the implementation 22 tests failed and three new suites (abbreviation, swipe, store) could not load their modules; the e2e scenario now checks the abbreviated value, the result, the copy control, and the expression after a reload.
 - [x] 3.2 Implement `lib/abbreviate.ts`, `lib/tokens.ts`, the Reatom `model/calculator-store.ts` with `withLocalStorage`, the caret UI and arrow keys, wider chips, the icon copy control, scroll lock, pointer/touch swipe, and the `next/dynamic` launcher. A digit typed right after a value gets no automatic `+` (ambiguous).
 - [x] 3.3 Update `src/features/calculator/README.md`.
 
