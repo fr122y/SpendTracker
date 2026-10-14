@@ -12,8 +12,14 @@
 - [x] 2.2 Implement `features/calculator` lib and UI and mount `CalculatorLauncher` in `_pages/dashboard`.
 - [x] 2.3 Add `src/features/calculator/README.md` and update the `_pages/dashboard` and `shared/lib` READMEs.
 
-## 3. Verify
+## 3. Second iteration (owner review of the Preview)
 
-- [x] 3.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run. Result: `npm run spec:check` passed (4 passed, 0 failed); `npm run validate` passed (typecheck, lint, 95 suites, 1083 tests; 28 new calculator tests). Playwright was not run: it needs E2E credentials and a running app with a database; `playwright test --list` confirms the new scenario is collected.
-- [x] 3.2 Review the full diff against `docs/engineering/code-review.md`. Result: the diff touches only the change folder, `shared/lib` (moved allocation math), `features/manage-buckets` (re-export, README), `features/calculator`, `_pages/dashboard`, and the new e2e spec; no schema, Server Action, or dependency change.
-- [ ] 3.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, compute, copy, and paste the result.
+- [ ] 3.1 Update failing tests first: abbreviation table and edge cases, token model (insert at caret, delete, caret moves, auto-plus, live amounts, missing category fallback), persistence round trip and corrupt data, swipe threshold, launcher hidden while open, Escape and backdrop closing, scroll lock, icon copy control, caret placement by tap and arrows; update the e2e scenario.
+- [ ] 3.2 Implement `lib/abbreviate.ts`, `lib/tokens.ts`, the Reatom `model/calculator-store.ts` with `withLocalStorage`, the caret UI and arrow keys, wider chips, the icon copy control, scroll lock, pointer/touch swipe, and the `next/dynamic` launcher.
+- [ ] 3.3 Update `src/features/calculator/README.md`.
+
+## 4. Verify
+
+- [ ] 4.1 Run `npm run spec:check` and `npm run validate`; record the results and any check not run.
+- [ ] 4.2 Review the full diff against `docs/engineering/code-review.md`.
+- [ ] 4.3 Manually verify on Vercel Preview: open the calculator on desktop and mobile, insert income, a percentage category, and the remainder, move the caret, compute, copy, and paste the result; reload and see the expression restored.
