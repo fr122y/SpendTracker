@@ -1,0 +1,7 @@
+# Playwright spec files gated by the `e2e` check against the Vercel Preview.
+#
+# One repo-relative path per line. Blank lines and lines starting with `#` are
+# ignored. Every listed file must exist, and none of its tests may be skipped.
+# This file is protected: adding or removing a spec needs the owner's bypass.
+
+e2e/pockets.spec.ts

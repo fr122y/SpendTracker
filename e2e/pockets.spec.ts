@@ -272,7 +272,7 @@ test.describe('Pockets', () => {
   })
 
   test('should record a purchase from the journal form', async () => {
-    const region = pocketRegion()
+    let region = pocketRegion()
     const journalForm = page
       .locator('form')
       .filter({ has: page.getByLabel('Сценарий операции') })
@@ -315,10 +315,27 @@ test.describe('Pockets', () => {
       .getByLabel('Фильтр операций')
       .getByRole('button', { name: 'Карманы', exact: true })
       .click()
-    await expect(page.getByText(JOURNAL_PURCHASE_DESCRIPTION)).toBeVisible(
-      TIMEOUT
+    // Scope the row to this run's pocket: the journal lists every pocket
+    // purchase of the date, and the description is stable across runs.
+    await expect(
+      page
+        .locator('div')
+        .filter({ has: page.getByText(JOURNAL_PURCHASE_DESCRIPTION) })
+        .filter({ has: page.getByText(`Из кармана: ${pocketName}`) })
+        .last()
+    ).toBeVisible(TIMEOUT)
+
+    await expectTotals(
+      region,
+      USED + JOURNAL_PURCHASE_AMOUNT,
+      REMAINING - JOURNAL_PURCHASE_AMOUNT
     )
 
+    // The journal shows the purchase optimistically under a temporary id, and
+    // deleting that row before the server has saved it removes nothing on the
+    // server. Reload so the history holds the saved purchase with its real id.
+    await page.reload()
+    region = await openPocket()
     await expectTotals(
       region,
       USED + JOURNAL_PURCHASE_AMOUNT,
@@ -347,6 +364,11 @@ test.describe('Pockets', () => {
     await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
 
     await expect(purchases.getByRole('listitem')).toHaveCount(1, TIMEOUT)
+    await expectTotals(region, USED, REMAINING)
+
+    // The deletion must reach the server, not only the optimistic cache.
+    await page.reload()
+    region = await openPocket()
     await expectTotals(region, USED, REMAINING)
   })
 
