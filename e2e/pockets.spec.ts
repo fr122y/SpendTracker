@@ -4,10 +4,14 @@ import {
   getE2ECredentials,
   loginWithCredentials,
   MISSING_E2E_CREDENTIALS_MESSAGE,
+  SIGNED_OUT_STATE,
 } from './utils/auth'
 import { expectNoHorizontalScroll } from './utils/viewport-helpers'
 
 const TIMEOUT = { timeout: 10000 }
+
+// This spec signs in through `/login` itself, so it starts signed out.
+test.use({ storageState: SIGNED_OUT_STATE })
 
 const BUDGET = 5000
 const PURCHASE_AMOUNT = 1500
