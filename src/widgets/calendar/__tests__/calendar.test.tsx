@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 
 import { Calendar } from '../ui/calendar'
 
@@ -341,6 +341,58 @@ describe('Calendar', () => {
       render(<Calendar />)
 
       expect(markedDays('ring-emerald-500/30')).toEqual(['31'])
+    })
+
+    it('shows both markers when salary 31 and advance 30 clamp to Nov 30', () => {
+      mockSalaryDay = 31
+      mockAdvanceDay = 30
+      mockSelectedDate = new Date(2026, 10, 15)
+
+      render(<Calendar />)
+
+      const cell = screen.getByRole('button', { name: '30, Зарплата и аванс' })
+      const dots = within(cell).getByTestId('payday-dots')
+      expect(dots.querySelector('.bg-emerald-400')).toBeInTheDocument()
+      expect(dots.querySelector('.bg-amber-400')).toBeInTheDocument()
+      expect(cell.className).toContain('from-emerald-950/40')
+      expect(cell.className).toContain('to-amber-950/40')
+    })
+
+    it('shows both markers on Feb 28 2027 for salary 31 and advance 30', () => {
+      mockSalaryDay = 31
+      mockAdvanceDay = 30
+      mockSelectedDate = new Date(2027, 1, 10)
+
+      render(<Calendar />)
+
+      expect(
+        screen.getByRole('button', { name: '28, Зарплата и аванс' })
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /Зарплата,|, Зарплата$|, Аванс$/ })
+      ).not.toBeInTheDocument()
+    })
+
+    it('shows both markers when salary and advance are the same day', () => {
+      mockSalaryDay = 15
+      mockAdvanceDay = 15
+
+      render(<Calendar />)
+
+      const cell = screen.getByRole('button', { name: '15, Зарплата и аванс' })
+      const dots = within(cell).getByTestId('payday-dots')
+      expect(dots.children).toHaveLength(2)
+    })
+
+    it('labels separate salary and advance days individually', () => {
+      render(<Calendar />)
+
+      expect(
+        screen.getByRole('button', { name: '10, Зарплата' })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: '25, Аванс' })
+      ).toBeInTheDocument()
     })
 
     it('does not move a payday off a weekend', () => {

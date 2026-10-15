@@ -144,6 +144,16 @@ function getCalendarDays(
   return days
 }
 
+function getDayLabel(day: CalendarDay): string | undefined {
+  if (!day.isCurrentMonth) return undefined
+  if (day.isSalaryDay && day.isAdvanceDay) {
+    return `${day.day}, Зарплата и аванс`
+  }
+  if (day.isSalaryDay) return `${day.day}, Зарплата`
+  if (day.isAdvanceDay) return `${day.day}, Аванс`
+  return undefined
+}
+
 const MONTH_NAMES = [
   'Январь',
   'Февраль',
@@ -346,17 +356,26 @@ export function Calendar() {
           <button
             key={index}
             onClick={() => setSelectedDate(day.date)}
+            aria-label={getDayLabel(day)}
             className={cn(
               'relative flex min-h-[48px] items-center justify-center rounded text-sm transition-colors sm:h-14 sm:text-base',
               /* ⚡ Auto-fix: Added background highlight for salary/advance days (Principle: Contrast) */
               day.isSalaryDay &&
+                !day.isAdvanceDay &&
                 day.isCurrentMonth &&
                 !day.isSelected &&
                 'bg-emerald-950/30 ring-1 ring-emerald-500/30',
               day.isAdvanceDay &&
+                !day.isSalaryDay &&
                 day.isCurrentMonth &&
                 !day.isSelected &&
                 'bg-amber-950/30 ring-1 ring-amber-500/30',
+              // Salary and advance on the same day: both colors, not one.
+              day.isSalaryDay &&
+                day.isAdvanceDay &&
+                day.isCurrentMonth &&
+                !day.isSelected &&
+                'bg-gradient-to-br from-emerald-950/40 to-amber-950/40 ring-1 ring-amber-500/30',
               !day.isCurrentMonth && !day.isWeekend && 'text-zinc-600',
               !day.isCurrentMonth && day.isWeekend && 'text-red-700',
               day.isCurrentMonth && !day.isWeekend && 'text-zinc-300',
@@ -371,6 +390,20 @@ export function Calendar() {
             )}
           >
             {day.day}
+            {day.isCurrentMonth && (day.isSalaryDay || day.isAdvanceDay) && (
+              <span
+                className="absolute right-1 top-1 flex gap-0.5"
+                data-testid="payday-dots"
+                aria-hidden="true"
+              >
+                {day.isSalaryDay && (
+                  <span className="h-1 w-1 rounded-full bg-emerald-400 sm:h-1.5 sm:w-1.5" />
+                )}
+                {day.isAdvanceDay && (
+                  <span className="h-1 w-1 rounded-full bg-amber-400 sm:h-1.5 sm:w-1.5" />
+                )}
+              </span>
+            )}
             {/* Expense indicator dot */}
             {day.hasExpense && (
               <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-green-400 shadow-sm shadow-green-400/50 sm:bottom-1 sm:h-1.5 sm:w-1.5" />

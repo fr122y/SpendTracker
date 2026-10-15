@@ -13,3 +13,8 @@
 - [x] 2.2 Use `getPaydayInMonth` in `getCalendarDays` and rework the legend editor.
 - [x] 2.3 Validate days in `updateSettings`.
 - [x] 2.4 Update `src/widgets/calendar/README.md` and `src/shared/lib/README.md`.
+
+## 3. Preview review follow-up
+
+- [x] 3.1 Add failing calendar tests for salary and advance on the same day (clamped: Nov 30 2026, Feb 28 2027; explicit: both 15) and per-day accessible names.
+- [x] 3.2 Show both markers (two-color cell and two corner dots) with the accessible name «Зарплата и аванс»; update the spec delta and the calendar README.

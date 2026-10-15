@@ -8,7 +8,7 @@
 
 ### Requirement: Mark payday on the clamped day of each month
 
-The calendar MUST mark the salary day and the advance day of the shown month on day `min(saved day, number of days in that month)`. A saved day beyond the end of a short month MUST be marked on the last day of that month. The marker MUST NOT move off a weekend.
+The calendar MUST mark the salary day and the advance day of the shown month on day `min(saved day, number of days in that month)`. A saved day beyond the end of a short month MUST be marked on the last day of that month. The marker MUST NOT move off a weekend. When the salary day and the advance day fall on the same day of the shown month, including after clamping, that day MUST show both markers and its accessible name MUST name both («Зарплата и аванс»).
 
 #### Scenario: Salary day 31 in a 30-day month
 
@@ -27,6 +27,19 @@ The calendar MUST mark the salary day and the advance day of the shown month on 
 - **GIVEN** the advance day falls on a Saturday in the shown month
 - **WHEN** the calendar is rendered
 - **THEN** that Saturday is marked as the advance day
+
+#### Scenario: Salary and advance clamp to the same day
+
+- **GIVEN** the salary day is 31 and the advance day is 30
+- **WHEN** the calendar shows November
+- **THEN** November 30 shows both the salary and the advance marker
+- **AND** its accessible name is «30, Зарплата и аванс»
+
+#### Scenario: Salary and advance saved on the same day
+
+- **GIVEN** the salary day and the advance day are both 15
+- **WHEN** the calendar is rendered
+- **THEN** day 15 shows both markers
 
 ### Requirement: Edit payday with visible range and validation
 
