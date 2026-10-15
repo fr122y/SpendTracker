@@ -25,6 +25,7 @@ jest.mock('@/shared/db', () => ({
     archivedAt: 'pocket.archivedAt',
     createdAt: 'pocket.createdAt',
   },
+  users: { id: 'user.id' },
   pocketMonthBudgets: {
     pocketId: 'pocketMonthBudget.pocketId',
     period: 'pocketMonthBudget.period',
@@ -58,6 +59,7 @@ import {
   createPocket,
   getPockets,
   initializePocketMonthBudget,
+  renamePocket,
   restorePocket,
   setPocketMonthBudget,
 } from '../pocket-actions'
@@ -138,6 +140,50 @@ function setMockExistingBudgetRead(
   return { from, innerJoin, where, limit }
 }
 
+type PocketRow = {
+  id: string
+  name: string
+  archivedAt: Date | null
+  createdAt: Date
+}
+
+/**
+ * Mocks the per-user name lock transaction: the user row lock, the active
+ * pocket read, and the insert or update that follows.
+ */
+function setMockNameLockTransaction({
+  activePockets,
+  written = [],
+}: {
+  activePockets: Array<{ id: string; name: string }>
+  written?: PocketRow[]
+}) {
+  const lockUser = jest.fn().mockResolvedValue([{ id: 'user-1' }])
+  const lockWhere = jest.fn(() => ({ for: lockUser }))
+  const activeWhere = jest.fn().mockResolvedValue(activePockets)
+  const returning = jest.fn().mockResolvedValue(written)
+  const insertValues = jest.fn(() => ({ returning }))
+  const updateWhere = jest.fn(() => ({ returning }))
+  const updateSet = jest.fn(() => ({ where: updateWhere }))
+  const tx = {
+    select: jest
+      .fn()
+      .mockImplementationOnce(() => ({
+        from: jest.fn(() => ({ where: lockWhere })),
+      }))
+      .mockImplementationOnce(() => ({
+        from: jest.fn(() => ({ where: activeWhere })),
+      })),
+    insert: jest.fn(() => ({ values: insertValues })),
+    update: jest.fn(() => ({ set: updateSet })),
+  }
+  mockDb.transaction.mockImplementation(
+    (callback: (transaction: typeof tx) => unknown) => callback(tx)
+  )
+
+  return { tx, lockUser, lockWhere, activeWhere, insertValues, updateSet }
+}
+
 describe('pocket-actions', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -163,26 +209,112 @@ describe('pocket-actions', () => {
 
   it('creates a trimmed pocket for the current user', async () => {
     const createdAt = new Date('2026-10-01T10:00:00.000Z')
-    const values = jest.fn(() => ({
-      returning: jest
-        .fn()
-        .mockResolvedValueOnce([
-          { id: 'pocket-1', name: 'Квартира', archivedAt: null, createdAt },
-        ]),
-    }))
-    mockDb.insert.mockReturnValueOnce({
-      values,
+    const { insertValues, lockUser, lockWhere } = setMockNameLockTransaction({
+      activePockets: [{ id: 'pocket-0', name: 'Отпуск' }],
+      written: [
+        { id: 'pocket-1', name: 'Квартира', archivedAt: null, createdAt },
+      ],
     })
 
     await expect(createPocket(' Квартира ')).resolves.toEqual({
-      id: 'pocket-1',
-      name: 'Квартира',
-      archivedAt: undefined,
-      createdAt: createdAt.toISOString(),
+      status: 'created',
+      pocket: {
+        id: 'pocket-1',
+        name: 'Квартира',
+        archivedAt: undefined,
+        createdAt: createdAt.toISOString(),
+      },
     })
-    expect(values).toHaveBeenCalledWith(
+    expect(insertValues).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1', name: 'Квартира' })
     )
+    expect(lockWhere).toHaveBeenCalledWith({
+      column: 'user.id',
+      value: 'user-1',
+    })
+    expect(lockUser).toHaveBeenCalledWith('update')
+    expect(mockDb.insert).not.toHaveBeenCalled()
+  })
+
+  it('reports an active pocket name conflict on create without inserting', async () => {
+    const { tx } = setMockNameLockTransaction({
+      activePockets: [{ id: 'pocket-1', name: 'Отпуск' }],
+    })
+
+    await expect(createPocket('  оТПУСК ')).resolves.toEqual({
+      status: 'name_conflict',
+      conflictingName: 'Отпуск',
+    })
+    expect(tx.insert).not.toHaveBeenCalled()
+  })
+
+  it('reads only active pockets, so an archived name can be reused', async () => {
+    const createdAt = new Date('2026-10-01T10:00:00.000Z')
+    const { activeWhere, insertValues } = setMockNameLockTransaction({
+      activePockets: [],
+      written: [
+        { id: 'pocket-2', name: 'Ремонт', archivedAt: null, createdAt },
+      ],
+    })
+
+    await expect(createPocket('Ремонт')).resolves.toMatchObject({
+      status: 'created',
+      pocket: { id: 'pocket-2', name: 'Ремонт' },
+    })
+    expect(activeWhere).toHaveBeenCalledWith({
+      conditions: [
+        { column: pockets.userId, value: 'user-1' },
+        { isNull: pockets.archivedAt },
+      ],
+    })
+    expect(insertValues).toHaveBeenCalledTimes(1)
+  })
+
+  describe('renamePocket', () => {
+    const createdAt = new Date('2026-01-01T00:00:00.000Z')
+
+    it('rejects a name used by another active pocket', async () => {
+      const { tx } = setMockNameLockTransaction({
+        activePockets: [
+          { id: 'pocket-1', name: 'Подарки' },
+          { id: 'pocket-2', name: 'Отпуск' },
+        ],
+      })
+
+      await expect(renamePocket('pocket-1', ' отпуск')).resolves.toEqual({
+        status: 'name_conflict',
+        conflictingName: 'Отпуск',
+      })
+      expect(tx.update).not.toHaveBeenCalled()
+    })
+
+    it('allows changing the case of its own name', async () => {
+      const { updateSet } = setMockNameLockTransaction({
+        activePockets: [{ id: 'pocket-1', name: 'Подарки' }],
+        written: [
+          { id: 'pocket-1', name: 'ПОДАРКИ', archivedAt: null, createdAt },
+        ],
+      })
+
+      await expect(renamePocket('pocket-1', 'ПОДАРКИ')).resolves.toEqual({
+        status: 'renamed',
+        pocket: {
+          id: 'pocket-1',
+          name: 'ПОДАРКИ',
+          archivedAt: undefined,
+          createdAt: createdAt.toISOString(),
+        },
+      })
+      expect(updateSet).toHaveBeenCalledWith({ name: 'ПОДАРКИ' })
+    })
+
+    it('still rejects renaming a missing or archived pocket', async () => {
+      setMockNameLockTransaction({ activePockets: [], written: [] })
+
+      await expect(renamePocket('pocket-9', 'Новое')).rejects.toThrow(
+        'Active pocket not found'
+      )
+    })
   })
 
   it('copies the latest earlier saved budget, not a later period', async () => {
@@ -355,26 +487,6 @@ describe('pocket-actions', () => {
   describe('restorePocket', () => {
     const createdAt = new Date('2026-01-01T00:00:00.000Z')
 
-    function setMockActivePockets(rows: Array<{ id: string; name: string }>) {
-      const where = jest.fn().mockResolvedValue(rows)
-      mockDb.select.mockReturnValueOnce({ from: jest.fn(() => ({ where })) })
-    }
-
-    function setMockRestoreUpdate(
-      rows: Array<{
-        id: string
-        name: string
-        archivedAt: Date | null
-        createdAt: Date
-      }>
-    ) {
-      const returning = jest.fn().mockResolvedValue(rows)
-      const where = jest.fn(() => ({ returning }))
-      const set = jest.fn(() => ({ where }))
-      mockDb.update.mockReturnValueOnce({ set })
-      return { set, where }
-    }
-
     it('clears archivedAt when no active pocket has the same name', async () => {
       ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
         id: 'pocket-1',
@@ -383,10 +495,12 @@ describe('pocket-actions', () => {
         archivedAt: new Date('2026-02-01T00:00:00.000Z'),
         createdAt,
       })
-      setMockActivePockets([{ id: 'pocket-2', name: 'Отпуск' }])
-      const { set } = setMockRestoreUpdate([
-        { id: 'pocket-1', name: 'Подарки', archivedAt: null, createdAt },
-      ])
+      const { updateSet: set, lockUser } = setMockNameLockTransaction({
+        activePockets: [{ id: 'pocket-2', name: 'Отпуск' }],
+        written: [
+          { id: 'pocket-1', name: 'Подарки', archivedAt: null, createdAt },
+        ],
+      })
 
       await expect(restorePocket('pocket-1')).resolves.toEqual({
         status: 'restored',
@@ -399,6 +513,7 @@ describe('pocket-actions', () => {
       })
       expect(getPocketForUser).toHaveBeenCalledWith('pocket-1', 'user-1')
       expect(set).toHaveBeenCalledWith({ archivedAt: null })
+      expect(lockUser).toHaveBeenCalledWith('update')
     })
 
     it('reports a trimmed, case-insensitive name conflict without restoring', async () => {
@@ -409,13 +524,15 @@ describe('pocket-actions', () => {
         archivedAt: new Date('2026-02-01T00:00:00.000Z'),
         createdAt,
       })
-      setMockActivePockets([{ id: 'pocket-2', name: ' подарки ' }])
+      const { tx } = setMockNameLockTransaction({
+        activePockets: [{ id: 'pocket-2', name: ' подарки ' }],
+      })
 
       await expect(restorePocket('pocket-1')).resolves.toEqual({
         status: 'name_conflict',
         conflictingName: ' подарки ',
       })
-      expect(mockDb.update).not.toHaveBeenCalled()
+      expect(tx.update).not.toHaveBeenCalled()
     })
 
     it('does not restore a pocket owned by another user', async () => {
@@ -442,8 +559,7 @@ describe('pocket-actions', () => {
         status: 'restored',
         pocket: { id: 'pocket-1', archivedAt: undefined },
       })
-      expect(mockDb.select).not.toHaveBeenCalled()
-      expect(mockDb.update).not.toHaveBeenCalled()
+      expect(mockDb.transaction).not.toHaveBeenCalled()
     })
   })
 })

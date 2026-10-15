@@ -449,6 +449,7 @@ describe('PocketsSection', () => {
 
     await waitFor(() =>
       expect(mockAddExpense).toHaveBeenCalledWith({
+        id: expect.any(String),
         description: 'Обед',
         amount: 450,
         date: '2026-01-21',
@@ -475,6 +476,7 @@ describe('PocketsSection', () => {
 
     await waitFor(() =>
       expect(mockAddExpense).toHaveBeenCalledWith({
+        id: expect.any(String),
         description: 'Продукты',
         amount: 200,
         date: '2026-01-21',
@@ -516,6 +518,7 @@ describe('PocketsSection', () => {
     await waitFor(() => {
       expect(mockSaveMapping).toHaveBeenCalledWith('Кофе', 'travel')
       expect(mockAddExpense).toHaveBeenCalledWith({
+        id: expect.any(String),
         description: 'Кофе',
         amount: 400,
         date: '2026-01-21',
@@ -546,6 +549,7 @@ describe('PocketsSection', () => {
 
     await waitFor(() =>
       expect(mockAddExpense).toHaveBeenCalledWith({
+        id: expect.any(String),
         description: 'Кофе',
         amount: 200,
         date: '2026-01-21',

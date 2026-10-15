@@ -5,6 +5,7 @@ import {
   expenseRows,
   journalForm,
   openJournal,
+  reloadPage,
   test,
   TIMEOUT,
 } from './utils/expenses'
@@ -47,6 +48,29 @@ test.describe('Expense Flow', () => {
           { exact: true }
         )
       ).toBeVisible()
+
+      await expenses.remove(expense)
+    })
+  })
+
+  test.describe('Double Submit', () => {
+    test('should save one expense for a rapid triple click', async ({
+      page,
+      expenses,
+    }) => {
+      const expense = await expenses.add('E2E тройной клик', {
+        clickCount: 3,
+      })
+
+      // Server state, not the optimistic list: reload before counting.
+      await reloadPage(page)
+      await openJournal(page)
+      await expect(
+        expenseRow(page, expense.description, expense.amount)
+      ).toBeVisible(TIMEOUT)
+      await expect(
+        expenseRows(page, expense.description, expense.amount)
+      ).toHaveCount(1)
 
       await expenses.remove(expense)
     })

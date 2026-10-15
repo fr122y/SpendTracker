@@ -35,6 +35,35 @@ import type { AddExpenseInput, Expense } from '@/shared/types'
 
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
 const PROJECT_MONEY_EMOJI = '💼'
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function resolveNewExpenseId(clientId: string | undefined): string {
+  if (clientId === undefined) return crypto.randomUUID()
+  if (!UUID_PATTERN.test(clientId)) {
+    throw new Error('Expense id must be a UUID')
+  }
+  return clientId.toLowerCase()
+}
+
+/**
+ * Whether an expense with this id is already stored for the user. Another
+ * user's row with the same id is an error, never a silent success.
+ */
+async function isStoredExpenseReplay(
+  id: string,
+  userId: string
+): Promise<boolean> {
+  const [existing] = await db
+    .select({ userId: expenses.userId })
+    .from(expenses)
+    .where(eq(expenses.id, id))
+  if (!existing) return false
+  if (existing.userId !== userId) {
+    throw new Error('Expense id is already used')
+  }
+  return true
+}
 
 async function getUserId(): Promise<string> {
   const session = await auth()
@@ -104,7 +133,7 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
   if (!data.description.trim()) {
     throw new Error('Operation comment is required')
   }
-  const id = crypto.randomUUID()
+  const id = resolveNewExpenseId(data.id)
   const operationType = data.operationType ?? 'expense'
   const isProjectMovement =
     operationType === 'project_withdrawal' || operationType === 'project_return'
@@ -200,23 +229,9 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
     operationType,
   }
 
-  if (isProjectMovement && data.projectId) {
-    const projectId = data.projectId
-    await db.transaction(async (transaction) => {
-      await assertProjectCashCovers(transaction, {
-        userId,
-        projectId,
-        delta: getProjectCashEffect(operationType, data.amount),
-      })
-      await transaction.insert(expenses).values(values)
-    })
-  } else {
-    await db.insert(expenses).values(values)
-  }
-
-  return {
-    id,
+  const result: Expense = {
     ...data,
+    id,
     category: isProjectMovement ? PROJECT_MONEY_CATEGORY : category,
     emoji: isProjectMovement ? PROJECT_MONEY_EMOJI : emoji,
     sharedBudgetId: data.sharedBudgetId,
@@ -224,6 +239,42 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
     authorUserId: userId,
     operationType,
   }
+
+  // A retried submit reuses the client id: answer with success without a
+  // second row or a second project cash check.
+  if (data.id !== undefined && (await isStoredExpenseReplay(id, userId))) {
+    return result
+  }
+
+  let inserted: Array<{ id: string }>
+  if (isProjectMovement && data.projectId) {
+    const projectId = data.projectId
+    inserted = await db.transaction(async (transaction) => {
+      await assertProjectCashCovers(transaction, {
+        userId,
+        projectId,
+        delta: getProjectCashEffect(operationType, data.amount),
+      })
+      return transaction
+        .insert(expenses)
+        .values(values)
+        .onConflictDoNothing({ target: expenses.id })
+        .returning({ id: expenses.id })
+    })
+  } else {
+    inserted = await db
+      .insert(expenses)
+      .values(values)
+      .onConflictDoNothing({ target: expenses.id })
+      .returning({ id: expenses.id })
+  }
+
+  // A concurrent request with the same id won the insert.
+  if (inserted.length === 0 && !(await isStoredExpenseReplay(id, userId))) {
+    throw new Error('Expense could not be created')
+  }
+
+  return result
 }
 
 /**

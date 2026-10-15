@@ -25,9 +25,15 @@ jest.mock('../project-helpers', () => ({
 }))
 
 jest.mock('@/shared/db', () => {
+  // insert(...).values(...).onConflictDoNothing(...).returning(...)
+  const insertResult = (values: { id: string }) => ({
+    onConflictDoNothing: () => ({
+      returning: () => Promise.resolve([{ id: values.id }]),
+    }),
+  })
   const mocks = {
-    insertValues: jest.fn(),
-    txInsertValues: jest.fn(),
+    insertValues: jest.fn(insertResult),
+    txInsertValues: jest.fn(insertResult),
     txDeleteWhere: jest.fn(),
     deleteWhere: jest.fn(),
     txUpdateSet: jest.fn(),
@@ -60,7 +66,7 @@ jest.mock('@/shared/db', () => {
       ),
     },
     categories: {},
-    expenses: { id: 'expense.id' },
+    expenses: { id: 'expense.id', userId: 'expense.userId' },
     sharedBudgetMembers: {},
     sharedBudgets: {},
     users: {},
@@ -108,6 +114,90 @@ describe('expense-actions project cash on hand', () => {
       expect.objectContaining({ operationType: 'project_return', amount: 4000 })
     )
     expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+  })
+
+  describe('client-generated expense id', () => {
+    const clientId = '0b0f3f5e-8a52-4c4f-9a65-2f3c8d0c1a11'
+    const expenseInput = {
+      id: clientId,
+      description: 'кофе',
+      amount: 250,
+      date: '2026-06-15',
+      category: 'Еда',
+      emoji: '🍔',
+    }
+
+    it('stores the expense under the client id', async () => {
+      dbModule.__mocks.existingWhere.mockResolvedValueOnce([])
+
+      await expect(addExpense(expenseInput)).resolves.toMatchObject({
+        id: clientId,
+      })
+      expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({ id: clientId, userId: 'user-1' })
+      )
+    })
+
+    it('answers a repeated request without a second row', async () => {
+      dbModule.__mocks.existingWhere.mockResolvedValueOnce([
+        { userId: 'user-1' },
+      ])
+
+      await expect(addExpense(expenseInput)).resolves.toMatchObject({
+        id: clientId,
+        description: 'кофе',
+      })
+      expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+    })
+
+    it('does not repeat the project cash check for a repeated return', async () => {
+      dbModule.__mocks.existingWhere.mockResolvedValueOnce([
+        { userId: 'user-1' },
+      ])
+
+      await addExpense({
+        id: clientId,
+        description: 'остаток',
+        amount: 4000,
+        date: '2026-06-15',
+        projectId: 'project-1',
+        operationType: 'project_return',
+      })
+
+      expect(assertCash).not.toHaveBeenCalled()
+      expect(dbModule.__mocks.txInsertValues).not.toHaveBeenCalled()
+    })
+
+    it('treats a concurrent duplicate that won the insert as success', async () => {
+      dbModule.__mocks.existingWhere
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ userId: 'user-1' }])
+      dbModule.__mocks.insertValues.mockReturnValueOnce({
+        onConflictDoNothing: () => ({ returning: () => Promise.resolve([]) }),
+      })
+
+      await expect(addExpense(expenseInput)).resolves.toMatchObject({
+        id: clientId,
+      })
+    })
+
+    it('rejects an id that belongs to another user', async () => {
+      dbModule.__mocks.existingWhere.mockResolvedValueOnce([
+        { userId: 'user-2' },
+      ])
+
+      await expect(addExpense(expenseInput)).rejects.toThrow(
+        'Expense id is already used'
+      )
+      expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+    })
+
+    it('rejects an id that is not a UUID', async () => {
+      await expect(
+        addExpense({ ...expenseInput, id: 'expense-1' })
+      ).rejects.toThrow('Expense id must be a UUID')
+      expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+    })
   })
 
   it('does not store a return that exceeds the cash on hand', async () => {

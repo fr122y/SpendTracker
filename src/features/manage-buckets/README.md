@@ -21,7 +21,8 @@ CRUD operations for allocation buckets (savings, investments, etc.).
 - Calculate money and the operations remainder in kopecks
 - Show an over-budget warning without changing the entered plan
 - Edit bucket labels
-- Add new buckets
+- Add new buckets; an added row is saved only after it gets a name, and a
+  repeated click reuses the unnamed row
 - Delete existing buckets
 - Validates finite, non-negative values and supported currency precision
 - Shows remaining percentage and amount for "Operations"

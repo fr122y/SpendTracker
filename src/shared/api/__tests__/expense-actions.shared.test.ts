@@ -28,9 +28,15 @@ jest.mock('../pocket-helpers', () => ({
 }))
 
 jest.mock('@/shared/db', () => {
+  // insert(...).values(...).onConflictDoNothing(...).returning(...)
+  const insertResult = (values: { id: string }) => ({
+    onConflictDoNothing: () => ({
+      returning: () => Promise.resolve([{ id: values.id }]),
+    }),
+  })
   const mocks = {
     deleteWhere: jest.fn(),
-    insertValues: jest.fn(),
+    insertValues: jest.fn(insertResult),
     membershipWhere: jest.fn(),
     categoryWhere: jest.fn(),
     expenseWhere: jest.fn(),

@@ -26,7 +26,12 @@ export {
   restorePocket,
   setPocketMonthBudget,
 } from './pocket-actions'
-export type { RestorePocketResult } from './pocket-actions'
+export type {
+  CreatePocketResult,
+  PocketNameConflict,
+  RenamePocketResult,
+  RestorePocketResult,
+} from './pocket-actions'
 export { getBuckets, updateBuckets } from './bucket-actions'
 export {
   getSettings,

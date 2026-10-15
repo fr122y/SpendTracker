@@ -266,16 +266,57 @@ describe('BucketEditor', () => {
 
     fireEvent.click(addButton)
 
+    const labelInputs = screen.getAllByLabelText('Название категории')
+    const newLabelInput = labelInputs[labelInputs.length - 1]
+    expect(newLabelInput).toHaveValue('')
+    expect(mockUpdateBuckets).not.toHaveBeenCalled()
+
+    fireEvent.change(newLabelInput, { target: { value: 'Отпуск' } })
+    fireEvent.blur(newLabelInput)
+
     await waitFor(() => {
       expect(mockUpdateBuckets).toHaveBeenCalledWith([
         defaultBuckets[0],
         defaultBuckets[1],
         expect.objectContaining({
-          label: '',
+          label: 'Отпуск',
           percentage: 0,
         }),
       ])
     })
+  })
+
+  it('does not save an added category until it has a name', () => {
+    render(<BucketEditor />)
+
+    const addButton = screen.getByRole('button', { name: /добавить/i })
+    fireEvent.click(addButton)
+    fireEvent.click(addButton)
+    fireEvent.click(addButton)
+
+    const labelInputs = screen.getAllByLabelText('Название категории')
+    expect(labelInputs).toHaveLength(defaultBuckets.length + 1)
+
+    const newLabelInput = labelInputs[labelInputs.length - 1]
+    fireEvent.change(newLabelInput, { target: { value: '   ' } })
+    fireEvent.blur(newLabelInput)
+
+    expect(mockUpdateBuckets).toHaveBeenCalledTimes(1)
+    expect(mockUpdateBuckets).toHaveBeenCalledWith(defaultBuckets)
+  })
+
+  it('removes an unnamed added category without saving', () => {
+    render(<BucketEditor />)
+
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    const deleteButtons = screen.getAllByRole('button', { name: /удалить/i })
+    fireEvent.click(deleteButtons[deleteButtons.length - 1])
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить' }))
+
+    expect(screen.getAllByLabelText('Название категории')).toHaveLength(
+      defaultBuckets.length
+    )
+    expect(mockUpdateBuckets).not.toHaveBeenCalled()
   })
 
   it('opens confirmation dialog when delete bucket button is clicked', () => {

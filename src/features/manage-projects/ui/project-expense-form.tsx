@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { formatDate, getProjectCashOnHand } from '@/shared/lib'
+import { formatDate, getProjectCashOnHand, useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType } from '@/shared/types'
@@ -31,6 +31,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
+  const runLocked = useSubmitLock()
   const expenses = useExpenseStore((state) => state.expenses)
   const categories = useCategoryStore((state) => state.categories)
   const selectedDate = useSessionStore((state) => state.selectedDate)
@@ -86,8 +87,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     setShowCategorySelect(true)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = async () => {
     const normalizedDescription = description.trim()
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
@@ -167,6 +167,11 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
 
     resetForm()
     setIsSubmitting(false)
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runLocked(submit)
   }
 
   const isFormValid =

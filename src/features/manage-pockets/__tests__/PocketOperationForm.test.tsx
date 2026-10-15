@@ -140,6 +140,7 @@ describe('PocketOperationForm keyword loading', () => {
 
     await waitFor(() =>
       expect(mockAddExpense).toHaveBeenCalledWith({
+        id: expect.any(String),
         description: 'На продукты',
         amount: 300,
         date: '2026-01-23',
@@ -147,5 +148,62 @@ describe('PocketOperationForm keyword loading', () => {
         operationType: 'pocket_transfer',
       })
     )
+  })
+
+  function fillTransfer() {
+    fireEvent.change(screen.getByLabelText('Комментарий'), {
+      target: { value: 'На продукты' },
+    })
+    fireEvent.change(screen.getByLabelText('Сумма'), {
+      target: { value: '300' },
+    })
+  }
+
+  it('sends one request for rapid repeated submits', async () => {
+    let resolveRequest!: () => void
+    mockAddExpense.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (resolveRequest = resolve))
+    )
+    render(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="transfer"
+        selectedDate={new Date(2026, 0, 23)}
+      />
+    )
+    fillTransfer()
+    const form = screen
+      .getByRole('button', { name: 'Перевести в расходы' })
+      .closest('form')!
+
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(1))
+    await act(async () => resolveRequest())
+    expect(mockAddExpense).toHaveBeenCalledTimes(1)
+  })
+
+  it('reuses the operation id when retrying a failed request', async () => {
+    mockAddExpense.mockRejectedValueOnce(new Error('network'))
+    render(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="transfer"
+        selectedDate={new Date(2026, 0, 23)}
+      />
+    )
+    fillTransfer()
+    const button = screen.getByRole('button', { name: 'Перевести в расходы' })
+
+    fireEvent.click(button)
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(button).toBeEnabled())
+    fireEvent.click(button)
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(2))
+
+    const [[first], [second]] = mockAddExpense.mock.calls
+    expect(second.id).toBe(first.id)
   })
 })

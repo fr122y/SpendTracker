@@ -48,6 +48,7 @@ export {
   useViewport,
   isMobile,
   isTabletOrSmaller,
+  useSubmitLock,
   type Viewport,
 } from './hooks'
 
@@ -87,3 +88,9 @@ export {
   isValidPaydayDay,
   getPaydayInMonth,
 } from './payday'
+
+export {
+  findPocketNameConflict,
+  getPocketNameKey,
+  POCKET_NAME_CONFLICT_MESSAGE,
+} from './pocket-name'

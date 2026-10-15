@@ -14,6 +14,7 @@ import {
 import type { Pocket, PocketMonthBudget } from '@/shared/types'
 
 let rejectCreate = false
+let conflictOnCreate = false
 let rejectSetBudget = false
 
 jest.mock('@/shared/lib', () => ({
@@ -38,10 +39,16 @@ jest.mock('@/shared/api', () => ({
   initializePocketMonthBudget: jest.fn(),
   createPocket: jest.fn(async () => {
     if (rejectCreate) throw new Error('create failed')
+    if (conflictOnCreate) {
+      return { status: 'name_conflict', conflictingName: 'Дом' }
+    }
     return {
-      id: 'pocket-server',
-      name: 'Дом',
-      createdAt: '2026-10-01T00:00:00.000Z',
+      status: 'created',
+      pocket: {
+        id: 'pocket-server',
+        name: 'Дом',
+        createdAt: '2026-10-01T00:00:00.000Z',
+      },
     }
   }),
   setPocketMonthBudget: jest.fn(async () => {
@@ -63,6 +70,7 @@ const createWrapper = (queryClient: QueryClient) =>
 describe('pocket optimistic mutations', () => {
   beforeEach(() => {
     rejectCreate = false
+    conflictOnCreate = false
     rejectSetBudget = false
     ;(showMutationRollbackToast as jest.Mock).mockReset()
   })
@@ -96,6 +104,39 @@ describe('pocket optimistic mutations', () => {
       expect(queryClient.getQueryData(['pockets'])).toEqual(initialPockets)
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
     })
+  })
+
+  it('rolls back a create name conflict without the generic toast', async () => {
+    conflictOnCreate = true
+    const initialPockets: Pocket[] = [
+      { id: 'pocket-1', name: 'дом', createdAt: '2026-01-01T00:00:00.000Z' },
+    ]
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    queryClient.setQueryData(['pockets'], initialPockets)
+
+    const { result } = renderHook(() => useCreatePocket(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    let caught: unknown
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({ name: 'Дом' })
+      } catch (error) {
+        caught = error
+      }
+    })
+
+    expect(caught).toBeInstanceOf(PocketNameConflictError)
+    await waitFor(() =>
+      expect(queryClient.getQueryData(['pockets'])).toEqual(initialPockets)
+    )
+    expect(showMutationRollbackToast).not.toHaveBeenCalled()
   })
 
   it('rolls back a failed monthly budget update without changing another month', async () => {

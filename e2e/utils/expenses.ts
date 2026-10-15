@@ -120,7 +120,7 @@ export async function submitExpense(
   page: Page,
   description: string,
   amount: number,
-  options: { tap?: boolean } = {}
+  options: { tap?: boolean; clickCount?: number } = {}
 ): Promise<string> {
   const form = journalForm(page)
   const descriptionInput = form.getByLabel('Описание расхода')
@@ -178,7 +178,7 @@ export async function submitExpense(
     )
   })
   if (options.tap) await submitButton.tap()
-  else await submitButton.click()
+  else await submitButton.click({ clickCount: options.clickCount ?? 1 })
   expect((await saved).ok()).toBe(true)
 
   // The form clears once the operation is handed to the mutation.
@@ -238,7 +238,7 @@ export const test = base.extend<{
   expenses: {
     add: (
       description: string,
-      options?: { amount?: number; tap?: boolean }
+      options?: { amount?: number; tap?: boolean; clickCount?: number }
     ) => Promise<CreatedExpense>
     remove: (expense: CreatedExpense) => Promise<void>
   }

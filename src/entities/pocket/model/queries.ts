@@ -40,11 +40,28 @@ export function usePocketMonthBudget(pocketId: string, period: string) {
   })
 }
 
+/**
+ * Thrown by `useCreatePocket`, `useRenamePocket`, and `useRestorePocket` when
+ * an active pocket already uses the name.
+ */
+export class PocketNameConflictError extends Error {
+  constructor(readonly conflictingName: string) {
+    super('Active pocket with the same name exists')
+    this.name = 'PocketNameConflictError'
+  }
+}
+
 export function useCreatePocket() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ name }: { name: string }) => createPocketAction(name),
+    mutationFn: async ({ name }: { name: string }) => {
+      const result = await createPocketAction(name)
+      if (result.status === 'name_conflict') {
+        throw new PocketNameConflictError(result.conflictingName)
+      }
+      return result.pocket
+    },
     onMutate: async ({ name }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
       const previous = queryClient.getQueryData<Pocket[]>(queryKeys.pockets.all)
@@ -59,9 +76,11 @@ export function useCreatePocket() {
       ])
       return { previous }
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
-      showMutationRollbackToast()
+      if (!(error instanceof PocketNameConflictError)) {
+        showMutationRollbackToast()
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.pockets.all })
@@ -73,8 +92,13 @@ export function useRenamePocket() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) =>
-      renamePocketAction(id, name),
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const result = await renamePocketAction(id, name)
+      if (result.status === 'name_conflict') {
+        throw new PocketNameConflictError(result.conflictingName)
+      }
+      return result.pocket
+    },
     onMutate: async ({ id, name }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
       const previous = queryClient.getQueryData<Pocket[]>(queryKeys.pockets.all)
@@ -85,9 +109,11 @@ export function useRenamePocket() {
       )
       return { previous }
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
-      showMutationRollbackToast()
+      if (!(error instanceof PocketNameConflictError)) {
+        showMutationRollbackToast()
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.pockets.all })
@@ -123,14 +149,6 @@ export function useArchivePocket() {
       })
     },
   })
-}
-
-/** Thrown by `useRestorePocket` when an active pocket already uses the name. */
-export class PocketNameConflictError extends Error {
-  constructor(readonly conflictingName: string) {
-    super('Active pocket with the same name exists')
-    this.name = 'PocketNameConflictError'
-  }
 }
 
 export function useRestorePocket() {
