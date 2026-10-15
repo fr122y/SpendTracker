@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useAddExpense } from '@/entities/expense'
+import { POCKET_PURCHASE_HINT, POCKET_TRANSFER_HINT } from '@/entities/pocket'
 import { formatDate } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
@@ -202,6 +203,9 @@ export function PocketOperationForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <p className="text-xs text-zinc-400">
+        {isPurchase ? POCKET_PURCHASE_HINT : POCKET_TRANSFER_HINT}
+      </p>
       <Input
         label="Комментарий"
         placeholder={isPurchase ? 'Что купили?' : 'Назначение перевода'}

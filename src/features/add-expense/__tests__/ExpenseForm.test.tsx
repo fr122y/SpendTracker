@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
+import { POCKET_PURCHASE_HINT } from '@/entities/pocket/model/hints'
+
 import { ExpenseForm } from '../ui/expense-form'
 
 import type { Pocket, SharedBudget } from '@/shared/types'
@@ -101,6 +103,7 @@ jest.mock('@/entities/project', () => ({
 }))
 
 jest.mock('@/entities/pocket', () => ({
+  ...jest.requireActual('@/entities/pocket/model/hints'),
   usePockets: () => ({ data: mockPockets }),
 }))
 
@@ -788,8 +791,10 @@ describe('ExpenseForm', () => {
       render(<ExpenseForm />)
 
       expect(screen.queryByLabelText('Карман')).not.toBeInTheDocument()
+      expect(screen.queryByText(POCKET_PURCHASE_HINT)).not.toBeInTheDocument()
       selectPocketScenario()
       expect(screen.getByLabelText('Карман')).toBeInTheDocument()
+      expect(screen.getByText(POCKET_PURCHASE_HINT)).toBeInTheDocument()
     })
 
     it('lists only non-archived pockets and renders no date field', () => {

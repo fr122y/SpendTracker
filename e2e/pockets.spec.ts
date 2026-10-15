@@ -233,6 +233,9 @@ test.describe('Pockets', () => {
     await region.getByRole('button', { name: 'Добавить покупку' }).click()
 
     const form = region.locator('form')
+    await expect(
+      form.getByText(/^Покупка из кармана: входит в «Анализ»/)
+    ).toBeVisible()
     await form.getByLabel('Комментарий').fill(PURCHASE_DESCRIPTION)
     await form.getByLabel('Сумма').fill(String(PURCHASE_AMOUNT))
     await expect(form.getByLabel('Дата')).toHaveCount(0)
@@ -260,6 +263,9 @@ test.describe('Pockets', () => {
     await region.getByRole('button', { name: 'Перевести в расходы' }).click()
 
     const form = region.locator('form')
+    await expect(
+      form.getByText(/^Перевод в расходы: пополняет недельный бюджет/)
+    ).toBeVisible()
     await form.getByLabel('Комментарий').fill(TRANSFER_DESCRIPTION)
     await form.getByLabel('Сумма').fill(String(TRANSFER_AMOUNT))
     await expect(form.getByLabel('Категория покупки')).toHaveCount(0)
@@ -354,6 +360,9 @@ test.describe('Pockets', () => {
       .getByLabel('Карман', { exact: true })
       .selectOption({ label: pocketName })
     await expect(journalForm.getByLabel(/дата/i)).toHaveCount(0)
+    await expect(
+      journalForm.getByText(/^Покупка из кармана: входит в «Анализ»/)
+    ).toBeVisible()
 
     await journalForm
       .getByPlaceholder('Описание расхода')
@@ -393,6 +402,14 @@ test.describe('Pockets', () => {
         .filter({ has: page.getByText(`Из кармана: ${pocketName}`) })
         .last()
     ).toBeVisible(TIMEOUT)
+    // The transfer card names only the pocket: «Перевод из кармана» is its
+    // category line and is not repeated in the badge.
+    const transferCard = page
+      .locator('[data-operation-type="pocket_transfer"]')
+      .filter({ has: page.getByText(TRANSFER_DESCRIPTION) })
+      .filter({ has: page.getByText(pocketName, { exact: true }) })
+    await expect(transferCard).toBeVisible(TIMEOUT)
+    await expect(transferCard.getByText(/Перевод из кармана/)).toHaveCount(1)
 
     await expectTotals(
       region,

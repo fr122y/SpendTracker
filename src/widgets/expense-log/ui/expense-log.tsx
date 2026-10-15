@@ -51,8 +51,9 @@ export function ExpenseLog() {
   )
 
   // Archived pockets stay in the map: their operations keep the pocket name.
-  // The journal does not wait for this query; cards fall back to a generic badge.
-  const { data: pockets } = usePockets()
+  // The journal does not wait for this query: while it loads, pocket cards show
+  // a placeholder badge; if it fails, they fall back to a generic badge.
+  const { data: pockets, isPending: arePocketsLoading } = usePockets()
   const pocketNames = useMemo(
     () => new Map((pockets ?? []).map((pocket) => [pocket.id, pocket.name])),
     [pockets]
@@ -164,6 +165,7 @@ export function ExpenseLog() {
             onDelete={deleteExpense}
             onEdit={updateExpense}
             pocketNames={pocketNames}
+            arePocketNamesLoading={arePocketsLoading}
             archivedPocketIds={archivedPocketIds}
           />
         ) : (

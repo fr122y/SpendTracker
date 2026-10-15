@@ -85,6 +85,7 @@ const initialMockExpenses: Expense[] = [
 let mockExpenses = [...initialMockExpenses]
 
 jest.mock('@/entities/pocket', () => ({
+  ...jest.requireActual('@/entities/pocket/model/hints'),
   usePockets: () => ({
     data: mockPocketListLoading ? undefined : mockPockets,
     isLoading: mockPocketListLoading,

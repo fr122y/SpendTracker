@@ -11,6 +11,8 @@ interface ExpenseListProps {
   showDate?: boolean
   /** Pocket names by pocket id, shown on the cards of pocket operations. */
   pocketNames?: ReadonlyMap<string, string>
+  /** Pocket names are still loading: pocket cards show a placeholder badge. */
+  arePocketNamesLoading?: boolean
   /** Ids of archived pockets; their operations render without edit or delete. */
   archivedPocketIds?: ReadonlySet<string>
 }
@@ -21,6 +23,7 @@ export function ExpenseList({
   onEdit,
   showDate = false,
   pocketNames,
+  arePocketNamesLoading = false,
   archivedPocketIds,
 }: ExpenseListProps) {
   if (expenses.length === 0) {
@@ -40,6 +43,7 @@ export function ExpenseList({
           onDelete={onDelete}
           onEdit={onEdit}
           showDate={showDate}
+          isPocketNameLoading={arePocketNamesLoading}
           isPocketArchived={Boolean(
             expense.pocketId && archivedPocketIds?.has(expense.pocketId)
           )}

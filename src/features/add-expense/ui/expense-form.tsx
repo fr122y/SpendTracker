@@ -9,7 +9,7 @@ import {
   useSharedBudgetCategories,
 } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
-import { usePockets } from '@/entities/pocket'
+import { POCKET_PURCHASE_HINT, usePockets } from '@/entities/pocket'
 import { useProjectStore } from '@/entities/project'
 import { useSessionStore } from '@/entities/session'
 import {
@@ -479,6 +479,9 @@ export function ExpenseForm() {
           placeholder="Выберите проект"
           disabled={isSubmitting || isSavingAnyMapping}
         />
+      )}
+      {isPocketPurchase && (
+        <p className="text-xs text-zinc-400">{POCKET_PURCHASE_HINT}</p>
       )}
       {isPocketPurchase && (
         <Select

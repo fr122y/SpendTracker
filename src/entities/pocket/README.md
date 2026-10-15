@@ -11,6 +11,7 @@ Manages user-owned named pockets and saved monthly budget snapshots.
 - `PocketNameConflictError`: thrown by `useRestorePocket` when an active pocket already has the same trimmed, case-insensitive name
 - `useSetPocketMonthBudget`: optimistic update to an existing period
 - `Pocket`, `PocketMonthBudget`: public entity types
+- `POCKET_PURCHASE_HINT`, `POCKET_TRANSFER_HINT`: one-line effect hints for pocket purchase and transfer forms
 
 ## State & Data
 
