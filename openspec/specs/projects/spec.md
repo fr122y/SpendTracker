@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change guard-project-operations. Update Purpose after archive.
+Проекты учитывают деньги, взятые из проекта и возвращённые в него, и не дают вернуть больше, чем находится «На руках».
 
 ## Requirements
 
