@@ -122,8 +122,9 @@ archived.
 - A commit whose work belongs to a task in the owner's vault task register
   carries `Refs: <task-id>`, for example `Refs: T-027` or
   `Refs: GUARDRAILS-01`. Use it only for a real task; do not invent an id.
-- Put trailers in the final block of the commit message, one per line,
-  together with any `Co-Authored-By:` line.
+- Put trailers in the final block of the commit message, one per line.
+- Do not add tool or assistant attribution to commits or Pull Requests: no
+  `Co-Authored-By:` line naming an AI assistant and no "Generated with" line.
 - Put them in the commit message, not only in the Pull Request description.
   The squash commit on `main` takes its body from the commit messages, so the
   description does not reach the history of `main`.
@@ -143,7 +144,6 @@ totals do not change.
 
 Change: add-monthly-pockets
 Refs: T-027
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 ```
 
 ## Enforcement
