@@ -24,6 +24,7 @@ import {
   getWeeklyBudgetCoverage,
   getWeeklyBudgetSummary,
   isValidWeeklyLimitAmount,
+  parseAmountInput,
   cn,
   type WeeklyBudgetCoverage,
 } from '@/shared/lib'
@@ -226,7 +227,6 @@ function PersonalBudgetSection({
   pocketById: Map<string, { id: string; name: string }>
 }) {
   const limitInputId = useId()
-  const limitErrorId = useId()
 
   return (
     <section className="space-y-3">
@@ -335,17 +335,11 @@ function PersonalBudgetSection({
             id={limitInputId}
             value={inputValue}
             onValueChange={onLimitChange}
-            aria-invalid={limitError ? true : undefined}
-            aria-describedby={limitError ? limitErrorId : undefined}
+            error={limitError ?? undefined}
             className="w-24 sm:w-32"
           />
           <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
         </div>
-        {limitError && (
-          <p id={limitErrorId} role="alert" className="text-xs text-red-400">
-            {limitError}
-          </p>
-        )}
       </div>
     </section>
   )
@@ -403,8 +397,6 @@ function SharedBudgetSection({
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const sharedLimitInputId = useId()
-  const sharedLimitErrorId = useId()
-  const createLimitErrorId = useId()
   const [sharedLimitError, setSharedLimitError] = useState<string | null>(null)
   const [createLimitError, setCreateLimitError] = useState<string | null>(null)
 
@@ -427,15 +419,16 @@ function SharedBudgetSection({
 
   const handleCreate = () => {
     const trimmedName = name.trim()
-    const limit = Number(initialLimit)
+    const parsedLimit = parseAmountInput(initialLimit)
 
     if (!trimmedName) {
       return
     }
-    if (!isValidWeeklyLimitAmount(limit)) {
-      setCreateLimitError(LIMIT_ERROR)
+    if (!parsedLimit.ok) {
+      setCreateLimitError(parsedLimit.error)
       return
     }
+    const limit = parsedLimit.value
 
     setCreateLimitError(null)
 
@@ -535,11 +528,11 @@ function SharedBudgetSection({
           <MathInput
             aria-label="Лимит общего бюджета"
             value={initialLimit}
-            onValueChange={(value, evaluated) =>
+            onValueChange={(value, evaluated) => {
+              setCreateLimitError(null)
               setInitialLimit(evaluated === null ? value : String(evaluated))
-            }
-            aria-invalid={createLimitError ? true : undefined}
-            aria-describedby={createLimitError ? createLimitErrorId : undefined}
+            }}
+            error={createLimitError ?? undefined}
           />
           <Button
             type="button"
@@ -551,15 +544,6 @@ function SharedBudgetSection({
             <Plus className="h-4 w-4" />
             Создать
           </Button>
-          {createLimitError && (
-            <p
-              id={createLimitErrorId}
-              role="alert"
-              className="text-xs text-red-400 sm:col-span-3"
-            >
-              {createLimitError}
-            </p>
-          )}
         </div>
       )}
 
@@ -588,10 +572,7 @@ function SharedBudgetSection({
                 id={sharedLimitInputId}
                 value={sharedLimitInput}
                 onValueChange={handleSharedLimitChange}
-                aria-invalid={sharedLimitError ? true : undefined}
-                aria-describedby={
-                  sharedLimitError ? sharedLimitErrorId : undefined
-                }
+                error={sharedLimitError ?? undefined}
                 className="w-24 sm:w-32"
               />
               <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
@@ -624,16 +605,6 @@ function SharedBudgetSection({
               )}
             </div>
           </div>
-
-          {sharedLimitError && (
-            <p
-              id={sharedLimitErrorId}
-              role="alert"
-              className="text-xs text-red-400"
-            >
-              {sharedLimitError}
-            </p>
-          )}
 
           {inviteUrl && (
             <div className="flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/60 p-2 sm:flex-row sm:items-center">

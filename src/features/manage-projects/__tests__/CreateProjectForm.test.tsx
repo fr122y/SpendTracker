@@ -153,4 +153,41 @@ describe('CreateProjectForm', () => {
     const submitButton = screen.getByRole('button', { name: /создать проект/i })
     expect(submitButton).toBeDisabled()
   })
+
+  it('enables submit for an expression while typing and submits on Enter', async () => {
+    render(<CreateProjectForm />)
+
+    fireEvent.change(screen.getByPlaceholderText(/название проекта/i), {
+      target: { value: 'Отпуск' },
+    })
+    const budget = screen.getByPlaceholderText(/бюджет/i)
+    fireEvent.change(budget, { target: { value: '50 000+5000' } })
+
+    expect(
+      screen.getByRole('button', { name: /создать проект/i })
+    ).toBeEnabled()
+
+    fireEvent.keyDown(budget, { key: 'Enter' })
+
+    await waitFor(() =>
+      expect(mockAddProject).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Отпуск', budget: 55000 })
+      )
+    )
+  })
+
+  it('keeps submit disabled for a budget above 100 000 000', () => {
+    render(<CreateProjectForm />)
+
+    fireEvent.change(screen.getByPlaceholderText(/название проекта/i), {
+      target: { value: 'Отпуск' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/бюджет/i), {
+      target: { value: '999999999999' },
+    })
+
+    expect(
+      screen.getByRole('button', { name: /создать проект/i })
+    ).toBeDisabled()
+  })
 })

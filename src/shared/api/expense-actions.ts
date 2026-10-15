@@ -11,6 +11,7 @@ import {
   sharedBudgets,
   users,
 } from '@/shared/db'
+import { isValidMoneyAmount } from '@/shared/lib/money-amount'
 
 import {
   assertCanUsePocket,
@@ -425,8 +426,7 @@ export async function updateExpense(
     if (
       existing.pocketId &&
       existing.operationType === 'pocket_transfer' &&
-      Number.isFinite(data.amount) &&
-      data.amount >= 0
+      isValidMoneyAmount(data.amount, { allowZero: true })
     ) {
       // A reduced transfer is the return event; zero represents a full return.
     } else {

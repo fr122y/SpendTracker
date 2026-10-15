@@ -5,7 +5,12 @@ import { useState } from 'react'
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { formatDate, getProjectCashOnHand, useSubmitLock } from '@/shared/lib'
+import {
+  formatDate,
+  getProjectCashOnHand,
+  parseAmountInput,
+  useSubmitLock,
+} from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType } from '@/shared/types'
@@ -51,10 +56,11 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     operationType === 'project_return'
       ? Math.max(getProjectCashOnHand(expenses, projectId), 0)
       : null
+  const parsedAmountInput = parseAmountInput(amount)
   const returnExceedsCash =
     projectCashOnHand !== null &&
-    Boolean(amount) &&
-    Number(amount) > projectCashOnHand
+    parsedAmountInput.ok &&
+    parsedAmountInput.value > projectCashOnHand
 
   const resetForm = () => {
     setDescription('')
@@ -89,8 +95,8 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
 
   const submit = async () => {
     const normalizedDescription = description.trim()
-    const parsedAmount = Number(amount)
-    if (!normalizedDescription || !amount || parsedAmount <= 0) return
+    if (!normalizedDescription || !parsedAmountInput.ok) return
+    const parsedAmount = parsedAmountInput.value
     if (returnExceedsCash) return
 
     setIsSubmitting(true)
@@ -171,13 +177,15 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
+    // Enter in the amount field submits through requestSubmit, which does not
+    // respect the disabled submit button.
+    if (!isFormValid) return
     void runLocked(submit)
   }
 
   const isFormValid =
     description.trim() &&
-    amount &&
-    Number(amount) > 0 &&
+    parsedAmountInput.ok &&
     !returnExceedsCash &&
     (isMovement || !showCategorySelect || !!selectedCategoryId)
 
@@ -209,10 +217,9 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
         disabled={isSubmitting || isSavingMapping}
       />
       <MathInput
-        placeholder="Сумма (можно ввести выражение, напр. 500+50)"
+        placeholder="Сумма, напр. 500+50"
         value={amount}
         onValueChange={(value) => setAmount(value)}
-        min={0}
         disabled={isSubmitting || isSavingMapping}
         className="text-base sm:text-sm"
       />

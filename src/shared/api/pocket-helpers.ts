@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db, pockets } from '@/shared/db'
+import { isValidMoneyAmount } from '@/shared/lib/money-amount'
 
 export const POCKET_TRANSFER_CATEGORY = 'Перевод из кармана'
 export const POCKET_TRANSFER_EMOJI = '↗️'
@@ -26,13 +27,13 @@ export function assertValidOperationDate(date: string): void {
 }
 
 export function assertValidOperationAmount(amount: number): void {
-  if (!Number.isFinite(amount) || amount <= 0) {
+  if (!isValidMoneyAmount(amount)) {
     throw new Error('Operation amount must be a positive finite number')
   }
 }
 
 export function assertValidPocketBudget(amount: number): void {
-  if (!Number.isFinite(amount) || amount < 0) {
+  if (!isValidMoneyAmount(amount, { allowZero: true })) {
     throw new Error('Pocket budget must be a non-negative finite number')
   }
 }

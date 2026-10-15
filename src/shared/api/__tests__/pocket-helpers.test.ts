@@ -41,6 +41,17 @@ describe('pocket validation helpers', () => {
     )
   })
 
+  it('rejects operation amounts and budgets above 100 000 000', () => {
+    expect(() => assertValidOperationAmount(100_000_000)).not.toThrow()
+    expect(() => assertValidOperationAmount(100_000_000.01)).toThrow(
+      'Operation amount must be a positive finite number'
+    )
+    expect(() => assertValidPocketBudget(100_000_000)).not.toThrow()
+    expect(() => assertValidPocketBudget(1e12)).toThrow(
+      'Pocket budget must be a non-negative finite number'
+    )
+  })
+
   it('trims a non-empty pocket name and enforces its length', () => {
     expect(normalizePocketName('  Накопления  ')).toBe('Накопления')
     expect(() => normalizePocketName(' ')).toThrow(

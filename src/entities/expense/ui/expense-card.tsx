@@ -240,7 +240,6 @@ export function ExpenseCard({
               onValueChange={handleValueChange}
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
-              min={0}
               className="w-24 sm:w-20 text-right text-base sm:text-sm font-semibold min-h-11"
               aria-label="edit amount"
             />

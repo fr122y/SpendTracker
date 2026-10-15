@@ -158,6 +158,8 @@ jest.mock('@/shared/lib', () => ({
     .getWeeklyBudgetSummary,
   isValidWeeklyLimitAmount: jest.requireActual('@/shared/lib/finance-selectors')
     .isValidWeeklyLimitAmount,
+  parseAmountInput: jest.requireActual('@/shared/lib/money-amount')
+    .parseAmountInput,
   getWeeklyBudgetCoverage: jest.fn((expenses, date, weeklyLimit) => {
     // For Jan 21, 2026 (Tuesday), week is Jan 20 - Jan 26
     const weekExpenses = expenses.filter(
@@ -644,7 +646,7 @@ describe('WeeklyBudget', () => {
 
       expect(mockSetWeeklyLimit).not.toHaveBeenCalled()
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Лимит должен быть больше 0'
+        'Сумма должна быть больше 0'
       )
       expect(input).toHaveAttribute('aria-invalid', 'true')
     })
@@ -658,7 +660,7 @@ describe('WeeklyBudget', () => {
 
       expect(mockSetWeeklyLimit).not.toHaveBeenCalled()
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Лимит должен быть больше 0'
+        'Сумма должна быть больше 0'
       )
 
       fireEvent.change(input, { target: { value: '7000' } })
@@ -826,7 +828,7 @@ describe('WeeklyBudget', () => {
 
       expect(mockCreateSharedBudget).not.toHaveBeenCalled()
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Лимит должен быть больше 0'
+        'Сумма должна быть больше 0'
       )
       expect(limitInput).toHaveAttribute('aria-invalid', 'true')
     })
@@ -840,7 +842,7 @@ describe('WeeklyBudget', () => {
 
       expect(mockSetSharedWeeklyLimit).not.toHaveBeenCalled()
       expect(screen.getByRole('alert')).toHaveTextContent(
-        'Лимит должен быть больше 0'
+        'Сумма должна быть больше 0'
       )
       expect(sharedLimitInput).toHaveAttribute('aria-invalid', 'true')
     })

@@ -53,6 +53,54 @@ test.describe('Expense Flow', () => {
     })
   })
 
+  test.describe('Amount Input', () => {
+    test('should evaluate an expression and submit it with Enter', async ({
+      page,
+      expenses,
+    }) => {
+      const expense = await expenses.add('E2E сумма по Enter', {
+        amountText: (amount) => `${amount - 1}+1`,
+        submitWithEnter: true,
+      })
+
+      await expect(
+        expenseRow(page, expense.description, expense.amount)
+      ).toBeVisible()
+
+      await expenses.remove(expense)
+    })
+
+    // Read-only: invalid amounts never reach the server.
+    test('should reject text, exponents and amounts above the cap inline', async ({
+      page,
+    }) => {
+      await openJournal(page)
+      const form = journalForm(page)
+      const amount = form.getByLabel('Сумма расхода')
+      const submit = form.getByRole('button', { name: 'Добавить', exact: true })
+      await form.getByLabel('Описание расхода').fill('E2E неверная сумма')
+
+      for (const [value, message] of [
+        ['15 руб', 'Введите сумму числом, напр. 1500 или 500+50'],
+        ['1e5', 'Введите сумму числом, напр. 1500 или 500+50'],
+        ['-100', 'Сумма должна быть больше 0'],
+        ['100000000.01', 'Не больше 100 000 000 ₽'],
+      ]) {
+        await amount.fill(value)
+        await expect(submit).toBeDisabled()
+        await amount.press('Enter')
+        await expect(form.getByRole('alert')).toHaveText(message)
+        await expect(amount).toHaveAttribute('aria-invalid', 'true')
+        await expect(amount).toBeFocused()
+      }
+
+      await amount.fill('1 500')
+      await expect(form.getByRole('alert')).toHaveCount(0)
+      await amount.fill('')
+      await form.getByLabel('Описание расхода').fill('')
+    })
+  })
+
   test.describe('Double Submit', () => {
     test('should save one expense for a rapid triple click', async ({
       page,
@@ -141,7 +189,7 @@ test.describe('Expense Flow', () => {
         .getAttribute('value')
       await project.selectOption(firstProject!)
       await form.getByLabel('Описание расхода').fill('E2E возврат сверх')
-      await form.getByLabel('Сумма расхода').fill('999999999')
+      await form.getByLabel('Сумма расхода').fill('99999999')
 
       await expect(form.getByRole('alert')).toContainText(
         'Нельзя вернуть больше, чем на руках'

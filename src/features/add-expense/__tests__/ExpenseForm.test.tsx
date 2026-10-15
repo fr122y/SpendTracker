@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { POCKET_PURCHASE_HINT } from '@/entities/pocket/model/hints'
 
@@ -221,6 +222,89 @@ describe('ExpenseForm', () => {
         })
       )
       expect(mockSaveMapping).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('amount input (T-036)', () => {
+    const fillDescription = () => {
+      mockCategorize.mockReturnValueOnce({
+        found: true,
+        categoryId: '1',
+        categoryName: 'Продукты',
+        categoryEmoji: '🛒',
+      })
+      fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+        target: { value: 'молоко' },
+      })
+      fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    }
+
+    it('enables submit while typing an expression, without blur', () => {
+      render(<ExpenseForm />)
+      fillDescription()
+
+      fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+        target: { value: '30000+5000*2' },
+      })
+
+      expect(screen.getByRole('button', { name: /добавить/i })).toBeEnabled()
+    })
+
+    it.each(['15 руб', '1e5', '-100', '0', '100000000.01'])(
+      'keeps submit disabled for %j',
+      (value) => {
+        render(<ExpenseForm />)
+        fillDescription()
+
+        fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+          target: { value },
+        })
+
+        expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
+      }
+    )
+
+    it('saves `1 500` as 1500', async () => {
+      render(<ExpenseForm />)
+      fillDescription()
+
+      fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+        target: { value: '1 500' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+      await waitFor(() =>
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({ amount: 1500 })
+        )
+      )
+    })
+
+    it('evaluates and submits on Enter in the amount field', async () => {
+      const user = userEvent.setup()
+      render(<ExpenseForm />)
+      fillDescription()
+
+      const amountInput = screen.getByPlaceholderText(/сумма/i)
+      await user.type(amountInput, '500+50{Enter}')
+
+      await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(1))
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({ description: 'молоко', amount: 550 })
+      )
+    })
+
+    it('shows an inline error and does not submit on Enter with text', async () => {
+      const user = userEvent.setup()
+      render(<ExpenseForm />)
+      fillDescription()
+
+      await user.type(screen.getByPlaceholderText(/сумма/i), '15 руб{Enter}')
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Введите сумму числом, напр. 1500 или 500+50'
+      )
+      expect(mockAddExpense).not.toHaveBeenCalled()
     })
   })
 

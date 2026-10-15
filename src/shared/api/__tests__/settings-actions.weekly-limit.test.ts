@@ -57,7 +57,7 @@ describe('weekly limit server validation', () => {
     )
   })
 
-  it.each([0, -100, Number.NaN, Number.POSITIVE_INFINITY])(
+  it.each([0, -100, 100_000_000.01, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects limit %p with a Russian error and stores nothing',
     async (amount) => {
       await expect(setWeeklyLimitForWeek('2026-10-12', amount)).rejects.toThrow(
@@ -110,6 +110,16 @@ describe('weekly limit server validation', () => {
     expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
     expect(dbModule.__mocks.directUpdateSet).not.toHaveBeenCalled()
   })
+
+  it.each([-1, 100_000_000.01, Number.NaN])(
+    'rejects salary %p in updateSettings before any write',
+    async (salary) => {
+      await expect(updateSettings({ salary })).rejects.toThrow(
+        'Доход должен быть от 0 до 100 000 000 ₽'
+      )
+      expect(dbModule.__mocks.directUpdateSet).not.toHaveBeenCalled()
+    }
+  )
 
   it('rejects a zero weekly limit in updateSettings before any write', async () => {
     await expect(

@@ -1,30 +1,10 @@
 'use client'
 
-import { forwardRef, useCallback, type KeyboardEvent } from 'react'
+import { forwardRef, useCallback, useState, type KeyboardEvent } from 'react'
 
-import { evaluateMathExpression } from '@/shared/lib/math-eval'
+import { parseAmountInput } from '@/shared/lib/money-amount'
 
 import { Input, type InputProps } from './input'
-
-const DISPLAY_DECIMAL_PLACES = 2
-
-function normalizeEvaluatedValue(value: number): {
-  displayValue: string
-  evaluatedValue: number
-} {
-  const precisionMultiplier = 10 ** DISPLAY_DECIMAL_PLACES
-  const rounded =
-    Math.round((value + Number.EPSILON) * precisionMultiplier) /
-    precisionMultiplier
-  const evaluatedValue = Object.is(rounded, -0) ? 0 : rounded
-
-  return {
-    displayValue: evaluatedValue
-      .toFixed(DISPLAY_DECIMAL_PLACES)
-      .replace(/\.?0+$/, ''),
-    evaluatedValue,
-  }
-}
 
 export interface MathInputProps extends Omit<
   InputProps,
@@ -37,90 +17,92 @@ export interface MathInputProps extends Omit<
   /**
    * Called when value changes.
    * - While typing: evaluated is null
-   * - On blur/Enter with valid expression: evaluated contains the result
+   * - On blur/Enter with a valid amount: evaluated contains the result,
+   *   rounded to kopecks
    */
   onValueChange: (value: string, evaluated: number | null) => void
   /**
-   * Minimum allowed value after evaluation
+   * Accept zero. Negative amounts are always invalid.
    */
-  min?: number
+  allowZero?: boolean
   /**
-   * Maximum allowed value after evaluation
+   * Inclusive upper bound; defaults to MAX_MONEY_AMOUNT (100 000 000).
    */
   max?: number
 }
 
 /**
- * Input component that supports mathematical expressions.
- * User can type expressions like "500+50" and on blur/Enter it evaluates to "550".
+ * Amount input that accepts numbers with thousands spaces and decimal comma
+ * or dot, and expressions like "500+50". On blur or Enter a valid amount is
+ * evaluated, rounded to kopecks, and emitted; an invalid one shows an inline
+ * error instead. Enter inside a form then submits the form; outside a form it
+ * blurs the input.
  *
- * @example
- * <MathInput
- *   value={amount}
- *   onValueChange={(value, evaluated) => {
- *     if (evaluated !== null) {
- *       setAmount(String(evaluated))
- *     } else {
- *       setAmount(value)
- *     }
- *   }}
- *   min={0}
- * />
+ * Forms decide whether the submit button is enabled with
+ * `parseAmountInput(value)` on the raw value, so validity follows typing.
  */
 export const MathInput = forwardRef<HTMLInputElement, MathInputProps>(
-  ({ value, onValueChange, min, max, onBlur, onKeyDown, ...props }, ref) => {
-    const evaluateAndUpdate = useCallback(() => {
-      // Check if the value looks like an expression (has operators)
-      const hasOperators = /[+\-*/()]/.test(value)
+  (
+    {
+      value,
+      onValueChange,
+      allowZero,
+      max,
+      onBlur,
+      onKeyDown,
+      error,
+      ...props
+    },
+    ref
+  ) => {
+    const [showError, setShowError] = useState(false)
+    const parsed = parseAmountInput(value, { allowZero, max })
+    const inlineError =
+      showError && !parsed.ok && parsed.reason !== 'empty'
+        ? parsed.error
+        : undefined
+    const shownError = error ?? inlineError
 
-      if (!hasOperators) {
-        // Just a plain number, parse it
-        const num = parseFloat(value.replace(',', '.'))
-        if (!isNaN(num)) {
-          let finalValue = num
-          if (min !== undefined && finalValue < min) finalValue = min
-          if (max !== undefined && finalValue > max) finalValue = max
-          const normalized = normalizeEvaluatedValue(finalValue)
-          onValueChange(normalized.displayValue, normalized.evaluatedValue)
-        }
-        return
+    const commit = useCallback((): boolean => {
+      if (parsed.ok) {
+        setShowError(false)
+        onValueChange(parsed.display, parsed.value)
+        return true
       }
-
-      // Evaluate the expression
-      const result = evaluateMathExpression(value)
-
-      if (!isNaN(result) && isFinite(result)) {
-        let finalValue = result
-        if (min !== undefined && finalValue < min) finalValue = min
-        if (max !== undefined && finalValue > max) finalValue = max
-        const normalized = normalizeEvaluatedValue(finalValue)
-        onValueChange(normalized.displayValue, normalized.evaluatedValue)
-      }
-      // If invalid, keep the current value (user can fix it)
-    }, [value, min, max, onValueChange])
+      setShowError(true)
+      return false
+    }, [parsed, onValueChange])
 
     const handleBlur = useCallback(
       (e: React.FocusEvent<HTMLInputElement>) => {
-        evaluateAndUpdate()
+        commit()
         onBlur?.(e)
       },
-      [evaluateAndUpdate, onBlur]
+      [commit, onBlur]
     )
 
     const handleKeyDown = useCallback(
       (e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-          evaluateAndUpdate()
-          ;(e.target as HTMLInputElement).blur()
+          // The form is submitted explicitly below, only for a valid amount.
+          e.preventDefault()
+          const input = e.currentTarget
+          if (commit()) {
+            if (input.form) {
+              input.form.requestSubmit()
+            } else {
+              input.blur()
+            }
+          }
         }
         onKeyDown?.(e)
       },
-      [evaluateAndUpdate, onKeyDown]
+      [commit, onKeyDown]
     )
 
     const handleChange = useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Pass value without evaluation while typing
+        setShowError(false)
         onValueChange(e.target.value, null)
       },
       [onValueChange]
@@ -136,6 +118,8 @@ export const MathInput = forwardRef<HTMLInputElement, MathInputProps>(
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         {...props}
+        error={shownError}
+        aria-invalid={shownError ? true : props['aria-invalid']}
       />
     )
   }

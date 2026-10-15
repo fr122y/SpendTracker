@@ -196,6 +196,34 @@ describe('PocketOperationForm keyword loading', () => {
     })
   }
 
+  it('submits an expression on Enter with the evaluated amount', async () => {
+    render(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="transfer"
+        selectedDate={new Date(2026, 0, 23)}
+      />
+    )
+    fireEvent.change(screen.getByLabelText('Комментарий'), {
+      target: { value: 'На продукты' },
+    })
+    const amount = screen.getByLabelText('Сумма')
+    fireEvent.change(amount, { target: { value: '1 500+250' } })
+
+    expect(
+      screen.getByRole('button', { name: 'Перевести в расходы' })
+    ).toBeEnabled()
+
+    fireEvent.keyDown(amount, { key: 'Enter' })
+
+    await waitFor(() =>
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 1750 })
+      )
+    )
+    expect(mockAddExpense).toHaveBeenCalledTimes(1)
+  })
+
   it('sends one request for rapid repeated submits', async () => {
     let resolveRequest!: () => void
     mockAddExpense.mockImplementationOnce(

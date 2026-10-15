@@ -21,7 +21,8 @@ Utility functions and helpers used across the application.
   Calculate weekly coverage for one shared budget without project top-ups
 - `getWeeklyBudgetSummary(coverage)`: Derive real spent, base limit, top-ups,
   effective limit, non-negative remaining, and over-budget amount
-- `isValidWeeklyLimitAmount(value)`: True for a finite weekly limit above zero
+- `isValidWeeklyLimitAmount(value)`: True for a finite weekly limit in
+  `(0, MAX_MONEY_AMOUNT]`
 - `isWeekStartDate(value)`: True for a real `YYYY-MM-DD` date that is a Monday
 - `getEffectiveWeeklyLimit(limits, date, defaultLimit)`: Resolve the weekly
   budget limit effective for a selected week
@@ -52,6 +53,12 @@ Utility functions and helpers used across the application.
 
 - `cn(...classes)`: Class name utility (tailwind-merge + clsx)
 - `evaluateMathExpression(expr)`: Safe math expression evaluator
+- `parseAmountInput(raw, { allowZero?, max? })`: Parse a typed amount
+  (thousands spaces, `,` or `.` decimals, expressions) into a value rounded to
+  kopecks or a Russian error; no partial parse
+- `isValidMoneyAmount(value, { allowZero?, max? })`: Server-side check for a
+  finite amount in `(0, MAX_MONEY_AMOUNT]` (`[0, …]` with `allowZero`)
+- `MAX_MONEY_AMOUNT`: 100 000 000 ₽ cap for amounts in forms and Server Actions
 - `getSafeCallbackUrl(callbackUrl, fallback?)`: allow only same-app relative
   auth redirect targets
 - `showMutationRollbackToast(message?)`: Unified error toast for optimistic
@@ -123,6 +130,7 @@ evaluateMathExpression('10,5+0,5') // 11
 evaluateMathExpression('abc') // NaN (invalid input)
 evaluateMathExpression('') // NaN (empty)
 evaluateMathExpression('5/0') // Infinity
+evaluateMathExpression('1.2.3') // NaN (no partial number)
 ```
 
 **Features:**

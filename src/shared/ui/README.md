@@ -119,7 +119,8 @@ Controlled alert dialog for confirming destructive or important actions.
 
 ### MathInput
 
-Input component that evaluates mathematical expressions on blur or Enter key.
+Amount input that evaluates expressions on blur or Enter and validates the
+result with `parseAmountInput` from `@/shared/lib`.
 
 ```tsx
 const [amount, setAmount] = useState('')
@@ -131,10 +132,11 @@ const [amount, setAmount] = useState('')
     // On blur/Enter: evaluated contains the result (or null if invalid)
     setAmount(evaluated !== null ? String(evaluated) : value)
   }}
-  placeholder="Сумма (можно ввести выражение, напр. 500+50)"
-  min={0}
-  max={100000}
+  placeholder="Сумма, напр. 500+50"
 />
+
+// Forms enable submit from the raw text, so validity follows typing:
+const isValid = parseAmountInput(amount).ok
 ```
 
 **Props:**
@@ -142,9 +144,11 @@ const [amount, setAmount] = useState('')
 - `value`: Current string value (can be number or expression like "500+50")
 - `onValueChange(value, evaluated)`: Called on change
   - While typing: `evaluated` is `null`, `value` is raw input
-  - On blur/Enter with valid expression: `evaluated` contains result
-- `min`: Optional minimum value (clamped after evaluation)
-- `max`: Optional maximum value (clamped after evaluation)
+  - On blur/Enter with a valid amount: `evaluated` contains the result,
+    rounded to kopecks; an invalid amount is not emitted
+- `allowZero`: Accept zero (default: only amounts above zero)
+- `max`: Inclusive upper bound (default: `MAX_MONEY_AMOUNT`, 100 000 000)
+- `error`: Optional external error that replaces the inline one
 - All standard Input props except `type` and `onChange`
 
 **Behavior:**
@@ -153,6 +157,11 @@ const [amount, setAmount] = useState('')
 2. On Tab/Enter, expression evaluates to `550`
 3. Input value updates to show `550`
 4. `onValueChange` called with `("550", 550)`
+5. Enter inside a form then calls `form.requestSubmit()` and keeps focus;
+   outside a form it blurs the input
+6. Invalid input (`15 руб`, `1e5`, `-100`, above the maximum) shows an inline
+   error (`role="alert"`, `aria-invalid`) after blur or Enter and hides it on
+   the next edit
 
 **Supported Expressions:**
 
@@ -160,6 +169,7 @@ const [amount, setAmount] = useState('')
 - Precedence: `2+3*4` → `14`
 - Parentheses: `(2+3)*4` → `20`
 - Decimals: `10.5+0.5` or `10,5+0,5` → `11`
+- Thousands spaces: `1 500` → `1500`
 
 ### Select
 

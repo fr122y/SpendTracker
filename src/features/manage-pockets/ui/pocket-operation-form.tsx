@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useAddExpense } from '@/entities/expense'
 import { POCKET_PURCHASE_HINT, POCKET_TRANSFER_HINT } from '@/entities/pocket'
-import { formatDate, useSubmitLock } from '@/shared/lib'
+import { formatDate, parseAmountInput, useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType } from '@/shared/types'
@@ -38,13 +38,17 @@ export function PocketOperationForm({
   const categories = useCategoryStore((state) => state.categories)
   const addExpense = useAddExpense()
   const runLocked = useSubmitLock()
+  const parsedAmount = parseAmountInput(amount)
+  // Enter turns `500+50` into `550` after submit; the same number is not a
+  // new operation.
+  const numericAmount = parsedAmount.ok ? parsedAmount.value : null
   // One id per entered operation: a retry after a failed request reuses it,
   // so the server stores the operation at most once.
   const operationIdRef = useRef<string | null>(null)
   useEffect(() => {
     // Edited input is a new operation, not a retry.
     operationIdRef.current = null
-  }, [description, amount, selectedCategoryId, kind])
+  }, [description, numericAmount, selectedCategoryId, kind])
   const {
     categorize,
     saveMappingAndGetResult,
@@ -52,11 +56,10 @@ export function PocketOperationForm({
     isSavingMapping,
   } = useCategorize()
   const isPurchase = kind === 'purchase'
-  const numericAmount = Number(amount)
   const isBusy = addExpense.isPending || isSubmitting || isSavingMapping
   const canSubmit =
     description.trim().length > 0 &&
-    numericAmount > 0 &&
+    numericAmount !== null &&
     (!isPurchase || !showCategorySelect || Boolean(selectedCategoryId))
 
   const reset = () => {
@@ -126,7 +129,7 @@ export function PocketOperationForm({
   ])
 
   const submit = async () => {
-    if (!canSubmit || isBusy) return
+    if (!canSubmit || isBusy || numericAmount === null) return
     if (isPurchase && !mappingsLoaded && !hasManualCategoryOverride) {
       setShouldResolveCategory(true)
       return
@@ -235,7 +238,6 @@ export function PocketOperationForm({
         placeholder="Например, 1500+250"
         value={amount}
         onValueChange={(value) => setAmount(value)}
-        min={0}
         disabled={isBusy}
         className="text-base sm:text-sm"
       />

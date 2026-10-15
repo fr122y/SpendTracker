@@ -113,5 +113,12 @@ describe('evaluateMathExpression', () => {
     it('should handle Russian decimal separator (comma)', () => {
       expect(evaluateMathExpression('10,5+0,5')).toBe(11)
     })
+
+    it.each(['1.2.3', '1..5', '.', '1e5', '15 руб'])(
+      'should return NaN for %j instead of a partial number',
+      (expr) => {
+        expect(evaluateMathExpression(expr)).toBeNaN()
+      }
+    )
   })
 })

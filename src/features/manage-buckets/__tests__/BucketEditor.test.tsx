@@ -503,7 +503,7 @@ describe('BucketEditor', () => {
     })
     fireEvent.blur(savingsInput)
 
-    expect(screen.getByText(/поддерживаемый диапазон/i)).toBeInTheDocument()
+    expect(screen.getByText('Не больше 100 000 000 ₽')).toBeInTheDocument()
     expect(mockUpdateBuckets).not.toHaveBeenCalled()
   })
 })
