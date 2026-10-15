@@ -19,6 +19,12 @@ Shows monthly pocket budgets, usage, operations, and editable history using the 
   soon as the selected pocket is known; its query does not wait for expense
   history to finish loading.
 - `useExpenses` supplies pocket purchase and transfer history.
+- The pocket header shows the displayed month («Октябрь 2026»).
+- `PocketMonthHistory` is a collapsed per-month overview: budget, spent, and
+  remainder or overspend from the pocket's first month to the selected one,
+  12 months at a time. It derives months with `getPocketMonthHistory` from
+  `usePocketMonthBudgets` (read-only, fetched only when expanded) and
+  `useExpenses`; it never initializes past months.
 - `useSessionStore` supplies the shared dashboard date.
 - Shared `SkeletonRect` and `SkeletonText` primitives represent initial widget
   load and first load of a selected month's budget; cached content remains

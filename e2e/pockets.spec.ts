@@ -308,6 +308,38 @@ test.describe('Pockets', () => {
     await expect(transfers.getByText(TRANSFER_DESCRIPTION)).toBeVisible()
   })
 
+  test('should show the displayed month and its history row', async () => {
+    const region = pocketRegion()
+    const now = new Date()
+    const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+    const monthName = now.toLocaleDateString('ru-RU', { month: 'long' })
+    const monthLabel = `${monthName.charAt(0).toUpperCase()}${monthName.slice(1)} ${now.getFullYear()}`
+
+    await expect(region.locator('[data-testid^="pocket-period-"]')).toHaveText(
+      monthLabel,
+      TIMEOUT
+    )
+
+    const toggle = region.getByRole('button', { name: /История по месяцам/ })
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+    // The pocket was created in this run, so the current month is its only one.
+    const history = region.getByLabel('История кармана по месяцам')
+    await expect(history.getByRole('listitem')).toHaveCount(1, TIMEOUT)
+    const row = history.getByTestId(`pocket-history-${period}`)
+    await expect(row).toContainText(monthLabel)
+    await expect(row).toContainText(
+      new RegExp(`Остаток\\s${money(REMAINING).source.slice(1, -1)}`)
+    )
+
+    await page.setViewportSize({ width: 375, height: 740 })
+    await expect(row).toBeVisible()
+    await expectNoHorizontalScroll(page)
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await toggle.click()
+  })
+
   test('should record a purchase from the journal form', async () => {
     let region = pocketRegion()
     const journalForm = page

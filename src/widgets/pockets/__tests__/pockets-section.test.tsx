@@ -39,6 +39,12 @@ const mockUsePocketMonthBudget = jest.fn((pocketId: string, period: string) => {
     isFetching: mockMonthBudgetFetching,
   }
 })
+let mockSavedBudgets: PocketMonthBudget[] = []
+const mockUsePocketMonthBudgets = jest.fn((pocketId: string) => ({
+  data: pocketId ? mockSavedBudgets : undefined,
+  isLoading: false,
+  isError: false,
+}))
 const mockAddExpense = jest.fn().mockResolvedValue(undefined)
 const mockUpdateExpense = jest.fn()
 const mockDeleteExpense = jest.fn()
@@ -84,6 +90,8 @@ jest.mock('@/entities/pocket', () => ({
     isLoading: mockPocketListLoading,
     isError: mockPocketListError,
   }),
+  usePocketMonthBudgets: (pocketId: string) =>
+    mockUsePocketMonthBudgets(pocketId),
   usePocketMonthBudget: (pocketId: string, period: string) =>
     mockUsePocketMonthBudget(pocketId, period),
   useCreatePocket: () => ({
@@ -208,6 +216,8 @@ describe('PocketsSection', () => {
     mockMonthBudgetError = false
     mockMonthBudgetFetching = false
     mockExpenses = [...initialMockExpenses]
+    mockSavedBudgets = []
+    mockPockets[0].createdAt = '2026-01-01'
     mockCategorize.mockReturnValue({ found: false })
     mockSaveMapping.mockResolvedValue(undefined)
     mockPockets[0].archivedAt = undefined
@@ -724,5 +734,93 @@ describe('PocketsSection', () => {
     expect(
       screen.getByRole('button', { name: 'Отпуск · архив', pressed: false })
     ).toBeInTheDocument()
+  })
+
+  it('shows which month the widget displays', () => {
+    render(<PocketsSection />)
+
+    expect(screen.getByTestId('pocket-period-pocket-1')).toHaveTextContent(
+      'Январь 2026'
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Покупки/ }))
+    expect(
+      screen.getByRole('heading', { name: 'Покупки за январь', level: 4 })
+    ).toBeInTheDocument()
+  })
+
+  it('shows the per-month history with remainder and overspend without creating budgets', () => {
+    mockPockets[0].createdAt = new Date(2025, 10, 15).toISOString()
+    mockSavedBudgets = [
+      { pocketId: 'pocket-1', period: '2025-11', budget: 400 },
+    ]
+    mockExpenses = [
+      ...initialMockExpenses,
+      {
+        id: 'old-purchase',
+        pocketId: 'pocket-1',
+        description: 'Сувениры',
+        amount: 100,
+        date: '2025-12-05',
+        category: 'Путешествия',
+        emoji: '✈️',
+      },
+    ]
+    render(<PocketsSection />)
+
+    expect(mockUsePocketMonthBudgets).not.toHaveBeenCalledWith('pocket-1')
+    const toggle = screen.getByRole('button', { name: /История по месяцам/ })
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(mockUsePocketMonthBudgets).toHaveBeenCalledWith('pocket-1')
+
+    const history = screen.getByLabelText('История кармана по месяцам')
+    const rows = within(history).getAllByRole('listitem')
+    expect(rows.map((row) => row.dataset.testid)).toEqual([
+      'pocket-history-2026-01',
+      'pocket-history-2025-12',
+      'pocket-history-2025-11',
+    ])
+    expect(rows[0]).toHaveTextContent('Январь 2026')
+    expect(rows[0]).toHaveTextContent('Бюджет 1 000 ₽')
+    expect(rows[0]).toHaveTextContent('Потрачено 1 500 ₽')
+    expect(rows[0]).toHaveTextContent('Перерасход 500 ₽')
+    expect(rows[1]).toHaveTextContent('Бюджет 400 ₽ (перенесён)')
+    expect(rows[1]).toHaveTextContent('Остаток 300 ₽')
+    expect(rows[2]).toHaveTextContent('Остаток 400 ₽')
+    // Only the selected month goes through the initializing query.
+    const initializedPeriods = new Set(
+      mockUsePocketMonthBudget.mock.calls.map(([, period]) => period)
+    )
+    expect([...initializedPeriods]).toEqual(['2026-01'])
+  })
+
+  it('pages long histories by twelve months', () => {
+    mockPockets[0].createdAt = new Date(2024, 0, 15).toISOString()
+    render(<PocketsSection />)
+
+    fireEvent.click(screen.getByRole('button', { name: /История по месяцам/ }))
+    const history = screen.getByLabelText('История кармана по месяцам')
+    expect(within(history).getAllByRole('listitem')).toHaveLength(12)
+    fireEvent.click(screen.getByRole('button', { name: 'Показать ещё' }))
+    expect(within(history).getAllByRole('listitem')).toHaveLength(24)
+    fireEvent.click(screen.getByRole('button', { name: 'Показать ещё' }))
+    expect(within(history).getAllByRole('listitem')).toHaveLength(25)
+    expect(
+      screen.queryByRole('button', { name: 'Показать ещё' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the history of an archived pocket read-only', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    mockMonthBudget = null
+    mockSavedBudgets = [
+      { pocketId: 'pocket-1', period: '2026-01', budget: 1000 },
+    ]
+    render(<PocketsSection />)
+
+    fireEvent.click(screen.getByRole('button', { name: /История по месяцам/ }))
+    const history = screen.getByLabelText('История кармана по месяцам')
+    expect(within(history).getByText(/Перерасход 500 ₽/)).toBeInTheDocument()
+    expect(within(history).queryByRole('textbox')).not.toBeInTheDocument()
   })
 })
