@@ -90,7 +90,11 @@ jest.mock('@/entities/expense', () => ({
 }))
 
 jest.mock('@/entities/pocket', () => ({
-  usePockets: () => ({ data: mockPockets, isLoading: !mockPockets }),
+  usePockets: () => ({
+    data: mockPockets,
+    isLoading: !mockPockets,
+    isPending: !mockPockets,
+  }),
 }))
 
 jest.mock('@/entities/session', () => ({
@@ -608,6 +612,25 @@ describe('ExpenseLog', () => {
         'pocket-active': 'Кафе',
         'pocket-archived': 'Отпуск',
       })
+    })
+
+    it('tells the list whether pocket names are still loading', () => {
+      mockExpenses = pocketOperations
+      const { ExpenseList } = jest.requireMock('@/entities/expense') as {
+        ExpenseList: jest.Mock
+      }
+      const lastLoading = () =>
+        (
+          ExpenseList.mock.calls.at(-1) as [{ arePocketNamesLoading?: boolean }]
+        )[0].arePocketNamesLoading
+
+      mockPockets = undefined
+      const { rerender } = render(<ExpenseLog />)
+      expect(lastLoading()).toBe(true)
+
+      mockPockets = []
+      rerender(<ExpenseLog />)
+      expect(lastLoading()).toBe(false)
     })
 
     it('marks only archived pockets as read-only in the list', () => {

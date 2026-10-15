@@ -1,5 +1,10 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
+import {
+  POCKET_PURCHASE_HINT,
+  POCKET_TRANSFER_HINT,
+} from '@/entities/pocket/model/hints'
+
 import { PocketOperationForm } from '../ui/pocket-operation-form'
 
 const mockAddExpense = jest.fn().mockResolvedValue(undefined)
@@ -78,6 +83,38 @@ jest.mock('@/entities/expense', () => ({
     isError: false,
   }),
 }))
+
+jest.mock('@/entities/pocket', () =>
+  jest.requireActual('@/entities/pocket/model/hints')
+)
+
+describe('PocketOperationForm effect hints', () => {
+  it('explains a purchase', () => {
+    render(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="purchase"
+        selectedDate={new Date(2026, 0, 21)}
+      />
+    )
+
+    expect(screen.getByText(POCKET_PURCHASE_HINT)).toBeInTheDocument()
+    expect(screen.queryByText(POCKET_TRANSFER_HINT)).not.toBeInTheDocument()
+  })
+
+  it('explains a transfer', () => {
+    render(
+      <PocketOperationForm
+        pocketId="pocket-1"
+        kind="transfer"
+        selectedDate={new Date(2026, 0, 21)}
+      />
+    )
+
+    expect(screen.getByText(POCKET_TRANSFER_HINT)).toBeInTheDocument()
+    expect(screen.queryByText(POCKET_PURCHASE_HINT)).not.toBeInTheDocument()
+  })
+})
 
 describe('PocketOperationForm keyword loading', () => {
   beforeEach(() => {

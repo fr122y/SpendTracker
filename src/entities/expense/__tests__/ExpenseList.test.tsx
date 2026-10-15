@@ -50,7 +50,7 @@ describe('ExpenseList', () => {
     )
 
     expect(screen.getByText('Из кармана: Кафе')).toBeInTheDocument()
-    expect(screen.getByText('Перевод из кармана: Отпуск')).toBeInTheDocument()
+    expect(screen.getByText('Отпуск')).toBeInTheDocument()
     expect(screen.getByText('Личный расход')).toBeInTheDocument()
   })
 
@@ -64,7 +64,7 @@ describe('ExpenseList', () => {
     )
 
     expect(screen.getByText('Покупка из кармана')).toBeInTheDocument()
-    expect(screen.getByText('Перевод из кармана: Отпуск')).toBeInTheDocument()
+    expect(screen.getByText('Отпуск')).toBeInTheDocument()
   })
 
   it('keeps the badges without names when no names are passed', () => {
@@ -73,6 +73,22 @@ describe('ExpenseList', () => {
     expect(screen.getByText('Покупка из кармана')).toBeInTheDocument()
     // Category and badge of the transfer both read «Перевод из кармана».
     expect(screen.getAllByText('Перевод из кармана')).toHaveLength(2)
+  })
+
+  it('shows placeholders instead of generic badges while names load', () => {
+    render(
+      <ExpenseList
+        expenses={[purchase, transfer, personal]}
+        arePocketNamesLoading
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.queryByText('Покупка из кармана')).not.toBeInTheDocument()
+    expect(
+      screen.getByTestId('pocket-badge-placeholder-transfer')
+    ).toBeInTheDocument()
+    expect(screen.getByText('Личный расход')).toBeInTheDocument()
   })
 
   it('offers no edit or delete for operations of an archived pocket', () => {

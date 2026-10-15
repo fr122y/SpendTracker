@@ -100,9 +100,51 @@ describe('ExpenseCard', () => {
       />
     )
 
-    expect(screen.getByText('Перевод из кармана: Кафе')).toBeInTheDocument()
-    // The category keeps its own text; only the badge carries the name.
-    expect(screen.getAllByText('Перевод из кармана')).toHaveLength(1)
+    // The category line reads «Перевод из кармана»; the badge names only the pocket.
+    expect(screen.getByText('Кафе')).toBeInTheDocument()
+    expect(screen.getAllByText(/Перевод из кармана/)).toHaveLength(1)
+  })
+
+  it('styles a pocket transfer apart from expenses', () => {
+    const { container } = render(
+      <ExpenseCard
+        expense={{
+          ...mockExpense,
+          pocketId: 'pocket-1',
+          operationType: 'pocket_transfer',
+          category: 'Перевод из кармана',
+        }}
+        pocketName="Кафе"
+      />
+    )
+
+    const card = container.querySelector('[data-operation-type]')
+    expect(card).toHaveAttribute('data-operation-type', 'pocket_transfer')
+    expect(card).toHaveClass('border-dashed')
+    expect(screen.getByRole('button', { name: /edit amount/i })).toHaveClass(
+      'text-violet-300'
+    )
+  })
+
+  it('shows a placeholder instead of the generic badge while the name loads', () => {
+    render(
+      <ExpenseCard
+        expense={{ ...mockExpense, pocketId: 'pocket-1' }}
+        isPocketNameLoading
+      />
+    )
+
+    expect(screen.getByTestId('pocket-badge-placeholder-1')).toBeInTheDocument()
+    expect(screen.queryByText('Покупка из кармана')).not.toBeInTheDocument()
+  })
+
+  it('ignores the loading flag on an operation without a pocket', () => {
+    render(<ExpenseCard expense={mockExpense} isPocketNameLoading />)
+
+    expect(
+      screen.queryByTestId('pocket-badge-placeholder-1')
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Личный расход')).toBeInTheDocument()
   })
 
   it('ignores a pocket name on an operation without a pocket', () => {
