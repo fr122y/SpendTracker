@@ -97,3 +97,23 @@ Categories already saved as percentages MUST retain their saved percentage and c
 - **WHEN** the server attempts to convert or overwrite that category
 - **THEN** the write fails with an actionable error
 - **AND** the old amount data remains unchanged
+
+### Requirement: Save an added category only after it has a name
+
+Действие «Добавить категорию» MUST добавлять в распределение пустую строку без сохранения. Строка MUST сохраняться только после того, как пользователь ввёл непустое имя и поле имени потеряло фокус. Удаление ещё не сохранённой строки MUST NOT вызывать сохранение. Повторное действие «Добавить категорию», пока безымянная строка уже открыта, MUST NOT добавлять вторую пустую строку.
+
+#### Scenario: Keep an unnamed category local
+
+- **WHEN** пользователь нажимает «Добавить категорию» и не вводит имя
+- **THEN** распределение сохраняется без новой строки, и после перезагрузки пустой категории нет
+
+#### Scenario: Save the category after a name is entered
+
+- **GIVEN** пользователь нажал «Добавить категорию»
+- **WHEN** пользователь вводит имя «Отпуск» и уходит из поля
+- **THEN** категория «Отпуск» сохраняется в распределении
+
+#### Scenario: Ignore repeated clicks on an unnamed row
+
+- **WHEN** пользователь нажимает «Добавить категорию» несколько раз подряд
+- **THEN** появляется одна пустая строка
