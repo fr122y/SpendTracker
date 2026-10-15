@@ -34,6 +34,7 @@ jest.mock('@/shared/db', () => ({
 }))
 
 jest.mock('../pocket-helpers', () => ({
+  assertCanUsePocket: jest.fn(),
   assertValidPocketBudget: jest.fn((amount: number) => {
     if (!Number.isFinite(amount) || amount < 0) {
       throw new Error('Pocket budget must be a non-negative finite number')
@@ -57,9 +58,10 @@ import {
   createPocket,
   getPockets,
   initializePocketMonthBudget,
+  restorePocket,
   setPocketMonthBudget,
 } from '../pocket-actions'
-import { getPocketForUser } from '../pocket-helpers'
+import { assertCanUsePocket, getPocketForUser } from '../pocket-helpers'
 
 const mockDb = db as unknown as {
   insert: jest.Mock
@@ -305,21 +307,10 @@ describe('pocket-actions', () => {
   })
 
   it('rejects negative budgets and updates only an existing period', async () => {
-    ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
-      id: 'pocket-1',
-      userId: 'user-1',
-      archivedAt: new Date(),
-    })
-
     await expect(
       setPocketMonthBudget('pocket-1', '2026-05', -1)
     ).rejects.toThrow('Pocket budget must be a non-negative finite number')
     expect(mockDb.update).not.toHaveBeenCalled()
-    ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
-      id: 'pocket-1',
-      userId: 'user-1',
-      archivedAt: new Date(),
-    })
     const where = jest.fn(() => ({
       returning: jest
         .fn()
@@ -339,12 +330,120 @@ describe('pocket-actions', () => {
       period: '2026-05',
       budget: 12_000,
     })
+    expect(assertCanUsePocket).toHaveBeenCalledWith('pocket-1', 'user-1')
     expect(set).toHaveBeenCalledWith({ budget: 12_000 })
     expect(where).toHaveBeenCalledWith({
       conditions: [
         { column: 'pocketMonthBudget.pocketId', value: 'pocket-1' },
         { column: 'pocketMonthBudget.period', value: '2026-05' },
       ],
+    })
+  })
+
+  it('rejects a budget change for an archived pocket', async () => {
+    ;(assertCanUsePocket as jest.Mock).mockRejectedValueOnce(
+      new Error('Pocket is archived')
+    )
+
+    await expect(
+      setPocketMonthBudget('pocket-1', '2026-05', 5_500)
+    ).rejects.toThrow('Pocket is archived')
+    expect(assertCanUsePocket).toHaveBeenCalledWith('pocket-1', 'user-1')
+    expect(mockDb.update).not.toHaveBeenCalled()
+  })
+
+  describe('restorePocket', () => {
+    const createdAt = new Date('2026-01-01T00:00:00.000Z')
+
+    function setMockActivePockets(rows: Array<{ id: string; name: string }>) {
+      const where = jest.fn().mockResolvedValue(rows)
+      mockDb.select.mockReturnValueOnce({ from: jest.fn(() => ({ where })) })
+    }
+
+    function setMockRestoreUpdate(
+      rows: Array<{
+        id: string
+        name: string
+        archivedAt: Date | null
+        createdAt: Date
+      }>
+    ) {
+      const returning = jest.fn().mockResolvedValue(rows)
+      const where = jest.fn(() => ({ returning }))
+      const set = jest.fn(() => ({ where }))
+      mockDb.update.mockReturnValueOnce({ set })
+      return { set, where }
+    }
+
+    it('clears archivedAt when no active pocket has the same name', async () => {
+      ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
+        id: 'pocket-1',
+        userId: 'user-1',
+        name: 'Подарки',
+        archivedAt: new Date('2026-02-01T00:00:00.000Z'),
+        createdAt,
+      })
+      setMockActivePockets([{ id: 'pocket-2', name: 'Отпуск' }])
+      const { set } = setMockRestoreUpdate([
+        { id: 'pocket-1', name: 'Подарки', archivedAt: null, createdAt },
+      ])
+
+      await expect(restorePocket('pocket-1')).resolves.toEqual({
+        status: 'restored',
+        pocket: {
+          id: 'pocket-1',
+          name: 'Подарки',
+          archivedAt: undefined,
+          createdAt: createdAt.toISOString(),
+        },
+      })
+      expect(getPocketForUser).toHaveBeenCalledWith('pocket-1', 'user-1')
+      expect(set).toHaveBeenCalledWith({ archivedAt: null })
+    })
+
+    it('reports a trimmed, case-insensitive name conflict without restoring', async () => {
+      ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
+        id: 'pocket-1',
+        userId: 'user-1',
+        name: 'Подарки',
+        archivedAt: new Date('2026-02-01T00:00:00.000Z'),
+        createdAt,
+      })
+      setMockActivePockets([{ id: 'pocket-2', name: ' подарки ' }])
+
+      await expect(restorePocket('pocket-1')).resolves.toEqual({
+        status: 'name_conflict',
+        conflictingName: ' подарки ',
+      })
+      expect(mockDb.update).not.toHaveBeenCalled()
+    })
+
+    it('does not restore a pocket owned by another user', async () => {
+      ;(getPocketForUser as jest.Mock).mockRejectedValueOnce(
+        new Error('Pocket not found')
+      )
+
+      await expect(restorePocket('pocket-other')).rejects.toThrow(
+        'Pocket not found'
+      )
+      expect(mockDb.update).not.toHaveBeenCalled()
+    })
+
+    it('returns an already active pocket unchanged', async () => {
+      ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
+        id: 'pocket-1',
+        userId: 'user-1',
+        name: 'Подарки',
+        archivedAt: null,
+        createdAt,
+      })
+
+      await expect(restorePocket('pocket-1')).resolves.toMatchObject({
+        status: 'restored',
+        pocket: { id: 'pocket-1', archivedAt: undefined },
+      })
+      expect(mockDb.select).not.toHaveBeenCalled()
+      expect(mockDb.update).not.toHaveBeenCalled()
     })
   })
 })

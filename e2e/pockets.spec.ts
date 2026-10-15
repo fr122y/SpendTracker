@@ -484,4 +484,57 @@ test.describe('Pockets', () => {
         .getByRole('button', { name: `${pocketName} · архив`, exact: true })
     ).toBeVisible(TIMEOUT)
   })
+
+  test('should keep an archived pocket read-only and restore it', async () => {
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await page.reload()
+
+    const pocketList = page.getByLabel('Список карманов')
+    const archivedButton = pocketList.getByRole('button', {
+      name: `${pocketName} · архив`,
+      exact: true,
+    })
+    await expect(archivedButton).toBeVisible(TIMEOUT)
+
+    // After a reload an archived pocket is never the default selection while
+    // an active pocket exists.
+    const activeButtons = pocketList
+      .getByRole('button')
+      .filter({ hasNotText: '· архив' })
+    if ((await activeButtons.count()) > 0) {
+      await expect(
+        pocketList.locator('button[aria-pressed="true"]')
+      ).not.toContainText('· архив')
+    }
+
+    await archivedButton.click()
+    const region = pocketRegion()
+    await expect(region.getByText('Архив', { exact: true })).toBeVisible(
+      TIMEOUT
+    )
+    await expect(
+      region.getByLabel(`Бюджет кармана ${pocketName}`)
+    ).toBeDisabled(TIMEOUT)
+
+    await region.getByRole('button', { name: 'Восстановить' }).click()
+    await expect(
+      pocketList.getByRole('button', { name: pocketName, exact: true })
+    ).toBeVisible(TIMEOUT)
+    await expect(
+      region.getByRole('button', { name: 'Добавить покупку' })
+    ).toBeEnabled(TIMEOUT)
+    await expect(region.getByLabel(`Бюджет кармана ${pocketName}`)).toBeEnabled(
+      TIMEOUT
+    )
+
+    // Leave the scenario pocket archived so reruns do not pile up active ones.
+    await region.getByRole('button', { name: 'Архивировать' }).click()
+    const dialog = page.getByRole('alertdialog', {
+      name: `Архивировать карман «${pocketName}»?`,
+    })
+    await dialog
+      .getByRole('button', { name: 'Архивировать', exact: true })
+      .click()
+    await expect(archivedButton).toBeVisible(TIMEOUT)
+  })
 })

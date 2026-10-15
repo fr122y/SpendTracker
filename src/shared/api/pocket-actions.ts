@@ -6,6 +6,7 @@ import { auth } from '@/shared/auth'
 import { db, pocketMonthBudgets, pockets } from '@/shared/db'
 
 import {
+  assertCanUsePocket,
   assertValidPocketBudget,
   assertValidPocketPeriod,
   getPocketForUser,
@@ -131,6 +132,61 @@ export async function archivePocket(pocketId: string): Promise<void> {
   if (!pocket.archivedAt) {
     throw new Error('Pocket could not be archived')
   }
+}
+
+export type RestorePocketResult =
+  | { status: 'restored'; pocket: Pocket }
+  | { status: 'name_conflict'; conflictingName: string }
+
+function pocketNameKey(name: string): string {
+  return name.trim().toLocaleLowerCase('ru-RU')
+}
+
+/**
+ * Returns an archived pocket to the active list. A conflict with an active
+ * pocket of the same name (trimmed, case-insensitive) is returned as a result
+ * rather than thrown, because production builds hide server action error
+ * messages from the client.
+ */
+export async function restorePocket(
+  pocketId: string
+): Promise<RestorePocketResult> {
+  const userId = await getUserId()
+  const pocket = await getPocketForUser(pocketId, userId)
+
+  if (!pocket.archivedAt) {
+    return { status: 'restored', pocket: mapPocket(pocket) }
+  }
+
+  const activePockets = await db
+    .select({ id: pockets.id, name: pockets.name })
+    .from(pockets)
+    .where(and(eq(pockets.userId, userId), isNull(pockets.archivedAt)))
+  const conflict = activePockets.find(
+    (active) =>
+      active.id !== pocketId &&
+      pocketNameKey(active.name) === pocketNameKey(pocket.name)
+  )
+  if (conflict) {
+    return { status: 'name_conflict', conflictingName: conflict.name }
+  }
+
+  const [row] = await db
+    .update(pockets)
+    .set({ archivedAt: null })
+    .where(and(eq(pockets.id, pocketId), eq(pockets.userId, userId)))
+    .returning({
+      id: pockets.id,
+      name: pockets.name,
+      archivedAt: pockets.archivedAt,
+      createdAt: pockets.createdAt,
+    })
+
+  if (!row) {
+    throw new Error('Pocket could not be restored')
+  }
+
+  return { status: 'restored', pocket: mapPocket(row) }
 }
 
 export async function getPocketMonthBudgets(
@@ -259,7 +315,7 @@ export async function setPocketMonthBudget(
   const userId = await getUserId()
   assertValidPocketPeriod(period)
   assertValidPocketBudget(budget)
-  await getPocketForUser(pocketId, userId)
+  await assertCanUsePocket(pocketId, userId)
 
   const [row] = await db
     .update(pocketMonthBudgets)

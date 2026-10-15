@@ -4,7 +4,12 @@ import { createElement, type ReactNode } from 'react'
 
 import { showMutationRollbackToast } from '@/shared/lib'
 
-import { useCreatePocket, useSetPocketMonthBudget } from '../model/queries'
+import {
+  PocketNameConflictError,
+  useCreatePocket,
+  useRestorePocket,
+  useSetPocketMonthBudget,
+} from '../model/queries'
 
 import type { Pocket, PocketMonthBudget } from '@/shared/types'
 
@@ -44,6 +49,10 @@ jest.mock('@/shared/api', () => ({
   }),
   renamePocket: jest.fn(),
   archivePocket: jest.fn(),
+  restorePocket: jest.fn(async () => ({
+    status: 'name_conflict',
+    conflictingName: 'отпуск',
+  })),
 }))
 
 const createWrapper = (queryClient: QueryClient) =>
@@ -128,5 +137,44 @@ describe('pocket optimistic mutations', () => {
       ).toEqual(may)
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
     })
+  })
+
+  it('rolls back a restore that conflicts with an active pocket name', async () => {
+    const initialPockets: Pocket[] = [
+      {
+        id: 'pocket-1',
+        name: 'Отпуск',
+        archivedAt: '2026-02-01T00:00:00.000Z',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+      { id: 'pocket-2', name: 'отпуск', createdAt: '2026-03-01T00:00:00.000Z' },
+    ]
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    queryClient.setQueryData(['pockets'], initialPockets)
+
+    const { result } = renderHook(() => useRestorePocket(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    let caught: unknown
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({ id: 'pocket-1' })
+      } catch (error) {
+        caught = error
+      }
+    })
+
+    expect(caught).toBeInstanceOf(PocketNameConflictError)
+    expect((caught as PocketNameConflictError).conflictingName).toBe('отпуск')
+    await waitFor(() =>
+      expect(queryClient.getQueryData(['pockets'])).toEqual(initialPockets)
+    )
+    expect(showMutationRollbackToast).not.toHaveBeenCalled()
   })
 })

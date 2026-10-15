@@ -23,7 +23,6 @@ jest.mock('../pocket-helpers', () => ({
   assertCanUsePocket: jest.fn(),
   assertValidOperationAmount: jest.fn(),
   assertValidOperationDate: jest.fn(),
-  getPocketForUser: jest.fn(),
   POCKET_TRANSFER_CATEGORY: 'Перевод из кармана',
   POCKET_TRANSFER_EMOJI: '↗️',
 }))
@@ -118,7 +117,7 @@ import {
   getExpenses,
   updateExpense,
 } from '../expense-actions'
-import { assertCanUsePocket, getPocketForUser } from '../pocket-helpers'
+import { assertCanUsePocket } from '../pocket-helpers'
 import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
@@ -431,7 +430,7 @@ describe('expense-actions shared budget access', () => {
 
     await updateExpense('transfer-1', { amount: 0, date: '2026-06-16' })
 
-    expect(getPocketForUser).toHaveBeenCalledWith('pocket-1', 'user-1')
+    expect(assertCanUsePocket).toHaveBeenCalledWith('pocket-1', 'user-1')
     expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({
       amount: 0,
       date: '2026-06-16',
@@ -467,6 +466,42 @@ describe('expense-actions shared budget access', () => {
     await expect(deleteExpense('expense-1')).rejects.toThrow(
       'Expense not found'
     )
+    expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
+  })
+
+  it('rejects an amount change for an operation of an archived pocket', async () => {
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-1',
+        projectId: null,
+        pocketId: 'pocket-1',
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        operationType: 'expense',
+      },
+    ])
+    ;(assertCanUsePocket as jest.Mock).mockRejectedValueOnce(
+      new Error('Pocket is archived')
+    )
+
+    await expect(updateExpense('purchase-1', { amount: 900 })).rejects.toThrow(
+      'Pocket is archived'
+    )
+    expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
+  })
+
+  it('rejects deleting an operation of an archived pocket', async () => {
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      { userId: 'user-1', sharedBudgetId: null, pocketId: 'pocket-1' },
+    ])
+    ;(assertCanUsePocket as jest.Mock).mockRejectedValueOnce(
+      new Error('Pocket is archived')
+    )
+
+    await expect(deleteExpense('purchase-1')).rejects.toThrow(
+      'Pocket is archived'
+    )
+    expect(assertCanUsePocket).toHaveBeenCalledWith('pocket-1', 'user-1')
     expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
   })
 })

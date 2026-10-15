@@ -8,7 +8,13 @@ Shows monthly pocket budgets, usage, operations, and editable history using the 
 
 ## State & Data
 
-- `usePockets` loads active and archived pockets.
+- `usePockets` loads active and archived pockets. Without an explicit
+  choice, the first active pocket is selected; an archived pocket is selected
+  by default only when no active pocket exists.
+- An archived pocket is read-only: its budget input is disabled and its
+  history has no edit or delete actions. `useRestorePocket` returns it to the
+  active list and shows a name-conflict message when an active pocket already
+  uses its name.
 - `usePocketMonthBudget` reads or initializes the selected month's budget as
   soon as the selected pocket is known; its query does not wait for expense
   history to finish loading.

@@ -1,13 +1,21 @@
 'use client'
 
-import { Archive, ArrowDownToLine, ArrowUpFromLine, Plus } from 'lucide-react'
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Plus,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { useExpenses } from '@/entities/expense'
 import {
+  PocketNameConflictError,
   useArchivePocket,
   usePocketMonthBudget,
   usePockets,
+  useRestorePocket,
   useSetPocketMonthBudget,
 } from '@/entities/pocket'
 import { useSessionStore } from '@/entities/session'
@@ -52,6 +60,7 @@ function PocketDetail({
   const period = getPeriod(selectedDate)
   const setMonthBudget = useSetPocketMonthBudget()
   const archivePocket = useArchivePocket()
+  const restorePocket = useRestorePocket()
   const [budgetDraft, setBudgetDraft] = useState<{
     period: string
     value: string
@@ -95,6 +104,7 @@ function PocketDetail({
         : []
 
   const saveBudget = (value: string, evaluated: number | null) => {
+    if (isArchived) return
     setBudgetDraft({ period, value })
     if (evaluated === null || evaluated < 0 || !monthBudget) return
     if (evaluated === monthBudget.budget) return
@@ -110,6 +120,11 @@ function PocketDetail({
       // The mutation state remains available for retry.
     }
   }
+
+  const handleRestore = () => {
+    restorePocket.mutate({ id: pocket.id })
+  }
+  const restoreError = restorePocket.error
 
   return (
     <section
@@ -131,6 +146,16 @@ function PocketDetail({
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {isArchived && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleRestore}
+              disabled={restorePocket.isPending}
+            >
+              <ArchiveRestore className="mr-1 h-4 w-4" /> Восстановить
+            </Button>
+          )}
           {!isArchived && (
             <>
               <Button
@@ -191,7 +216,7 @@ function PocketDetail({
                   value={budgetInput}
                   onValueChange={saveBudget}
                   min={0}
-                  disabled={setMonthBudget.isPending}
+                  disabled={isArchived || setMonthBudget.isPending}
                 />
               ) : (
                 <p className="min-h-10 py-2 text-sm text-zinc-500">
@@ -282,6 +307,7 @@ function PocketDetail({
                     <PocketOperationRow
                       key={operation.id}
                       operation={operation}
+                      readOnly={isArchived}
                     />
                   ))}
                 </ul>
@@ -349,6 +375,13 @@ function PocketDetail({
           Не удалось архивировать карман.
         </p>
       )}
+      {restoreError && (
+        <p role="alert" className="text-sm text-red-400">
+          {restoreError instanceof PocketNameConflictError
+            ? `Нельзя восстановить: уже есть активный карман «${restoreError.conflictingName}». Переименуйте его и повторите.`
+            : 'Не удалось восстановить карман.'}
+        </p>
+      )}
     </section>
   )
 }
@@ -366,8 +399,12 @@ export function PocketsSection() {
   const [selectedPocketId, setSelectedPocketId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
+  // Without an explicit choice, open the first active pocket; an archived one
+  // is shown by default only when no active pocket exists.
   const selectedPocket =
-    pockets.find((pocket) => pocket.id === selectedPocketId) ?? pockets[0]
+    pockets.find((pocket) => pocket.id === selectedPocketId) ??
+    pockets.find((pocket) => !pocket.archivedAt) ??
+    pockets[0]
   const selectedPeriod = getPeriod(selectedDate)
   const selectedMonthBudget = usePocketMonthBudget(
     selectedPocket?.id ?? '',

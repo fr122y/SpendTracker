@@ -8,7 +8,14 @@ import {
 
 import type { Expense } from '@/shared/types'
 
-export function PocketOperationRow({ operation }: { operation: Expense }) {
+export function PocketOperationRow({
+  operation,
+  readOnly = false,
+}: {
+  operation: Expense
+  /** An archived pocket's history is shown without edit or delete actions. */
+  readOnly?: boolean
+}) {
   const updateExpense = useUpdateExpense()
   const deleteExpense = useDeleteExpense()
 
@@ -16,8 +23,12 @@ export function PocketOperationRow({ operation }: { operation: Expense }) {
     <li>
       <ExpenseCard
         expense={operation}
-        onDelete={(id) => deleteExpense.mutate(id)}
-        onEdit={(id, data) => updateExpense.mutate({ id, data })}
+        onDelete={readOnly ? undefined : (id) => deleteExpense.mutate(id)}
+        onEdit={
+          readOnly
+            ? undefined
+            : (id, data) => updateExpense.mutate({ id, data })
+        }
         showDate
       />
     </li>
