@@ -663,6 +663,11 @@ describe('PocketsSection', () => {
     const history = screen.getByLabelText('История покупок')
     expect(within(history).getByText('Билеты')).toBeInTheDocument()
     expect(
+      within(history).getByText(
+        'Карман в архиве — восстановите, чтобы изменить'
+      )
+    ).toBeInTheDocument()
+    expect(
       within(history).queryByRole('button', { name: 'delete' })
     ).not.toBeInTheDocument()
     expect(

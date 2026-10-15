@@ -11,6 +11,8 @@ interface ExpenseListProps {
   showDate?: boolean
   /** Pocket names by pocket id, shown on the cards of pocket operations. */
   pocketNames?: ReadonlyMap<string, string>
+  /** Ids of archived pockets; their operations render without edit or delete. */
+  archivedPocketIds?: ReadonlySet<string>
 }
 
 export function ExpenseList({
@@ -19,6 +21,7 @@ export function ExpenseList({
   onEdit,
   showDate = false,
   pocketNames,
+  archivedPocketIds,
 }: ExpenseListProps) {
   if (expenses.length === 0) {
     return <div className="py-8 text-center text-zinc-500">Нет расходов</div>
@@ -37,6 +40,9 @@ export function ExpenseList({
           onDelete={onDelete}
           onEdit={onEdit}
           showDate={showDate}
+          isPocketArchived={Boolean(
+            expense.pocketId && archivedPocketIds?.has(expense.pocketId)
+          )}
           pocketName={
             expense.pocketId ? pocketNames?.get(expense.pocketId) : undefined
           }

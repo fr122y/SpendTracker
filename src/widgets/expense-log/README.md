@@ -26,6 +26,8 @@ daily real-expense totals.
 - Scrollable ExpenseList
 - Pocket operation cards show the pocket name, including an archived pocket;
   until pockets are loaded the cards keep the badge without a name
+- Operations of an archived pocket have no edit or delete actions and show a
+  hint to restore the pocket
 - Empty state message when no operations match the active filter
 
 ## Dependencies

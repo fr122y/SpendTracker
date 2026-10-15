@@ -15,10 +15,13 @@ real expenses, project withdrawals, project returns, or pocket transfers.
   for real expenses. The optional `pocketName` prop adds the pocket name to
   the badge of a pocket operation: «Из кармана: <имя>» for a purchase and
   «Перевод из кармана: <имя>» for a transfer; without it the badge reads
-  «Покупка из кармана» or «Перевод из кармана»
+  «Покупка из кармана» or «Перевод из кармана». Without `onDelete` the card
+  has no delete action. `isPocketArchived` removes edit and delete actions and
+  shows the hint «Карман в архиве — восстановите, чтобы изменить»
 - `ExpenseList`: Component rendering a sorted list of operations with optional
   date display. The optional `pocketNames` prop (pocket id to name) supplies
-  `pocketName` to the cards of pocket operations
+  `pocketName` to the cards of pocket operations; `archivedPocketIds` marks
+  operations of archived pockets read-only
 
 ## State & Data
 

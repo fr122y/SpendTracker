@@ -23,6 +23,7 @@ export function PocketOperationRow({
     <li>
       <ExpenseCard
         expense={operation}
+        isPocketArchived={readOnly}
         onDelete={readOnly ? undefined : (id) => deleteExpense.mutate(id)}
         onEdit={
           readOnly

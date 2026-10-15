@@ -22,7 +22,12 @@ interface ExpenseCardProps {
   showDate?: boolean
   /** Name of the operation's pocket; the badge falls back to a generic label without it. */
   pocketName?: string
+  /** The operation belongs to an archived pocket: no edit or delete actions. */
+  isPocketArchived?: boolean
 }
+
+export const ARCHIVED_POCKET_OPERATION_HINT =
+  'Карман в архиве — восстановите, чтобы изменить'
 
 function formatExpenseDate(date: string) {
   const [year, month, day] = date.split('-')
@@ -93,11 +98,14 @@ function getOperationMeta(expense: Expense, pocketName?: string) {
 
 export function ExpenseCard({
   expense,
-  onDelete,
-  onEdit,
+  onDelete: onDeleteProp,
+  onEdit: onEditProp,
   showDate = false,
   pocketName,
+  isPocketArchived = false,
 }: ExpenseCardProps) {
+  const onDelete = isPocketArchived ? undefined : onDeleteProp
+  const onEdit = isPocketArchived ? undefined : onEditProp
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editValue, setEditValue] = useState(String(expense.amount))
@@ -187,6 +195,11 @@ export function ExpenseCard({
                 <OperationIcon className="h-3 w-3" />
                 {operationMeta.label}
               </span>
+              {isPocketArchived && (
+                <span className="text-zinc-400">
+                  {ARCHIVED_POCKET_OPERATION_HINT}
+                </span>
+              )}
               {showDate && (
                 <span data-testid={`expense-date-${expense.id}`}>
                   {formatExpenseDate(expense.date)}
