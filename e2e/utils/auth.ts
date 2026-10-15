@@ -14,6 +14,16 @@ export interface E2ECredentials {
   password: string
 }
 
+/**
+ * Session saved by `e2e/auth.setup.ts` and loaded by every test project
+ */
+export const E2E_STORAGE_STATE = 'playwright/.auth/user.json'
+
+/**
+ * Storage state for specs that sign in by themselves
+ */
+export const SIGNED_OUT_STATE = { cookies: [], origins: [] }
+
 export const MISSING_E2E_CREDENTIALS_MESSAGE =
   'Set E2E_USER_EMAIL and E2E_USER_PASSWORD to run authenticated e2e scenarios'
 

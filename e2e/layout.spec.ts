@@ -1,10 +1,19 @@
 import { test, expect } from '@playwright/test'
 
+import {
+  type DesktopLayout,
+  readDesktopLayout,
+  restoreDesktopLayout,
+  swapFirstTwoWidgets,
+} from './utils/layout'
+
+// Edit mode marks every desktop widget with a drag handle.
+const DRAG_HANDLE = 'Перетащить виджет'
+
 test.describe('Layout Persistence', () => {
   test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
   })
 
   test('should toggle edit mode', async ({ page }) => {
@@ -32,15 +41,10 @@ test.describe('Layout Persistence', () => {
     // Enter edit mode
     await header.getByRole('button', { name: /Редактировать/ }).click()
 
-    // Verify widgets have edit mode styling (ring border)
-    const widgetContainer = page.locator('.ring-1.ring-zinc-700').first()
-    await expect(widgetContainer).toBeVisible()
-
-    // Verify widget content has reduced opacity
-    const widgetContent = page
-      .locator('.pointer-events-none.opacity-60')
-      .first()
-    await expect(widgetContent).toBeVisible()
+    // Verify every widget shows its drag handle
+    const handles = page.getByRole('button', { name: DRAG_HANDLE })
+    const layout = await readDesktopLayout(page)
+    await expect(handles).toHaveCount(layout.flat().length)
 
     // Verify widget titles are visible in edit mode
     await expect(page.getByText('Календарь', { exact: true })).toBeVisible()
@@ -56,13 +60,8 @@ test.describe('Layout Persistence', () => {
     // Exit edit mode
     await header.getByRole('button', { name: /Готово/ }).click()
 
-    // Verify edit mode styling is removed
-    const editModeWidgets = page.locator('.ring-1.ring-zinc-700')
-    await expect(editModeWidgets).toHaveCount(0)
-
-    // Verify reduced opacity is removed
-    const reducedOpacity = page.locator('.pointer-events-none.opacity-60')
-    await expect(reducedOpacity).toHaveCount(0)
+    // Verify the drag handles are removed
+    await expect(page.getByRole('button', { name: DRAG_HANDLE })).toHaveCount(0)
   })
 
   test('should maintain normal state after toggle and reload', async ({
@@ -88,32 +87,39 @@ test.describe('Layout Persistence', () => {
       header.getByRole('button', { name: /Редактировать/ })
     ).toBeVisible()
 
-    // Verify no edit mode styling
-    const editModeWidgets = page.locator('.ring-1.ring-zinc-700')
-    await expect(editModeWidgets).toHaveCount(0)
+    // Verify no edit mode drag handles
+    await expect(page.getByRole('button', { name: DRAG_HANDLE })).toHaveCount(0)
+  })
+})
+
+test.describe('Layout Persistence on the server', () => {
+  // The layout is stored on the server per user. The test captures the
+  // whole layout first; the cleanup restores every column of it, runs even
+  // when the test fails or times out, and has its own time budget.
+  let original: DesktopLayout | undefined
+
+  test.beforeEach(async ({ page }) => {
+    original = undefined
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await page.goto('/')
+  })
+
+  test.afterEach(async ({ page }, testInfo) => {
+    if (!original) return
+    testInfo.setTimeout(testInfo.timeout + 120000)
+    await restoreDesktopLayout(page, original)
   })
 
   test('should persist layout configuration after reload', async ({ page }) => {
-    const header = page.getByRole('banner')
+    // Drags, waits for the save, and reloads on a possibly slow Preview.
+    test.setTimeout(150000)
+    original = await readDesktopLayout(page)
 
-    // Verify default widgets are present
-    await header.getByRole('button', { name: /Редактировать/ }).click()
-    await expect(page.getByText('Календарь', { exact: true })).toBeVisible()
-    await expect(
-      page.getByText('Журнал расходов', { exact: true })
-    ).toBeVisible()
+    const swapped = await swapFirstTwoWidgets(page, original)
 
-    // Exit edit mode
-    await header.getByRole('button', { name: /Готово/ }).click()
-
-    // Reload page
     await page.reload()
-
-    // Verify widgets are still present
-    await header.getByRole('button', { name: /Редактировать/ }).click()
-    await expect(page.getByText('Календарь', { exact: true })).toBeVisible()
-    await expect(
-      page.getByText('Журнал расходов', { exact: true })
-    ).toBeVisible()
+    await expect
+      .poll(() => readDesktopLayout(page), { timeout: 15000 })
+      .toEqual(swapped)
   })
 })

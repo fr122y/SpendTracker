@@ -67,37 +67,69 @@ export async function expectMinimumTouchTarget(
 }
 
 /**
- * Verifies expected number of visible columns in grid layout
- * Used to test responsive grid behavior
+ * Verifies expected number of visible columns in grid layout.
+ * Counts columns geometrically from the actual placement of the widget
+ * cards inside `data-grid-container`, for every layout:
+ * - widget cards are the children of the outermost vertical flex
+ *   containers (mobile accordion list, tablet grid columns, desktop
+ *   column stacks);
+ * - cards are grouped by their left edge (4px tolerance);
+ * - columns must not overlap horizontally.
+ * Returns 0 (fails) when no visible widget cards are found.
+ * Waits for the grid, since the skeleton renders while the layout loads.
  */
 export async function expectVisibleColumns(
   page: Page,
   expectedCount: number
 ): Promise<void> {
-  // Look for grid container and count columns
-  const columnCount = await page.evaluate(() => {
-    const gridContainer = document.querySelector('[data-grid-container]')
-    if (!gridContainer) return 0
-
-    // For mobile, count stacked widgets (flex-col)
-    if (gridContainer.classList.contains('flex-col')) {
-      return 1
-    }
-
-    // For tablet, count grid columns
-    const gridCols = window
-      .getComputedStyle(gridContainer)
-      .gridTemplateColumns.split(' ')
-    if (gridCols.length > 1) {
-      return gridCols.length
-    }
-
-    // For desktop, count direct column children
-    const columns = gridContainer.querySelectorAll(':scope > div')
-    return columns.length
+  await expect(page.locator('[data-grid-container]')).toBeVisible({
+    timeout: 10000,
   })
 
-  expect(columnCount).toBe(expectedCount)
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const grid = document.querySelector('[data-grid-container]')
+          if (!grid) return 0
+
+          const cards: Element[] = []
+          const visit = (el: Element) => {
+            for (const child of Array.from(el.children)) {
+              const style = window.getComputedStyle(child)
+              if (
+                style.display === 'flex' &&
+                style.flexDirection === 'column'
+              ) {
+                cards.push(...Array.from(child.children))
+              } else {
+                visit(child)
+              }
+            }
+          }
+          visit(grid)
+
+          const boxes = cards
+            .map((card) => card.getBoundingClientRect())
+            .filter((box) => box.width > 0 && box.height > 0)
+          if (boxes.length === 0) return 0
+
+          const columns: { left: number; right: number }[] = []
+          for (const box of boxes) {
+            const column = columns.find((c) => Math.abs(c.left - box.left) <= 4)
+            if (column) column.right = Math.max(column.right, box.right)
+            else columns.push({ left: box.left, right: box.right })
+          }
+
+          columns.sort((a, b) => a.left - b.left)
+          for (let i = 1; i < columns.length; i++) {
+            if (columns[i].left < columns[i - 1].right - 1) return -1
+          }
+          return columns.length
+        }),
+      { timeout: 10000 }
+    )
+    .toBe(expectedCount)
 }
 
 /**

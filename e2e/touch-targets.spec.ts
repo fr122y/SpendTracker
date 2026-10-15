@@ -1,46 +1,67 @@
-import { test, expect } from '@playwright/test'
+import {
+  expect,
+  expenseRow,
+  journalForm,
+  openJournal,
+  reloadPage,
+  test,
+  TIMEOUT,
+} from './utils/expenses'
+
+import type { Locator } from '@playwright/test'
+
+async function expectTouchTarget(target: Locator): Promise<void> {
+  await expect(target).toBeVisible()
+  const box = await target.boundingBox()
+  expect(box).not.toBeNull()
+  if (box) {
+    expect(box.width).toBeGreaterThanOrEqual(44)
+    expect(box.height).toBeGreaterThanOrEqual(44)
+  }
+}
 
 test.describe('Touch Target Accessibility Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
+    await expect(page.locator('[data-grid-container]')).toBeVisible(TIMEOUT)
   })
 
   test.describe('Navigation Buttons', () => {
-    test('previous month button meets 44x44px minimum on mobile', async ({
+    test('header previous day button meets 44x44px minimum on mobile', async ({
       page,
     }) => {
       await page.setViewportSize({ width: 375, height: 667 })
 
-      const prevButton = page
-        .getByRole('button', { name: 'Предыдущий месяц' })
-        .first()
-      await expect(prevButton).toBeVisible()
-
-      const box = await prevButton.boundingBox()
-      expect(box).not.toBeNull()
-      if (box) {
-        expect(box.width).toBeGreaterThanOrEqual(44)
-        expect(box.height).toBeGreaterThanOrEqual(44)
-      }
+      await expectTouchTarget(
+        page
+          .getByRole('banner')
+          .getByRole('button', { name: 'Предыдущий день' })
+      )
     })
 
-    test('next month button meets 44x44px minimum on mobile', async ({
+    test('header next day button meets 44x44px minimum on mobile', async ({
       page,
     }) => {
       await page.setViewportSize({ width: 375, height: 667 })
 
-      const nextButton = page
-        .getByRole('button', { name: 'Следующий месяц' })
-        .first()
-      await expect(nextButton).toBeVisible()
+      await expectTouchTarget(
+        page.getByRole('banner').getByRole('button', { name: 'Следующий день' })
+      )
+    })
 
-      const box = await nextButton.boundingBox()
-      expect(box).not.toBeNull()
-      if (box) {
-        expect(box.width).toBeGreaterThanOrEqual(44)
-        expect(box.height).toBeGreaterThanOrEqual(44)
+    test('calendar month buttons meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width: 375, height: 667 })
+      await reloadPage(page)
+      // On mobile the calendar sits in a collapsed accordion section
+      const toggle = page.getByRole('button', { name: 'Календарь' })
+      if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+        await toggle.click()
+      }
+
+      for (const name of ['Предыдущий месяц', 'Следующий месяц']) {
+        await expectTouchTarget(page.getByRole('button', { name, exact: true }))
       }
     })
   })
@@ -49,7 +70,10 @@ test.describe('Touch Target Accessibility Tests', () => {
     test('submit button meets 44px minimum height', async ({ page }) => {
       await page.setViewportSize({ width: 375, height: 667 })
 
-      const submitButton = page.getByRole('button', {
+      await reloadPage(page)
+      await openJournal(page)
+
+      const submitButton = journalForm(page).getByRole('button', {
         name: 'Добавить',
         exact: true,
       })
@@ -64,36 +88,27 @@ test.describe('Touch Target Accessibility Tests', () => {
   })
 
   test.describe('Delete Buttons', () => {
-    test('delete button meets 44x44px minimum on mobile', async ({ page }) => {
+    test('delete button meets 44x44px minimum on mobile', async ({
+      page,
+      expenses,
+    }) => {
       await page.setViewportSize({ width: 375, height: 667 })
+      // Load the mobile layout from scratch, so it does not remount mid-input
+      await reloadPage(page)
 
-      // Add an expense first
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+      const expense = await expenses.add('E2E проверка кнопки удаления')
 
-      await descriptionInput.fill('Test expense')
-      await amountInput.fill('100')
-      await submitButton.click()
+      await expectTouchTarget(
+        expenseRow(page, expense.description, expense.amount).getByRole(
+          'button',
+          { name: 'delete' }
+        )
+      )
 
-      // Wait for expense to appear
-      await expect(page.getByText('Test expense')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Check delete button size
-      const deleteButton = page.getByRole('button', { name: 'delete' }).first()
-      await expect(deleteButton).toBeVisible()
-
-      const box = await deleteButton.boundingBox()
-      expect(box).not.toBeNull()
-      if (box) {
-        expect(box.width).toBeGreaterThanOrEqual(44)
-        expect(box.height).toBeGreaterThanOrEqual(44)
-      }
+      // Clean up at desktop width: the mobile accordion can collapse the
+      // journal again after a reload and cover the row's delete button.
+      await page.setViewportSize({ width: 1280, height: 720 })
+      await expenses.remove(expense)
     })
   })
 

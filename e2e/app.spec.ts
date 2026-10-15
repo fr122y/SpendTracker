@@ -1,335 +1,305 @@
-import { test, expect } from '@playwright/test'
+import {
+  dailyTotal,
+  expect,
+  expenseRow,
+  journalForm,
+  parseRubles,
+  reloadPage,
+  test,
+  TIMEOUT,
+} from './utils/expenses'
 
-test.describe('SmartSpend Tracker', () => {
-  // Clear localStorage before each test for clean state
+import type { Page } from '@playwright/test'
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** The analysis button of one category. */
+function analysisStat(page: Page, category: string) {
+  return page.getByRole('button', {
+    name: new RegExp(
+      `^${escapeRegExp(category)}, .* ₽, \\d+%\\. Открыть расходы$`
+    ),
+  })
+}
+
+/** The analysis value and share of one category, or zeros without expenses. */
+async function analysisEntry(
+  page: Page,
+  category: string
+): Promise<{ value: number; percent: number }> {
+  const stat = analysisStat(page, category)
+  if ((await stat.count()) === 0) return { value: 0, percent: 0 }
+  const label = (await stat.getAttribute('aria-label')) ?? ''
+  const [, value = '', percent = ''] = label.split(',')
+  return { value: parseRubles(value), percent: parseRubles(percent) }
+}
+
+async function analysisValue(page: Page, category: string): Promise<number> {
+  return (await analysisEntry(page, category)).value
+}
+
+test.describe('SpendTracker', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => {
-      localStorage.clear()
-    })
-    await page.reload()
+    await expect(dailyTotal(page)).toBeVisible(TIMEOUT)
   })
 
-  // Phase 7.1: Smoke Test - App loads and renders dashboard
   test.describe('Smoke Tests', () => {
     test('should load the home page with title and header', async ({
       page,
     }) => {
-      await expect(page).toHaveTitle(/SmartSpend Tracker/)
+      await expect(page).toHaveTitle(/SpendTracker/)
       await expect(
         page.getByRole('heading', { name: 'SmartSpend Terminal' })
       ).toBeVisible()
     })
 
-    test('should render month navigation controls', async ({ page }) => {
+    test('should render date navigation controls', async ({ page }) => {
       const header = page.getByRole('banner')
 
-      // Previous month button (in header)
       await expect(
-        header.getByRole('button', { name: 'Предыдущий месяц' })
+        header.getByRole('button', { name: 'Предыдущий день' })
       ).toBeVisible()
-
-      // Next month button (in header)
       await expect(
-        header.getByRole('button', { name: 'Следующий месяц' })
+        header.getByRole('button', { name: 'Следующий день' })
       ).toBeVisible()
-
-      // Edit mode button
       await expect(
-        header.getByRole('button', { name: /Редактировать/ })
+        header.getByRole('button', { name: 'Выбрать месяц' })
+      ).toBeVisible()
+      await expect(
+        header.getByRole('button', { name: 'Редактировать' })
       ).toBeVisible()
     })
 
     test('should render dashboard widgets', async ({ page }) => {
-      // Expense form should be visible (part of EXPENSE_LOG widget)
-      await expect(page.getByPlaceholder('Описание расхода')).toBeVisible()
-      await expect(page.getByPlaceholder('Сумма')).toBeVisible()
+      const form = journalForm(page)
+      await expect(form.getByLabel('Описание расхода')).toBeVisible()
+      await expect(form.getByLabel('Сумма расхода')).toBeVisible()
       await expect(
-        page.getByRole('button', { name: 'Добавить', exact: true })
+        form.getByRole('button', { name: 'Добавить', exact: true })
       ).toBeVisible()
 
-      // Weekly budget widget should be visible (widget heading)
       await expect(page.getByText('Бюджет на неделю')).toBeVisible()
     })
   })
 
-  // Phase 7.2: Add Expense Flow - Add expense with fallback categorization
   test.describe('Add Expense Flow', () => {
-    test('should add expense via form and show in list', async ({ page }) => {
-      // Fill in expense form
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+    // Each add and delete waits for its server action and reloads.
+    test.describe.configure({ timeout: 90000 })
 
-      await descriptionInput.fill('Тестовый расход на продукты')
-      await amountInput.fill('500')
+    test('should add expense via form and show in list', async ({
+      page,
+      expenses,
+    }) => {
+      const expense = await expenses.add('E2E продукты')
 
-      // Submit the form
-      await submitButton.click()
+      const row = expenseRow(page, expense.description, expense.amount)
+      await expect(row).toBeVisible()
+      await expect(
+        row.getByText(expense.category, { exact: true })
+      ).toBeVisible()
 
-      // Wait for the expense to appear in the list
-      // The Server Action will fallback to "Другое" category without AI
-      await expect(page.getByText('Тестовый расход на продукты')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Verify the amount is displayed
-      await expect(page.getByText('500 ₽').first()).toBeVisible()
+      await expenses.remove(expense)
     })
 
-    test('should clear form after successful submission', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+    test('should clear form after successful submission', async ({
+      page,
+      expenses,
+    }) => {
+      const expense = await expenses.add('E2E кофе')
 
-      await descriptionInput.fill('Кофе')
-      await amountInput.fill('250')
-      await submitButton.click()
+      const form = journalForm(page)
+      await expect(form.getByLabel('Описание расхода')).toHaveValue('')
+      await expect(form.getByLabel('Сумма расхода')).toHaveValue('')
 
-      // Wait for expense to be added
-      await expect(page.getByText('Кофе')).toBeVisible({ timeout: 10000 })
-
-      // Form should be cleared
-      await expect(descriptionInput).toHaveValue('')
-      await expect(amountInput).toHaveValue('')
+      await expenses.remove(expense)
     })
 
-    test('should update daily total after adding expense', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+    test('should update daily total after adding expense', async ({
+      page,
+      expenses,
+    }) => {
+      const before = parseRubles(await dailyTotal(page).textContent())
 
-      // Add first expense
-      await descriptionInput.fill('Обед')
-      await amountInput.fill('300')
-      await submitButton.click()
-      await expect(page.getByText('Обед')).toBeVisible({ timeout: 10000 })
+      const lunch = await expenses.add('E2E обед')
+      const dinner = await expenses.add('E2E ужин')
 
-      // Add second expense
-      await descriptionInput.fill('Ужин')
-      await amountInput.fill('400')
-      await submitButton.click()
-      await expect(page.getByText('Ужин')).toBeVisible({ timeout: 10000 })
+      await expect(dailyTotal(page)).toHaveText(
+        `${(before + lunch.amount + dinner.amount).toLocaleString('ru-RU')} ₽`,
+        TIMEOUT
+      )
 
-      // Total should show 700 (300 + 400)
-      await expect(page.getByText('700 ₽').first()).toBeVisible()
+      await expenses.remove(lunch)
+      await expenses.remove(dinner)
+      await expect(dailyTotal(page)).toHaveText(
+        `${before.toLocaleString('ru-RU')} ₽`,
+        TIMEOUT
+      )
     })
   })
 
-  // Phase 7.2 continued: Verify expense appears in Analysis widget
   test.describe('Expense Analysis', () => {
+    // Each add and delete waits for its server action and reloads.
+    test.describe.configure({ timeout: 90000 })
+
     test('should show expense category in analysis widget', async ({
       page,
+      expenses,
     }) => {
-      // Add an expense
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+      const expense = await expenses.add('E2E тест анализа')
+      const stat = analysisStat(page, expense.category)
+      await expect(stat).toBeVisible(TIMEOUT)
 
-      await descriptionInput.fill('Тест анализа')
-      await amountInput.fill('1000')
-      await submitButton.click()
+      // The share is this category's part of the analysis total.
+      const total = page.getByTestId('analysis-header-total')
+      await expect
+        .poll(async () => {
+          const { value, percent } = await analysisEntry(page, expense.category)
+          const sum = parseRubles(await total.textContent())
+          return percent === Number(((value / sum) * 100).toFixed(0))
+        }, TIMEOUT)
+        .toBe(true)
+      const withExpense = await analysisValue(page, expense.category)
 
-      // Wait for expense to be added
-      await expect(page.getByText('Тест анализа')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Analysis widget should show the category (Другое by default)
-      // The percentage should be 100% since it's the only expense
-      await expect(page.getByText('Другое').first()).toBeVisible()
-      await expect(page.getByText('100%').first()).toBeVisible()
+      // The category value carries exactly this test's amount.
+      await expenses.remove(expense)
+      await expect
+        .poll(() => analysisValue(page, expense.category), TIMEOUT)
+        .toBe(withExpense - expense.amount)
     })
 
     test('should update analysis totals when expenses are added', async ({
       page,
+      expenses,
     }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+      const totalBefore = parseRubles(
+        await page.getByTestId('analysis-header-total').textContent()
+      )
+      const description = 'E2E расход для анализа'
+      const expense = await expenses.add(description)
 
-      // Add expense
-      await descriptionInput.fill('Расход для анализа')
-      await amountInput.fill('2500')
-      await submitButton.click()
+      await expect(page.getByTestId('analysis-header-total')).toHaveText(
+        `${(totalBefore + expense.amount).toLocaleString('ru-RU')} ₽`,
+        TIMEOUT
+      )
+      const categoryAfter = await analysisValue(page, expense.category)
 
-      // Wait for expense to appear
-      await expect(page.getByText('Расход для анализа')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Analysis widget should show the total amount
-      // Look for the formatted amount in the analysis section (use first match)
-      await expect(page.getByText(/2[\s\u00A0]?500/).first()).toBeVisible()
+      await expenses.remove(expense)
+      await expect
+        .poll(() => analysisValue(page, expense.category), TIMEOUT)
+        .toBe(categoryAfter - expense.amount)
     })
   })
 
-  // Phase 7.3: Persistence Test - Data remains after page reload
   test.describe('Data Persistence', () => {
-    test('should persist expenses after page reload', async ({ page }) => {
-      // Add an expense
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+    // Each add and delete waits for its server action and reloads.
+    test.describe.configure({ timeout: 90000 })
 
-      await descriptionInput.fill('Постоянный расход')
-      await amountInput.fill('1500')
-      await submitButton.click()
-
-      // Wait for expense to be added
-      await expect(page.getByText('Постоянный расход')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Reload the page
-      await page.reload()
-
-      // Expense should still be visible after reload
-      await expect(page.getByText('Постоянный расход')).toBeVisible({
-        timeout: 10000,
-      })
-      await expect(page.getByText('1 500').first()).toBeVisible()
-    })
-
-    test('should persist multiple expenses after reload', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
-
-      // Add first expense
-      await descriptionInput.fill('Первый расход')
-      await amountInput.fill('100')
-      await submitButton.click()
-      await expect(page.getByText('Первый расход')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Add second expense
-      await descriptionInput.fill('Второй расход')
-      await amountInput.fill('200')
-      await submitButton.click()
-      await expect(page.getByText('Второй расход')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Reload the page
-      await page.reload()
-
-      // Both expenses should still be visible
-      await expect(page.getByText('Первый расход')).toBeVisible({
-        timeout: 10000,
-      })
-      await expect(page.getByText('Второй расход')).toBeVisible()
-    })
-
-    test('should persist layout configuration after reload', async ({
+    test('should persist expenses after page reload', async ({
       page,
+      expenses,
     }) => {
+      const expense = await expenses.add('E2E постоянный расход')
+
+      await reloadPage(page)
+      await expect(
+        expenseRow(page, expense.description, expense.amount)
+      ).toBeVisible(TIMEOUT)
+
+      await expenses.remove(expense)
+    })
+
+    test('should persist multiple expenses after reload', async ({
+      page,
+      expenses,
+    }) => {
+      const first = await expenses.add('E2E первый расход')
+      const second = await expenses.add('E2E второй расход')
+
+      await reloadPage(page)
+      await expect(
+        expenseRow(page, first.description, first.amount)
+      ).toBeVisible(TIMEOUT)
+      await expect(
+        expenseRow(page, second.description, second.amount)
+      ).toBeVisible()
+
+      await expenses.remove(first)
+      await expenses.remove(second)
+    })
+
+    test('should toggle layout edit mode from the header', async ({ page }) => {
       const header = page.getByRole('banner')
 
-      // Enter edit mode
-      const editButton = header.getByRole('button', { name: /Редактировать/ })
-      await editButton.click()
-
-      // Verify we're in edit mode (button text changes to "Готово")
+      await header.getByRole('button', { name: /Редактировать/ }).click()
       await expect(header.getByRole('button', { name: /Готово/ })).toBeVisible()
 
-      // Exit edit mode
       await header.getByRole('button', { name: /Готово/ }).click()
-
-      // Verify we're out of edit mode
       await expect(
         header.getByRole('button', { name: /Редактировать/ })
       ).toBeVisible()
     })
   })
 
-  // Navigation Tests
-  test.describe('Month Navigation', () => {
-    test('should navigate to previous month', async ({ page }) => {
-      const header = page.getByRole('banner')
-      const prevButton = header.getByRole('button', {
-        name: 'Предыдущий месяц',
-      })
+  test.describe('Date Navigation', () => {
+    test('should navigate to the previous day and month', async ({ page }) => {
+      const dateButton = page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Выбрать месяц' })
+      const shown = parseHeaderDate(await dateButton.textContent())
 
-      // Get current month text
-      const monthText = page.locator('span.capitalize')
-      const initialMonth = await monthText.textContent()
+      await page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Предыдущий день' })
+        .click()
+      const dayBefore = addDays(shown, -1)
+      await expect(dateButton).toHaveText(formatHeaderDate(dayBefore))
 
-      // Navigate to previous month
-      await prevButton.click()
-
-      // Month text should change
-      const newMonth = await monthText.textContent()
-      expect(newMonth).not.toBe(initialMonth)
+      // The picker moves one month back from the date the day step showed.
+      const monthBefore = shiftMonth(dayBefore, -1)
+      await pickMonth(page, monthBefore)
+      await expect(dateButton).toHaveText(formatHeaderDate(monthBefore))
     })
 
-    test('should navigate to next month', async ({ page }) => {
-      const header = page.getByRole('banner')
-      const nextButton = header.getByRole('button', { name: 'Следующий месяц' })
+    test('should navigate to the next day and month', async ({ page }) => {
+      const dateButton = page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Выбрать месяц' })
+      const shown = parseHeaderDate(await dateButton.textContent())
 
-      // Get current month text
-      const monthText = page.locator('span.capitalize')
-      const initialMonth = await monthText.textContent()
+      await page
+        .getByRole('banner')
+        .getByRole('button', { name: 'Следующий день' })
+        .click()
+      const dayAfter = addDays(shown, 1)
+      await expect(dateButton).toHaveText(formatHeaderDate(dayAfter))
 
-      // Navigate to next month
-      await nextButton.click()
-
-      // Month text should change
-      const newMonth = await monthText.textContent()
-      expect(newMonth).not.toBe(initialMonth)
+      const monthAfter = shiftMonth(dayAfter, 1)
+      await pickMonth(page, monthAfter)
+      await expect(dateButton).toHaveText(formatHeaderDate(monthAfter))
     })
   })
 
-  // Edit Mode Tests
   test.describe('Edit Mode', () => {
     test('should toggle edit mode', async ({ page }) => {
       const header = page.getByRole('banner')
-      const editButton = header.getByRole('button', { name: /Редактировать/ })
 
-      // Click to enter edit mode
-      await editButton.click()
+      await header.getByRole('button', { name: 'Редактировать' }).click()
+      await expect(header.getByRole('button', { name: 'Готово' })).toBeVisible()
 
-      // Button should now show "Готово"
-      await expect(header.getByRole('button', { name: /Готово/ })).toBeVisible()
-
-      // Click again to exit edit mode
-      await header.getByRole('button', { name: /Готово/ }).click()
-
-      // Button should show "Редактировать" again
+      await header.getByRole('button', { name: 'Готово' }).click()
       await expect(
-        header.getByRole('button', { name: /Редактировать/ })
+        header.getByRole('button', { name: 'Редактировать' })
       ).toBeVisible()
     })
 
     test('should show widget titles in edit mode', async ({ page }) => {
       const header = page.getByRole('banner')
 
-      // Enter edit mode
-      await header.getByRole('button', { name: /Редактировать/ }).click()
+      await header.getByRole('button', { name: 'Редактировать' }).click()
 
-      // Widget titles should be visible
       await expect(page.getByText('Календарь', { exact: true })).toBeVisible()
       await expect(
         page.getByText('Журнал расходов', { exact: true })
@@ -339,3 +309,69 @@ test.describe('SmartSpend Tracker', () => {
     })
   })
 })
+
+function formatHeaderDate(date: Date): string {
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
+const MONTHS_GENITIVE = Array.from(
+  { length: 12 },
+  (_, month) => formatHeaderDate(new Date(2024, month, 15)).split(' ')[1]
+)
+
+/** Parses the header date, such as `14 октября 2026 г.`. */
+function parseHeaderDate(text: string | null): Date {
+  const [day = '', month = '', year = ''] = (text ?? '').trim().split(/\s+/)
+  const monthIndex = MONTHS_GENITIVE.indexOf(month)
+  expect(monthIndex, `header date "${text}"`).toBeGreaterThanOrEqual(0)
+  return new Date(Number(year), monthIndex, Number(day))
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days)
+}
+
+/** The same day in a neighbouring month, clamped to that month's length. */
+function shiftMonth(date: Date, months: number): Date {
+  const first = new Date(date.getFullYear(), date.getMonth() + months, 1)
+  const lastDay = new Date(
+    first.getFullYear(),
+    first.getMonth() + 1,
+    0
+  ).getDate()
+  return new Date(
+    first.getFullYear(),
+    first.getMonth(),
+    Math.min(date.getDate(), lastDay)
+  )
+}
+
+/** Opens the header month picker and selects the month of `date`. */
+async function pickMonth(page: Page, date: Date): Promise<void> {
+  const header = page.getByRole('banner')
+  await header.getByRole('button', { name: 'Выбрать месяц' }).click()
+  const picker = page.getByRole('dialog', { name: 'Выбор месяца' })
+  await expect(picker).toBeVisible()
+
+  const shownYear = Number(
+    (await picker
+      .getByText(/^\d{4}$/)
+      .first()
+      .textContent()) ?? '0'
+  )
+  if (date.getFullYear() < shownYear) {
+    await picker.getByRole('button', { name: 'Предыдущий год' }).click()
+  } else if (date.getFullYear() > shownYear) {
+    await picker.getByRole('button', { name: 'Следующий год' }).click()
+  }
+
+  const monthName = date.toLocaleDateString('ru-RU', { month: 'long' })
+  await picker
+    .getByRole('button', { name: new RegExp(`^${monthName}$`, 'i') })
+    .click()
+  await expect(picker).toBeHidden()
+}

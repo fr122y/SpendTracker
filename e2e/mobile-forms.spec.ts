@@ -1,18 +1,27 @@
-import { test, expect } from '@playwright/test'
+import {
+  dailyTotal,
+  expenseRow,
+  openJournal,
+  expect,
+  journalForm,
+  test,
+  TIMEOUT,
+} from './utils/expenses'
 
 test.describe('Mobile Form Interaction Tests', () => {
+  // Touch input needs a touch-enabled context.
+  test.use({ hasTouch: true, viewport: { width: 375, height: 667 } })
+
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
-    // Set mobile viewport
-    await page.setViewportSize({ width: 375, height: 667 })
+    await expect(dailyTotal(page)).toBeVisible(TIMEOUT)
+    await openJournal(page)
   })
 
   test.describe('Expense Form on Mobile', () => {
     test('inputs should be full width on mobile', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
+      const descriptionInput = journalForm(page).getByLabel('Описание расхода')
+      const amountInput = journalForm(page).getByLabel('Сумма расхода')
 
       await expect(descriptionInput).toBeVisible()
       await expect(amountInput).toBeVisible()
@@ -38,7 +47,7 @@ test.describe('Mobile Form Interaction Tests', () => {
     })
 
     test('submit button should be full width on mobile', async ({ page }) => {
-      const submitButton = page.getByRole('button', {
+      const submitButton = journalForm(page).getByRole('button', {
         name: 'Добавить',
         exact: true,
       })
@@ -61,34 +70,24 @@ test.describe('Mobile Form Interaction Tests', () => {
 
     test('form submits correctly on mobile with touch input', async ({
       page,
+      expenses,
     }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+      // Adding and safely removing a row needs several reloads.
+      test.slow()
+      // Taps every field and the submit button.
+      const expense = await expenses.add('E2E мобильный расход', { tap: true })
 
-      // Tap to focus (simulate touch)
-      await descriptionInput.tap()
-      await descriptionInput.fill('Mobile test expense')
+      // Exactly this run's row shows the description and the amount.
+      const row = expenseRow(page, expense.description, expense.amount)
+      await expect(row).toBeVisible(TIMEOUT)
+      await expect(row.getByText(`${expense.amount} ₽`)).toBeVisible()
 
-      await amountInput.tap()
-      await amountInput.fill('500')
-
-      // Tap submit button
-      await submitButton.tap()
-
-      // Verify expense appears
-      await expect(page.getByText('Mobile test expense')).toBeVisible({
-        timeout: 10000,
-      })
-      await expect(page.getByText('500 ₽').first()).toBeVisible()
+      await expenses.remove(expense)
     })
 
     test('inputs accept keyboard input on mobile', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
+      const descriptionInput = journalForm(page).getByLabel('Описание расхода')
+      const amountInput = journalForm(page).getByLabel('Сумма расхода')
 
       // Type with keyboard
       await descriptionInput.fill('Keyboard input test')
@@ -98,30 +97,25 @@ test.describe('Mobile Form Interaction Tests', () => {
       await expect(amountInput).toHaveValue('12345')
     })
 
-    test('form clears after submission on mobile', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
+    test('form clears after submission on mobile', async ({
+      page,
+      expenses,
+    }) => {
+      test.slow()
+      const expense = await expenses.add('E2E мобильная очистка', { tap: true })
+      await expect(
+        expenseRow(page, expense.description, expense.amount)
+      ).toBeVisible(TIMEOUT)
 
-      await descriptionInput.fill('Clear test')
-      await amountInput.fill('100')
-      await submitButton.tap()
+      const form = journalForm(page)
+      await expect(form.getByLabel('Описание расхода')).toHaveValue('')
+      await expect(form.getByLabel('Сумма расхода')).toHaveValue('')
 
-      // Wait for submission
-      await expect(page.getByText('Clear test')).toBeVisible({
-        timeout: 10000,
-      })
-
-      // Form should be cleared
-      await expect(descriptionInput).toHaveValue('')
-      await expect(amountInput).toHaveValue('')
+      await expenses.remove(expense)
     })
 
     test('inputs have proper focus states on mobile', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
+      const descriptionInput = journalForm(page).getByLabel('Описание расхода')
 
       // Focus input
       await descriptionInput.focus()
@@ -142,25 +136,51 @@ test.describe('Mobile Form Interaction Tests', () => {
 
   test.describe('Form Accessibility on Mobile', () => {
     test('inputs have placeholders', async ({ page }) => {
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
+      const descriptionInput = journalForm(page).getByLabel('Описание расхода')
+      const amountInput = journalForm(page).getByLabel('Сумма расхода')
 
       // Verify inputs have placeholder
       await expect(descriptionInput).toHaveAttribute(
         'placeholder',
         'Описание расхода'
       )
-      await expect(amountInput).toHaveAttribute('placeholder', 'Сумма')
+      // The amount placeholder also hints that expressions are accepted.
+      await expect(amountInput).toHaveAttribute(
+        'placeholder',
+        'Сумма (можно ввести выражение, напр. 500+50)'
+      )
     })
 
     test('submit button is visible and accessible', async ({ page }) => {
-      const submitButton = page.getByRole('button', {
+      const submitButton = journalForm(page).getByRole('button', {
         name: 'Добавить',
         exact: true,
       })
 
-      // Button should be visible and accessible
+      // Button is visible, disabled until the form is valid, then enabled
       await expect(submitButton).toBeVisible()
+      await expect(submitButton).toBeDisabled()
+
+      const form = journalForm(page)
+      const descriptionInput = form.getByLabel('Описание расхода')
+      const amountInput = form.getByLabel('Сумма расхода')
+      const categorySelect = form.getByLabel('Категория', { exact: true })
+      const suggestion = form.getByText('Категория:', { exact: true })
+      // The form picks a category on description blur once keyword
+      // mappings have loaded, so retry until the category step shows.
+      await expect(async () => {
+        await descriptionInput.fill('E2E проверка кнопки')
+        await amountInput.fill('100')
+        await descriptionInput.focus()
+        await descriptionInput.blur()
+        await expect(categorySelect.or(suggestion)).toBeVisible({
+          timeout: 1000,
+        })
+      }).toPass(TIMEOUT)
+      if (await categorySelect.isVisible()) {
+        await expect(submitButton).toBeDisabled()
+        await categorySelect.selectOption({ index: 1 })
+      }
       await expect(submitButton).toBeEnabled()
     })
   })

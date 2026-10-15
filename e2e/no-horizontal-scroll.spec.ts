@@ -1,13 +1,11 @@
-import { test } from '@playwright/test'
-
 import { VIEWPORTS } from '../playwright.config'
+import { expect, reloadPage, test, TIMEOUT } from './utils/expenses'
 import { expectNoHorizontalScroll } from './utils/viewport-helpers'
 
 test.describe('No Horizontal Scroll Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
+    await expect(page.locator('[data-grid-container]')).toBeVisible(TIMEOUT)
   })
 
   test('mobile small (375px) has no horizontal scroll', async ({ page }) => {
@@ -48,42 +46,30 @@ test.describe('No Horizontal Scroll Tests', () => {
   test.describe('No Horizontal Scroll with Content', () => {
     test('no horizontal scroll after adding multiple expenses', async ({
       page,
+      expenses,
     }) => {
+      // Adds and removes three expenses through the UI
+      test.setTimeout(120000)
       await page.setViewportSize(VIEWPORTS.mobile_small)
+      // Load the mobile layout from scratch, so it does not remount mid-input
+      await reloadPage(page)
 
-      const descriptionInput = page.getByPlaceholder('Описание расхода')
-      const amountInput = page.getByPlaceholder('Сумма')
-      const submitButton = page.getByRole('button', {
-        name: 'Добавить',
-        exact: true,
-      })
-
-      // Add several expenses with long descriptions
-      const expenses = [
-        {
-          description:
-            'Very long expense description that might cause overflow',
-          amount: '1000',
-        },
-        {
-          description: 'Another really long description to test text wrapping',
-          amount: '2000',
-        },
-        {
-          description: 'Third expense with a lengthy description',
-          amount: '3000',
-        },
-      ]
-
-      for (const expense of expenses) {
-        await descriptionInput.fill(expense.description)
-        await amountInput.fill(expense.amount)
-        await submitButton.click()
-        await page.waitForTimeout(500)
+      // Long descriptions that might cause overflow
+      const created = []
+      for (const description of [
+        'E2E очень длинное описание расхода, которое может вызвать переполнение',
+        'E2E ещё одно действительно длинное описание для проверки переноса',
+        'E2E третий расход с достаточно длинным описанием',
+      ]) {
+        created.push(await expenses.add(description))
       }
 
-      // Still no horizontal scroll
       await expectNoHorizontalScroll(page)
+
+      // Clean up at desktop width: the mobile accordion can collapse the
+      // journal again after a reload and cover the row's delete button.
+      await page.setViewportSize({ width: 1280, height: 720 })
+      for (const expense of created) await expenses.remove(expense)
     })
 
     test('no horizontal scroll in edit mode on all viewports', async ({

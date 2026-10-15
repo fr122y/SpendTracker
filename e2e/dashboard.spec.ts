@@ -3,8 +3,6 @@ import { test, expect } from '@playwright/test'
 test.describe('Dashboard Smoke Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await page.evaluate(() => localStorage.clear())
-    await page.reload()
   })
 
   test('should display critical widgets', async ({ page }) => {
@@ -24,20 +22,20 @@ test.describe('Dashboard Smoke Tests', () => {
     await header.getByRole('button', { name: /Готово/ }).click()
   })
 
-  test('should display current month in header', async ({ page }) => {
-    const monthText = page.locator('span.capitalize')
-
-    // Get current month in Russian locale
-    const now = new Date()
-    const expectedMonth = now
-      .toLocaleDateString('ru-RU', {
+  test('should display current date in header', async ({ page }) => {
+    // The header shows the selected day, today by default, formatted by the
+    // app in the browser; compute the expectation from the browser clock.
+    const expectedDate = await page.evaluate(() =>
+      new Date().toLocaleDateString('ru-RU', {
+        day: 'numeric',
         month: 'long',
         year: 'numeric',
       })
-      .toLowerCase()
+    )
 
-    // Verify month is displayed
-    await expect(monthText).toContainText(expectedMonth)
+    await expect(
+      page.getByRole('banner').getByRole('button', { name: 'Выбрать месяц' })
+    ).toHaveText(expectedDate)
   })
 
   test('should render header with title', async ({ page }) => {
@@ -46,14 +44,66 @@ test.describe('Dashboard Smoke Tests', () => {
     ).toBeVisible()
   })
 
-  test('should render month navigation controls', async ({ page }) => {
+  test('should render date navigation controls', async ({ page }) => {
     const header = page.getByRole('banner')
+    const dateButton = header.getByRole('button', { name: 'Выбрать месяц' })
+    const formatShifted = (days: number) =>
+      page.evaluate((offset) => {
+        const date = new Date()
+        date.setDate(date.getDate() + offset)
+        return date.toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })
+      }, days)
 
     await expect(
-      header.getByRole('button', { name: 'Предыдущий месяц' })
+      header.getByRole('button', { name: 'Предыдущий день' })
     ).toBeVisible()
     await expect(
-      header.getByRole('button', { name: 'Следующий месяц' })
+      header.getByRole('button', { name: 'Следующий день' })
     ).toBeVisible()
+    await expect(dateButton).toBeVisible()
+
+    // The arrows move the selected date back and forward
+    await header.getByRole('button', { name: 'Предыдущий день' }).click()
+    await expect(dateButton).toHaveText(await formatShifted(-1))
+    await header.getByRole('button', { name: 'Следующий день' }).click()
+    await expect(dateButton).toHaveText(await formatShifted(0))
+
+    // The date button opens the month picker
+    await dateButton.click()
+    const picker = page.getByRole('dialog', { name: 'Выбор месяца' })
+    await expect(picker).toBeVisible()
+    await picker.getByRole('button', { name: 'Закрыть' }).click()
+    await expect(picker).toBeHidden()
+
+    // Picking another month in the picker moves the header to that month
+    const target = await page.evaluate(() => {
+      const today = new Date()
+      const month = (today.getMonth() + 1) % 12
+      const lastDay = new Date(today.getFullYear(), month + 1, 0).getDate()
+      const date = new Date(
+        today.getFullYear(),
+        month,
+        Math.min(today.getDate(), lastDay)
+      )
+      return {
+        monthName: date.toLocaleDateString('ru-RU', { month: 'long' }),
+        header: date.toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+      }
+    })
+    await dateButton.click()
+    await expect(picker).toBeVisible()
+    await picker
+      .getByRole('button', { name: new RegExp(`^${target.monthName}$`, 'i') })
+      .click()
+    await expect(picker).toBeHidden()
+    await expect(dateButton).toHaveText(target.header)
   })
 })
