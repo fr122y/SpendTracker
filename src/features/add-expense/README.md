@@ -39,6 +39,9 @@ real expenses.
 7. Personal, project, pocket, and shared real expenses use keyword category
    suggestions/manual override; pocket purchases use the personal categories
 8. Project withdrawals and returns use the technical `Проектные деньги` category
+9. Project scenarios are offered only while the user has a project; otherwise
+   a hint points to creating one in «Проекты». A project return larger than
+   the project's cash on hand shows an inline error and cannot be submitted
 
 ## Dependencies
 

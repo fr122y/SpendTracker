@@ -21,6 +21,9 @@ CRUD operations for expense projects with budget allocation.
 - Auto-generated color from predefined palette
 - Add expenses linked to projects with local keyword-based categorization
 - Add project withdrawals and returns as non-expense money movements
+- Block a return larger than the project's cash on hand with an inline error
+- `CreateProjectForm` calls optional `onCreated` after a submit so the parent
+  can close it
 - Manual category override with keyword mapping upsert on submit
 
 ## Dependencies

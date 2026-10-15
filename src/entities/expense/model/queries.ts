@@ -54,11 +54,26 @@ export function useAddExpense() {
   })
 }
 
+export const PROJECT_CASH_NEGATIVE_DELETE_MESSAGE =
+  'Нельзя удалить: на руках станет меньше 0 — сначала удалите возврат'
+
+export class ProjectCashNegativeError extends Error {
+  constructor() {
+    super(PROJECT_CASH_NEGATIVE_DELETE_MESSAGE)
+    this.name = 'ProjectCashNegativeError'
+  }
+}
+
 export function useDeleteExpense() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => deleteExpenseAction(id),
+    mutationFn: async (id: string) => {
+      const result = await deleteExpenseAction(id)
+      if (result?.status === 'project_cash_negative') {
+        throw new ProjectCashNegativeError()
+      }
+    },
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
       const previous = queryClient.getQueryData<Expense[]>(
@@ -69,9 +84,11 @@ export function useDeleteExpense() {
       )
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
       queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
-      showMutationRollbackToast()
+      showMutationRollbackToast(
+        error instanceof ProjectCashNegativeError ? error.message : undefined
+      )
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })

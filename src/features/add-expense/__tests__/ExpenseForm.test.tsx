@@ -38,7 +38,8 @@ let mockSharedCategories = [
   },
 ]
 
-const mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
+let mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
+let mockExpenses: Array<Record<string, unknown>> = []
 
 const ACTIVE_POCKET: Pocket = {
   id: 'pocket-1',
@@ -60,8 +61,12 @@ const ARCHIVED_POCKET: Pocket = {
 let mockPockets: Pocket[] | undefined = []
 
 jest.mock('@/entities/expense', () => ({
-  useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
-    selector({ addExpense: mockAddExpense }),
+  useExpenseStore: (
+    selector: (state: {
+      addExpense: jest.Mock
+      expenses: typeof mockExpenses
+    }) => unknown
+  ) => selector({ addExpense: mockAddExpense, expenses: mockExpenses }),
 }))
 
 jest.mock('@/entities/category', () => ({
@@ -108,6 +113,8 @@ describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockPockets = []
+    mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
+    mockExpenses = []
     mockCategorizeShared.mockReturnValue({ found: false })
     mockSaveSharedMapping.mockResolvedValue(undefined)
     mockSharedBudgets = [
@@ -602,6 +609,99 @@ describe('ExpenseForm', () => {
           category: 'Проектные деньги',
         })
       )
+    })
+  })
+
+  describe('project return limit', () => {
+    beforeEach(() => {
+      mockExpenses = [
+        {
+          id: 'withdrawal-1',
+          description: 'взял',
+          amount: 5000,
+          date: '2025-01-10',
+          category: 'Проектные деньги',
+          emoji: '💼',
+          projectId: 'project-1',
+          operationType: 'project_withdrawal',
+        },
+        {
+          id: 'project-expense-1',
+          description: 'краска',
+          amount: 700,
+          date: '2025-01-11',
+          category: 'Другое',
+          emoji: '📝',
+          projectId: 'project-1',
+          operationType: 'expense',
+        },
+      ]
+    })
+
+    function fillReturn(amount: string) {
+      fireEvent.change(screen.getByLabelText(/сценарий операции/i), {
+        target: { value: 'project_return' },
+      })
+      fireEvent.change(screen.getByLabelText(/^проект$/i), {
+        target: { value: 'project-1' },
+      })
+      fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+        target: { value: 'остаток' },
+      })
+      fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+        target: { value: amount },
+      })
+    }
+
+    it('blocks a return larger than the cash on hand with an inline error', () => {
+      render(<ExpenseForm />)
+      fillReturn('7000')
+
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        /Нельзя вернуть больше, чем на руках: 5\s000 ₽/
+      )
+      const submit = screen.getByRole('button', { name: /добавить/i })
+      expect(submit).toBeDisabled()
+      fireEvent.submit(submit.closest('form')!)
+      expect(mockAddExpense).not.toHaveBeenCalled()
+    })
+
+    it('allows returning the whole cash on hand', async () => {
+      render(<ExpenseForm />)
+      fillReturn('5000')
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+      await waitFor(() =>
+        expect(mockAddExpense).toHaveBeenCalledWith(
+          expect.objectContaining({
+            amount: 5000,
+            projectId: 'project-1',
+            operationType: 'project_return',
+          })
+        )
+      )
+    })
+  })
+
+  describe('without projects', () => {
+    beforeEach(() => {
+      mockProjects = []
+    })
+
+    it('does not offer project scenarios and points to project creation', () => {
+      render(<ExpenseForm />)
+
+      const labels = Array.from(
+        screen.getByLabelText(/сценарий операции/i).querySelectorAll('option')
+      ).map((option) => option.textContent)
+      expect(labels).not.toContain('Проектный расход')
+      expect(labels).not.toContain('Взял из проекта')
+      expect(labels).not.toContain('Вернул в проект')
+      expect(
+        screen.getByText(/Проектные операции появятся после создания проекта/)
+      ).toBeInTheDocument()
+      expect(screen.queryByLabelText(/^проект$/i)).not.toBeInTheDocument()
     })
   })
 

@@ -88,6 +88,21 @@ describe('CreateProjectForm', () => {
     })
   })
 
+  it('notifies the parent after creating a project', async () => {
+    const onCreated = jest.fn()
+    render(<CreateProjectForm onCreated={onCreated} />)
+
+    fireEvent.change(screen.getByPlaceholderText(/название проекта/i), {
+      target: { value: 'Отпуск' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/бюджет/i), {
+      target: { value: '50000' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /создать проект/i }))
+
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
+  })
+
   it('disables submit button when form is empty', () => {
     render(<CreateProjectForm />)
 

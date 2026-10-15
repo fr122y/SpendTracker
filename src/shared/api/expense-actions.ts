@@ -20,6 +20,12 @@ import {
   POCKET_TRANSFER_EMOJI,
 } from './pocket-helpers'
 import {
+  assertProjectCashCovers,
+  getProjectCashEffect,
+  isProjectCashOperation,
+  PROJECT_RETURN_EXCEEDS_CASH_ERROR,
+} from './project-helpers'
+import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
 } from './shared-budget-actions'
@@ -179,7 +185,7 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
     ? POCKET_TRANSFER_EMOJI
     : (sharedCategory?.emoji ?? pocketCategory?.emoji ?? data.emoji!)
 
-  await db.insert(expenses).values({
+  const values = {
     id,
     userId,
     description: data.description,
@@ -192,7 +198,21 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
     sharedBudgetId: data.sharedBudgetId ?? null,
     sharedBudgetCategoryId: data.sharedBudgetCategoryId ?? null,
     operationType,
-  })
+  }
+
+  if (isProjectMovement && data.projectId) {
+    const projectId = data.projectId
+    await db.transaction(async (transaction) => {
+      await assertProjectCashCovers(transaction, {
+        userId,
+        projectId,
+        delta: getProjectCashEffect(operationType, data.amount),
+      })
+      await transaction.insert(expenses).values(values)
+    })
+  } else {
+    await db.insert(expenses).values(values)
+  }
 
   return {
     id,
@@ -206,18 +226,28 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
   }
 }
 
-export async function deleteExpense(id: string): Promise<void> {
+/**
+ * `project_cash_negative` is returned instead of thrown so the client can show
+ * a specific message: production builds hide thrown Server Action messages.
+ */
+export type DeleteExpenseResult =
+  | { status: 'deleted' }
+  | { status: 'project_cash_negative' }
+
+export async function deleteExpense(id: string): Promise<DeleteExpenseResult> {
   const userId = await getUserId()
   const [expense] = await db
     .select({
       userId: expenses.userId,
       sharedBudgetId: expenses.sharedBudgetId,
       pocketId: expenses.pocketId,
+      projectId: expenses.projectId,
+      operationType: expenses.operationType,
     })
     .from(expenses)
     .where(eq(expenses.id, id))
 
-  if (!expense) return
+  if (!expense) return { status: 'deleted' }
 
   if (expense.sharedBudgetId) {
     await assertCanManageSharedBudgetExpense(expense.sharedBudgetId, userId)
@@ -229,7 +259,32 @@ export async function deleteExpense(id: string): Promise<void> {
     await assertCanUsePocket(expense.pocketId, userId)
   }
 
+  const projectId = expense.projectId
+  if (projectId && isProjectCashOperation(expense.operationType)) {
+    return db.transaction(async (transaction) => {
+      try {
+        await assertProjectCashCovers(transaction, {
+          userId,
+          projectId,
+          excludeExpenseId: id,
+          delta: 0,
+        })
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === PROJECT_RETURN_EXCEEDS_CASH_ERROR
+        ) {
+          return { status: 'project_cash_negative' as const }
+        }
+        throw error
+      }
+      await transaction.delete(expenses).where(eq(expenses.id, id))
+      return { status: 'deleted' as const }
+    })
+  }
+
   await db.delete(expenses).where(eq(expenses.id, id))
+  return { status: 'deleted' }
 }
 
 export async function updateExpense(
@@ -240,6 +295,7 @@ export async function updateExpense(
   const [existing] = await db
     .select({
       userId: expenses.userId,
+      amount: expenses.amount,
       projectId: expenses.projectId,
       pocketId: expenses.pocketId,
       sharedBudgetId: expenses.sharedBudgetId,
@@ -381,5 +437,38 @@ export async function updateExpense(
 
   if (Object.keys(patch).length === 0) return
 
-  await db.update(expenses).set(patch).where(eq(expenses.id, id))
+  const nextAmount = data.amount !== undefined ? data.amount : existing.amount
+  const affectsProjectCash =
+    isProjectCashOperation(existing.operationType) ||
+    isProjectCashOperation(nextOperationType)
+
+  if (!affectsProjectCash) {
+    await db.update(expenses).set(patch).where(eq(expenses.id, id))
+    return
+  }
+
+  // Lock every affected project in a stable order so concurrent edits of the
+  // same projects cannot deadlock or both pass the cash-on-hand check.
+  const affectedProjectIds = [
+    ...new Set(
+      [existing.projectId, nextProjectId].filter((value): value is string =>
+        Boolean(value)
+      )
+    ),
+  ].sort()
+
+  await db.transaction(async (transaction) => {
+    for (const projectId of affectedProjectIds) {
+      await assertProjectCashCovers(transaction, {
+        userId,
+        projectId,
+        excludeExpenseId: id,
+        delta:
+          projectId === nextProjectId
+            ? getProjectCashEffect(nextOperationType, nextAmount)
+            : 0,
+      })
+    }
+    await transaction.update(expenses).set(patch).where(eq(expenses.id, id))
+  })
 }

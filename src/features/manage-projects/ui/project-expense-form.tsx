@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { formatDate } from '@/shared/lib'
+import { formatDate, getProjectCashOnHand } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType } from '@/shared/types'
@@ -31,6 +31,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
+  const expenses = useExpenseStore((state) => state.expenses)
   const categories = useCategoryStore((state) => state.categories)
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const {
@@ -45,6 +46,14 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     label: `${category.emoji} ${category.name}`,
   }))
   const isMovement = operationType !== 'expense'
+  const projectCashOnHand =
+    operationType === 'project_return'
+      ? Math.max(getProjectCashOnHand(expenses, projectId), 0)
+      : null
+  const returnExceedsCash =
+    projectCashOnHand !== null &&
+    Boolean(amount) &&
+    Number(amount) > projectCashOnHand
 
   const resetForm = () => {
     setDescription('')
@@ -82,6 +91,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     const normalizedDescription = description.trim()
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
+    if (returnExceedsCash) return
 
     setIsSubmitting(true)
 
@@ -163,6 +173,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     description.trim() &&
     amount &&
     Number(amount) > 0 &&
+    !returnExceedsCash &&
     (isMovement || !showCategorySelect || !!selectedCategoryId)
 
   return (
@@ -200,6 +211,12 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
         disabled={isSubmitting || isSavingMapping}
         className="text-base sm:text-sm"
       />
+      {returnExceedsCash && projectCashOnHand !== null && (
+        <p role="alert" className="text-sm text-red-400">
+          Нельзя вернуть больше, чем на руках:{' '}
+          {projectCashOnHand.toLocaleString('ru-RU')} ₽
+        </p>
+      )}
       {suggestedCategoryId && !showCategorySelect && !isMovement && (
         <div className="text-sm text-zinc-300">
           <span className="mr-2">Категория:</span>
