@@ -46,6 +46,13 @@ const mockSetPocketMonthBudget = jest.fn()
 const mockCreatePocket = jest.fn().mockResolvedValue(undefined)
 const mockRenamePocket = jest.fn().mockResolvedValue(undefined)
 const mockArchivePocket = jest.fn().mockResolvedValue(undefined)
+const mockRestorePocket = jest.fn()
+let mockRestoreError: Error | null = null
+class MockPocketNameConflictError extends Error {
+  constructor(readonly conflictingName: string) {
+    super('Active pocket with the same name exists')
+  }
+}
 const mockCategorize = jest.fn()
 const mockSaveMapping = jest.fn().mockResolvedValue(undefined)
 const initialMockExpenses: Expense[] = [
@@ -94,6 +101,14 @@ jest.mock('@/entities/pocket', () => ({
     isPending: false,
     isError: false,
   }),
+  useRestorePocket: () => ({
+    mutate: mockRestorePocket,
+    isPending: false,
+    error: mockRestoreError,
+  }),
+  get PocketNameConflictError() {
+    return MockPocketNameConflictError
+  },
   useSetPocketMonthBudget: () => ({
     mutate: mockSetPocketMonthBudget,
     isPending: false,
@@ -196,6 +211,8 @@ describe('PocketsSection', () => {
     mockCategorize.mockReturnValue({ found: false })
     mockSaveMapping.mockResolvedValue(undefined)
     mockPockets[0].archivedAt = undefined
+    mockPockets.splice(1)
+    mockRestoreError = null
     mockArchivePocket.mockImplementation(async ({ id }: { id: string }) => {
       if (id === mockPockets[0].id) {
         mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
@@ -634,12 +651,78 @@ describe('PocketsSection', () => {
     view.rerender(<PocketsSection />)
 
     expect(screen.getByRole('button', { name: /Покупки/ })).toBeInTheDocument()
-    expect(screen.getByLabelText('Бюджет кармана Отпуск')).not.toBeDisabled()
+    expect(screen.getByLabelText('Бюджет кармана Отпуск')).toBeDisabled()
     expect(
       screen.queryByRole('button', { name: 'Добавить покупку' })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Переименовать' })
     ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Покупки/ }))
+    const history = screen.getByLabelText('История покупок')
+    expect(within(history).getByText('Билеты')).toBeInTheDocument()
+    expect(
+      within(history).getByText(
+        'Карман в архиве — восстановите, чтобы изменить'
+      )
+    ).toBeInTheDocument()
+    expect(
+      within(history).queryByRole('button', { name: 'delete' })
+    ).not.toBeInTheDocument()
+    expect(
+      within(history).getByRole('button', { name: 'edit amount' })
+    ).toBeDisabled()
+  })
+
+  it('does not save a budget for an archived pocket', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    render(<PocketsSection />)
+
+    const input = screen.getByLabelText('Бюджет кармана Отпуск')
+    expect(input).toBeDisabled()
+    fireEvent.change(input, { target: { value: '5500' } })
+    fireEvent.blur(input)
+
+    expect(mockSetPocketMonthBudget).not.toHaveBeenCalled()
+  })
+
+  it('restores an archived pocket from its detail view', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    render(<PocketsSection />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Восстановить/ }))
+
+    expect(mockRestorePocket).toHaveBeenCalledWith({ id: 'pocket-1' })
+  })
+
+  it('explains a restore conflict with an active pocket of the same name', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    mockRestoreError = new MockPocketNameConflictError('отпуск')
+    render(<PocketsSection />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Нельзя восстановить: уже есть активный карман «отпуск». Переименуйте его и повторите.'
+    )
+  })
+
+  it('selects the first active pocket by default, not an archived one', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    mockPockets.push({
+      id: 'pocket-2',
+      name: 'Ремонт',
+      createdAt: '2026-01-05',
+    })
+    render(<PocketsSection />)
+
+    expect(
+      screen.getByRole('region', { name: 'Карман Ремонт' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Ремонт', pressed: true })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Отпуск · архив', pressed: false })
+    ).toBeInTheDocument()
   })
 })

@@ -74,4 +74,25 @@ describe('ExpenseList', () => {
     // Category and badge of the transfer both read «Перевод из кармана».
     expect(screen.getAllByText('Перевод из кармана')).toHaveLength(2)
   })
+
+  it('offers no edit or delete for operations of an archived pocket', () => {
+    render(
+      <ExpenseList
+        expenses={[purchase, personal]}
+        pocketNames={new Map([['pocket-1', 'Кафе']])}
+        archivedPocketIds={new Set(['pocket-1'])}
+        onDelete={jest.fn()}
+        onEdit={jest.fn()}
+      />
+    )
+
+    expect(
+      screen.getByText('Карман в архиве — восстановите, чтобы изменить')
+    ).toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: 'delete' })).toHaveLength(1)
+    const amounts = screen.getAllByRole('button', { name: 'edit amount' })
+    expect(amounts[0]).toHaveTextContent('300')
+    expect(amounts[0]).toBeDisabled()
+    expect(amounts[1]).toBeEnabled()
+  })
 })

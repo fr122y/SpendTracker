@@ -10,6 +10,7 @@ import {
   initializePocketMonthBudget,
   queryKeys,
   renamePocket as renamePocketAction,
+  restorePocket as restorePocketAction,
   setPocketMonthBudget as setPocketMonthBudgetAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
@@ -114,6 +115,50 @@ export function useArchivePocket() {
     onError: (_error, _variables, context) => {
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
       showMutationRollbackToast()
+    },
+    onSettled: (_data, _error, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.pockets.all })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.pocketBudgets.byPocket(id),
+      })
+    },
+  })
+}
+
+/** Thrown by `useRestorePocket` when an active pocket already uses the name. */
+export class PocketNameConflictError extends Error {
+  constructor(readonly conflictingName: string) {
+    super('Active pocket with the same name exists')
+    this.name = 'PocketNameConflictError'
+  }
+}
+
+export function useRestorePocket() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id }: { id: string }) => {
+      const result = await restorePocketAction(id)
+      if (result.status === 'name_conflict') {
+        throw new PocketNameConflictError(result.conflictingName)
+      }
+      return result.pocket
+    },
+    onMutate: async ({ id }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
+      const previous = queryClient.getQueryData<Pocket[]>(queryKeys.pockets.all)
+      queryClient.setQueryData(queryKeys.pockets.all, (old: Pocket[] = []) =>
+        old.map((pocket) =>
+          pocket.id === id ? { ...pocket, archivedAt: undefined } : pocket
+        )
+      )
+      return { previous }
+    },
+    onError: (error, _variables, context) => {
+      queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
+      if (!(error instanceof PocketNameConflictError)) {
+        showMutationRollbackToast()
+      }
     },
     onSettled: (_data, _error, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.pockets.all })

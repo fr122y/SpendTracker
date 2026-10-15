@@ -18,7 +18,6 @@ import {
   assertValidOperationDate,
   POCKET_TRANSFER_CATEGORY,
   POCKET_TRANSFER_EMOJI,
-  getPocketForUser,
 } from './pocket-helpers'
 import {
   assertCanManageSharedBudgetExpense,
@@ -213,6 +212,7 @@ export async function deleteExpense(id: string): Promise<void> {
     .select({
       userId: expenses.userId,
       sharedBudgetId: expenses.sharedBudgetId,
+      pocketId: expenses.pocketId,
     })
     .from(expenses)
     .where(eq(expenses.id, id))
@@ -223,6 +223,10 @@ export async function deleteExpense(id: string): Promise<void> {
     await assertCanManageSharedBudgetExpense(expense.sharedBudgetId, userId)
   } else if (expense.userId !== userId) {
     throw new Error('Expense not found')
+  }
+
+  if (expense.pocketId) {
+    await assertCanUsePocket(expense.pocketId, userId)
   }
 
   await db.delete(expenses).where(eq(expenses.id, id))
@@ -254,7 +258,7 @@ export async function updateExpense(
   }
 
   if (existing.pocketId) {
-    await getPocketForUser(existing.pocketId, userId)
+    await assertCanUsePocket(existing.pocketId, userId)
   }
 
   if (

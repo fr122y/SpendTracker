@@ -610,6 +610,35 @@ describe('ExpenseLog', () => {
       })
     })
 
+    it('marks only archived pockets as read-only in the list', () => {
+      mockExpenses = pocketOperations
+      mockPockets = [
+        {
+          id: 'pocket-active',
+          name: 'Кафе',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        },
+        {
+          id: 'pocket-archived',
+          name: 'Отпуск',
+          archivedAt: '2026-01-20T00:00:00.000Z',
+          createdAt: '2026-01-02T00:00:00.000Z',
+        },
+      ]
+
+      render(<ExpenseLog />)
+
+      const { ExpenseList } = jest.requireMock('@/entities/expense') as {
+        ExpenseList: jest.Mock
+      }
+      const lastCall = ExpenseList.mock.calls.at(-1) as [
+        { archivedPocketIds?: ReadonlySet<string> },
+      ]
+      expect([...(lastCall[0].archivedPocketIds ?? [])]).toEqual([
+        'pocket-archived',
+      ])
+    })
+
     it('renders operations without names while pockets are not loaded', () => {
       mockExpenses = pocketOperations
       mockPockets = undefined

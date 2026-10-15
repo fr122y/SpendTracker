@@ -7,7 +7,8 @@ Manages user-owned named pockets and saved monthly budget snapshots.
 - `usePockets`: query all active and archived pockets for the current user
 - `usePocketMonthBudget`: query and initialize a selected month for an active pocket; returns `null` when an archived pocket has no saved period
 - `usePocketMonthBudgets`: query all saved monthly budgets for one pocket
-- `useCreatePocket`, `useRenamePocket`, `useArchivePocket`: optimistic pocket mutations
+- `useCreatePocket`, `useRenamePocket`, `useArchivePocket`, `useRestorePocket`: optimistic pocket mutations
+- `PocketNameConflictError`: thrown by `useRestorePocket` when an active pocket already has the same trimmed, case-insensitive name
 - `useSetPocketMonthBudget`: optimistic update to an existing period
 - `Pocket`, `PocketMonthBudget`: public entity types
 
@@ -16,7 +17,7 @@ Manages user-owned named pockets and saved monthly budget snapshots.
 - **Source of truth:** Database through authenticated Server Actions
 - **Client cache:** TanStack Query
 - **Operation records:** The expense entity stores pocket purchases and transfers with a pocket link
-- **Archive behavior:** Existing month budgets remain editable; initialization and new operations are blocked after archive
+- **Archive behavior:** An archived pocket is read-only: its budgets and operations cannot be created, changed, or deleted until it is restored
 
 ## Dependencies
 

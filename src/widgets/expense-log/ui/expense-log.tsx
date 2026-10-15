@@ -57,6 +57,15 @@ export function ExpenseLog() {
     () => new Map((pockets ?? []).map((pocket) => [pocket.id, pocket.name])),
     [pockets]
   )
+  const archivedPocketIds = useMemo(
+    () =>
+      new Set(
+        (pockets ?? [])
+          .filter((pocket) => pocket.archivedAt)
+          .map((pocket) => pocket.id)
+      ),
+    [pockets]
+  )
 
   if (isLoading) {
     return <ExpenseLogSkeleton />
@@ -155,6 +164,7 @@ export function ExpenseLog() {
             onDelete={deleteExpense}
             onEdit={updateExpense}
             pocketNames={pocketNames}
+            archivedPocketIds={archivedPocketIds}
           />
         ) : (
           <EmptyState

@@ -16,12 +16,18 @@ import type { Expense } from '@/shared/types'
 
 interface ExpenseCardProps {
   expense: Expense
-  onDelete: (id: string) => void
+  /** Omit to render the card without a delete action. */
+  onDelete?: (id: string) => void
   onEdit?: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
   showDate?: boolean
   /** Name of the operation's pocket; the badge falls back to a generic label without it. */
   pocketName?: string
+  /** The operation belongs to an archived pocket: no edit or delete actions. */
+  isPocketArchived?: boolean
 }
+
+export const ARCHIVED_POCKET_OPERATION_HINT =
+  'Карман в архиве — восстановите, чтобы изменить'
 
 function formatExpenseDate(date: string) {
   const [year, month, day] = date.split('-')
@@ -92,11 +98,14 @@ function getOperationMeta(expense: Expense, pocketName?: string) {
 
 export function ExpenseCard({
   expense,
-  onDelete,
-  onEdit,
+  onDelete: onDeleteProp,
+  onEdit: onEditProp,
   showDate = false,
   pocketName,
+  isPocketArchived = false,
 }: ExpenseCardProps) {
+  const onDelete = isPocketArchived ? undefined : onDeleteProp
+  const onEdit = isPocketArchived ? undefined : onEditProp
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editValue, setEditValue] = useState(String(expense.amount))
@@ -186,6 +195,11 @@ export function ExpenseCard({
                 <OperationIcon className="h-3 w-3" />
                 {operationMeta.label}
               </span>
+              {isPocketArchived && (
+                <span className="text-zinc-400">
+                  {ARCHIVED_POCKET_OPERATION_HINT}
+                </span>
+              )}
               {showDate && (
                 <span data-testid={`expense-date-${expense.id}`}>
                   {formatExpenseDate(expense.date)}
@@ -224,13 +238,15 @@ export function ExpenseCard({
               {expense.amount} ₽
             </button>
           )}
-          <button
-            onClick={() => setIsDeleteDialogOpen(true)}
-            aria-label="delete"
-            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400 sm:min-h-0 sm:min-w-0 sm:p-1"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {onDelete && (
+            <button
+              onClick={() => setIsDeleteDialogOpen(true)}
+              aria-label="delete"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400 sm:min-h-0 sm:min-w-0 sm:p-1"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
       <ConfirmDialog
@@ -239,7 +255,7 @@ export function ExpenseCard({
         description="Операция будет удалена без возможности восстановления."
         confirmLabel="Удалить"
         onConfirm={() => {
-          onDelete(expense.id)
+          onDelete?.(expense.id)
           setIsDeleteDialogOpen(false)
         }}
         onClose={() => setIsDeleteDialogOpen(false)}

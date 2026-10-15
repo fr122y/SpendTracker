@@ -31,11 +31,15 @@ Server Actions and shared query infrastructure for the application.
   weekly limit from a selected week forward
 - `getSharedBudgets()`: list shared budgets where the current user is a member
 - `getPockets()`, `createPocket(name)`, `renamePocket(id, name)`,
-  `archivePocket(id)`: manage the current user's persistent personal pockets
+  `archivePocket(id)`, `restorePocket(id)`: manage the current user's
+  persistent personal pockets; `restorePocket` returns a `name_conflict`
+  result instead of restoring when an active pocket has the same trimmed,
+  case-insensitive name
 - `getPocketMonthBudgets(pocketId)`,
   `initializePocketMonthBudget(pocketId, period)`,
   `setPocketMonthBudget(pocketId, period, budget)`: read, initialize from the
-  latest prior saved period, or update a pocket's monthly budget
+  latest prior saved period, or update a pocket's monthly budget. Budget
+  changes and edits or deletion of pocket operations reject an archived pocket
 - `createSharedBudget(data)`: create a shared budget, owner membership, and
   initial weekly limit
 - `archiveSharedBudget(sharedBudgetId)`: archive a shared budget owned by the
