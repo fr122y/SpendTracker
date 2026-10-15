@@ -19,4 +19,4 @@
 ## 3. Проверка
 
 - [x] 3.1 Выполнить `npm run spec:check` и `npm run validate`.
-- [ ] 3.2 Убедиться, что проверка `e2e` на Preview Pull Request проходит.
+- [x] 3.2 Убедиться, что проверка `e2e` на Preview Pull Request проходит. Результат: `e2e` прошла в PR #72.
