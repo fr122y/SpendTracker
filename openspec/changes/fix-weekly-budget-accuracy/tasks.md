@@ -13,3 +13,9 @@
 - [x] 2.2 Validate the limit and week start in `setWeeklyLimitForWeek` and `updateSettings`.
 - [x] 2.3 Rework the weekly budget summary, top-up metrics, limit error, and label association.
 - [x] 2.4 Update `src/widgets/weekly-budget/README.md` and `src/shared/lib/README.md`.
+
+## 3. Shared budget limit follow-up
+
+- [x] 3.1 Add server tests: `createSharedBudget` and `setSharedWeeklyLimitForWeek` reject 0, negative and non-finite limits before any write.
+- [x] 3.2 Add UI tests: inline error for a zero limit on creation and a negative limit on edit.
+- [x] 3.3 Apply `isValidWeeklyLimitAmount` in the shared budget server actions and forms; update the spec delta and the widget README.

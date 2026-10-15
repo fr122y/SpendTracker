@@ -811,6 +811,40 @@ describe('WeeklyBudget', () => {
       })
     })
 
+    it('rejects a zero shared budget limit on creation with an inline error', () => {
+      mockSharedBudgets = []
+
+      render(<WeeklyBudget />)
+
+      fireEvent.change(screen.getByLabelText('Название общего бюджета'), {
+        target: { value: 'Семья' },
+      })
+      const limitInput = screen.getByLabelText('Лимит общего бюджета')
+      fireEvent.change(limitInput, { target: { value: '0' } })
+      fireEvent.blur(limitInput)
+      fireEvent.click(screen.getByRole('button', { name: /создать/i }))
+
+      expect(mockCreateSharedBudget).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Лимит должен быть больше 0'
+      )
+      expect(limitInput).toHaveAttribute('aria-invalid', 'true')
+    })
+
+    it('rejects a negative shared weekly limit edit with an inline error', () => {
+      render(<WeeklyBudget />)
+
+      const sharedLimitInput = screen.getAllByDisplayValue('8000')[0]
+      fireEvent.change(sharedLimitInput, { target: { value: '-5' } })
+      fireEvent.blur(sharedLimitInput)
+
+      expect(mockSetSharedWeeklyLimit).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Лимит должен быть больше 0'
+      )
+      expect(sharedLimitInput).toHaveAttribute('aria-invalid', 'true')
+    })
+
     it('shows and copies generated invite link for owner', async () => {
       mockCreateInvite.mockImplementation((_id, options) => {
         options.onSuccess({

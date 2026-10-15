@@ -33,6 +33,8 @@ import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
 
 import type { Project, SharedBudget } from '@/shared/types'
 
+const LIMIT_ERROR = 'Лимит должен быть больше 0'
+
 function formatCurrency(value: number): string {
   return `${value.toLocaleString('ru-RU')} ₽`
 }
@@ -401,6 +403,10 @@ function SharedBudgetSection({
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
   const sharedLimitInputId = useId()
+  const sharedLimitErrorId = useId()
+  const createLimitErrorId = useId()
+  const [sharedLimitError, setSharedLimitError] = useState<string | null>(null)
+  const [createLimitError, setCreateLimitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!activeBudget) {
@@ -411,6 +417,7 @@ function SharedBudgetSection({
     setSharedLimitInput(
       String(getEffectiveSharedWeeklyLimit(activeBudget, selectedDate))
     )
+    setSharedLimitError(null)
     setInviteUrl('')
   }, [activeBudget, selectedDate])
 
@@ -422,9 +429,15 @@ function SharedBudgetSection({
     const trimmedName = name.trim()
     const limit = Number(initialLimit)
 
-    if (!trimmedName || !Number.isFinite(limit) || limit < 0) {
+    if (!trimmedName) {
       return
     }
+    if (!isValidWeeklyLimitAmount(limit)) {
+      setCreateLimitError(LIMIT_ERROR)
+      return
+    }
+
+    setCreateLimitError(null)
 
     createSharedBudget.mutate({
       name: trimmedName,
@@ -438,16 +451,20 @@ function SharedBudgetSection({
   const handleSharedLimitChange = (value: string, evaluated: number | null) => {
     if (!activeBudget) return
 
-    if (evaluated !== null) {
-      setSharedWeeklyLimit.mutate({
-        sharedBudgetId: activeBudget.id,
-        effectiveWeekStart,
-        amount: evaluated,
-      })
-      setSharedLimitInput(String(evaluated))
-    } else {
-      setSharedLimitInput(value)
+    setSharedLimitInput(value)
+    if (evaluated === null) return
+
+    if (!isValidWeeklyLimitAmount(evaluated)) {
+      setSharedLimitError(LIMIT_ERROR)
+      return
     }
+
+    setSharedLimitError(null)
+    setSharedWeeklyLimit.mutate({
+      sharedBudgetId: activeBudget.id,
+      effectiveWeekStart,
+      amount: evaluated,
+    })
   }
 
   const handleInvite = () => {
@@ -521,7 +538,8 @@ function SharedBudgetSection({
             onValueChange={(value, evaluated) =>
               setInitialLimit(evaluated === null ? value : String(evaluated))
             }
-            min={0}
+            aria-invalid={createLimitError ? true : undefined}
+            aria-describedby={createLimitError ? createLimitErrorId : undefined}
           />
           <Button
             type="button"
@@ -533,6 +551,15 @@ function SharedBudgetSection({
             <Plus className="h-4 w-4" />
             Создать
           </Button>
+          {createLimitError && (
+            <p
+              id={createLimitErrorId}
+              role="alert"
+              className="text-xs text-red-400 sm:col-span-3"
+            >
+              {createLimitError}
+            </p>
+          )}
         </div>
       )}
 
@@ -561,7 +588,10 @@ function SharedBudgetSection({
                 id={sharedLimitInputId}
                 value={sharedLimitInput}
                 onValueChange={handleSharedLimitChange}
-                min={0}
+                aria-invalid={sharedLimitError ? true : undefined}
+                aria-describedby={
+                  sharedLimitError ? sharedLimitErrorId : undefined
+                }
                 className="w-24 sm:w-32"
               />
               <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
@@ -594,6 +624,16 @@ function SharedBudgetSection({
               )}
             </div>
           </div>
+
+          {sharedLimitError && (
+            <p
+              id={sharedLimitErrorId}
+              role="alert"
+              className="text-xs text-red-400"
+            >
+              {sharedLimitError}
+            </p>
+          )}
 
           {inviteUrl && (
             <div className="flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/60 p-2 sm:flex-row sm:items-center">
@@ -702,7 +742,7 @@ export function WeeklyBudget() {
 
     setInputValue(value)
     if (!isValidWeeklyLimitAmount(evaluated)) {
-      setLimitError('Лимит должен быть больше 0')
+      setLimitError(LIMIT_ERROR)
       return
     }
 

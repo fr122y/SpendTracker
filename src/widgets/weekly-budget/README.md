@@ -33,7 +33,9 @@ shared weekly budget.
 - Direct limit editing via a labelled input field; 0 and negative limits show
   an inline error and are not saved
 - Over-budget visual indication
-- Shared budget creation with the selected week's initial limit
+- Shared budget creation with the selected week's initial limit; 0 and
+  negative shared limits (creation and edit) show an inline error and are not
+  saved
 - Active shared budget selection, member list, shared spent, remaining, and
   historical shared weekly limit editing
 - Owner-only invite link generation and archival

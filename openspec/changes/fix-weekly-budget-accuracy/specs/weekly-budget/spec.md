@@ -32,7 +32,7 @@ The weekly budget summary MUST show the real amount spent in the week, not cappe
 
 ### Requirement: Accept only a positive personal weekly limit for the user's week
 
-The personal weekly limit MUST be greater than zero. The form MUST reject 0 and negative values with the inline error «Лимит должен быть больше 0» and MUST NOT save them; the server MUST reject them as well. The week a new limit applies to MUST be the Monday of the selected date in the user's local calendar, sent by the client as `YYYY-MM-DD`; the server MUST reject a value that is not a real date in that format or is not a Monday, and MUST NOT derive the week from its own clock. The «Лимит» label MUST be associated with its input.
+The personal weekly limit MUST be greater than zero. The form MUST reject 0 and negative values with the inline error «Лимит должен быть больше 0» and MUST NOT save them; the server MUST reject them as well. The week a new limit applies to MUST be the Monday of the selected date in the user's local calendar, sent by the client as `YYYY-MM-DD`; the server MUST reject a value that is not a real date in that format or is not a Monday, and MUST NOT derive the week from its own clock. The same rule MUST apply to a shared budget limit, both on creation and on edit: the form MUST show the same inline error and MUST NOT save, and the server MUST reject a zero, negative or non-finite shared limit before any write. The «Лимит» label MUST be associated with its input.
 
 #### Scenario: Zero limit
 
@@ -45,6 +45,13 @@ The personal weekly limit MUST be greater than zero. The form MUST reject 0 and 
 - **GIVEN** the user is in UTC+10 and it is Monday 08:00 local time (Sunday in UTC)
 - **WHEN** the user sets a new weekly limit
 - **THEN** the limit applies from that local Monday
+
+#### Scenario: Zero or negative shared budget limit
+
+- **GIVEN** the user creates a shared budget or edits the active shared budget's weekly limit
+- **WHEN** the user enters 0 or a negative limit
+- **THEN** the error «Лимит должен быть больше 0» is shown and nothing is saved
+- **AND** the server rejects such a limit before any write
 
 #### Scenario: Week start is not a Monday
 
