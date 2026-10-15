@@ -19,6 +19,10 @@ Utility functions and helpers used across the application.
   spending coverage by personal limit, project top-ups, and uncovered overage
 - `getSharedWeeklyBudgetCoverage(expenses, sharedBudgetId, date, limit)`:
   Calculate weekly coverage for one shared budget without project top-ups
+- `getWeeklyBudgetSummary(coverage)`: Derive real spent, base limit, top-ups,
+  effective limit, non-negative remaining, and over-budget amount
+- `isValidWeeklyLimitAmount(value)`: True for a finite weekly limit above zero
+- `isWeekStartDate(value)`: True for a real `YYYY-MM-DD` date that is a Monday
 - `getEffectiveWeeklyLimit(limits, date, defaultLimit)`: Resolve the weekly
   budget limit effective for a selected week
 - `getWeekBoundaries(date)`: Return Monday-Sunday ISO date boundaries for a

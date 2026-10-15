@@ -24,9 +24,14 @@ shared weekly budget.
 - Week date range display (Mon-Sun)
 - Segmented progress bar for personal limit, project additions, pocket transfers,
   and uncovered overage
-- Personal, project-covered, pocket-covered, source additions, remaining, and
-  over-budget amounts
-- Direct limit editing via input field
+- Real spent amount against the effective limit (base limit plus same-week
+  project and pocket top-ups), with the base limit and top-ups shown when
+  top-ups exist
+- Remaining amount within budget, or a single over-budget line
+- Project and pocket top-up metrics, with the part used to cover overspending,
+  shown only when the top-up is above zero
+- Direct limit editing via a labelled input field; 0 and negative limits show
+  an inline error and are not saved
 - Over-budget visual indication
 - Shared budget creation with the selected week's initial limit
 - Active shared budget selection, member list, shared spent, remaining, and

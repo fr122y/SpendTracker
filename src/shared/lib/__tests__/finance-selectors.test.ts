@@ -18,6 +18,9 @@ import {
   getSharedWeeklyBudgetCoverage,
   getEffectiveWeeklyLimit,
   getWeekBoundaries,
+  getWeeklyBudgetSummary,
+  isValidWeeklyLimitAmount,
+  isWeekStartDate,
 } from '../finance-selectors'
 
 import type { Expense } from '@/shared/types'
@@ -967,5 +970,85 @@ describe('weekly budget limit selectors', () => {
   it('calculates Monday as the effective week start', () => {
     expect(getWeekBoundaries(new Date('2026-06-17')).start).toBe('2026-06-15')
     expect(getWeekBoundaries(new Date('2026-06-21')).start).toBe('2026-06-15')
+  })
+})
+
+describe('weekly budget summary', () => {
+  const baseCoverage = getWeeklyBudgetCoverage([], new Date(2026, 9, 14), 4000)
+
+  it('reports the real spent amount and overage when over budget', () => {
+    const summary = getWeeklyBudgetSummary({
+      ...baseCoverage,
+      personalSpent: 4760.5,
+    })
+
+    expect(summary).toMatchObject({
+      spent: 4760.5,
+      effectiveLimit: 4000,
+      remaining: 0,
+      overBudget: 760.5,
+    })
+  })
+
+  it('includes project and pocket top-ups in the effective limit', () => {
+    const summary = getWeeklyBudgetSummary({
+      ...baseCoverage,
+      weeklyLimit: 8000,
+      projectTopUp: 1000,
+      pocketTopUp: 500,
+      personalSpent: 6134.5,
+    })
+
+    expect(summary).toMatchObject({
+      spent: 6134.5,
+      baseLimit: 8000,
+      topUp: 1500,
+      effectiveLimit: 9500,
+      remaining: 3365.5,
+      overBudget: 0,
+    })
+  })
+})
+
+describe('weekly limit validation', () => {
+  it.each([1, 0.01, 8000])('accepts positive limit %p', (value) => {
+    expect(isValidWeeklyLimitAmount(value)).toBe(true)
+  })
+
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, '8000', null])(
+    'rejects limit %p',
+    (value) => {
+      expect(isValidWeeklyLimitAmount(value)).toBe(false)
+    }
+  )
+
+  it.each(['2026-10-12', '2024-01-15', '2024-02-26'])(
+    'accepts Monday %p',
+    (value) => {
+      expect(isWeekStartDate(value)).toBe(true)
+    }
+  )
+
+  it.each([
+    '2026-10-13',
+    '2026-10-11',
+    '2026-02-30',
+    '2026-1-12',
+    '2026-10-12T00:00:00Z',
+    '',
+    undefined,
+  ])('rejects non-Monday or malformed week start %p', (value) => {
+    expect(isWeekStartDate(value)).toBe(false)
+  })
+
+  it('takes the week start from the local date, not UTC', () => {
+    // Monday 2026-10-12 08:00 in UTC+10 is still Sunday in UTC; the client
+    // computes the Monday from its local calendar date.
+    const localMondayMorning = new Date(2026, 9, 12, 8, 0)
+
+    expect(getWeekBoundaries(localMondayMorning).start).toBe('2026-10-12')
+    expect(isWeekStartDate(getWeekBoundaries(localMondayMorning).start)).toBe(
+      true
+    )
   })
 })

@@ -131,4 +131,21 @@ test.describe('Dashboard Smoke Tests', () => {
       savedLabel
     )
   })
+
+  test('should reject a zero weekly limit without saving', async ({ page }) => {
+    // The personal section renders first; a shared budget may add a second
+    // «Лимит:» field below it.
+    const input = page.getByLabel('Лимит:').first()
+    await expect(input).toBeVisible()
+    const savedLimit = await input.inputValue()
+
+    await input.fill('0')
+    await input.press('Enter')
+
+    await expect(page.getByText('Лимит должен быть больше 0')).toBeVisible()
+    await expect(input).toHaveAttribute('aria-invalid', 'true')
+
+    await page.reload()
+    await expect(page.getByLabel('Лимит:').first()).toHaveValue(savedLimit)
+  })
 })
