@@ -28,6 +28,8 @@ jest.mock('@/shared/db', () => {
   const mocks = {
     insertValues: jest.fn(),
     txInsertValues: jest.fn(),
+    txDeleteWhere: jest.fn(),
+    deleteWhere: jest.fn(),
     txUpdateSet: jest.fn(),
     txUpdateWhere: jest.fn(),
     updateSet: jest.fn(),
@@ -36,6 +38,7 @@ jest.mock('@/shared/db', () => {
   }
   const transaction = {
     insert: jest.fn(() => ({ values: mocks.txInsertValues })),
+    delete: jest.fn(() => ({ where: mocks.txDeleteWhere })),
     update: jest.fn(() => ({ set: mocks.txUpdateSet })),
   }
   mocks.txUpdateSet.mockReturnValue({ where: mocks.txUpdateWhere })
@@ -49,6 +52,7 @@ jest.mock('@/shared/db', () => {
         from: () => ({ where: mocks.existingWhere }),
       })),
       insert: jest.fn(() => ({ values: mocks.insertValues })),
+      delete: jest.fn(() => ({ where: mocks.deleteWhere })),
       update: jest.fn(() => ({ set: mocks.updateSet })),
       transaction: jest.fn(
         async (callback: (tx: typeof transaction) => unknown) =>
@@ -63,7 +67,7 @@ jest.mock('@/shared/db', () => {
   }
 })
 
-import { addExpense, updateExpense } from '../expense-actions'
+import { addExpense, deleteExpense, updateExpense } from '../expense-actions'
 import {
   assertProjectCashCovers,
   PROJECT_RETURN_EXCEEDS_CASH_ERROR,
@@ -164,5 +168,53 @@ describe('expense-actions project cash on hand', () => {
 
     expect(assertCash).not.toHaveBeenCalled()
     expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({ amount: 200 })
+  })
+
+  const withdrawal = {
+    userId: 'user-1',
+    sharedBudgetId: null,
+    pocketId: null,
+    projectId: 'project-1',
+    operationType: 'project_withdrawal',
+  }
+
+  it('rejects deleting a withdrawal that would make cash on hand negative', async () => {
+    dbModule.__mocks.existingWhere.mockResolvedValueOnce([withdrawal])
+    assertCash.mockRejectedValueOnce(
+      new Error(PROJECT_RETURN_EXCEEDS_CASH_ERROR)
+    )
+
+    await expect(deleteExpense('withdrawal-1')).resolves.toEqual({
+      status: 'project_cash_negative',
+    })
+    expect(assertCash).toHaveBeenCalledWith(dbModule.__transaction, {
+      userId: 'user-1',
+      projectId: 'project-1',
+      excludeExpenseId: 'withdrawal-1',
+      delta: 0,
+    })
+    expect(dbModule.__mocks.txDeleteWhere).not.toHaveBeenCalled()
+    expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
+  })
+
+  it('deletes a covered withdrawal under the project lock', async () => {
+    dbModule.__mocks.existingWhere.mockResolvedValueOnce([withdrawal])
+
+    await expect(deleteExpense('withdrawal-1')).resolves.toEqual({
+      status: 'deleted',
+    })
+    expect(dbModule.__mocks.txDeleteWhere).toHaveBeenCalled()
+  })
+
+  it('deletes a personal expense without a project lock', async () => {
+    dbModule.__mocks.existingWhere.mockResolvedValueOnce([
+      { ...withdrawal, projectId: null, operationType: 'expense' },
+    ])
+
+    await expect(deleteExpense('expense-1')).resolves.toEqual({
+      status: 'deleted',
+    })
+    expect(assertCash).not.toHaveBeenCalled()
+    expect(dbModule.__mocks.deleteWhere).toHaveBeenCalled()
   })
 })

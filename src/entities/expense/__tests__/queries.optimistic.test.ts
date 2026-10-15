@@ -15,6 +15,7 @@ import type { Expense } from '@/shared/types'
 let shouldRejectAdd = false
 let shouldRejectDelete = false
 let shouldRejectUpdate = false
+let deleteResultStatus: 'deleted' | 'project_cash_negative' = 'deleted'
 
 jest.mock('@/shared/lib', () => ({
   showMutationRollbackToast: jest.fn(),
@@ -32,6 +33,7 @@ jest.mock('@/shared/api', () => ({
     if (shouldRejectDelete) {
       throw new Error('delete failed')
     }
+    return { status: deleteResultStatus }
   }),
   updateExpense: jest.fn(async () => {
     if (shouldRejectUpdate) {
@@ -196,5 +198,34 @@ describe('expense optimistic mutations', () => {
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
       expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['expenses'] })
     })
+  })
+
+  it('rolls back a delete that would make project cash negative with a specific message', async () => {
+    shouldRejectDelete = false
+    deleteResultStatus = 'project_cash_negative'
+
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    queryClient.setQueryData(['expenses'], initialExpenses)
+
+    const { result } = renderHook(() => useDeleteExpense(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate('1')
+    })
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(['expenses'])).toEqual(initialExpenses)
+      expect(showMutationRollbackToast).toHaveBeenCalledWith(
+        'Нельзя удалить: на руках станет меньше 0 — сначала удалите возврат'
+      )
+    })
+    deleteResultStatus = 'deleted'
   })
 })
