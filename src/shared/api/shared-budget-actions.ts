@@ -12,6 +12,7 @@ import {
   sharedBudgetWeeklyLimits,
   users,
 } from '@/shared/db'
+import { isValidWeeklyLimitAmount } from '@/shared/lib/finance-selectors'
 
 import type {
   CreateSharedBudgetInput,
@@ -38,8 +39,8 @@ function requireValidBudgetName(name: string): string {
 }
 
 function requireValidLimit(amount: number): void {
-  if (!Number.isFinite(amount) || amount < 0) {
-    throw new Error('Shared weekly limit must be a non-negative number')
+  if (!isValidWeeklyLimitAmount(amount)) {
+    throw new Error('Лимит должен быть больше 0')
   }
 }
 
@@ -329,8 +330,8 @@ export async function setSharedWeeklyLimitForWeek(
   amount: number
 ): Promise<void> {
   const userId = await getUserId()
-  await requireActiveMembership(sharedBudgetId, userId)
   requireValidLimit(amount)
+  await requireActiveMembership(sharedBudgetId, userId)
 
   if (!effectiveWeekStart) {
     throw new Error('Effective week start is required')

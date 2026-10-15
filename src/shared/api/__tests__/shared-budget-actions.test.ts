@@ -101,6 +101,7 @@ import {
   archiveSharedBudget,
   createSharedBudget,
   setActiveSharedBudget,
+  setSharedWeeklyLimitForWeek,
 } from '../shared-budget-actions'
 
 describe('shared-budget-actions', () => {
@@ -231,4 +232,39 @@ describe('shared-budget-actions', () => {
       isActive: true,
     })
   })
+
+  it.each([0, -100, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejects creating a shared budget with limit %p before any write',
+    async (initialWeeklyLimit) => {
+      const { db } = jest.requireMock('@/shared/db') as {
+        db: { select: jest.Mock; insert: jest.Mock; transaction: jest.Mock }
+      }
+
+      await expect(
+        createSharedBudget({
+          name: 'Семья',
+          initialWeeklyLimit,
+          effectiveWeekStart: '2026-10-12',
+        })
+      ).rejects.toThrow('Лимит должен быть больше 0')
+      expect(db.select).not.toHaveBeenCalled()
+      expect(db.insert).not.toHaveBeenCalled()
+      expect(db.transaction).not.toHaveBeenCalled()
+    }
+  )
+
+  it.each([0, -100, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejects editing a shared weekly limit to %p before any write',
+    async (amount) => {
+      const { db } = jest.requireMock('@/shared/db') as {
+        db: { select: jest.Mock; insert: jest.Mock }
+      }
+
+      await expect(
+        setSharedWeeklyLimitForWeek('shared-1', '2026-10-12', amount)
+      ).rejects.toThrow('Лимит должен быть больше 0')
+      expect(db.select).not.toHaveBeenCalled()
+      expect(db.insert).not.toHaveBeenCalled()
+    }
+  )
 })

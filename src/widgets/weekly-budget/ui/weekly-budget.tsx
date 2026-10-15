@@ -1,7 +1,7 @@
 'use client'
 
 import { Archive, Copy, Link2, Plus, Users } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 
 import { useExpenseStore } from '@/entities/expense'
 import { usePockets } from '@/entities/pocket'
@@ -22,6 +22,8 @@ import {
   getSharedWeeklyBudgetCoverage,
   getWeekBoundaries,
   getWeeklyBudgetCoverage,
+  getWeeklyBudgetSummary,
+  isValidWeeklyLimitAmount,
   cn,
   type WeeklyBudgetCoverage,
 } from '@/shared/lib'
@@ -30,6 +32,8 @@ import { Button, ConfirmDialog, Input, MathInput, Select } from '@/shared/ui'
 import { WeeklyBudgetSkeleton } from './weekly-budget-skeleton'
 
 import type { Project, SharedBudget } from '@/shared/types'
+
+const LIMIT_ERROR = 'Лимит должен быть больше 0'
 
 function formatCurrency(value: number): string {
   return `${value.toLocaleString('ru-RU')} ₽`
@@ -151,59 +155,79 @@ function BudgetProgress({
 
 function BudgetSummary({
   coverage,
-  limit,
   title,
 }: {
   coverage: WeeklyBudgetCoverage
-  limit: number
   title: string
 }) {
-  const remaining = coverage.totalAvailable - coverage.personalSpent
-  const isOverBudget = coverage.uncovered > 0
+  const summary = getWeeklyBudgetSummary(coverage)
+  const isOverBudget = summary.overBudget > 0
 
   return (
-    <div className="flex flex-col gap-1 text-xs sm:flex-row sm:items-center sm:justify-between sm:text-sm">
-      <span className="text-zinc-400">
-        {title}:{' '}
-        <span
-          className={cn(
-            'font-semibold',
-            isOverBudget ? 'text-red-400' : 'text-emerald-400'
-          )}
-        >
-          {formatCurrency(coverage.personalCovered)} / {formatCurrency(limit)}
+    <div className="flex flex-col gap-1 text-xs sm:text-sm">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-zinc-400">
+          {title}:{' '}
+          <span
+            className={cn(
+              'font-semibold',
+              isOverBudget ? 'text-red-400' : 'text-emerald-400'
+            )}
+          >
+            {formatCurrency(summary.spent)} /{' '}
+            {formatCurrency(summary.effectiveLimit)}
+          </span>
         </span>
-      </span>
-      <span className="text-zinc-400">
-        Осталось:{' '}
-        <span
-          className={cn(
-            'font-semibold',
-            isOverBudget ? 'text-red-400' : 'text-zinc-100'
-          )}
-        >
-          {formatCurrency(remaining)}
+        {isOverBudget ? (
+          <span className="text-zinc-400">
+            Сверх бюджета:{' '}
+            <span className="whitespace-nowrap font-semibold text-red-400">
+              {formatCurrency(summary.overBudget)}
+            </span>
+          </span>
+        ) : (
+          <span className="text-zinc-400">
+            Осталось:{' '}
+            <span className="font-semibold text-zinc-100">
+              {formatCurrency(summary.remaining)}
+            </span>
+          </span>
+        )}
+      </div>
+      {summary.topUp > 0 && (
+        <span className="text-zinc-500">
+          Лимит{' '}
+          <span className="whitespace-nowrap">
+            {formatCurrency(summary.baseLimit)}
+          </span>{' '}
+          + пополнения{' '}
+          <span className="whitespace-nowrap">
+            {formatCurrency(summary.topUp)}
+          </span>
         </span>
-      </span>
+      )}
     </div>
   )
 }
 
 function PersonalBudgetSection({
   coverage,
-  weeklyLimit,
   inputValue,
+  limitError,
   onLimitChange,
   projectById,
   pocketById,
 }: {
   coverage: WeeklyBudgetCoverage
-  weeklyLimit: number
   inputValue: string
+  limitError: string | null
   onLimitChange: (value: string, evaluated: number | null) => void
   projectById: Map<string, Project>
   pocketById: Map<string, { id: string; name: string }>
 }) {
+  const limitInputId = useId()
+  const limitErrorId = useId()
+
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
@@ -216,51 +240,41 @@ function PersonalBudgetSection({
         projectById={projectById}
         pocketById={pocketById}
       />
-      <BudgetSummary
-        coverage={coverage}
-        limit={weeklyLimit}
-        title="Личный бюджет"
-      />
+      <BudgetSummary coverage={coverage} title="Личный бюджет" />
 
       <div className="space-y-2">
-        <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-3 sm:text-sm">
-          <span className="flex flex-col gap-0.5">
-            <span className="text-zinc-500">Проектная добавка</span>
-            <span className="whitespace-nowrap font-semibold text-sky-300">
-              {formatCurrency(coverage.projectTopUp)}
-            </span>
-          </span>
-          {coverage.pocketTopUp > 0 && (
-            <span className="flex flex-col gap-0.5">
-              <span className="text-zinc-500">Переводы из карманов</span>
-              <span className="whitespace-nowrap font-semibold text-violet-300">
-                {formatCurrency(coverage.pocketTopUp)}
+        {(coverage.projectTopUp > 0 || coverage.pocketTopUp > 0) && (
+          <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 sm:text-sm">
+            {coverage.projectTopUp > 0 && (
+              <span className="flex flex-col gap-0.5">
+                <span className="text-zinc-500">Пополнение из проектов</span>
+                <span className="whitespace-nowrap font-semibold text-sky-300">
+                  {formatCurrency(coverage.projectTopUp)}
+                </span>
+                <span className="text-zinc-500">
+                  ушло на перерасход:{' '}
+                  <span className="whitespace-nowrap text-sky-300">
+                    {formatCurrency(coverage.projectCovered)}
+                  </span>
+                </span>
               </span>
-            </span>
-          )}
-          <span className="flex flex-col gap-0.5">
-            <span className="text-zinc-500">Покрыто проектами</span>
-            <span className="whitespace-nowrap font-semibold text-sky-300">
-              {formatCurrency(coverage.projectCovered)}
-            </span>
-          </span>
-          {coverage.pocketTopUp > 0 && (
-            <span className="flex flex-col gap-0.5">
-              <span className="text-zinc-500">Покрыто карманами</span>
-              <span className="whitespace-nowrap font-semibold text-violet-300">
-                {formatCurrency(coverage.pocketCovered)}
+            )}
+            {coverage.pocketTopUp > 0 && (
+              <span className="flex flex-col gap-0.5">
+                <span className="text-zinc-500">Переводы из карманов</span>
+                <span className="whitespace-nowrap font-semibold text-violet-300">
+                  {formatCurrency(coverage.pocketTopUp)}
+                </span>
+                <span className="text-zinc-500">
+                  ушло на перерасход:{' '}
+                  <span className="whitespace-nowrap text-violet-300">
+                    {formatCurrency(coverage.pocketCovered)}
+                  </span>
+                </span>
               </span>
-            </span>
-          )}
-          {coverage.uncovered > 0 && (
-            <span className="flex flex-col gap-0.5">
-              <span className="text-zinc-500">Сверх бюджета</span>
-              <span className="whitespace-nowrap font-semibold text-red-400">
-                {formatCurrency(coverage.uncovered)}
-              </span>
-            </span>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
         {coverage.projectSegments.length > 0 && (
           <div className="flex flex-wrap gap-1.5 text-xs sm:text-sm">
@@ -309,15 +323,29 @@ function PersonalBudgetSection({
         )}
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        <label className="text-xs text-zinc-400 sm:text-sm">Лимит:</label>
-        <MathInput
-          value={inputValue}
-          onValueChange={onLimitChange}
-          min={0}
-          className="w-24 sm:w-32"
-        />
-        <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <label
+            htmlFor={limitInputId}
+            className="text-xs text-zinc-400 sm:text-sm"
+          >
+            Лимит:
+          </label>
+          <MathInput
+            id={limitInputId}
+            value={inputValue}
+            onValueChange={onLimitChange}
+            aria-invalid={limitError ? true : undefined}
+            aria-describedby={limitError ? limitErrorId : undefined}
+            className="w-24 sm:w-32"
+          />
+          <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
+        </div>
+        {limitError && (
+          <p id={limitErrorId} role="alert" className="text-xs text-red-400">
+            {limitError}
+          </p>
+        )}
       </div>
     </section>
   )
@@ -374,6 +402,11 @@ function SharedBudgetSection({
   const [copyLabel, setCopyLabel] = useState('Копировать')
   const [isArchiveOpen, setIsArchiveOpen] = useState(false)
   const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const sharedLimitInputId = useId()
+  const sharedLimitErrorId = useId()
+  const createLimitErrorId = useId()
+  const [sharedLimitError, setSharedLimitError] = useState<string | null>(null)
+  const [createLimitError, setCreateLimitError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!activeBudget) {
@@ -384,6 +417,7 @@ function SharedBudgetSection({
     setSharedLimitInput(
       String(getEffectiveSharedWeeklyLimit(activeBudget, selectedDate))
     )
+    setSharedLimitError(null)
     setInviteUrl('')
   }, [activeBudget, selectedDate])
 
@@ -395,9 +429,15 @@ function SharedBudgetSection({
     const trimmedName = name.trim()
     const limit = Number(initialLimit)
 
-    if (!trimmedName || !Number.isFinite(limit) || limit < 0) {
+    if (!trimmedName) {
       return
     }
+    if (!isValidWeeklyLimitAmount(limit)) {
+      setCreateLimitError(LIMIT_ERROR)
+      return
+    }
+
+    setCreateLimitError(null)
 
     createSharedBudget.mutate({
       name: trimmedName,
@@ -411,16 +451,20 @@ function SharedBudgetSection({
   const handleSharedLimitChange = (value: string, evaluated: number | null) => {
     if (!activeBudget) return
 
-    if (evaluated !== null) {
-      setSharedWeeklyLimit.mutate({
-        sharedBudgetId: activeBudget.id,
-        effectiveWeekStart,
-        amount: evaluated,
-      })
-      setSharedLimitInput(String(evaluated))
-    } else {
-      setSharedLimitInput(value)
+    setSharedLimitInput(value)
+    if (evaluated === null) return
+
+    if (!isValidWeeklyLimitAmount(evaluated)) {
+      setSharedLimitError(LIMIT_ERROR)
+      return
     }
+
+    setSharedLimitError(null)
+    setSharedWeeklyLimit.mutate({
+      sharedBudgetId: activeBudget.id,
+      effectiveWeekStart,
+      amount: evaluated,
+    })
   }
 
   const handleInvite = () => {
@@ -494,7 +538,8 @@ function SharedBudgetSection({
             onValueChange={(value, evaluated) =>
               setInitialLimit(evaluated === null ? value : String(evaluated))
             }
-            min={0}
+            aria-invalid={createLimitError ? true : undefined}
+            aria-describedby={createLimitError ? createLimitErrorId : undefined}
           />
           <Button
             type="button"
@@ -506,6 +551,15 @@ function SharedBudgetSection({
             <Plus className="h-4 w-4" />
             Создать
           </Button>
+          {createLimitError && (
+            <p
+              id={createLimitErrorId}
+              role="alert"
+              className="text-xs text-red-400 sm:col-span-3"
+            >
+              {createLimitError}
+            </p>
+          )}
         </div>
       )}
 
@@ -518,21 +572,26 @@ function SharedBudgetSection({
       {activeBudget && coverage && (
         <div className="space-y-3">
           <BudgetProgress coverage={coverage} label="Общие расходы" />
-          <BudgetSummary
-            coverage={coverage}
-            limit={coverage.weeklyLimit}
-            title="Общий бюджет"
-          />
+          <BudgetSummary coverage={coverage} title="Общий бюджет" />
 
           <MemberList budget={activeBudget} />
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="flex items-center gap-2 sm:gap-3">
-              <label className="text-xs text-zinc-400 sm:text-sm">Лимит:</label>
+              <label
+                htmlFor={sharedLimitInputId}
+                className="text-xs text-zinc-400 sm:text-sm"
+              >
+                Лимит:
+              </label>
               <MathInput
+                id={sharedLimitInputId}
                 value={sharedLimitInput}
                 onValueChange={handleSharedLimitChange}
-                min={0}
+                aria-invalid={sharedLimitError ? true : undefined}
+                aria-describedby={
+                  sharedLimitError ? sharedLimitErrorId : undefined
+                }
                 className="w-24 sm:w-32"
               />
               <span className="text-xs text-zinc-500 sm:text-sm">₽</span>
@@ -565,6 +624,16 @@ function SharedBudgetSection({
               )}
             </div>
           </div>
+
+          {sharedLimitError && (
+            <p
+              id={sharedLimitErrorId}
+              role="alert"
+              className="text-xs text-red-400"
+            >
+              {sharedLimitError}
+            </p>
+          )}
 
           {inviteUrl && (
             <div className="flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900/60 p-2 sm:flex-row sm:items-center">
@@ -625,9 +694,11 @@ export function WeeklyBudget() {
     useSharedBudgets()
   const { data: pockets = [], isLoading: arePocketsLoading } = usePockets()
   const [inputValue, setInputValue] = useState(String(weeklyLimit))
+  const [limitError, setLimitError] = useState<string | null>(null)
 
   useEffect(() => {
     setInputValue(String(weeklyLimit))
+    setLimitError(null)
   }, [weeklyLimit])
 
   const activeSharedBudget = getActiveSharedBudget(sharedBudgets)
@@ -664,12 +735,19 @@ export function WeeklyBudget() {
   }
 
   const handleLimitChange = (value: string, evaluated: number | null) => {
-    if (evaluated !== null) {
-      setWeeklyLimitForDate(selectedDate, evaluated)
-      setInputValue(String(evaluated))
-    } else {
+    if (evaluated === null) {
       setInputValue(value)
+      return
     }
+
+    setInputValue(value)
+    if (!isValidWeeklyLimitAmount(evaluated)) {
+      setLimitError(LIMIT_ERROR)
+      return
+    }
+
+    setLimitError(null)
+    setWeeklyLimitForDate(selectedDate, evaluated)
   }
 
   return (
@@ -686,8 +764,8 @@ export function WeeklyBudget() {
 
       <PersonalBudgetSection
         coverage={personalCoverage}
-        weeklyLimit={weeklyLimit}
         inputValue={inputValue}
+        limitError={limitError}
         onLimitChange={handleLimitChange}
         projectById={projectById}
         pocketById={pocketById}

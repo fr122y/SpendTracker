@@ -606,6 +606,60 @@ export function getEffectiveWeeklyLimit(
   return effectiveLimit?.amount ?? defaultLimit
 }
 
+export interface WeeklyBudgetSummary {
+  /** Real spent amount for the week, not capped at the limit. */
+  spent: number
+  /** Base weekly limit before same-week top-ups. */
+  baseLimit: number
+  /** Same-week project withdrawals and pocket transfers. */
+  topUp: number
+  /** Base limit plus top-ups. */
+  effectiveLimit: number
+  /** Unspent part of the effective limit; zero when over budget. */
+  remaining: number
+  /** Spending beyond the effective limit; zero when within budget. */
+  overBudget: number
+}
+
+export function getWeeklyBudgetSummary(
+  coverage: WeeklyBudgetCoverage
+): WeeklyBudgetSummary {
+  const topUp = coverage.projectTopUp + coverage.pocketTopUp
+  const effectiveLimit = coverage.weeklyLimit + topUp
+  const spent = coverage.personalSpent
+
+  return {
+    spent,
+    baseLimit: coverage.weeklyLimit,
+    topUp,
+    effectiveLimit,
+    remaining: Math.max(effectiveLimit - spent, 0),
+    overBudget: Math.max(spent - effectiveLimit, 0),
+  }
+}
+
+/** A weekly limit must be a finite amount greater than zero. */
+export function isValidWeeklyLimitAmount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+/** True for a real calendar date in `YYYY-MM-DD` format that is a Monday. */
+export function isWeekStartDate(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return false
+
+  const [year, month, day] = match.slice(1).map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day &&
+    date.getUTCDay() === 1
+  )
+}
+
 /**
  * Helper: Format date as ISO date string (YYYY-MM-DD)
  */

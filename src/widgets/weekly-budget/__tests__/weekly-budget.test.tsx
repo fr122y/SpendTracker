@@ -154,6 +154,10 @@ jest.mock('@/entities/shared-budget', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
+  getWeeklyBudgetSummary: jest.requireActual('@/shared/lib/finance-selectors')
+    .getWeeklyBudgetSummary,
+  isValidWeeklyLimitAmount: jest.requireActual('@/shared/lib/finance-selectors')
+    .isValidWeeklyLimitAmount,
   getWeeklyBudgetCoverage: jest.fn((expenses, date, weeklyLimit) => {
     // For Jan 21, 2026 (Tuesday), week is Jan 20 - Jan 26
     const weekExpenses = expenses.filter(
@@ -403,10 +407,10 @@ describe('WeeklyBudget', () => {
       expect(input).toBeInTheDocument()
     })
 
-    it('renders limit label', () => {
+    it('renders limit label linked to the limit input', () => {
       render(<WeeklyBudget />)
 
-      expect(screen.getByText('Лимит:')).toBeInTheDocument()
+      expect(screen.getByLabelText('Лимит:')).toHaveValue('10000')
     })
   })
 
@@ -430,13 +434,61 @@ describe('WeeklyBudget', () => {
       ).toHaveTextContent(/7\s?700/)
     })
 
-    it('shows negative remaining amount when over budget', () => {
+    it('shows a single over-budget line instead of negative remaining', () => {
       mockWeeklyLimit = 2000
       render(<WeeklyBudget />)
 
-      // Remaining: 2000 - 2300 = -300
-      const remainingText = screen.getAllByText(/Осталось:/)[0].parentElement
-      expect(remainingText).toHaveTextContent('-300')
+      // Over budget: 2300 - 2000 = 300, shown once
+      expect(screen.queryByText(/Осталось:/)).not.toBeInTheDocument()
+      expect(screen.getAllByText(/Сверх бюджета:/)).toHaveLength(1)
+      expect(screen.getByText(/Сверх бюджета:/)).toHaveTextContent(/300 ₽/)
+      expect(screen.queryByText(/-300/)).not.toBeInTheDocument()
+    })
+
+    it('shows the real spent amount when over budget, not capped at the limit', () => {
+      mockWeeklyLimit = 2000
+      render(<WeeklyBudget />)
+
+      const spent = screen.getAllByText(/Личный бюджет:/)[0]
+      expect(spent).toHaveTextContent(/2\s?300 ₽ \/ 2\s?000 ₽/)
+    })
+
+    it('shows the effective limit with top-ups so remaining is explainable', () => {
+      mockWeeklyLimit = 8000
+      mockExpenses = [
+        ...mockExpenses,
+        {
+          id: 'pocket-transfer',
+          description: 'Transfer',
+          amount: 1500,
+          date: '2026-01-21',
+          category: 'Перевод из кармана',
+          emoji: '↗️',
+          pocketId: 'pocket-1',
+          operationType: 'pocket_transfer',
+        },
+      ]
+
+      render(<WeeklyBudget />)
+
+      expect(screen.getAllByText(/Личный бюджет:/)[0]).toHaveTextContent(
+        /2\s?300 ₽ \/ 9\s?500 ₽/
+      )
+      expect(screen.getByText(/пополнения/)).toHaveTextContent(
+        /Лимит 8\s?000 ₽ \+ пополнения 1\s?500 ₽/
+      )
+      expect(screen.getByText(/Осталось:/)).toHaveTextContent(/7\s?200 ₽/)
+    })
+
+    it('hides top-up lines when there are no project or pocket top-ups', () => {
+      render(<WeeklyBudget />)
+
+      expect(
+        screen.queryByText('Пополнение из проектов')
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText('Переводы из карманов')).not.toBeInTheDocument()
+      expect(screen.queryByText(/ушло на перерасход/)).not.toBeInTheDocument()
+      expect(screen.queryByText(/пополнения/)).not.toBeInTheDocument()
     })
 
     it('excludes project expenses from weekly spent amount', () => {
@@ -481,8 +533,8 @@ describe('WeeklyBudget', () => {
 
       render(<WeeklyBudget />)
 
-      expect(screen.getByText('Проектная добавка')).toBeInTheDocument()
-      expect(screen.getByText('Покрыто проектами')).toBeInTheDocument()
+      expect(screen.getByText('Пополнение из проектов')).toBeInTheDocument()
+      expect(screen.getByText(/ушло на перерасход/)).toHaveTextContent(/300 ₽/)
       expect(screen.getAllByText(/1\s?000 ₽/)[0]).toHaveClass(
         'whitespace-nowrap'
       )
@@ -532,24 +584,22 @@ describe('WeeklyBudget', () => {
       render(<WeeklyBudget />)
 
       expect(screen.getByText('Переводы из карманов')).toBeInTheDocument()
-      expect(screen.getByText('Покрыто карманами')).toBeInTheDocument()
+      expect(screen.getByText(/ушло на перерасход/)).toHaveTextContent(/300 ₽/)
       expect(screen.getByText('Отпуск')).toBeInTheDocument()
-      expect(screen.getAllByText('500 ₽')).toHaveLength(2)
-      expect(screen.getByText('300 ₽')).toBeInTheDocument()
+      // Top-up in the effective-limit line, the pocket metric, and the chip
+      expect(screen.getAllByText('500 ₽')).toHaveLength(3)
     })
 
     it('shows uncovered summary only when personal spending exceeds coverage', () => {
       render(<WeeklyBudget />)
 
-      expect(screen.queryByText('Сверх бюджета')).not.toBeInTheDocument()
+      expect(screen.queryByText(/Сверх бюджета/)).not.toBeInTheDocument()
 
       mockWeeklyLimit = 1000
       render(<WeeklyBudget />)
 
-      const uncoveredLabel = screen.getByText('Сверх бюджета')
-      const uncoveredMetric = uncoveredLabel.parentElement
+      const uncoveredMetric = screen.getByText(/Сверх бюджета:/)
 
-      expect(uncoveredMetric).toBeTruthy()
       expect(
         within(uncoveredMetric as HTMLElement).getByText(/1\s?300 ₽/)
       ).toHaveClass('whitespace-nowrap')
@@ -585,14 +635,37 @@ describe('WeeklyBudget', () => {
       expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 15000)
     })
 
-    it('updates limit to zero', () => {
+    it('rejects a zero limit with an inline error', () => {
       render(<WeeklyBudget />)
 
       const input = screen.getByDisplayValue('10000')
       fireEvent.change(input, { target: { value: '0' } })
       fireEvent.blur(input)
 
-      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 0)
+      expect(mockSetWeeklyLimit).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Лимит должен быть больше 0'
+      )
+      expect(input).toHaveAttribute('aria-invalid', 'true')
+    })
+
+    it('rejects a negative limit and clears the error after a valid one', () => {
+      render(<WeeklyBudget />)
+
+      const input = screen.getByLabelText('Лимит:')
+      fireEvent.change(input, { target: { value: '-500' } })
+      fireEvent.blur(input)
+
+      expect(mockSetWeeklyLimit).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Лимит должен быть больше 0'
+      )
+
+      fireEvent.change(input, { target: { value: '7000' } })
+      fireEvent.blur(input)
+
+      expect(mockSetWeeklyLimit).toHaveBeenCalledWith(mockSelectedDate, 7000)
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
 
     it('does not update limit for invalid input', () => {
@@ -736,6 +809,40 @@ describe('WeeklyBudget', () => {
         effectiveWeekStart: '2026-01-20',
         amount: 9000,
       })
+    })
+
+    it('rejects a zero shared budget limit on creation with an inline error', () => {
+      mockSharedBudgets = []
+
+      render(<WeeklyBudget />)
+
+      fireEvent.change(screen.getByLabelText('Название общего бюджета'), {
+        target: { value: 'Семья' },
+      })
+      const limitInput = screen.getByLabelText('Лимит общего бюджета')
+      fireEvent.change(limitInput, { target: { value: '0' } })
+      fireEvent.blur(limitInput)
+      fireEvent.click(screen.getByRole('button', { name: /создать/i }))
+
+      expect(mockCreateSharedBudget).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Лимит должен быть больше 0'
+      )
+      expect(limitInput).toHaveAttribute('aria-invalid', 'true')
+    })
+
+    it('rejects a negative shared weekly limit edit with an inline error', () => {
+      render(<WeeklyBudget />)
+
+      const sharedLimitInput = screen.getAllByDisplayValue('8000')[0]
+      fireEvent.change(sharedLimitInput, { target: { value: '-5' } })
+      fireEvent.blur(sharedLimitInput)
+
+      expect(mockSetSharedWeeklyLimit).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Лимит должен быть больше 0'
+      )
+      expect(sharedLimitInput).toHaveAttribute('aria-invalid', 'true')
     })
 
     it('shows and copies generated invite link for owner', async () => {

@@ -11,7 +11,8 @@ import {
 } from '@/shared/db'
 import {
   getEffectiveWeeklyLimit,
-  getWeekBoundaries,
+  isValidWeeklyLimitAmount,
+  isWeekStartDate,
   type WeeklyLimitSetting,
 } from '@/shared/lib/finance-selectors'
 import { isValidPaydayDay } from '@/shared/lib/payday'
@@ -95,10 +96,40 @@ export async function getSettings(): Promise<Settings> {
   }
 }
 
-export async function updateSettings(data: Partial<Settings>): Promise<void> {
+const WEEKLY_LIMIT_AMOUNT_ERROR = 'Лимит должен быть больше 0'
+const WEEK_START_ERROR =
+  'Начало недели должно быть понедельником в формате ГГГГ-ММ-ДД'
+
+function assertWeeklyLimitInput(
+  effectiveWeekStart: unknown,
+  amount: unknown
+): void {
+  if (!isWeekStartDate(effectiveWeekStart)) {
+    throw new Error(WEEK_START_ERROR)
+  }
+  if (!isValidWeeklyLimitAmount(amount)) {
+    throw new Error(WEEKLY_LIMIT_AMOUNT_ERROR)
+  }
+}
+
+export interface UpdateSettingsInput extends Partial<Settings> {
+  /**
+   * Client-local Monday (`YYYY-MM-DD`) of the week a new `weeklyLimit`
+   * applies to. Required with `weeklyLimit`: the server does not derive the
+   * week from its own clock.
+   */
+  weeklyLimitWeekStart?: string
+}
+
+export async function updateSettings(data: UpdateSettingsInput): Promise<void> {
   const userId = await getUserId()
-  const { weeklyLimit, weeklyLimits, ...settingsData } = data
+  const { weeklyLimit, weeklyLimits, weeklyLimitWeekStart, ...settingsData } =
+    data
   void weeklyLimits
+
+  if (weeklyLimit !== undefined) {
+    assertWeeklyLimitInput(weeklyLimitWeekStart, weeklyLimit)
+  }
 
   for (const key of ['salaryDay', 'advanceDay'] as const) {
     if (key in settingsData && !isValidPaydayDay(settingsData[key])) {
@@ -133,9 +164,8 @@ export async function updateSettings(data: Partial<Settings>): Promise<void> {
       .where(eq(userSettings.userId, userId))
   }
 
-  if (weeklyLimit !== undefined) {
-    const effectiveWeekStart = getWeekBoundaries(new Date()).start
-    await setWeeklyLimitForWeek(effectiveWeekStart, weeklyLimit)
+  if (weeklyLimit !== undefined && weeklyLimitWeekStart !== undefined) {
+    await setWeeklyLimitForWeek(weeklyLimitWeekStart, weeklyLimit)
   }
 }
 
@@ -198,6 +228,7 @@ export async function setWeeklyLimitForWeek(
   amount: number
 ): Promise<void> {
   const userId = await getUserId()
+  assertWeeklyLimitInput(effectiveWeekStart, amount)
 
   await db
     .insert(weeklyBudgetLimits)
