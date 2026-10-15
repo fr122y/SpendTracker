@@ -142,4 +142,23 @@ describe('updateSettings legacy allocation compatibility', () => {
     })
     expect(dbModule.__mocks.txUpdateSet).not.toHaveBeenCalled()
   })
+
+  it.each([
+    { salaryDay: 0 },
+    { salaryDay: 32 },
+    { salaryDay: 10.5 },
+    { advanceDay: 35 },
+    { advanceDay: -1 },
+  ])('rejects an out-of-range payday %p without updating', async (data) => {
+    await expect(updateSettings(data)).rejects.toThrow('от 1 до 31')
+    expect(dbModule.__mocks.directUpdateSet).not.toHaveBeenCalled()
+  })
+
+  it('accepts payday 31 for every month', async () => {
+    await updateSettings({ advanceDay: 31 })
+
+    expect(dbModule.__mocks.directUpdateSet).toHaveBeenCalledWith({
+      advanceDay: 31,
+    })
+  })
 })

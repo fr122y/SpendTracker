@@ -6,7 +6,15 @@ import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
 import { useSettingsStore } from '@/entities/settings'
 import { MonthPickerModal } from '@/features/month-picker'
-import { cn, getScopedOperations, type ExpenseScope } from '@/shared/lib'
+import {
+  PAYDAY_MAX,
+  PAYDAY_MIN,
+  cn,
+  getPaydayInMonth,
+  getScopedOperations,
+  isValidPaydayDay,
+  type ExpenseScope,
+} from '@/shared/lib'
 import { Button } from '@/shared/ui'
 
 import { CalendarSkeleton } from './calendar-skeleton'
@@ -74,6 +82,15 @@ function getCalendarDays(
 
   const days: CalendarDay[] = []
 
+  const paydayFlags = (date: Date) => ({
+    isSalaryDay:
+      date.getDate() ===
+      getPaydayInMonth(salaryDay, date.getFullYear(), date.getMonth()),
+    isAdvanceDay:
+      date.getDate() ===
+      getPaydayInMonth(advanceDay, date.getFullYear(), date.getMonth()),
+  })
+
   // Add days from previous month
   for (let i = startDayOfWeek - 1; i >= 0; i--) {
     const day = prevMonthDays - i
@@ -86,8 +103,7 @@ function getCalendarDays(
       isToday: isSameDay(date, today),
       isSelected: isSameDay(date, selectedDate),
       hasExpense: expenseDates.has(formatDate(date)),
-      isSalaryDay: day === salaryDay,
-      isAdvanceDay: day === advanceDay,
+      ...paydayFlags(date),
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     })
   }
@@ -103,8 +119,7 @@ function getCalendarDays(
       isToday: isSameDay(date, today),
       isSelected: isSameDay(date, selectedDate),
       hasExpense: expenseDates.has(formatDate(date)),
-      isSalaryDay: day === salaryDay,
-      isAdvanceDay: day === advanceDay,
+      ...paydayFlags(date),
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     })
   }
@@ -121,13 +136,22 @@ function getCalendarDays(
       isToday: isSameDay(date, today),
       isSelected: isSameDay(date, selectedDate),
       hasExpense: expenseDates.has(formatDate(date)),
-      isSalaryDay: day === salaryDay,
-      isAdvanceDay: day === advanceDay,
+      ...paydayFlags(date),
       isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
     })
   }
 
   return days
+}
+
+function getDayLabel(day: CalendarDay): string | undefined {
+  if (!day.isCurrentMonth) return undefined
+  if (day.isSalaryDay && day.isAdvanceDay) {
+    return `${day.day}, Зарплата и аванс`
+  }
+  if (day.isSalaryDay) return `${day.day}, Зарплата`
+  if (day.isAdvanceDay) return `${day.day}, Аванс`
+  return undefined
 }
 
 const MONTH_NAMES = [
@@ -173,6 +197,7 @@ export function Calendar() {
     null
   )
   const [editValue, setEditValue] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
   const [isMonthPickerOpen, setIsMonthPickerOpen] = useState(false)
 
   if (isExpensesLoading || isSettingsLoading) {
@@ -182,23 +207,51 @@ export function Calendar() {
   const handleStartEdit = (field: 'salary' | 'advance') => {
     setEditingField(field)
     setEditValue(String(field === 'salary' ? salaryDay : advanceDay))
+    setEditError(null)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingField(null)
+    setEditError(null)
+  }
+
+  const parseEditValue = (): number | null => {
+    const trimmed = editValue.trim()
+    if (!/^\d+$/.test(trimmed)) return null
+    const value = Number(trimmed)
+    return isValidPaydayDay(value) ? value : null
   }
 
   const handleSaveEdit = () => {
-    const value = Math.min(31, Math.max(1, parseInt(editValue) || 1))
+    const value = parseEditValue()
+    if (value === null) {
+      setEditError(`Введите день от ${PAYDAY_MIN} до ${PAYDAY_MAX}`)
+      return
+    }
     if (editingField === 'salary') {
       setSalaryDay(value)
     } else if (editingField === 'advance') {
       setAdvanceDay(value)
     }
-    setEditingField(null)
+    handleCancelEdit()
+  }
+
+  const handleBlur = () => {
+    // Leaving the field saves a valid value and discards an invalid one;
+    // an invalid value is never replaced by a nearby valid day.
+    if (parseEditValue() === null) {
+      handleCancelEdit()
+    } else {
+      handleSaveEdit()
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault()
       handleSaveEdit()
     } else if (e.key === 'Escape') {
-      setEditingField(null)
+      handleCancelEdit()
     }
   }
 
@@ -303,17 +356,26 @@ export function Calendar() {
           <button
             key={index}
             onClick={() => setSelectedDate(day.date)}
+            aria-label={getDayLabel(day)}
             className={cn(
               'relative flex min-h-[48px] items-center justify-center rounded text-sm transition-colors sm:h-14 sm:text-base',
               /* ⚡ Auto-fix: Added background highlight for salary/advance days (Principle: Contrast) */
               day.isSalaryDay &&
+                !day.isAdvanceDay &&
                 day.isCurrentMonth &&
                 !day.isSelected &&
                 'bg-emerald-950/30 ring-1 ring-emerald-500/30',
               day.isAdvanceDay &&
+                !day.isSalaryDay &&
                 day.isCurrentMonth &&
                 !day.isSelected &&
                 'bg-amber-950/30 ring-1 ring-amber-500/30',
+              // Salary and advance on the same day: both colors, not one.
+              day.isSalaryDay &&
+                day.isAdvanceDay &&
+                day.isCurrentMonth &&
+                !day.isSelected &&
+                'bg-gradient-to-br from-emerald-950/40 to-amber-950/40 ring-1 ring-amber-500/30',
               !day.isCurrentMonth && !day.isWeekend && 'text-zinc-600',
               !day.isCurrentMonth && day.isWeekend && 'text-red-700',
               day.isCurrentMonth && !day.isWeekend && 'text-zinc-300',
@@ -328,6 +390,20 @@ export function Calendar() {
             )}
           >
             {day.day}
+            {day.isCurrentMonth && (day.isSalaryDay || day.isAdvanceDay) && (
+              <span
+                className="absolute right-1 top-1 flex gap-0.5"
+                data-testid="payday-dots"
+                aria-hidden="true"
+              >
+                {day.isSalaryDay && (
+                  <span className="h-1 w-1 rounded-full bg-emerald-400 sm:h-1.5 sm:w-1.5" />
+                )}
+                {day.isAdvanceDay && (
+                  <span className="h-1 w-1 rounded-full bg-amber-400 sm:h-1.5 sm:w-1.5" />
+                )}
+              </span>
+            )}
             {/* Expense indicator dot */}
             {day.hasExpense && (
               <span className="absolute bottom-0.5 h-1 w-1 rounded-full bg-green-400 shadow-sm shadow-green-400/50 sm:bottom-1 sm:h-1.5 sm:w-1.5" />
@@ -343,56 +419,40 @@ export function Calendar() {
           <span className="h-3 w-3 rounded-full bg-green-400 shadow-sm shadow-green-400/50" />
           <span>Операция</span>
         </div>
-        <button
-          onClick={() => handleStartEdit('salary')}
-          className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
-        >
-          <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50 ring-1 ring-emerald-400/50" />
-          {editingField === 'salary' ? (
-            <input
-              type="number"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleSaveEdit}
-              onKeyDown={handleKeyDown}
-              min={1}
-              max={31}
-              autoFocus
-              aria-label="День зарплаты"
-              className="w-12 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2 ring-emerald-400"
-            />
-          ) : (
-            <span>
-              Зарплата:{' '}
-              <span className="font-medium text-emerald-400">{salaryDay}</span>
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => handleStartEdit('advance')}
-          className="flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
-        >
-          <span className="h-3 w-3 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50 ring-1 ring-amber-400/50" />
-          {editingField === 'advance' ? (
-            <input
-              type="number"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleSaveEdit}
-              onKeyDown={handleKeyDown}
-              min={1}
-              max={31}
-              autoFocus
-              aria-label="День аванса"
-              className="w-12 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2 ring-amber-400"
-            />
-          ) : (
-            <span>
-              Аванс:{' '}
-              <span className="font-medium text-amber-400">{advanceDay}</span>
-            </span>
-          )}
-        </button>
+        <PaydayLegendItem
+          field="salary"
+          label="Зарплата"
+          inputLabel="День зарплаты"
+          day={salaryDay}
+          tone="emerald"
+          isEditing={editingField === 'salary'}
+          editValue={editValue}
+          editError={editError}
+          onStartEdit={handleStartEdit}
+          onChange={(value) => {
+            setEditValue(value)
+            setEditError(null)
+          }}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+        />
+        <PaydayLegendItem
+          field="advance"
+          label="Аванс"
+          inputLabel="День аванса"
+          day={advanceDay}
+          tone="amber"
+          isEditing={editingField === 'advance'}
+          editValue={editValue}
+          editError={editError}
+          onStartEdit={handleStartEdit}
+          onChange={(value) => {
+            setEditValue(value)
+            setEditError(null)
+          }}
+          onBlur={handleBlur}
+          onKeyDown={handleKeyDown}
+        />
       </div>
 
       <MonthPickerModal
@@ -404,6 +464,117 @@ export function Calendar() {
         }}
         onClose={() => setIsMonthPickerOpen(false)}
       />
+    </div>
+  )
+}
+
+const PAYDAY_TONES = {
+  emerald: {
+    dot: 'bg-emerald-400 shadow-emerald-400/50 ring-emerald-400/50',
+    value: 'text-emerald-400',
+    focus: 'focus-visible:ring-emerald-500',
+    input: 'ring-emerald-400',
+  },
+  amber: {
+    dot: 'bg-amber-400 shadow-amber-400/50 ring-amber-400/50',
+    value: 'text-amber-400',
+    focus: 'focus-visible:ring-amber-500',
+    input: 'ring-amber-400',
+  },
+} as const
+
+interface PaydayLegendItemProps {
+  field: 'salary' | 'advance'
+  label: string
+  inputLabel: string
+  day: number
+  tone: keyof typeof PAYDAY_TONES
+  isEditing: boolean
+  editValue: string
+  editError: string | null
+  onStartEdit: (field: 'salary' | 'advance') => void
+  onChange: (value: string) => void
+  onBlur: () => void
+  onKeyDown: (e: React.KeyboardEvent) => void
+}
+
+function PaydayLegendItem({
+  field,
+  label,
+  inputLabel,
+  day,
+  tone,
+  isEditing,
+  editValue,
+  editError,
+  onStartEdit,
+  onChange,
+  onBlur,
+  onKeyDown,
+}: PaydayLegendItemProps) {
+  const colors = PAYDAY_TONES[tone]
+  const dot = (
+    <span
+      className={cn(
+        'h-3 w-3 shrink-0 rounded-full shadow-sm ring-1',
+        colors.dot
+      )}
+    />
+  )
+
+  if (!isEditing) {
+    return (
+      <button
+        onClick={() => onStartEdit(field)}
+        className={cn(
+          'flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2',
+          colors.focus
+        )}
+      >
+        {dot}
+        <span>
+          {label}:{' '}
+          <span className={cn('font-medium', colors.value)}>{day}</span>
+        </span>
+      </button>
+    )
+  }
+
+  const hintId = `payday-${field}-hint`
+  const errorId = `payday-${field}-error`
+
+  return (
+    <div className="flex flex-col gap-1 rounded px-2 py-1">
+      <div className="flex items-center gap-2">
+        {dot}
+        <span>{label}:</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          value={editValue}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
+          min={PAYDAY_MIN}
+          max={PAYDAY_MAX}
+          autoFocus
+          aria-label={inputLabel}
+          aria-invalid={editError !== null}
+          aria-describedby={editError ? `${hintId} ${errorId}` : hintId}
+          className={cn(
+            'w-14 rounded bg-zinc-800 px-2 py-0.5 text-zinc-100 outline-none ring-2',
+            editError ? 'ring-red-500' : colors.input
+          )}
+        />
+      </div>
+      <span id={hintId} className="text-xs text-zinc-500">
+        День {PAYDAY_MIN}–{PAYDAY_MAX} · Enter — сохранить, Esc — отмена
+      </span>
+      {editError && (
+        <span id={errorId} role="alert" className="text-xs text-red-400">
+          {editError}
+        </span>
+      )}
     </div>
   )
 }

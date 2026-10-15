@@ -106,4 +106,29 @@ test.describe('Dashboard Smoke Tests', () => {
     await expect(picker).toBeHidden()
     await expect(dateButton).toHaveText(target.header)
   })
+
+  test('should reject an out-of-range salary day without saving', async ({
+    page,
+  }) => {
+    const salaryButton = page.getByRole('button', { name: /Зарплата:/ })
+    const savedLabel = await salaryButton.innerText()
+    await salaryButton.click()
+
+    const input = page.getByRole('spinbutton', { name: 'День зарплаты' })
+    await expect(input).toBeFocused()
+    await expect(page.getByText('Зарплата:', { exact: true })).toBeVisible()
+    await expect(page.getByText(/1–31 · Enter — сохранить/)).toBeVisible()
+
+    await input.fill('35')
+    await input.press('Enter')
+
+    await expect(page.getByText('Введите день от 1 до 31')).toBeVisible()
+    await expect(input).toBeVisible()
+
+    await input.press('Escape')
+    await expect(input).toBeHidden()
+    await expect(page.getByRole('button', { name: /Зарплата:/ })).toHaveText(
+      savedLabel
+    )
+  })
 })

@@ -14,6 +14,7 @@ import {
   getWeekBoundaries,
   type WeeklyLimitSetting,
 } from '@/shared/lib/finance-selectors'
+import { isValidPaydayDay } from '@/shared/lib/payday'
 
 import {
   percentageFromAmountKopecks,
@@ -98,6 +99,12 @@ export async function updateSettings(data: Partial<Settings>): Promise<void> {
   const userId = await getUserId()
   const { weeklyLimit, weeklyLimits, ...settingsData } = data
   void weeklyLimits
+
+  for (const key of ['salaryDay', 'advanceDay'] as const) {
+    if (key in settingsData && !isValidPaydayDay(settingsData[key])) {
+      throw new Error('День зарплаты и аванса должен быть от 1 до 31')
+    }
+  }
 
   if (settingsData.salary !== undefined) {
     await db.transaction(async (tx) => {

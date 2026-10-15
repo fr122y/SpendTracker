@@ -70,3 +70,11 @@ export {
   calculateAllocation,
   assertAllocationRepresentable,
 } from './allocation'
+
+// Salary and advance day rules
+export {
+  PAYDAY_MIN,
+  PAYDAY_MAX,
+  isValidPaydayDay,
+  getPaydayInMonth,
+} from './payday'

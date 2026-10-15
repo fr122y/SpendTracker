@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 
 import { Calendar } from '../ui/calendar'
 
@@ -9,7 +9,7 @@ const mockPrevMonth = jest.fn()
 const mockSetSalaryDay = jest.fn()
 const mockSetAdvanceDay = jest.fn()
 
-const mockSelectedDate = new Date(2026, 0, 22)
+let mockSelectedDate = new Date(2026, 0, 22)
 let mockExpenseLoading = false
 let mockSettingsLoading = false
 let mockExpenses: Array<{ date: string; sharedBudgetId?: string }> = []
@@ -64,6 +64,7 @@ describe('Calendar', () => {
     mockExpenses = []
     mockExpenseLoading = false
     mockSettingsLoading = false
+    mockSelectedDate = new Date(2026, 0, 22)
   })
 
   it('renders skeleton while data is loading', () => {
@@ -252,20 +253,25 @@ describe('Calendar', () => {
       expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
     })
 
-    it('clamps value to max 31', () => {
+    it('shows an error instead of saving a day above 31', () => {
       render(<Calendar />)
 
       const salaryButton = screen.getByText(/Зарплата:/).closest('button')!
       fireEvent.click(salaryButton)
 
       const input = screen.getByRole('spinbutton')
-      fireEvent.change(input, { target: { value: '50' } })
+      fireEvent.change(input, { target: { value: '35' } })
       fireEvent.keyDown(input, { key: 'Enter' })
 
-      expect(mockSetSalaryDay).toHaveBeenCalledWith(31)
+      expect(mockSetSalaryDay).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent('от 1 до 31')
+      expect(screen.getByRole('spinbutton')).toHaveAttribute(
+        'aria-invalid',
+        'true'
+      )
     })
 
-    it('clamps value to min 1', () => {
+    it('shows an error instead of saving day 0', () => {
       render(<Calendar />)
 
       const salaryButton = screen.getByText(/Зарплата:/).closest('button')!
@@ -275,7 +281,127 @@ describe('Calendar', () => {
       fireEvent.change(input, { target: { value: '0' } })
       fireEvent.keyDown(input, { key: 'Enter' })
 
-      expect(mockSetSalaryDay).toHaveBeenCalledWith(1)
+      expect(mockSetSalaryDay).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+    })
+
+    it('discards an invalid value on blur without saving', () => {
+      render(<Calendar />)
+
+      fireEvent.click(screen.getByText(/Зарплата:/).closest('button')!)
+
+      const input = screen.getByRole('spinbutton')
+      fireEvent.change(input, { target: { value: '35' } })
+      fireEvent.blur(input)
+
+      expect(mockSetSalaryDay).not.toHaveBeenCalled()
+      expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument()
+    })
+
+    it('keeps the label and shows the range and keys while editing', () => {
+      render(<Calendar />)
+
+      fireEvent.click(screen.getByText(/Зарплата:/).closest('button')!)
+
+      expect(screen.getByText('Зарплата:')).toBeInTheDocument()
+      expect(screen.getByText(/1–31/)).toHaveTextContent(
+        'Enter — сохранить, Esc — отмена'
+      )
+    })
+  })
+
+  describe('payday markers', () => {
+    const markedDays = (ringClass: string) =>
+      screen
+        .getAllByRole('button')
+        .filter((button) => button.className.includes(ringClass))
+        .map((button) => button.textContent)
+
+    it('marks salary day 31 on the last day of November', () => {
+      mockSalaryDay = 31
+      mockSelectedDate = new Date(2026, 10, 15)
+
+      render(<Calendar />)
+
+      expect(markedDays('ring-emerald-500/30')).toEqual(['30'])
+    })
+
+    it('marks advance day 30 on February 28 in a non-leap year', () => {
+      mockAdvanceDay = 30
+      mockSelectedDate = new Date(2026, 1, 10)
+
+      render(<Calendar />)
+
+      expect(markedDays('ring-amber-500/30')).toEqual(['28'])
+    })
+
+    it('keeps salary day 31 on the 31st in a long month', () => {
+      mockSalaryDay = 31
+
+      render(<Calendar />)
+
+      expect(markedDays('ring-emerald-500/30')).toEqual(['31'])
+    })
+
+    it('shows both markers when salary 31 and advance 30 clamp to Nov 30', () => {
+      mockSalaryDay = 31
+      mockAdvanceDay = 30
+      mockSelectedDate = new Date(2026, 10, 15)
+
+      render(<Calendar />)
+
+      const cell = screen.getByRole('button', { name: '30, Зарплата и аванс' })
+      const dots = within(cell).getByTestId('payday-dots')
+      expect(dots.querySelector('.bg-emerald-400')).toBeInTheDocument()
+      expect(dots.querySelector('.bg-amber-400')).toBeInTheDocument()
+      expect(cell.className).toContain('from-emerald-950/40')
+      expect(cell.className).toContain('to-amber-950/40')
+    })
+
+    it('shows both markers on Feb 28 2027 for salary 31 and advance 30', () => {
+      mockSalaryDay = 31
+      mockAdvanceDay = 30
+      mockSelectedDate = new Date(2027, 1, 10)
+
+      render(<Calendar />)
+
+      expect(
+        screen.getByRole('button', { name: '28, Зарплата и аванс' })
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByRole('button', { name: /Зарплата,|, Зарплата$|, Аванс$/ })
+      ).not.toBeInTheDocument()
+    })
+
+    it('shows both markers when salary and advance are the same day', () => {
+      mockSalaryDay = 15
+      mockAdvanceDay = 15
+
+      render(<Calendar />)
+
+      const cell = screen.getByRole('button', { name: '15, Зарплата и аванс' })
+      const dots = within(cell).getByTestId('payday-dots')
+      expect(dots.children).toHaveLength(2)
+    })
+
+    it('labels separate salary and advance days individually', () => {
+      render(<Calendar />)
+
+      expect(
+        screen.getByRole('button', { name: '10, Зарплата' })
+      ).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: '25, Аванс' })
+      ).toBeInTheDocument()
+    })
+
+    it('does not move a payday off a weekend', () => {
+      // 2026-01-10 is a Saturday.
+      mockSalaryDay = 10
+
+      render(<Calendar />)
+
+      expect(markedDays('ring-emerald-500/30')).toEqual(['10'])
     })
   })
 
