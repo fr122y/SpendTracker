@@ -30,6 +30,13 @@ Utility functions and helpers used across the application.
 - `rublesToKopecks`, `percentageToKopecks`, `amountToPercentage`, `formatKopecks`, `formatPercentage`, `formatEditableKopecks`: currency-safe conversions and display formatting
 - Used by `features/manage-buckets` and `features/calculator`
 
+### Salary And Advance Days (`payday.ts`)
+
+- `getPaydayInMonth(day, year, month)`: the day a saved salary or advance day
+  falls on in a month, `min(day, daysInMonth)`; weekends are not shifted
+- `isValidPaydayDay(value)`, `PAYDAY_MIN`, `PAYDAY_MAX`: a valid saved day is
+  an integer 1–31; used by `widgets/calendar` and the settings Server Action
+
 ### Utilities
 
 - `cn(...classes)`: Class name utility (tailwind-merge + clsx)
