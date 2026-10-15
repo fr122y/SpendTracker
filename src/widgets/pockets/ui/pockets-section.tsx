@@ -158,14 +158,16 @@ function PocketDetail({
           )}
           {!isArchived && (
             <>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setIsRenaming((value) => !value)}
-                disabled={!canUseMonth}
-              >
-                {isRenaming ? 'Отмена' : 'Переименовать'}
-              </Button>
+              {!isRenaming && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsRenaming(true)}
+                  disabled={!canUseMonth}
+                >
+                  Переименовать
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="ghost"

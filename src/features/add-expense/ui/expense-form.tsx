@@ -16,7 +16,7 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import { formatDate } from '@/shared/lib'
+import { formatDate, getProjectCashOnHand } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType, SharedBudget } from '@/shared/types'
@@ -43,6 +43,14 @@ function getSharedBudgetOptions(budgets: SharedBudget[]) {
   })
 }
 
+function isProjectScenario(scenario: OperationScenario): boolean {
+  return (
+    scenario === 'project_expense' ||
+    scenario === 'project_withdrawal' ||
+    scenario === 'project_return'
+  )
+}
+
 export function ExpenseForm() {
   const [chosenScenario, setScenario] =
     useState<OperationScenario>('personal_expense')
@@ -62,6 +70,7 @@ export function ExpenseForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
+  const expenses = useExpenseStore((state) => state.expenses)
   const categories = useCategoryStore((state) => state.categories)
   const projects = useProjectStore((state) => state.projects)
   const selectedDate = useSessionStore((state) => state.selectedDate)
@@ -78,10 +87,13 @@ export function ExpenseForm() {
     () => (pockets ?? []).filter((pocket) => !pocket.archivedAt),
     [pockets]
   )
+  const hasProjects = projects.length > 0
   // The pocket scenario exists only while a non-archived pocket does; if the
   // last one is archived elsewhere, the form falls back to a personal expense.
+  // Project scenarios likewise exist only while the user has a project.
   const scenario: OperationScenario =
-    chosenScenario === 'pocket_purchase' && activePockets.length === 0
+    (chosenScenario === 'pocket_purchase' && activePockets.length === 0) ||
+    (isProjectScenario(chosenScenario) && !hasProjects)
       ? 'personal_expense'
       : chosenScenario
   const isPocketPurchase = scenario === 'pocket_purchase'
@@ -148,10 +160,16 @@ export function ExpenseForm() {
       ? scenario
       : 'expense'
   const isMovement = operationType !== 'expense'
-  const needsProject =
-    scenario === 'project_expense' ||
-    scenario === 'project_withdrawal' ||
-    scenario === 'project_return'
+  const needsProject = isProjectScenario(scenario)
+  const parsedAmountValue = Number(amount)
+  const projectCashOnHand =
+    scenario === 'project_return' && selectedProjectId
+      ? Math.max(getProjectCashOnHand(expenses, selectedProjectId), 0)
+      : null
+  const returnExceedsCash =
+    projectCashOnHand !== null &&
+    Boolean(amount) &&
+    parsedAmountValue > projectCashOnHand
 
   const resetForm = () => {
     setDescription('')
@@ -222,6 +240,7 @@ export function ExpenseForm() {
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
     if (needsProject && !selectedProjectId) return
+    if (returnExceedsCash) return
     if (isPocketPurchase && !selectedPocket) return
     if (isSharedExpense && !selectedSharedBudget?.id) return
 
@@ -383,6 +402,7 @@ export function ExpenseForm() {
     amount &&
     Number(amount) > 0 &&
     (!needsProject || !!selectedProjectId) &&
+    !returnExceedsCash &&
     (!isPocketPurchase || !!selectedPocket) &&
     (!isSharedExpense ||
       (!!selectedSharedBudget?.id && !!selectedCategoryId)) &&
@@ -393,9 +413,13 @@ export function ExpenseForm() {
     ...(sharedBudgetOptions.length > 0
       ? [{ value: 'shared_expense', label: 'Общий расход' }]
       : []),
-    { value: 'project_expense', label: 'Проектный расход' },
-    { value: 'project_withdrawal', label: 'Взял из проекта' },
-    { value: 'project_return', label: 'Вернул в проект' },
+    ...(hasProjects
+      ? [
+          { value: 'project_expense', label: 'Проектный расход' },
+          { value: 'project_withdrawal', label: 'Взял из проекта' },
+          { value: 'project_return', label: 'Вернул в проект' },
+        ]
+      : []),
     ...(activePockets.length > 0
       ? [{ value: 'pocket_purchase', label: 'Покупка из кармана' }]
       : []),
@@ -426,6 +450,12 @@ export function ExpenseForm() {
           }}
           disabled={isSubmitting || isSavingAnyMapping}
         />
+        {!hasProjects && (
+          <p className="mt-1 text-xs text-zinc-400">
+            Проектные операции появятся после создания проекта в разделе
+            «Проекты».
+          </p>
+        )}
       </div>
       {isSharedExpense && sharedBudgetOptions.length > 1 && (
         <Select
@@ -477,6 +507,12 @@ export function ExpenseForm() {
         disabled={isSubmitting || isSavingAnyMapping}
         className="text-base sm:text-sm"
       />
+      {returnExceedsCash && projectCashOnHand !== null && (
+        <p role="alert" className="text-sm text-red-400">
+          Нельзя вернуть больше, чем на руках:{' '}
+          {projectCashOnHand.toLocaleString('ru-RU')} ₽
+        </p>
+      )}
       {suggestedCategoryId && !showCategorySelect && !isMovement && (
         <div className="text-sm text-zinc-300">
           <span className="mr-2">Категория:</span>

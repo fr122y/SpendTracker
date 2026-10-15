@@ -404,6 +404,10 @@ describe('PocketsSection', () => {
     fireEvent.change(screen.getByLabelText('Новое название'), {
       target: { value: 'Большая поездка' },
     })
+    expect(screen.getAllByRole('button', { name: 'Отмена' })).toHaveLength(1)
+    expect(
+      screen.queryByRole('button', { name: 'Переименовать' })
+    ).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
 
     await waitFor(() =>

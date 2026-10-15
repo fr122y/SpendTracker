@@ -84,7 +84,7 @@ export function ProjectsSection() {
       {/* ⚡ Auto-fix: Enhanced contrast and depth (Principle: Contrast) */}
       {showCreateForm && (
         <div className="rounded-lg border border-zinc-700 bg-zinc-900/70 shadow-md p-3 sm:p-4 animate-fade-in">
-          <CreateProjectForm />
+          <CreateProjectForm onCreated={() => setShowCreateForm(false)} />
         </div>
       )}
 

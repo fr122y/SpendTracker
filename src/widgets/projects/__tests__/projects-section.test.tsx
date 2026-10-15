@@ -145,8 +145,13 @@ jest.mock('@/entities/expense', () => ({
 
 // Mock CreateProjectForm
 jest.mock('@/features/manage-projects', () => ({
-  CreateProjectForm: jest.fn(() => (
-    <div data-testid="create-project-form">Create Project Form</div>
+  CreateProjectForm: jest.fn(({ onCreated }: { onCreated?: () => void }) => (
+    <div data-testid="create-project-form">
+      Create Project Form
+      <button type="button" onClick={() => onCreated?.()}>
+        Submit mocked project
+      </button>
+    </div>
   )),
   ProjectExpenseForm: jest.fn(({ projectId }: { projectId: string }) => (
     <div data-testid={`project-expense-form-${projectId}`}>
@@ -399,6 +404,20 @@ describe('ProjectsSection', () => {
       // Toggle on again
       fireEvent.click(screen.getByText('Создать проект'))
       expect(screen.getByTestId('create-project-form')).toBeInTheDocument()
+    })
+  })
+
+  describe('closing after creation', () => {
+    it('closes the create form after a project is created', () => {
+      render(<ProjectsSection />)
+
+      fireEvent.click(screen.getByText('Создать проект'))
+      fireEvent.click(screen.getByText('Submit mocked project'))
+
+      expect(
+        screen.queryByTestId('create-project-form')
+      ).not.toBeInTheDocument()
+      expect(screen.getByText('Создать проект')).toBeInTheDocument()
     })
   })
 

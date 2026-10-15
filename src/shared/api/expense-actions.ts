@@ -20,6 +20,11 @@ import {
   POCKET_TRANSFER_EMOJI,
 } from './pocket-helpers'
 import {
+  assertProjectCashCovers,
+  getProjectCashEffect,
+  isProjectCashOperation,
+} from './project-helpers'
+import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
 } from './shared-budget-actions'
@@ -179,7 +184,7 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
     ? POCKET_TRANSFER_EMOJI
     : (sharedCategory?.emoji ?? pocketCategory?.emoji ?? data.emoji!)
 
-  await db.insert(expenses).values({
+  const values = {
     id,
     userId,
     description: data.description,
@@ -192,7 +197,21 @@ export async function addExpense(data: AddExpenseInput): Promise<Expense> {
     sharedBudgetId: data.sharedBudgetId ?? null,
     sharedBudgetCategoryId: data.sharedBudgetCategoryId ?? null,
     operationType,
-  })
+  }
+
+  if (isProjectMovement && data.projectId) {
+    const projectId = data.projectId
+    await db.transaction(async (transaction) => {
+      await assertProjectCashCovers(transaction, {
+        userId,
+        projectId,
+        delta: getProjectCashEffect(operationType, data.amount),
+      })
+      await transaction.insert(expenses).values(values)
+    })
+  } else {
+    await db.insert(expenses).values(values)
+  }
 
   return {
     id,
@@ -240,6 +259,7 @@ export async function updateExpense(
   const [existing] = await db
     .select({
       userId: expenses.userId,
+      amount: expenses.amount,
       projectId: expenses.projectId,
       pocketId: expenses.pocketId,
       sharedBudgetId: expenses.sharedBudgetId,
@@ -381,5 +401,38 @@ export async function updateExpense(
 
   if (Object.keys(patch).length === 0) return
 
-  await db.update(expenses).set(patch).where(eq(expenses.id, id))
+  const nextAmount = data.amount !== undefined ? data.amount : existing.amount
+  const affectsProjectCash =
+    isProjectCashOperation(existing.operationType) ||
+    isProjectCashOperation(nextOperationType)
+
+  if (!affectsProjectCash) {
+    await db.update(expenses).set(patch).where(eq(expenses.id, id))
+    return
+  }
+
+  // Lock every affected project in a stable order so concurrent edits of the
+  // same projects cannot deadlock or both pass the cash-on-hand check.
+  const affectedProjectIds = [
+    ...new Set(
+      [existing.projectId, nextProjectId].filter((value): value is string =>
+        Boolean(value)
+      )
+    ),
+  ].sort()
+
+  await db.transaction(async (transaction) => {
+    for (const projectId of affectedProjectIds) {
+      await assertProjectCashCovers(transaction, {
+        userId,
+        projectId,
+        excludeExpenseId: id,
+        delta:
+          projectId === nextProjectId
+            ? getProjectCashEffect(nextOperationType, nextAmount)
+            : 0,
+      })
+    }
+    await transaction.update(expenses).set(patch).where(eq(expenses.id, id))
+  })
 }

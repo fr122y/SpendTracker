@@ -5,6 +5,7 @@ import { ProjectExpenseForm } from '../ui/project-expense-form'
 const mockAddExpense = jest.fn()
 const mockCategorize = jest.fn()
 const mockSaveMapping = jest.fn()
+let mockExpenses: Array<Record<string, unknown>> = []
 
 const mockCategories = [
   { id: '1', name: 'Продукты', emoji: '🛒' },
@@ -13,8 +14,12 @@ const mockCategories = [
 ]
 
 jest.mock('@/entities/expense', () => ({
-  useExpenseStore: (selector: (state: { addExpense: jest.Mock }) => unknown) =>
-    selector({ addExpense: mockAddExpense }),
+  useExpenseStore: (
+    selector: (state: {
+      addExpense: jest.Mock
+      expenses: typeof mockExpenses
+    }) => unknown
+  ) => selector({ addExpense: mockAddExpense, expenses: mockExpenses }),
 }))
 
 jest.mock('@/entities/category', () => ({
@@ -39,6 +44,28 @@ describe('ProjectExpenseForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockExpenses = [
+      {
+        id: 'withdrawal-1',
+        description: 'взял',
+        amount: 5000,
+        date: '2025-01-10',
+        category: 'Проектные деньги',
+        emoji: '💼',
+        projectId,
+        operationType: 'project_withdrawal',
+      },
+      {
+        id: 'return-1',
+        description: 'вернул',
+        amount: 1000,
+        date: '2025-01-11',
+        category: 'Проектные деньги',
+        emoji: '💼',
+        projectId,
+        operationType: 'project_return',
+      },
+    ]
   })
 
   it('adds project expense with suggested category', async () => {
@@ -134,5 +161,51 @@ describe('ProjectExpenseForm', () => {
         })
       )
     })
+  })
+
+  it('rejects a return larger than the cash on hand with an inline error', () => {
+    render(<ProjectExpenseForm projectId={projectId} />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции проекта/i), {
+      target: { value: 'project_return' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'лишнее' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '4001' },
+    })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      /Нельзя вернуть больше, чем на руках: 4\s000 ₽/
+    )
+    expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
+    fireEvent.submit(screen.getByRole('button', { name: /добавить/i }))
+    expect(mockAddExpense).not.toHaveBeenCalled()
+  })
+
+  it('allows returning exactly the cash on hand', async () => {
+    render(<ProjectExpenseForm projectId={projectId} />)
+
+    fireEvent.change(screen.getByLabelText(/сценарий операции проекта/i), {
+      target: { value: 'project_return' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'всё' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '4000' },
+    })
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    await waitFor(() =>
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({
+          amount: 4000,
+          operationType: 'project_return',
+        })
+      )
+    )
   })
 })

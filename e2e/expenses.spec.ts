@@ -3,6 +3,8 @@ import {
   expect,
   expenseRow,
   expenseRows,
+  journalForm,
+  openJournal,
   test,
   TIMEOUT,
 } from './utils/expenses'
@@ -83,6 +85,46 @@ test.describe('Expense Flow', () => {
       ).toBeVisible()
 
       await expenses.remove(second)
+    })
+  })
+
+  test.describe('Project Operations', () => {
+    // Read-only: the journal form is filled but never submitted, so the shared
+    // account keeps its data. The branch depends on whether it has projects.
+    test('should not offer a dead end or a return above cash on hand', async ({
+      page,
+    }) => {
+      await openJournal(page)
+      const form = journalForm(page)
+      const scenario = form.getByLabel('Сценарий операции')
+      const hasProjects =
+        (await scenario
+          .locator('option', { hasText: 'Вернул в проект' })
+          .count()) > 0
+
+      if (!hasProjects) {
+        await expect(
+          form.getByText(/Проектные операции появятся после создания проекта/)
+        ).toBeVisible()
+        return
+      }
+
+      await scenario.selectOption('project_return')
+      const project = form.getByLabel('Проект', { exact: true })
+      const firstProject = await project
+        .locator('option:not([value=""])')
+        .first()
+        .getAttribute('value')
+      await project.selectOption(firstProject!)
+      await form.getByLabel('Описание расхода').fill('E2E возврат сверх')
+      await form.getByLabel('Сумма расхода').fill('999999999')
+
+      await expect(form.getByRole('alert')).toContainText(
+        'Нельзя вернуть больше, чем на руках'
+      )
+      await expect(
+        form.getByRole('button', { name: 'Добавить' })
+      ).toBeDisabled()
     })
   })
 })

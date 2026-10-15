@@ -5,7 +5,12 @@ import { useState } from 'react'
 import { useProjectStore } from '@/entities/project'
 import { Button, Input, MathInput } from '@/shared/ui'
 
-export function CreateProjectForm() {
+interface CreateProjectFormProps {
+  /** Called after a project is submitted, so the parent can close the form. */
+  onCreated?: () => void
+}
+
+export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
   const [name, setName] = useState('')
   const [budget, setBudget] = useState('')
 
@@ -24,6 +29,7 @@ export function CreateProjectForm() {
 
     setName('')
     setBudget('')
+    onCreated?.()
   }
 
   const isFormValid = name.trim() && budget && Number(budget) > 0

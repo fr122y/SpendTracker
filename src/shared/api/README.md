@@ -71,6 +71,10 @@ Server Actions and shared query infrastructure for the application.
   shared-budget links
 - Shared expenses cannot be linked to project operations; project money remains
   private task-scoped behavior until a later product decision
+- Project cash on hand is withdrawals minus returns of the project; project
+  expenses do not change it. Adding or editing a project withdrawal or return
+  locks the project row in a transaction and rejects a change that would make
+  cash on hand negative (`project-helpers.ts`)
 - Shared budget invite tokens are stored as hashes and accepted through Server
   Actions only
 - Password reset tokens are stored as hashes, expire after 15 minutes, and are
