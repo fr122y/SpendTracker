@@ -40,7 +40,12 @@ function tokenize(expr: string): Token[] | null {
         i++
       }
 
-      const value = parseFloat(numStr)
+      // A whole token must be one number: `1.2.3` or a lone `.` is invalid,
+      // not a partial parse.
+      if (!/^-?(\d+\.?\d*|\.\d+)$/.test(numStr)) {
+        return null
+      }
+      const value = Number(numStr)
       if (isNaN(value)) {
         return null
       }

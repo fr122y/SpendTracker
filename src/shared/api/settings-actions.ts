@@ -15,6 +15,7 @@ import {
   isWeekStartDate,
   type WeeklyLimitSetting,
 } from '@/shared/lib/finance-selectors'
+import { isValidMoneyAmount } from '@/shared/lib/money-amount'
 import { isValidPaydayDay } from '@/shared/lib/payday'
 
 import {
@@ -135,6 +136,13 @@ export async function updateSettings(data: UpdateSettingsInput): Promise<void> {
     if (key in settingsData && !isValidPaydayDay(settingsData[key])) {
       throw new Error('День зарплаты и аванса должен быть от 1 до 31')
     }
+  }
+
+  if (
+    settingsData.salary !== undefined &&
+    !isValidMoneyAmount(settingsData.salary, { allowZero: true })
+  ) {
+    throw new Error('Доход должен быть от 0 до 100 000 000 ₽')
   }
 
   if (settingsData.salary !== undefined) {

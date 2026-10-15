@@ -1,3 +1,5 @@
+import { isValidMoneyAmount } from './money-amount'
+
 import type { Expense } from '@/shared/types'
 
 export interface CategoryStat {
@@ -638,9 +640,9 @@ export function getWeeklyBudgetSummary(
   }
 }
 
-/** A weekly limit must be a finite amount greater than zero. */
+/** A weekly limit must be a finite amount in `(0, MAX_MONEY_AMOUNT]`. */
 export function isValidWeeklyLimitAmount(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0
+  return isValidMoneyAmount(value)
 }
 
 /** True for a real calendar date in `YYYY-MM-DD` format that is a Monday. */

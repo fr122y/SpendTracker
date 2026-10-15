@@ -230,7 +230,7 @@ function PocketDetail({
                   aria-label={`Бюджет кармана ${pocket.name}`}
                   value={budgetInput}
                   onValueChange={saveBudget}
-                  min={0}
+                  allowZero
                   disabled={isArchived || setMonthBudget.isPending}
                 />
               ) : (

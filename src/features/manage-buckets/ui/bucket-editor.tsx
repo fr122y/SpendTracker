@@ -319,7 +319,7 @@ export function BucketEditor() {
             value={salaryInputValue}
             onValueChange={handleSalaryChange}
             placeholder="Введите сумму"
-            min={0}
+            allowZero
           />
           <span className="text-zinc-400">₽</span>
         </div>
@@ -391,6 +391,7 @@ export function BucketEditor() {
                         )
                       }
                       placeholder="—"
+                      allowZero
                       className="min-w-0"
                     />
                     <span className="shrink-0 text-zinc-400">%</span>
@@ -422,6 +423,7 @@ export function BucketEditor() {
                         )
                       }
                       placeholder="0"
+                      allowZero
                       className="min-w-0"
                     />
                     <span className="shrink-0 text-zinc-400">₽</span>

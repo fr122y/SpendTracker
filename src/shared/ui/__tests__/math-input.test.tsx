@@ -195,7 +195,9 @@ describe('MathInput', () => {
     })
 
     it('normalizes negative zero to zero', () => {
-      render(<MathInput value="-0.004" onValueChange={mockOnValueChange} />)
+      render(
+        <MathInput value="-0.004" onValueChange={mockOnValueChange} allowZero />
+      )
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
@@ -205,7 +207,7 @@ describe('MathInput', () => {
   })
 
   describe('Expression evaluation on Enter key', () => {
-    it('evaluates expression and blurs input on Enter', async () => {
+    it('evaluates expression and blurs input on Enter outside a form', async () => {
       const user = userEvent.setup()
       render(<MathInput value="100+50" onValueChange={mockOnValueChange} />)
       const input = screen.getByRole('textbox')
@@ -236,19 +238,21 @@ describe('MathInput', () => {
     })
   })
 
-  describe('Min/Max clamping', () => {
-    it('clamps value to min when result is below minimum', () => {
-      render(
-        <MathInput value="10-20" onValueChange={mockOnValueChange} min={0} />
-      )
+  describe('Range validation', () => {
+    it('rejects a result below zero with an inline error', () => {
+      render(<MathInput value="10-20" onValueChange={mockOnValueChange} />)
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('0', 0)
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Сумма должна быть больше 0'
+      )
+      expect(input).toHaveAttribute('aria-invalid', 'true')
     })
 
-    it('clamps value to max when result exceeds maximum', () => {
+    it('rejects a result above a custom maximum', () => {
       render(
         <MathInput
           value="500+600"
@@ -260,43 +264,48 @@ describe('MathInput', () => {
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('1000', 1000)
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent('Не больше 1 000 ₽')
     })
 
-    it('clamps plain number to min', () => {
-      render(<MathInput value="-5" onValueChange={mockOnValueChange} min={0} />)
+    it('rejects a negative plain number even when zero is allowed', () => {
+      render(
+        <MathInput value="-5" onValueChange={mockOnValueChange} allowZero />
+      )
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('0', 0)
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Сумма не может быть отрицательной'
+      )
     })
 
-    it('clamps plain number to max', () => {
+    it('rejects an amount above 100 000 000 by default', () => {
       render(
-        <MathInput value="150" onValueChange={mockOnValueChange} max={100} />
+        <MathInput value="100000000.01" onValueChange={mockOnValueChange} />
+      )
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Не больше 100 000 000 ₽'
+      )
+    })
+
+    it('accepts a value within bounds', () => {
+      render(
+        <MathInput value="50+50" onValueChange={mockOnValueChange} max={200} />
       )
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
 
       expect(mockOnValueChange).toHaveBeenCalledWith('100', 100)
-    })
-
-    it('does not clamp when value is within bounds', () => {
-      render(
-        <MathInput
-          value="50+50"
-          onValueChange={mockOnValueChange}
-          min={0}
-          max={200}
-        />
-      )
-      const input = screen.getByRole('textbox')
-
-      fireEvent.blur(input)
-
-      expect(mockOnValueChange).toHaveBeenCalledWith('100', 100)
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     })
   })
 
@@ -359,8 +368,10 @@ describe('MathInput', () => {
       expect(mockOnValueChange).not.toHaveBeenCalled()
     })
 
-    it('handles zero value', () => {
-      render(<MathInput value="0" onValueChange={mockOnValueChange} />)
+    it('accepts zero when allowed', () => {
+      render(
+        <MathInput value="0" onValueChange={mockOnValueChange} allowZero />
+      )
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
@@ -368,22 +379,28 @@ describe('MathInput', () => {
       expect(mockOnValueChange).toHaveBeenCalledWith('0', 0)
     })
 
-    it('handles expression resulting in zero', () => {
+    it('rejects an expression resulting in zero by default', () => {
       render(<MathInput value="100-100" onValueChange={mockOnValueChange} />)
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('0', 0)
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Сумма должна быть больше 0'
+      )
     })
 
-    it('handles negative result', () => {
+    it('rejects a negative result', () => {
       render(<MathInput value="50-100" onValueChange={mockOnValueChange} />)
       const input = screen.getByRole('textbox')
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('-50', -50)
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Сумма должна быть больше 0'
+      )
     })
 
     it('respects order of operations', () => {
@@ -432,6 +449,91 @@ describe('MathInput', () => {
 
       expect(mockOnValueChange).toHaveBeenCalledWith('150', 150)
       expect(mockOnKeyDown).toHaveBeenCalled()
+    })
+  })
+
+  describe('Input format', () => {
+    it.each([
+      ['1 500', '1500', 1500],
+      ['1\u00a0500,50', '1500.5', 1500.5],
+      [' 42 ', '42', 42],
+      ['12.345', '12.35', 12.35],
+    ])('accepts %j', (value, display, evaluated) => {
+      render(<MathInput value={value} onValueChange={mockOnValueChange} />)
+
+      fireEvent.blur(screen.getByRole('textbox'))
+
+      expect(mockOnValueChange).toHaveBeenCalledWith(display, evaluated)
+    })
+
+    it.each(['15 руб', '1e5', '1.2.3', '500+50abc'])(
+      'rejects %j without a partial parse',
+      (value) => {
+        render(<MathInput value={value} onValueChange={mockOnValueChange} />)
+
+        fireEvent.blur(screen.getByRole('textbox'))
+
+        expect(mockOnValueChange).not.toHaveBeenCalled()
+        expect(screen.getByRole('alert')).toHaveTextContent(
+          'Введите сумму числом, напр. 1500 или 500+50'
+        )
+      }
+    )
+
+    it('hides the error while the user edits the value', () => {
+      render(<MathInput value="15 руб" onValueChange={mockOnValueChange} />)
+      const input = screen.getByRole('textbox')
+
+      fireEvent.blur(input)
+      expect(screen.getByRole('alert')).toBeInTheDocument()
+
+      fireEvent.change(input, { target: { value: '15' } })
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Enter inside a form', () => {
+    it('evaluates and submits the form, keeping focus', async () => {
+      const user = userEvent.setup()
+      const onSubmit = jest.fn((event: React.FormEvent) =>
+        event.preventDefault()
+      )
+      render(
+        <form onSubmit={onSubmit}>
+          <MathInput value="500+50" onValueChange={mockOnValueChange} />
+        </form>
+      )
+      const input = screen.getByRole('textbox')
+
+      await user.click(input)
+      await user.keyboard('{Enter}')
+
+      expect(mockOnValueChange).toHaveBeenCalledWith('550', 550)
+      expect(onSubmit).toHaveBeenCalledTimes(1)
+      expect(input).toHaveFocus()
+    })
+
+    it('does not submit an invalid amount and shows the error', async () => {
+      const user = userEvent.setup()
+      const onSubmit = jest.fn((event: React.FormEvent) =>
+        event.preventDefault()
+      )
+      render(
+        <form onSubmit={onSubmit}>
+          <MathInput value="-100" onValueChange={mockOnValueChange} />
+        </form>
+      )
+      const input = screen.getByRole('textbox')
+
+      await user.click(input)
+      await user.keyboard('{Enter}')
+
+      expect(onSubmit).not.toHaveBeenCalled()
+      expect(mockOnValueChange).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Сумма должна быть больше 0'
+      )
+      expect(input).toHaveFocus()
     })
   })
 })

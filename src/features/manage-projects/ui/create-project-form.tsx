@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 import { useProjectStore } from '@/entities/project'
-import { useSubmitLock } from '@/shared/lib'
+import { parseAmountInput, useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput } from '@/shared/ui'
 
 interface CreateProjectFormProps {
@@ -18,13 +18,16 @@ export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
   const addProject = useProjectStore((state) => state.addProject)
   const runLocked = useSubmitLock()
 
+  const parsedBudget = parseAmountInput(budget)
+  const isFormValid = Boolean(name.trim()) && parsedBudget.ok
+
   const submit = () => {
-    if (!name.trim() || !budget || Number(budget) <= 0) return
+    if (!name.trim() || !parsedBudget.ok) return
 
     addProject({
       id: crypto.randomUUID(),
       name: name.trim(),
-      budget: Number(budget),
+      budget: parsedBudget.value,
     })
 
     setName('')
@@ -37,8 +40,6 @@ export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
     void runLocked(submit)
   }
 
-  const isFormValid = name.trim() && budget && Number(budget) > 0
-
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Input
@@ -47,10 +48,10 @@ export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
         onChange={(e) => setName(e.target.value)}
       />
       <MathInput
-        placeholder="Бюджет (можно ввести выражение, напр. 50000+5000)"
+        placeholder="Бюджет, напр. 50000+5000"
+        aria-label="Бюджет проекта"
         value={budget}
         onValueChange={(value) => setBudget(value)}
-        min={0}
       />
       <Button type="submit" disabled={!isFormValid}>
         Создать проект

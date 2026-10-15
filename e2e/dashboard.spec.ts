@@ -142,7 +142,7 @@ test.describe('Dashboard Smoke Tests', () => {
     await input.fill('0')
     await input.press('Enter')
 
-    await expect(page.getByText('Лимит должен быть больше 0')).toBeVisible()
+    await expect(page.getByText('Сумма должна быть больше 0')).toBeVisible()
     await expect(input).toHaveAttribute('aria-invalid', 'true')
 
     await page.reload()

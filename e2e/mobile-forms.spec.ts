@@ -147,7 +147,7 @@ test.describe('Mobile Form Interaction Tests', () => {
       // The amount placeholder also hints that expressions are accepted.
       await expect(amountInput).toHaveAttribute(
         'placeholder',
-        'Сумма (можно ввести выражение, напр. 500+50)'
+        'Сумма, напр. 500+50'
       )
     })
 

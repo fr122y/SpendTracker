@@ -16,7 +16,12 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import { formatDate, getProjectCashOnHand, useSubmitLock } from '@/shared/lib'
+import {
+  formatDate,
+  getProjectCashOnHand,
+  parseAmountInput,
+  useSubmitLock,
+} from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType, SharedBudget } from '@/shared/types'
@@ -162,14 +167,15 @@ export function ExpenseForm() {
       : 'expense'
   const isMovement = operationType !== 'expense'
   const needsProject = isProjectScenario(scenario)
-  const parsedAmountValue = Number(amount)
+  const parsedAmountInput = parseAmountInput(amount)
+  const parsedAmountValue = parsedAmountInput.ok ? parsedAmountInput.value : 0
   const projectCashOnHand =
     scenario === 'project_return' && selectedProjectId
       ? Math.max(getProjectCashOnHand(expenses, selectedProjectId), 0)
       : null
   const returnExceedsCash =
     projectCashOnHand !== null &&
-    Boolean(amount) &&
+    parsedAmountInput.ok &&
     parsedAmountValue > projectCashOnHand
 
   const resetForm = () => {
@@ -237,8 +243,8 @@ export function ExpenseForm() {
 
   const submit = async () => {
     const normalizedDescription = description.trim()
-    const parsedAmount = Number(amount)
-    if (!normalizedDescription || !amount || parsedAmount <= 0) return
+    if (!normalizedDescription || !parsedAmountInput.ok) return
+    const parsedAmount = parsedAmountInput.value
     if (needsProject && !selectedProjectId) return
     if (returnExceedsCash) return
     if (isPocketPurchase && !selectedPocket) return
@@ -399,13 +405,15 @@ export function ExpenseForm() {
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
+    // Enter in the amount field submits through requestSubmit, which does not
+    // respect the disabled submit button.
+    if (!isFormValid) return
     void runLocked(submit)
   }
 
   const isFormValid =
     description.trim() &&
-    amount &&
-    Number(amount) > 0 &&
+    parsedAmountInput.ok &&
     (!needsProject || !!selectedProjectId) &&
     !returnExceedsCash &&
     (!isPocketPurchase || !!selectedPocket) &&
@@ -507,11 +515,10 @@ export function ExpenseForm() {
         disabled={isSubmitting || isSavingAnyMapping}
       />
       <MathInput
-        placeholder="Сумма (можно ввести выражение, напр. 500+50)"
+        placeholder="Сумма, напр. 500+50"
         aria-label="Сумма расхода"
         value={amount}
         onValueChange={(value) => setAmount(value)}
-        min={0}
         disabled={isSubmitting || isSavingAnyMapping}
         className="text-base sm:text-sm"
       />

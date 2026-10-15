@@ -1015,12 +1015,17 @@ describe('weekly limit validation', () => {
     expect(isValidWeeklyLimitAmount(value)).toBe(true)
   })
 
-  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, '8000', null])(
-    'rejects limit %p',
-    (value) => {
-      expect(isValidWeeklyLimitAmount(value)).toBe(false)
-    }
-  )
+  it.each([
+    0,
+    -1,
+    100_000_000.01,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    '8000',
+    null,
+  ])('rejects limit %p', (value) => {
+    expect(isValidWeeklyLimitAmount(value)).toBe(false)
+  })
 
   it.each(['2026-10-12', '2024-01-15', '2024-02-26'])(
     'accepts Monday %p',

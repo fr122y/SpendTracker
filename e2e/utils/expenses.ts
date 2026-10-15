@@ -111,6 +111,15 @@ export function expenseRow(
   return expenseRows(page, description, amount).last()
 }
 
+interface SubmitExpenseOptions {
+  tap?: boolean
+  clickCount?: number
+  /** What to type into the amount field; defaults to the amount itself. */
+  amountText?: (amount: number) => string
+  /** Submit with Enter in the amount field instead of the button. */
+  submitWithEnter?: boolean
+}
+
 /**
  * Fills the journal form and submits a personal expense.
  * Accepts a category suggestion when one is shown, otherwise picks the
@@ -120,8 +129,9 @@ export async function submitExpense(
   page: Page,
   description: string,
   amount: number,
-  options: { tap?: boolean; clickCount?: number } = {}
+  options: SubmitExpenseOptions = {}
 ): Promise<string> {
+  const amountText = options.amountText?.(amount) ?? String(amount)
   const form = journalForm(page)
   const descriptionInput = form.getByLabel('Описание расхода')
   const amountInput = form.getByLabel('Сумма расхода')
@@ -145,9 +155,9 @@ export async function submitExpense(
       if (options.tap) await descriptionInput.tap()
       await descriptionInput.fill(description)
     }
-    if ((await amountInput.inputValue()) !== String(amount)) {
+    if ((await amountInput.inputValue()) !== amountText) {
       if (options.tap) await amountInput.tap()
-      await amountInput.fill(String(amount))
+      await amountInput.fill(amountText)
     }
     await descriptionInput.focus()
     await descriptionInput.blur()
@@ -177,7 +187,8 @@ export async function submitExpense(
       body.includes(`"amount":${amount}`)
     )
   })
-  if (options.tap) await submitButton.tap()
+  if (options.submitWithEnter) await amountInput.press('Enter')
+  else if (options.tap) await submitButton.tap()
   else await submitButton.click({ clickCount: options.clickCount ?? 1 })
   expect((await saved).ok()).toBe(true)
 
@@ -238,7 +249,7 @@ export const test = base.extend<{
   expenses: {
     add: (
       description: string,
-      options?: { amount?: number; tap?: boolean; clickCount?: number }
+      options?: SubmitExpenseOptions & { amount?: number }
     ) => Promise<CreatedExpense>
     remove: (expense: CreatedExpense) => Promise<void>
   }

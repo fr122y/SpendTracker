@@ -217,6 +217,43 @@ describe('expense-actions project cash on hand', () => {
     expect(dbModule.__mocks.txInsertValues).not.toHaveBeenCalled()
   })
 
+  it.each([0, -100, 100_000_000.01, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejects adding an operation with amount %p before any write',
+    async (amount) => {
+      await expect(
+        addExpense({
+          description: 'кофе',
+          amount,
+          date: '2026-06-15',
+          category: 'Еда',
+          emoji: '🍔',
+        })
+      ).rejects.toThrow('Operation amount must be a positive finite number')
+      expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+      expect(dbModule.__mocks.txInsertValues).not.toHaveBeenCalled()
+    }
+  )
+
+  it('rejects editing an operation amount above 100 000 000', async () => {
+    dbModule.__mocks.existingWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-1',
+        amount: 1000,
+        projectId: null,
+        pocketId: null,
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        operationType: 'expense',
+      },
+    ])
+
+    await expect(
+      updateExpense('expense-1', { amount: 999_999_999_999 })
+    ).rejects.toThrow('Operation amount must be a positive finite number')
+    expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
+    expect(dbModule.__mocks.txUpdateSet).not.toHaveBeenCalled()
+  })
+
   it('rechecks the balance when a return amount is edited', async () => {
     dbModule.__mocks.existingWhere.mockResolvedValueOnce([
       {

@@ -56,6 +56,18 @@ export {
 // Import it directly from '@/features/widget-registry' where needed
 
 export { evaluateMathExpression } from './math-eval'
+export {
+  AMOUNT_FORMAT_ERROR,
+  AMOUNT_NEGATIVE_ERROR,
+  AMOUNT_POSITIVE_ERROR,
+  MAX_MONEY_AMOUNT,
+  getAmountMaxError,
+  isValidMoneyAmount,
+  parseAmountInput,
+  roundToKopecks,
+  type MoneyAmountRules,
+  type ParsedAmountInput,
+} from './money-amount'
 export { getSafeCallbackUrl } from './auth-redirect'
 export { showMutationRollbackToast } from './mutation-toast'
 
