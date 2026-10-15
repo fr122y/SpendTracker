@@ -33,6 +33,11 @@ export {
   type PocketMonthSummary,
 } from './finance-selectors'
 
+export {
+  getPocketMonthHistory,
+  type PocketHistoryMonth,
+} from './pocket-history'
+
 export { cn } from './cn'
 
 // Reatom

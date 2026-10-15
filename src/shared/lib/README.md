@@ -28,6 +28,13 @@ Utility functions and helpers used across the application.
 - `getWeekBoundaries(date)`: Return Monday-Sunday ISO date boundaries for a
   date
 
+### Pocket History (`pocket-history.ts`)
+
+- `getPocketMonthHistory({ pocketId, pocketCreatedAt, budgets, expenses, selectedPeriod })`:
+  per-month budget, spent, and remainder (negative = overspend) from the
+  pocket's first month to `selectedPeriod`, newest first; a month without a
+  saved budget carries the latest earlier one, or 0. Read-only.
+
 ### Income Allocation (`allocation.ts`)
 
 - `getBucketAmountKopecks(bucket, incomeKopecks)`, `calculateAllocation(buckets, incomeKopecks)`: bucket amounts, allocated total, and the operations remainder in kopecks

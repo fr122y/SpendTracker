@@ -27,6 +27,12 @@ import {
 import { getPocketMonthSummary } from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, MathInput } from '@/shared/ui'
 
+import {
+  formatPocketCurrency as formatCurrency,
+  formatPocketMonthName,
+  formatPocketPeriod,
+} from './pocket-format'
+import { PocketMonthHistory } from './pocket-month-history'
 import { PocketOperationRow } from './pocket-operation-row'
 import { PocketMonthSkeleton, PocketsSkeleton } from './pockets-skeleton'
 
@@ -38,10 +44,6 @@ function getPeriod(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
-function formatCurrency(amount: number) {
-  return `${amount.toLocaleString('ru-RU')} ₽`
-}
-
 function PocketDetail({
   pocket,
   selectedDate,
@@ -50,7 +52,12 @@ function PocketDetail({
   isBudgetLoading,
   isBudgetError,
 }: {
-  pocket: { id: string; name: string; archivedAt?: string | null }
+  pocket: {
+    id: string
+    name: string
+    archivedAt?: string | null
+    createdAt: string
+  }
   selectedDate: Date
   expenses: Expense[]
   monthBudget: PocketMonthBudget | null | undefined
@@ -144,6 +151,12 @@ function PocketDetail({
               </span>
             )}
           </div>
+          <p
+            data-testid={`pocket-period-${pocket.id}`}
+            className="mt-1 text-sm text-zinc-400"
+          >
+            {formatPocketPeriod(period)}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {isArchived && (
@@ -299,9 +312,8 @@ function PocketDetail({
               }
             >
               <h4 className="text-sm font-medium text-zinc-300">
-                {historyKind === 'purchase'
-                  ? 'Покупки за месяц'
-                  : 'Переводы за месяц'}
+                {historyKind === 'purchase' ? 'Покупки' : 'Переводы'} за{' '}
+                {formatPocketMonthName(period)}
               </h4>
               {selectedOperations.length > 0 ? (
                 <ul className="space-y-2">
@@ -320,6 +332,13 @@ function PocketDetail({
               )}
             </div>
           )}
+
+          <PocketMonthHistory
+            pocket={pocket}
+            selectedPeriod={period}
+            expenses={expenses}
+            monthBudget={monthBudget}
+          />
 
           {!isArchived && (
             <div className="space-y-3 border-t border-zinc-800 pt-3">
