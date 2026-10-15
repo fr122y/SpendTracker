@@ -56,6 +56,11 @@ Utility functions and helpers used across the application.
   auth redirect targets
 - `showMutationRollbackToast(message?)`: Unified error toast for optimistic
   mutation rollback UX
+- `useSubmitLock()`: ref-based lock for form submits; rapid repeated submits
+  run the task once until it settles
+- `getPocketNameKey`, `findPocketNameConflict`, `POCKET_NAME_CONFLICT_MESSAGE`
+  (`pocket-name.ts`): trimmed, case-insensitive pocket name comparison shared
+  by the forms and the pocket Server Actions
 
 ### Widget Registry (moved to features layer)
 

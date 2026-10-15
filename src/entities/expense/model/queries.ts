@@ -150,6 +150,7 @@ export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
     isLoading,
     addExpense: (expense) => {
       addExpense.mutate({
+        id: expense.id,
         description: expense.description,
         amount: expense.amount,
         date: expense.date,

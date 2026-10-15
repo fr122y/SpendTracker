@@ -3,6 +3,7 @@ import {
   expect,
   type Locator,
   type Page,
+  type Request,
   type Response,
 } from '@playwright/test'
 
@@ -180,6 +181,17 @@ test.describe('Pockets', () => {
     const isServerAction = (response: Response) =>
       response.request().method() === 'POST' &&
       response.request().headers()['next-action'] !== undefined
+    let createRequests = 0
+    const countCreateRequest = (request: Request) => {
+      if (
+        request.method() === 'POST' &&
+        request.headers()['next-action'] !== undefined &&
+        (request.postData() ?? '').includes(pocketName)
+      ) {
+        createRequests += 1
+      }
+    }
+    page.on('request', countCreateRequest)
     let createDone = false
     const created = page.waitForResponse((response) => {
       const done =
@@ -196,16 +208,22 @@ test.describe('Pockets', () => {
         isServerAction(response) &&
         (response.request().postData() ?? '').includes('"queryKey":["pockets"]')
     )
-    await createForm.getByRole('button', { name: 'Создать карман' }).click()
+    // A rapid triple click must still send exactly one create request.
+    await createForm
+      .getByRole('button', { name: 'Создать карман' })
+      .click({ clickCount: 3 })
     const createResponse = await created
     expect(createResponse.ok(), 'create pocket server action').toBe(true)
     expect((await refetched).ok(), 'pocket list refetch').toBe(true)
+    page.off('request', countCreateRequest)
+    expect(createRequests, 'create pocket requests').toBe(1)
 
     await expect(createForm).toBeHidden(TIMEOUT)
     const chip = page
       .getByLabel('Список карманов')
       .getByRole('button', { name: pocketName, exact: true })
     await expect(chip).toBeVisible(TIMEOUT)
+    await expect(chip).toHaveCount(1)
 
     const region = await openPocket()
     await expect(chip).toHaveAttribute('aria-pressed', 'true')
@@ -213,6 +231,34 @@ test.describe('Pockets', () => {
       region.getByRole('heading', { name: pocketName, level: 3 })
     ).toBeVisible()
     await expectTotals(region, 0, 0)
+  })
+
+  test('should reject a second active pocket with the same name', async () => {
+    await page.getByRole('button', { name: 'Создать карман' }).click()
+    const createForm = page
+      .locator('form')
+      .filter({ has: page.getByLabel('Название кармана') })
+    await createForm
+      .getByLabel('Название кармана')
+      .fill(`  ${pocketName.toUpperCase()} `)
+    await createForm.getByRole('button', { name: 'Создать карман' }).click()
+
+    await expect(createForm.getByRole('alert')).toHaveText(
+      'Карман с таким названием уже есть',
+      TIMEOUT
+    )
+    await expect(
+      page
+        .getByLabel('Список карманов')
+        .getByRole('button', { name: pocketName, exact: true })
+    ).toHaveCount(1)
+
+    // Close the form without creating anything.
+    await page.goto('/')
+    await expect(
+      page.getByRole('heading', { name: 'Карманы', level: 2 })
+    ).toBeVisible(TIMEOUT)
+    await openPocket()
   })
 
   test('should change the month budget', async () => {

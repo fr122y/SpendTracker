@@ -24,8 +24,12 @@ export interface Expense {
   operationType?: MoneyOperationType
 }
 
+/**
+ * `id` is an optional client-generated UUID. A repeated request with the same
+ * id stores nothing new, so a retried submit cannot create a duplicate.
+ */
 export type AddExpenseInput = Omit<Expense, 'id' | 'category' | 'emoji'> &
-  Partial<Pick<Expense, 'category' | 'emoji'>>
+  Partial<Pick<Expense, 'id' | 'category' | 'emoji'>>
 
 export type SharedBudgetRole = 'owner' | 'member'
 

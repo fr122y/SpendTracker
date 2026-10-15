@@ -32,9 +32,13 @@ Server Actions and shared query infrastructure for the application.
 - `getSharedBudgets()`: list shared budgets where the current user is a member
 - `getPockets()`, `createPocket(name)`, `renamePocket(id, name)`,
   `archivePocket(id)`, `restorePocket(id)`: manage the current user's
-  persistent personal pockets; `restorePocket` returns a `name_conflict`
-  result instead of restoring when an active pocket has the same trimmed,
-  case-insensitive name
+  persistent personal pockets. `createPocket`, `renamePocket`, and
+  `restorePocket` return a `name_conflict` result instead of writing when
+  another active pocket has the same trimmed, case-insensitive name; they
+  check and write under a per-user row lock. The database does not enforce
+  the rule yet (T-058)
+- `addExpense(data)` accepts an optional client-generated UUID `id`; a repeat
+  with the same id stores nothing new and returns the operation
 - `getPocketMonthBudgets(pocketId)`,
   `initializePocketMonthBudget(pocketId, period)`,
   `setPocketMonthBudget(pocketId, period, budget)`: read, initialize from the

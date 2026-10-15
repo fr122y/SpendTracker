@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import { useProjectStore } from '@/entities/project'
+import { useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput } from '@/shared/ui'
 
 interface CreateProjectFormProps {
@@ -15,10 +16,9 @@ export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
   const [budget, setBudget] = useState('')
 
   const addProject = useProjectStore((state) => state.addProject)
+  const runLocked = useSubmitLock()
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-
+  const submit = () => {
     if (!name.trim() || !budget || Number(budget) <= 0) return
 
     addProject({
@@ -30,6 +30,11 @@ export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
     setName('')
     setBudget('')
     onCreated?.()
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runLocked(submit)
   }
 
   const isFormValid = name.trim() && budget && Number(budget) > 0

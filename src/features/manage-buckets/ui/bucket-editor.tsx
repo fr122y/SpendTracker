@@ -79,6 +79,9 @@ export function BucketEditor() {
 
   const [localBuckets, setLocalBuckets] = useState<AllocationBucket[]>(buckets)
   const localBucketsRef = useRef(localBuckets)
+  // Rows added with «Добавить категорию» stay local until they get a name, so
+  // an unnamed category is never saved.
+  const draftIdsRef = useRef(new Set<string>())
   const [localSalary, setLocalSalary] = useState(salary)
   const [error, setError] = useState('')
   const [inputValues, setInputValues] = useState<Record<string, string>>({})
@@ -93,13 +96,17 @@ export function BucketEditor() {
     let didBucketsChange = false
 
     setLocalBuckets((currentBuckets) => {
-      if (areBucketsEqual(currentBuckets, buckets)) {
+      const drafts = currentBuckets.filter((bucket) =>
+        draftIdsRef.current.has(bucket.id)
+      )
+      const nextBuckets = drafts.length > 0 ? [...buckets, ...drafts] : buckets
+      if (areBucketsEqual(currentBuckets, nextBuckets)) {
         return currentBuckets
       }
 
       didBucketsChange = true
-      localBucketsRef.current = buckets
-      return buckets
+      localBucketsRef.current = nextBuckets
+      return nextBuckets
     })
 
     if (didBucketsChange) {
@@ -135,10 +142,16 @@ export function BucketEditor() {
     }
   }
 
+  const persistBuckets = (nextBuckets: AllocationBucket[]) => {
+    updateBuckets(
+      nextBuckets.filter((bucket) => !draftIdsRef.current.has(bucket.id))
+    )
+  }
+
   const saveBuckets = (nextBuckets: AllocationBucket[]) => {
     localBucketsRef.current = nextBuckets
     setLocalBuckets(nextBuckets)
-    updateBuckets(nextBuckets)
+    persistBuckets(nextBuckets)
   }
 
   const handleBucketFieldChange = (
@@ -220,20 +233,45 @@ export function BucketEditor() {
   }
 
   const handleLabelBlur = () => {
-    updateBuckets(localBucketsRef.current)
+    for (const bucket of localBucketsRef.current) {
+      if (draftIdsRef.current.has(bucket.id) && bucket.label.trim()) {
+        draftIdsRef.current.delete(bucket.id)
+      }
+    }
+    persistBuckets(localBucketsRef.current)
   }
 
   const handleAddBucket = () => {
+    // Repeated clicks reuse the one unnamed row instead of stacking empties.
+    const hasUnnamedDraft = localBucketsRef.current.some(
+      (bucket) => draftIdsRef.current.has(bucket.id) && !bucket.label.trim()
+    )
+    if (hasUnnamedDraft) return
+
     const newBucket: AllocationBucket = {
       id: crypto.randomUUID(),
       label: '',
       percentage: 0,
     }
-    saveBuckets([...localBucketsRef.current, newBucket])
+    draftIdsRef.current.add(newBucket.id)
+    const nextBuckets = [...localBucketsRef.current, newBucket]
+    localBucketsRef.current = nextBuckets
+    setLocalBuckets(nextBuckets)
   }
 
   const handleDeleteBucket = (id: string) => {
-    saveBuckets(localBucketsRef.current.filter((bucket) => bucket.id !== id))
+    const isDraft = draftIdsRef.current.delete(id)
+    const nextBuckets = localBucketsRef.current.filter(
+      (bucket) => bucket.id !== id
+    )
+    if (isDraft) {
+      localBucketsRef.current = nextBuckets
+      setLocalBuckets(nextBuckets)
+      setError('')
+      setBucketPendingDelete(null)
+      return
+    }
+    saveBuckets(nextBuckets)
     setError('')
     setBucketPendingDelete(null)
   }

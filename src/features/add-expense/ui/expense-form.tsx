@@ -16,7 +16,7 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import { formatDate, getProjectCashOnHand } from '@/shared/lib'
+import { formatDate, getProjectCashOnHand, useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType, SharedBudget } from '@/shared/types'
@@ -70,6 +70,7 @@ export function ExpenseForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
+  const runLocked = useSubmitLock()
   const expenses = useExpenseStore((state) => state.expenses)
   const categories = useCategoryStore((state) => state.categories)
   const projects = useProjectStore((state) => state.projects)
@@ -234,8 +235,7 @@ export function ExpenseForm() {
     setShowCategorySelect(true)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = async () => {
     const normalizedDescription = description.trim()
     const parsedAmount = Number(amount)
     if (!normalizedDescription || !amount || parsedAmount <= 0) return
@@ -395,6 +395,11 @@ export function ExpenseForm() {
 
     resetForm()
     setIsSubmitting(false)
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runLocked(submit)
   }
 
   const isFormValid =

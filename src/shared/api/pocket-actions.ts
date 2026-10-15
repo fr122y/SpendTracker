@@ -3,7 +3,8 @@
 import { and, asc, desc, eq, isNull, lt } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
-import { db, pocketMonthBudgets, pockets } from '@/shared/db'
+import { db, pocketMonthBudgets, pockets, users } from '@/shared/db'
+import { findPocketNameConflict } from '@/shared/lib/pocket-name'
 
 import {
   assertCanUsePocket,
@@ -61,55 +62,135 @@ export async function getPockets(): Promise<Pocket[]> {
   return rows.map(mapPocket)
 }
 
-export async function createPocket(name: string): Promise<Pocket> {
-  const userId = await getUserId()
-  const normalizedName = normalizePocketName(name)
-  const id = crypto.randomUUID()
-  const [row] = await db
-    .insert(pockets)
-    .values({ id, userId, name: normalizedName })
-    .returning({
-      id: pockets.id,
-      name: pockets.name,
-      archivedAt: pockets.archivedAt,
-      createdAt: pockets.createdAt,
-    })
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
-  if (!row) {
-    throw new Error('Pocket could not be created')
-  }
-
-  return mapPocket(row)
+/** A rejected name: an active pocket of the user already uses it. */
+export type PocketNameConflict = {
+  status: 'name_conflict'
+  conflictingName: string
 }
 
+export type CreatePocketResult =
+  | { status: 'created'; pocket: Pocket }
+  | PocketNameConflict
+
+export type RenamePocketResult =
+  | { status: 'renamed'; pocket: Pocket }
+  | PocketNameConflict
+
+/**
+ * Runs a pocket name change under a per-user lock. Locking the user row
+ * serializes concurrent create, rename, and restore calls of one user, so the
+ * second call sees the first one's committed name. The database itself does
+ * not enforce the rule yet (T-058): a write that bypasses these actions can
+ * still create a duplicate active name.
+ */
+function withPocketNameLock<T>(
+  userId: string,
+  callback: (transaction: Transaction) => Promise<T>
+): Promise<T> {
+  return db.transaction(async (transaction) => {
+    await transaction
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, userId))
+      .for('update')
+    return callback(transaction)
+  })
+}
+
+async function findActivePocketNameConflict(
+  transaction: Transaction,
+  userId: string,
+  name: string,
+  excludePocketId?: string
+): Promise<PocketNameConflict | null> {
+  const activePockets = await transaction
+    .select({ id: pockets.id, name: pockets.name })
+    .from(pockets)
+    .where(and(eq(pockets.userId, userId), isNull(pockets.archivedAt)))
+  const conflict = findPocketNameConflict(activePockets, name, excludePocketId)
+
+  return conflict
+    ? { status: 'name_conflict', conflictingName: conflict.name }
+    : null
+}
+
+/**
+ * Creates an active pocket. A name already used by another active pocket
+ * (trimmed, case-insensitive) is returned as `name_conflict` rather than
+ * thrown, because production builds hide server action error messages.
+ */
+export async function createPocket(name: string): Promise<CreatePocketResult> {
+  const userId = await getUserId()
+  const normalizedName = normalizePocketName(name)
+
+  return withPocketNameLock(userId, async (transaction) => {
+    const conflict = await findActivePocketNameConflict(
+      transaction,
+      userId,
+      normalizedName
+    )
+    if (conflict) return conflict
+
+    const [row] = await transaction
+      .insert(pockets)
+      .values({ id: crypto.randomUUID(), userId, name: normalizedName })
+      .returning({
+        id: pockets.id,
+        name: pockets.name,
+        archivedAt: pockets.archivedAt,
+        createdAt: pockets.createdAt,
+      })
+
+    if (!row) {
+      throw new Error('Pocket could not be created')
+    }
+
+    return { status: 'created', pocket: mapPocket(row) }
+  })
+}
+
+/** Renames an active pocket; a name conflict is returned like in `createPocket`. */
 export async function renamePocket(
   pocketId: string,
   name: string
-): Promise<Pocket> {
+): Promise<RenamePocketResult> {
   const userId = await getUserId()
   const normalizedName = normalizePocketName(name)
-  const [row] = await db
-    .update(pockets)
-    .set({ name: normalizedName })
-    .where(
-      and(
-        eq(pockets.id, pocketId),
-        eq(pockets.userId, userId),
-        isNull(pockets.archivedAt)
-      )
+
+  return withPocketNameLock(userId, async (transaction) => {
+    const conflict = await findActivePocketNameConflict(
+      transaction,
+      userId,
+      normalizedName,
+      pocketId
     )
-    .returning({
-      id: pockets.id,
-      name: pockets.name,
-      archivedAt: pockets.archivedAt,
-      createdAt: pockets.createdAt,
-    })
+    if (conflict) return conflict
 
-  if (!row) {
-    throw new Error('Active pocket not found')
-  }
+    const [row] = await transaction
+      .update(pockets)
+      .set({ name: normalizedName })
+      .where(
+        and(
+          eq(pockets.id, pocketId),
+          eq(pockets.userId, userId),
+          isNull(pockets.archivedAt)
+        )
+      )
+      .returning({
+        id: pockets.id,
+        name: pockets.name,
+        archivedAt: pockets.archivedAt,
+        createdAt: pockets.createdAt,
+      })
 
-  return mapPocket(row)
+    if (!row) {
+      throw new Error('Active pocket not found')
+    }
+
+    return { status: 'renamed', pocket: mapPocket(row) }
+  })
 }
 
 export async function archivePocket(pocketId: string): Promise<void> {
@@ -136,11 +217,7 @@ export async function archivePocket(pocketId: string): Promise<void> {
 
 export type RestorePocketResult =
   | { status: 'restored'; pocket: Pocket }
-  | { status: 'name_conflict'; conflictingName: string }
-
-function pocketNameKey(name: string): string {
-  return name.trim().toLocaleLowerCase('ru-RU')
-}
+  | PocketNameConflict
 
 /**
  * Returns an archived pocket to the active list. A conflict with an active
@@ -158,35 +235,32 @@ export async function restorePocket(
     return { status: 'restored', pocket: mapPocket(pocket) }
   }
 
-  const activePockets = await db
-    .select({ id: pockets.id, name: pockets.name })
-    .from(pockets)
-    .where(and(eq(pockets.userId, userId), isNull(pockets.archivedAt)))
-  const conflict = activePockets.find(
-    (active) =>
-      active.id !== pocketId &&
-      pocketNameKey(active.name) === pocketNameKey(pocket.name)
-  )
-  if (conflict) {
-    return { status: 'name_conflict', conflictingName: conflict.name }
-  }
+  return withPocketNameLock(userId, async (transaction) => {
+    const conflict = await findActivePocketNameConflict(
+      transaction,
+      userId,
+      pocket.name,
+      pocketId
+    )
+    if (conflict) return conflict
 
-  const [row] = await db
-    .update(pockets)
-    .set({ archivedAt: null })
-    .where(and(eq(pockets.id, pocketId), eq(pockets.userId, userId)))
-    .returning({
-      id: pockets.id,
-      name: pockets.name,
-      archivedAt: pockets.archivedAt,
-      createdAt: pockets.createdAt,
-    })
+    const [row] = await transaction
+      .update(pockets)
+      .set({ archivedAt: null })
+      .where(and(eq(pockets.id, pocketId), eq(pockets.userId, userId)))
+      .returning({
+        id: pockets.id,
+        name: pockets.name,
+        archivedAt: pockets.archivedAt,
+        createdAt: pockets.createdAt,
+      })
 
-  if (!row) {
-    throw new Error('Pocket could not be restored')
-  }
+    if (!row) {
+      throw new Error('Pocket could not be restored')
+    }
 
-  return { status: 'restored', pocket: mapPocket(row) }
+    return { status: 'restored', pocket: mapPocket(row) }
+  })
 }
 
 export async function getPocketMonthBudgets(

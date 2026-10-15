@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 import { POCKET_PURCHASE_HINT } from '@/entities/pocket/model/hints'
 
@@ -253,6 +253,44 @@ describe('ExpenseForm', () => {
         })
       )
     })
+  })
+
+  it('adds one expense for a rapid triple submit while the mapping saves', async () => {
+    let resolveMapping!: () => void
+    mockCategorize.mockReturnValue({ found: false })
+    mockSaveMapping.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (resolveMapping = resolve))
+    )
+
+    render(<ExpenseForm />)
+
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'кофемашина' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByLabelText(/категория/i), {
+      target: { value: '2' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '5000' },
+    })
+    const form = screen
+      .getByRole('button', { name: /добавить/i })
+      .closest('form')!
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+
+    await act(async () => resolveMapping())
+
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalledTimes(1))
+    expect(mockSaveMapping).toHaveBeenCalledTimes(1)
+    expect(mockAddExpense).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.any(String),
+        description: 'кофемашина',
+      })
+    )
   })
 
   it('creates a shared expense with a shared budget category', async () => {

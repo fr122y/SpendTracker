@@ -72,6 +72,25 @@ describe('CreateProjectForm', () => {
     })
   })
 
+  it('creates one project for a rapid triple submit', async () => {
+    render(<CreateProjectForm />)
+
+    fireEvent.change(screen.getByPlaceholderText(/название проекта/i), {
+      target: { value: 'Отпуск' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/бюджет/i), {
+      target: { value: '50000' },
+    })
+    const form = screen
+      .getByRole('button', { name: /создать проект/i })
+      .closest('form')!
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+
+    await waitFor(() => expect(mockAddProject).toHaveBeenCalledTimes(1))
+  })
+
   it('resets form after creating project', async () => {
     render(<CreateProjectForm />)
 

@@ -2,25 +2,52 @@
 
 import { useState } from 'react'
 
-import { useCreatePocket } from '@/entities/pocket'
+import {
+  PocketNameConflictError,
+  useCreatePocket,
+  usePockets,
+} from '@/entities/pocket'
+import {
+  findPocketNameConflict,
+  POCKET_NAME_CONFLICT_MESSAGE,
+  useSubmitLock,
+} from '@/shared/lib'
 import { Button, Input } from '@/shared/ui'
 
 export function CreatePocketForm({ onCreated }: { onCreated?: () => void }) {
   const [name, setName] = useState('')
+  const [submitError, setSubmitError] = useState<
+    'name_conflict' | 'failed' | null
+  >(null)
+  const { data: pockets = [] } = usePockets()
   const createPocket = useCreatePocket()
+  const runLocked = useSubmitLock()
   const normalizedName = name.trim()
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (!normalizedName || createPocket.isPending) return
+  const submit = async () => {
+    if (!normalizedName) return
+    setSubmitError(null)
+
+    const activePockets = pockets.filter((pocket) => !pocket.archivedAt)
+    if (findPocketNameConflict(activePockets, normalizedName)) {
+      setSubmitError('name_conflict')
+      return
+    }
 
     try {
       await createPocket.mutateAsync({ name: normalizedName })
       setName('')
       onCreated?.()
-    } catch {
-      // The mutation state renders the retry message below.
+    } catch (error) {
+      setSubmitError(
+        error instanceof PocketNameConflictError ? 'name_conflict' : 'failed'
+      )
     }
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void runLocked(submit)
   }
 
   return (
@@ -29,7 +56,10 @@ export function CreatePocketForm({ onCreated }: { onCreated?: () => void }) {
         label="Название кармана"
         placeholder="Например, отпуск"
         value={name}
-        onChange={(event) => setName(event.target.value)}
+        onChange={(event) => {
+          setName(event.target.value)
+          setSubmitError(null)
+        }}
         maxLength={80}
         required
         disabled={createPocket.isPending}
@@ -42,9 +72,11 @@ export function CreatePocketForm({ onCreated }: { onCreated?: () => void }) {
       >
         Создать карман
       </Button>
-      {createPocket.isError && (
+      {submitError && (
         <p role="alert" className="text-sm text-red-400 sm:basis-full">
-          Не удалось создать карман. Попробуйте ещё раз.
+          {submitError === 'name_conflict'
+            ? POCKET_NAME_CONFLICT_MESSAGE
+            : 'Не удалось создать карман. Попробуйте ещё раз.'}
         </p>
       )}
     </form>

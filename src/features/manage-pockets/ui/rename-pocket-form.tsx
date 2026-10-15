@@ -2,7 +2,16 @@
 
 import { useState } from 'react'
 
-import { useRenamePocket } from '@/entities/pocket'
+import {
+  PocketNameConflictError,
+  usePockets,
+  useRenamePocket,
+} from '@/entities/pocket'
+import {
+  findPocketNameConflict,
+  POCKET_NAME_CONFLICT_MESSAGE,
+  useSubmitLock,
+} from '@/shared/lib'
 import { Button, Input } from '@/shared/ui'
 
 export function RenamePocketForm({
@@ -15,25 +24,37 @@ export function RenamePocketForm({
   onDone: () => void
 }) {
   const [name, setName] = useState(initialName)
+  const [submitError, setSubmitError] = useState<
+    'name_conflict' | 'failed' | null
+  >(null)
+  const { data: pockets = [] } = usePockets()
   const renamePocket = useRenamePocket()
+  const runLocked = useSubmitLock()
   const normalizedName = name.trim()
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    if (
-      !normalizedName ||
-      normalizedName === initialName ||
-      renamePocket.isPending
-    ) {
+  const submit = async () => {
+    if (!normalizedName || normalizedName === initialName) return
+    setSubmitError(null)
+
+    const activePockets = pockets.filter((pocket) => !pocket.archivedAt)
+    if (findPocketNameConflict(activePockets, normalizedName, pocketId)) {
+      setSubmitError('name_conflict')
       return
     }
 
     try {
       await renamePocket.mutateAsync({ id: pocketId, name: normalizedName })
       onDone()
-    } catch {
-      // The mutation state renders the retry message below.
+    } catch (error) {
+      setSubmitError(
+        error instanceof PocketNameConflictError ? 'name_conflict' : 'failed'
+      )
     }
+  }
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    void runLocked(submit)
   }
 
   return (
@@ -41,7 +62,10 @@ export function RenamePocketForm({
       <Input
         label="Новое название"
         value={name}
-        onChange={(event) => setName(event.target.value)}
+        onChange={(event) => {
+          setName(event.target.value)
+          setSubmitError(null)
+        }}
         maxLength={80}
         required
         disabled={renamePocket.isPending}
@@ -57,9 +81,11 @@ export function RenamePocketForm({
           Отмена
         </Button>
       </div>
-      {renamePocket.isError && (
+      {submitError && (
         <p role="alert" className="text-sm text-red-400 sm:basis-full">
-          Не удалось переименовать карман. Попробуйте ещё раз.
+          {submitError === 'name_conflict'
+            ? POCKET_NAME_CONFLICT_MESSAGE
+            : 'Не удалось переименовать карман. Попробуйте ещё раз.'}
         </p>
       )}
     </form>

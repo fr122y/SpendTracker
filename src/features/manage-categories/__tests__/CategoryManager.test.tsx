@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 
 import { CategoryManager } from '../ui/category-manager'
 
@@ -58,11 +58,11 @@ jest.mock('@/entities/category', () => ({
     isLoading: false,
   }),
   useAddSharedBudgetCategory: () => ({
-    mutate: mockAddSharedCategory,
+    mutateAsync: mockAddSharedCategory,
     isPending: false,
   }),
   useUpdateSharedBudgetCategory: () => ({
-    mutate: mockUpdateSharedCategory,
+    mutateAsync: mockUpdateSharedCategory,
     isPending: false,
   }),
   useArchiveSharedBudgetCategory: () => ({
@@ -316,11 +316,37 @@ describe('CategoryManager', () => {
     fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
 
     await waitFor(() => {
-      expect(mockAddSharedCategory).toHaveBeenCalledWith(
-        { name: 'Аптека', emoji: '💊' },
-        expect.any(Object)
-      )
+      expect(mockAddSharedCategory).toHaveBeenCalledWith({
+        name: 'Аптека',
+        emoji: '💊',
+      })
     })
+  })
+
+  it('adds one shared category for a rapid triple submit', async () => {
+    let resolveRequest!: () => void
+    mockAddSharedCategory.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (resolveRequest = resolve))
+    )
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+    fireEvent.change(screen.getByPlaceholderText(/название/i), {
+      target: { value: 'Аптека' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/эмодзи/i), {
+      target: { value: '💊' },
+    })
+    const form = screen
+      .getByRole('button', { name: /добавить категорию/i })
+      .closest('form')!
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+    fireEvent.submit(form)
+
+    await waitFor(() => expect(mockAddSharedCategory).toHaveBeenCalledTimes(1))
+    await act(async () => resolveRequest())
+    expect(mockAddSharedCategory).toHaveBeenCalledTimes(1)
   })
 
   it('edits a shared category', async () => {
@@ -337,14 +363,11 @@ describe('CategoryManager', () => {
     fireEvent.click(screen.getByRole('button', { name: /сохранить/i }))
 
     await waitFor(() => {
-      expect(mockUpdateSharedCategory).toHaveBeenCalledWith(
-        {
-          id: 'shared-category-1',
-          name: 'Супермаркет',
-          emoji: '🛍️',
-        },
-        expect.any(Object)
-      )
+      expect(mockUpdateSharedCategory).toHaveBeenCalledWith({
+        id: 'shared-category-1',
+        name: 'Супермаркет',
+        emoji: '🛍️',
+      })
     })
   })
 

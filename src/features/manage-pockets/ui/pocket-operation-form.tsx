@@ -1,11 +1,11 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useAddExpense } from '@/entities/expense'
 import { POCKET_PURCHASE_HINT, POCKET_TRANSFER_HINT } from '@/entities/pocket'
-import { formatDate } from '@/shared/lib'
+import { formatDate, useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType } from '@/shared/types'
@@ -37,6 +37,14 @@ export function PocketOperationForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const categories = useCategoryStore((state) => state.categories)
   const addExpense = useAddExpense()
+  const runLocked = useSubmitLock()
+  // One id per entered operation: a retry after a failed request reuses it,
+  // so the server stores the operation at most once.
+  const operationIdRef = useRef<string | null>(null)
+  useEffect(() => {
+    // Edited input is a new operation, not a retry.
+    operationIdRef.current = null
+  }, [description, amount, selectedCategoryId, kind])
   const {
     categorize,
     saveMappingAndGetResult,
@@ -61,6 +69,7 @@ export function PocketOperationForm({
     setHasManualCategoryOverride(false)
     setShouldResolveCategory(false)
     setIsSubmitting(false)
+    operationIdRef.current = null
     onDone?.()
   }
 
@@ -116,8 +125,7 @@ export function PocketOperationForm({
     shouldResolveCategory,
   ])
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const submit = async () => {
     if (!canSubmit || isBusy) return
     if (isPurchase && !mappingsLoaded && !hasManualCategoryOverride) {
       setShouldResolveCategory(true)
@@ -182,8 +190,10 @@ export function PocketOperationForm({
       ? 'expense'
       : 'pocket_transfer'
 
+    operationIdRef.current ??= crypto.randomUUID()
     try {
       await addExpense.mutateAsync({
+        id: operationIdRef.current,
         description: description.trim(),
         amount: numericAmount,
         date: formatDate(selectedDate),
@@ -199,6 +209,11 @@ export function PocketOperationForm({
       setIsSubmitting(false)
       // The mutation state renders the retry message below.
     }
+  }
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runLocked(submit)
   }
 
   return (

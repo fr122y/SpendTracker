@@ -15,6 +15,7 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
+import { useSubmitLock } from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, Input, Select } from '@/shared/ui'
 
 import { CategoryManagerSkeleton } from './category-manager-skeleton'
@@ -27,6 +28,7 @@ export function CategoryManager() {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('')
   const [error, setError] = useState('')
+  const runLocked = useSubmitLock()
   const [categoryPendingDelete, setCategoryPendingDelete] =
     useState<Category | null>(null)
   const [mode, setMode] = useState<CategoryMode>('personal')
@@ -91,8 +93,7 @@ export function CategoryManager() {
     return <CategoryManagerSkeleton />
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const submit = () => {
     setError('')
 
     if (!name.trim() || !emoji.trim()) return
@@ -112,6 +113,11 @@ export function CategoryManager() {
     setEmoji('')
   }
 
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runLocked(submit)
+  }
+
   const isFormValid = name.trim() && emoji.trim()
   const isSharedFormValid = sharedName.trim() && sharedEmoji.trim()
 
@@ -122,8 +128,7 @@ export function CategoryManager() {
     setEditingSharedCategory(null)
   }
 
-  const handleSharedSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const submitShared = async () => {
     setSharedError('')
 
     if (!selectedSharedBudget || !isSharedFormValid) return
@@ -144,18 +149,24 @@ export function CategoryManager() {
       return
     }
 
-    if (editingSharedCategory) {
-      updateSharedCategory.mutate(
-        {
+    try {
+      if (editingSharedCategory) {
+        await updateSharedCategory.mutateAsync({
           id: editingSharedCategory.id,
           ...nextCategory,
-        },
-        { onSuccess: resetSharedForm }
-      )
-      return
+        })
+      } else {
+        await addSharedCategory.mutateAsync(nextCategory)
+      }
+      resetSharedForm()
+    } catch {
+      // The mutation hooks roll back and show the error toast.
     }
+  }
 
-    addSharedCategory.mutate(nextCategory, { onSuccess: resetSharedForm })
+  const handleSharedSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    void runLocked(submitShared)
   }
 
   const startSharedEdit = (category: SharedBudgetCategory) => {
