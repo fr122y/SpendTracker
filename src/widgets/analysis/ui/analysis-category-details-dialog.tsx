@@ -4,6 +4,8 @@ import { X } from 'lucide-react'
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
+import { ExpenseEditDialog } from '@/features/edit-expense'
+
 import {
   filterExpensesByNameGroups,
   getCategoryExpenseBase,
@@ -35,6 +37,7 @@ interface AnalysisCategoryDetailsDialogProps {
 
 interface ExpenseDetailRowProps {
   expense: Expense
+  onOpen: (expense: Expense) => void
 }
 
 interface NameGroupFilterProps {
@@ -132,7 +135,7 @@ function NameGroupFilter({
   )
 }
 
-function ExpenseDetailRow({ expense }: ExpenseDetailRowProps) {
+function ExpenseDetailRow({ expense, onOpen }: ExpenseDetailRowProps) {
   const operationLabel = expense.sharedBudgetId
     ? 'Общий расход'
     : expense.projectId
@@ -142,8 +145,15 @@ function ExpenseDetailRow({ expense }: ExpenseDetailRowProps) {
   return (
     <article
       data-testid={`category-expense-${expense.id}`}
-      className="flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3"
+      className="relative flex items-center justify-between gap-3 rounded-lg border border-zinc-800 bg-zinc-900/70 p-3 transition-colors hover:border-zinc-600 hover:bg-zinc-800/80"
     >
+      {/* Stretched over the whole row: activating the row opens the editor. */}
+      <button
+        type="button"
+        aria-label="Изменить операцию"
+        onClick={() => onOpen(expense)}
+        className="absolute inset-0 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+      />
       <div className="flex min-w-0 items-center gap-3">
         <span aria-hidden="true" className="shrink-0 text-xl">
           {expense.emoji}
@@ -175,6 +185,12 @@ export function AnalysisCategoryDetailsDialog({
   const dialogRef = useRef<HTMLElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [showAllGroups, setShowAllGroups] = useState(false)
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
+  const isEditorOpenRef = useRef(false)
+  isEditorOpenRef.current = editingExpenseId !== null
+  const editingExpense = editingExpenseId
+    ? expenses.find((expense) => expense.id === editingExpenseId)
+    : undefined
   const [selectedGroupKeyValues, setSelectedGroupKeyValues] = useState<
     string[]
   >([])
@@ -225,6 +241,8 @@ export function AnalysisCategoryDetailsDialog({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // The expense editor on top owns Escape and Tab while it is open.
+      if (isEditorOpenRef.current) return
       if (event.key === 'Escape') {
         event.preventDefault()
         handleClose()
@@ -264,6 +282,7 @@ export function AnalysisCategoryDetailsDialog({
   }, [handleClose])
 
   const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (isEditorOpenRef.current) return
     if (event.target === event.currentTarget) handleClose()
   }
 
@@ -368,7 +387,11 @@ export function AnalysisCategoryDetailsDialog({
                   </h3>
                   <div className="space-y-2">
                     {dateGroup.expenses.map((expense) => (
-                      <ExpenseDetailRow key={expense.id} expense={expense} />
+                      <ExpenseDetailRow
+                        key={expense.id}
+                        expense={expense}
+                        onOpen={(row) => setEditingExpenseId(row.id)}
+                      />
                     ))}
                   </div>
                 </section>
@@ -377,6 +400,13 @@ export function AnalysisCategoryDetailsDialog({
           )}
         </div>
       </section>
+      {editingExpense && (
+        <ExpenseEditDialog
+          key={editingExpense.id}
+          expense={editingExpense}
+          onClose={() => setEditingExpenseId(null)}
+        />
+      )}
     </div>,
     document.body
   )

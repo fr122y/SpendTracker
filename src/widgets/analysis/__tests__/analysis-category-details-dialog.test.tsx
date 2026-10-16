@@ -6,6 +6,23 @@ import { AnalysisCategoryDetailsDialog } from '../ui/analysis-category-details-d
 import type { CategoryStat, ExpenseScope } from '@/shared/lib'
 import type { Expense } from '@/shared/types'
 
+jest.mock('@/features/edit-expense', () => ({
+  ExpenseEditDialog: ({
+    expense,
+    onClose,
+  }: {
+    expense: { id: string; description: string }
+    onClose: () => void
+  }) => (
+    <div role="dialog" aria-label="Изменить операцию">
+      <span data-testid="editing-expense">{expense.id}</span>
+      <button type="button" onClick={onClose}>
+        Закрыть редактор
+      </button>
+    </div>
+  ),
+}))
+
 const SELECTED_DATE = new Date(2026, 0, 15)
 const CATEGORY: CategoryStat = {
   name: 'Кафе',
@@ -64,7 +81,7 @@ function DialogHarness({ expenses, scope = 'all' }: DialogHarnessProps) {
 }
 
 describe('AnalysisCategoryDetailsDialog', () => {
-  it('shows read-only expense rows grouped by descending date', () => {
+  it('shows expense rows grouped by descending date', () => {
     const expenses = [
       expense('older', 'столовка', 300, '2026-01-03'),
       expense('newer', 'столовая', 200, '2026-01-18'),
@@ -85,8 +102,10 @@ describe('AnalysisCategoryDetailsDialog', () => {
       'столовая'
     )
     expect(
-      within(screen.getByTestId('category-expense-newer')).queryByRole('button')
-    ).not.toBeInTheDocument()
+      within(screen.getByTestId('category-expense-newer')).getByRole('button', {
+        name: 'Изменить операцию',
+      })
+    ).toBeInTheDocument()
     expect(
       screen.queryByTestId('category-expense-movement')
     ).not.toBeInTheDocument()
@@ -232,7 +251,9 @@ describe('AnalysisCategoryDetailsDialog', () => {
     expect(closeButton).toHaveFocus()
     fireEvent.click(screen.getByRole('button', { name: 'Показать все (10)' }))
     fireEvent.click(screen.getByRole('button', { name: /чай/ }))
-    screen.getByRole('button', { name: 'Свернуть' }).focus()
+    within(screen.getByTestId('category-expense-tea'))
+      .getByRole('button', { name: 'Изменить операцию' })
+      .focus()
     fireEvent.keyDown(document, { key: 'Tab' })
     expect(closeButton).toHaveFocus()
 
@@ -246,5 +267,34 @@ describe('AnalysisCategoryDetailsDialog', () => {
     expect(
       screen.getByTestId('analysis-category-details-summary')
     ).toHaveTextContent('Найдено: 10 из 10 · 1 000 ₽ из 1 000 ₽')
+  })
+
+  it('opens the editor from a row and keeps Escape for the editor while it is open', () => {
+    const expenses = [
+      expense('tea', 'чай', 100),
+      expense('coffee', 'кофе', 200, '2026-01-16'),
+    ]
+
+    render(<DialogHarness expenses={expenses} />)
+
+    fireEvent.click(
+      within(screen.getByTestId('category-expense-coffee')).getByRole(
+        'button',
+        { name: 'Изменить операцию' }
+      )
+    )
+
+    expect(screen.getByTestId('editing-expense')).toHaveTextContent('coffee')
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(
+      screen.getByTestId('analysis-category-details-dialog')
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Закрыть редактор' }))
+    expect(screen.queryByTestId('editing-expense')).not.toBeInTheDocument()
+    expect(
+      screen.getByTestId('analysis-category-details-dialog')
+    ).toBeInTheDocument()
   })
 })
