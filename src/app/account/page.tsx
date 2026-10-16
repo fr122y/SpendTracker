@@ -4,11 +4,8 @@ import { redirect } from 'next/navigation'
 import { auth, getAccountProfile } from '@/shared/auth'
 import { Button } from '@/shared/ui'
 
+import { AccountProfileSection, ChangePasswordForm } from './account-forms'
 import { signOutCurrentUser } from './actions'
-
-function formatAccountValue(value: string | null | undefined) {
-  return value?.trim() ? value : 'Не указано'
-}
 
 export default async function AccountPage() {
   const session = await auth()
@@ -30,7 +27,7 @@ export default async function AccountPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-400">
-              Account
+              Аккаунт
             </p>
             <h1 className="mt-2 font-mono text-2xl font-bold text-white">
               Личный кабинет
@@ -45,34 +42,20 @@ export default async function AccountPage() {
           </Link>
         </div>
 
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl shadow-black/20">
-          <dl className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Имя
-              </dt>
-              <dd className="mt-2 break-words text-sm text-zinc-100">
-                {formatAccountValue(profile.name)}
-              </dd>
-            </div>
+        <AccountProfileSection
+          name={profile.name}
+          email={profile.email}
+          provider={profile.provider}
+        />
 
-            <div>
-              <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Email
-              </dt>
-              <dd className="mt-2 break-words text-sm text-zinc-100">
-                {formatAccountValue(profile.email)}
-              </dd>
-            </div>
-
-            <div>
-              <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Вход
-              </dt>
-              <dd className="mt-2 text-sm text-zinc-100">{profile.provider}</dd>
-            </div>
-          </dl>
-        </div>
+        {profile.hasPassword ? (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
+            <h2 className="mb-4 font-mono text-base font-bold text-white">
+              Сменить пароль
+            </h2>
+            <ChangePasswordForm />
+          </div>
+        ) : null}
 
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -81,7 +64,7 @@ export default async function AccountPage() {
                 Завершить сессию
               </h2>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
-                Выход завершит текущую сессию и вернет вас на страницу входа.
+                Выход завершит текущую сессию и вернёт вас на страницу входа.
               </p>
             </div>
 

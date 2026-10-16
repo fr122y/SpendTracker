@@ -12,7 +12,7 @@ import { accounts, db, sessions, users, verificationTokens } from '@/shared/db'
 import authConfig from './config'
 import { seedUserDefaults } from './seed-defaults'
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   ...authConfig,
   providers: [
     Google,
@@ -93,9 +93,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true
     },
-    jwt({ token, user }) {
+    jwt({ token, user, trigger, session }) {
       if (user?.id) {
         token.id = user.id
+      }
+
+      // Account page name change refreshes the JWT through `unstable_update`.
+      if (trigger === 'update' && typeof session?.user?.name === 'string') {
+        token.name = session.user.name
       }
 
       return token

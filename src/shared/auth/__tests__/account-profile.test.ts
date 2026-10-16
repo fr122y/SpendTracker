@@ -54,7 +54,8 @@ describe('getAccountProfile', () => {
       id: 'user-1',
       name: 'Ilya',
       email: 'ilya@example.com',
-      provider: 'Credentials',
+      provider: 'Email и пароль',
+      hasPassword: true,
     })
   })
 
