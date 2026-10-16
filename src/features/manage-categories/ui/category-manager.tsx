@@ -17,7 +17,7 @@ import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import { useSubmitLock } from '@/shared/lib'
+import { pluralizeRu, useSubmitLock } from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, Input, Select } from '@/shared/ui'
 
 import { CategoryManagerSkeleton } from './category-manager-skeleton'
@@ -457,7 +457,15 @@ function DeleteCategoryDialog({
         <p>Считаем операции…</p>
       ) : hasExpenses ? (
         <>
-          <p>В категории {expenseCount} операций. Куда перенести?</p>
+          <p>
+            В категории {expenseCount}{' '}
+            {pluralizeRu(expenseCount ?? 0, [
+              'операция',
+              'операции',
+              'операций',
+            ])}
+            . Куда перенести?
+          </p>
           <Select
             label="Перенести в"
             id="delete-category-target"

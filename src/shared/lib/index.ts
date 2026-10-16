@@ -107,3 +107,4 @@ export {
   getPocketNameKey,
   POCKET_NAME_CONFLICT_MESSAGE,
 } from './pocket-name'
+export { pluralizeRu } from './plural'

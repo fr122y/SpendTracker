@@ -244,13 +244,24 @@ describe('CategoryManager', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Удалить Продукты' }))
 
-    expect(
-      screen.getByText('В категории 4 операций. Куда перенести?')
-    ).toBeInTheDocument()
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(
+      'В категории 4 операции. Куда перенести?'
+    )
     expect(screen.getByLabelText('Перенести в')).toHaveValue('6')
 
     fireEvent.click(screen.getByRole('button', { name: 'Удалить категорию' }))
     expect(mockDeleteCategory).toHaveBeenCalledWith('1', '6')
+  })
+
+  it('uses the singular form for one expense', () => {
+    mockExpenseCount = 1
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить Продукты' }))
+
+    expect(screen.getByRole('alertdialog')).toHaveTextContent(
+      'В категории 1 операция. Куда перенести?'
+    )
   })
 
   it('defaults to the first remaining category when «Другое» is deleted', () => {

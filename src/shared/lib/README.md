@@ -68,6 +68,8 @@ Utility functions and helpers used across the application.
 - `getPocketNameKey`, `findPocketNameConflict`, `POCKET_NAME_CONFLICT_MESSAGE`
   (`pocket-name.ts`): trimmed, case-insensitive pocket name comparison shared
   by the forms and the pocket Server Actions
+- `pluralizeRu(count, [one, few, many])` (`plural.ts`): Russian plural form
+  for a count, with the 11–14 exceptions
 
 ### Widget Registry (moved to features layer)
 
