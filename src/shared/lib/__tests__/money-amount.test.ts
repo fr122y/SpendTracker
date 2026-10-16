@@ -4,6 +4,7 @@ import {
   AMOUNT_POSITIVE_ERROR,
   MAX_MONEY_AMOUNT,
   isValidMoneyAmount,
+  normalizeMoneyAmount,
   parseAmountInput,
 } from '../money-amount'
 
@@ -95,5 +96,28 @@ describe('isValidMoneyAmount', () => {
   it('accepts zero with allowZero', () => {
     expect(isValidMoneyAmount(0, { allowZero: true })).toBe(true)
     expect(isValidMoneyAmount(-0.01, { allowZero: true })).toBe(false)
+  })
+})
+
+describe('normalizeMoneyAmount', () => {
+  it.each([
+    [1500.005, 1500.01],
+    [0.1 + 0.2, 0.3],
+    [99_999_999.994, 99_999_999.99],
+    [-0.001, 0],
+    [250, 250],
+  ])('rounds %p to kopecks as %p', (value, expected) => {
+    expect(normalizeMoneyAmount(value)).toBe(expected)
+  })
+
+  it.each(['100', null, undefined, Number.NaN])(
+    'returns %p unchanged for the validator',
+    (value) => {
+      expect(normalizeMoneyAmount(value)).toBe(value)
+    }
+  )
+
+  it('rounds a sub-kopeck amount to zero, which a positive rule rejects', () => {
+    expect(isValidMoneyAmount(normalizeMoneyAmount(0.004))).toBe(false)
   })
 })

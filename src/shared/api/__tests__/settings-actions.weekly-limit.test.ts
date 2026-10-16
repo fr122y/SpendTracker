@@ -57,6 +57,14 @@ describe('weekly limit server validation', () => {
     )
   })
 
+  it('rounds the limit to kopecks before storing it', async () => {
+    await setWeeklyLimitForWeek('2026-10-12', 8000.126)
+
+    expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 8000.13 })
+    )
+  })
+
   it.each([0, -100, 100_000_000.01, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects limit %p with a Russian error and stores nothing',
     async (amount) => {

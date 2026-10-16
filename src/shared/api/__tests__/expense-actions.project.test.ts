@@ -138,6 +138,17 @@ describe('expense-actions project cash on hand', () => {
       )
     })
 
+    it('rounds the amount to kopecks before storing it', async () => {
+      dbModule.__mocks.existingWhere.mockResolvedValueOnce([])
+
+      await expect(
+        addExpense({ ...expenseInput, amount: 0.1 + 0.2 })
+      ).resolves.toMatchObject({ amount: 0.3 })
+      expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+        expect.objectContaining({ amount: 0.3 })
+      )
+    })
+
     it('answers a repeated request without a second row', async () => {
       dbModule.__mocks.existingWhere.mockResolvedValueOnce([
         { userId: 'user-1' },
@@ -294,6 +305,24 @@ describe('expense-actions project cash on hand', () => {
     await updateExpense('expense-1', { amount: 200 })
 
     expect(assertCash).not.toHaveBeenCalled()
+    expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({ amount: 200 })
+  })
+
+  it('rounds an edited amount to kopecks before storing it', async () => {
+    dbModule.__mocks.existingWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-1',
+        amount: 100,
+        projectId: null,
+        pocketId: null,
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        operationType: 'expense',
+      },
+    ])
+
+    await updateExpense('expense-1', { amount: 199.999 })
+
     expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({ amount: 200 })
   })
 

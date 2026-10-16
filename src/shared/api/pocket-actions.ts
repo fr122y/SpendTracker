@@ -4,6 +4,7 @@ import { and, asc, desc, eq, isNull, lt } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
 import { db, pocketMonthBudgets, pockets, users } from '@/shared/db'
+import { normalizeMoneyAmount } from '@/shared/lib/money-amount'
 import { findPocketNameConflict } from '@/shared/lib/pocket-name'
 
 import {
@@ -416,9 +417,10 @@ export async function initializePocketMonthBudget(
 export async function setPocketMonthBudget(
   pocketId: string,
   period: string,
-  budget: number
+  rawBudget: number
 ): Promise<PocketMonthBudget> {
   const userId = await getUserId()
+  const budget = normalizeMoneyAmount(rawBudget)
   assertValidPocketPeriod(period)
   assertValidPocketBudget(budget)
   await assertCanUsePocket(pocketId, userId)

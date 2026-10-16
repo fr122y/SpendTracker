@@ -4,7 +4,10 @@ import { and, eq } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
 import { db, expenses, projects } from '@/shared/db'
-import { isValidMoneyAmount } from '@/shared/lib/money-amount'
+import {
+  isValidMoneyAmount,
+  normalizeMoneyAmount,
+} from '@/shared/lib/money-amount'
 
 import type { Project } from '@/shared/types'
 
@@ -43,9 +46,10 @@ export async function getProjects(): Promise<Project[]> {
 }
 
 export async function addProject(
-  data: Omit<Project, 'id' | 'color' | 'createdAt'>
+  input: Omit<Project, 'id' | 'color' | 'createdAt'>
 ): Promise<Project> {
   const userId = await getUserId()
+  const data = { ...input, budget: normalizeMoneyAmount(input.budget) }
   if (!isValidMoneyAmount(data.budget)) {
     throw new Error('Project budget must be a positive finite number')
   }

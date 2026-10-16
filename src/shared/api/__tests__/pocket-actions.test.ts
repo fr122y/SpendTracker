@@ -530,6 +530,22 @@ describe('pocket-actions', () => {
     })
   })
 
+  it('rounds the budget to kopecks before storing it', async () => {
+    const where = jest.fn(() => ({
+      returning: jest
+        .fn()
+        .mockResolvedValueOnce([
+          { pocketId: 'pocket-1', period: '2026-05', budget: 12_000.01 },
+        ]),
+    }))
+    const set = jest.fn(() => ({ where }))
+    mockDb.update.mockReturnValueOnce({ set })
+
+    await setPocketMonthBudget('pocket-1', '2026-05', 12_000.005)
+
+    expect(set).toHaveBeenCalledWith({ budget: 12_000.01 })
+  })
+
   it('rejects a budget change for an archived pocket', async () => {
     ;(assertCanUsePocket as jest.Mock).mockRejectedValueOnce(
       new Error('Pocket is archived')
