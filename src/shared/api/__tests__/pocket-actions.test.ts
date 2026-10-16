@@ -270,6 +270,64 @@ describe('pocket-actions', () => {
     expect(insertValues).toHaveBeenCalledTimes(1)
   })
 
+  describe('active name unique index violation', () => {
+    const createdAt = new Date('2026-01-01T00:00:00.000Z')
+
+    function uniqueViolation(constraintName: string) {
+      return Object.assign(new Error('Failed query'), {
+        cause: Object.assign(new Error('duplicate key value'), {
+          code: '23505',
+          constraint_name: constraintName,
+        }),
+      })
+    }
+
+    function rejectTransactionWith(error: Error) {
+      mockDb.transaction.mockImplementationOnce(() => Promise.reject(error))
+    }
+
+    it('maps the violation on create to name_conflict', async () => {
+      rejectTransactionWith(uniqueViolation('pocket_active_name_unique_idx'))
+
+      await expect(createPocket(' Отпуск ')).resolves.toEqual({
+        status: 'name_conflict',
+        conflictingName: 'Отпуск',
+      })
+    })
+
+    it('maps the violation on rename to name_conflict', async () => {
+      rejectTransactionWith(uniqueViolation('pocket_active_name_unique_idx'))
+
+      await expect(renamePocket('pocket-1', 'Отпуск')).resolves.toEqual({
+        status: 'name_conflict',
+        conflictingName: 'Отпуск',
+      })
+    })
+
+    it('maps the violation on restore to name_conflict', async () => {
+      ;(getPocketForUser as jest.Mock).mockResolvedValueOnce({
+        id: 'pocket-1',
+        userId: 'user-1',
+        name: 'Подарки',
+        archivedAt: new Date('2026-02-01T00:00:00.000Z'),
+        createdAt,
+      })
+      rejectTransactionWith(uniqueViolation('pocket_active_name_unique_idx'))
+
+      await expect(restorePocket('pocket-1')).resolves.toEqual({
+        status: 'name_conflict',
+        conflictingName: 'Подарки',
+      })
+    })
+
+    it('rethrows a unique violation of another constraint', async () => {
+      const error = uniqueViolation('pocket_pkey')
+      rejectTransactionWith(error)
+
+      await expect(createPocket('Отпуск')).rejects.toBe(error)
+    })
+  })
+
   describe('renamePocket', () => {
     const createdAt = new Date('2026-01-01T00:00:00.000Z')
 
