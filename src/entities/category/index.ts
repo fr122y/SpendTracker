@@ -1,11 +1,14 @@
 // Category entity - Public API
 export {
+  type DeleteCategoryInput,
   isCategoryNameDuplicate,
   isSharedCategoryNameDuplicate,
   useAddCategory,
   useAddSharedBudgetCategory,
   useArchiveSharedBudgetCategory,
+  getDefaultReassignTarget,
   useCategories,
+  useCategoryExpenseCount,
   useCategoryStore,
   useDeleteCategory,
   useSharedBudgetCategories,

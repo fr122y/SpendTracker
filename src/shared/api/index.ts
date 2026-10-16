@@ -5,7 +5,12 @@ export {
   deleteExpense,
   updateExpense,
 } from './expense-actions'
-export { getCategories, addCategory, deleteCategory } from './category-actions'
+export {
+  getCategories,
+  addCategory,
+  countCategoryExpenses,
+  deleteCategoryWithReassign,
+} from './category-actions'
 export {
   getKeywordMappings,
   saveKeywordMapping,

@@ -6,7 +6,9 @@ Manages expense categories through DB-backed query hooks and mutation actions.
 
 - `useCategories`: Query hook for the category list
 - `useAddCategory`: Mutation hook for adding a category
-- `useDeleteCategory`: Mutation hook for deleting a category
+- `useDeleteCategory`: Mutation hook for deleting a category and moving its personal expenses to a target category
+- `useCategoryExpenseCount`: Query hook for the number of personal expenses in a category
+- `getDefaultReassignTarget`: Default target for moved expenses («Другое», else the first remaining category)
 - `useSharedBudgetCategories`: Query hook for active shared budget categories
 - `useAddSharedBudgetCategory`: Mutation hook for adding a shared category
 - `useUpdateSharedBudgetCategory`: Mutation hook for renaming a shared category
