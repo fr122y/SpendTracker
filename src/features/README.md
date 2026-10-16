@@ -14,6 +14,7 @@ Each feature folder should contain:
 ## Features
 
 - **add-expense** - Form and logic for adding new expenses with AI categorization
+- **edit-expense** - Full editor for an operation: amount, description, category, date
 - **manage-categories** - CRUD operations for expense categories
 - **manage-projects** - CRUD operations for projects with budget allocation
 - **manage-buckets** - CRUD operations for budget buckets (spending limits)

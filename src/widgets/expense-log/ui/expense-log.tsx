@@ -3,14 +3,21 @@
 import { Wallet } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { useExpenseStore, ExpenseList } from '@/entities/expense'
+import {
+  useDeleteExpenseWithUndo,
+  useExpenseStore,
+  ExpenseList,
+} from '@/entities/expense'
 import { usePockets } from '@/entities/pocket'
 import { useSessionStore } from '@/entities/session'
 import { ExpenseForm } from '@/features/add-expense'
+import { ExpenseEditDialog } from '@/features/edit-expense'
 import { getDailyExpenseTotal, getDailyOperations } from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
 
 import { ExpenseLogSkeleton } from './expense-log-skeleton'
+
+import type { Expense } from '@/shared/types'
 
 function formatDateRussian(date: Date): string {
   const day = date.getDate()
@@ -41,14 +48,16 @@ export function ExpenseLog() {
     'all'
   )
   const selectedDate = useSessionStore((state) => state.selectedDate)
-  const { expenses, isLoading, deleteExpense, updateExpense } = useExpenseStore(
-    (state) => ({
-      expenses: state.expenses,
-      isLoading: state.isLoading,
-      deleteExpense: state.deleteExpense,
-      updateExpense: state.updateExpense,
-    })
-  )
+  const { expenses, isLoading, updateExpense } = useExpenseStore((state) => ({
+    expenses: state.expenses,
+    isLoading: state.isLoading,
+    updateExpense: state.updateExpense,
+  }))
+  const deleteExpense = useDeleteExpenseWithUndo()
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
+  const editingExpense = editingExpenseId
+    ? expenses.find((expense: Expense) => expense.id === editingExpenseId)
+    : undefined
 
   // Archived pockets stay in the map: their operations keep the pocket name.
   // The journal does not wait for this query: while it loads, pocket cards show
@@ -164,6 +173,8 @@ export function ExpenseLog() {
             expenses={filteredOperations}
             onDelete={deleteExpense}
             onEdit={updateExpense}
+            onOpenEditor={(expense) => setEditingExpenseId(expense.id)}
+            canUndoDelete
             pocketNames={pocketNames}
             arePocketNamesLoading={arePocketsLoading}
             archivedPocketIds={archivedPocketIds}
@@ -176,6 +187,13 @@ export function ExpenseLog() {
           />
         )}
       </div>
+      {editingExpense && (
+        <ExpenseEditDialog
+          key={editingExpense.id}
+          expense={editingExpense}
+          onClose={() => setEditingExpenseId(null)}
+        />
+      )}
     </div>
   )
 }

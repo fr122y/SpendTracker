@@ -15,6 +15,10 @@ interface ExpenseListProps {
   arePocketNamesLoading?: boolean
   /** Ids of archived pockets; their operations render without edit or delete. */
   archivedPocketIds?: ReadonlySet<string>
+  /** Opens the full editor for a record. */
+  onOpenEditor?: (expense: Expense) => void
+  /** Deletes can be undone from a toast. */
+  canUndoDelete?: boolean
 }
 
 export function ExpenseList({
@@ -25,6 +29,8 @@ export function ExpenseList({
   pocketNames,
   arePocketNamesLoading = false,
   archivedPocketIds,
+  onOpenEditor,
+  canUndoDelete = false,
 }: ExpenseListProps) {
   if (expenses.length === 0) {
     return <div className="py-8 text-center text-zinc-500">Нет расходов</div>
@@ -42,6 +48,8 @@ export function ExpenseList({
           expense={expense}
           onDelete={onDelete}
           onEdit={onEdit}
+          onOpenEditor={onOpenEditor}
+          canUndoDelete={canUndoDelete}
           showDate={showDate}
           isPocketNameLoading={arePocketNamesLoading}
           isPocketArchived={Boolean(

@@ -46,6 +46,23 @@ let mockSelectedDate = new Date(2026, 0, 15) // Jan 15, 2026
 let mockIsLoading = false
 
 // Mock query hooks with legacy aliases for the current component implementation
+jest.mock('@/features/edit-expense', () => ({
+  ExpenseEditDialog: ({
+    expense,
+    onClose,
+  }: {
+    expense: { id: string; description: string }
+    onClose: () => void
+  }) => (
+    <div role="dialog" aria-label="Изменить операцию">
+      <span data-testid="editing-expense">{expense.id}</span>
+      <button type="button" onClick={onClose}>
+        Закрыть редактор
+      </button>
+    </div>
+  ),
+}))
+
 jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: mockExpenses, isLoading: false }),
   useExpenseStore: (
@@ -351,7 +368,7 @@ describe('AnalysisDashboard', () => {
       ).toHaveAttribute('data-fill-mode', 'shared')
     })
 
-    it('opens read-only category details with the current month and scope', () => {
+    it('opens editable category details with the current month and scope', () => {
       mockSelectedDate = new Date(2026, 0, 15)
       mockExpenses = [
         {
@@ -427,10 +444,11 @@ describe('AnalysisDashboard', () => {
         screen.getByTestId('analysis-category-details-summary')
       ).toHaveTextContent('Найдено: 2 из 2 · 1 200 ₽ из 1 200 ₽')
       expect(
-        within(screen.getByTestId('category-expense-personal')).queryByRole(
-          'button'
+        within(screen.getByTestId('category-expense-personal')).getByRole(
+          'button',
+          { name: 'Изменить операцию' }
         )
-      ).not.toBeInTheDocument()
+      ).toBeInTheDocument()
 
       fireEvent.click(
         screen.getByRole('button', { name: 'Закрыть расходы категории' })

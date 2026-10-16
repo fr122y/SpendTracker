@@ -365,4 +365,52 @@ describe('ExpenseCard', () => {
       expect(onEdit).not.toHaveBeenCalled()
     })
   })
+
+  describe('full editor and delete confirmation', () => {
+    it('opens the full editor from the edit button', () => {
+      const onOpenEditor = jest.fn()
+      render(<ExpenseCard expense={mockExpense} onOpenEditor={onOpenEditor} />)
+
+      fireEvent.click(screen.getByRole('button', { name: 'Изменить операцию' }))
+      expect(onOpenEditor).toHaveBeenCalledWith(mockExpense)
+    })
+
+    it('hides the edit button for an archived pocket operation', () => {
+      render(
+        <ExpenseCard
+          expense={{ ...mockExpense, pocketId: 'pocket-1' }}
+          onOpenEditor={jest.fn()}
+          isPocketArchived
+        />
+      )
+      expect(
+        screen.queryByRole('button', { name: 'Изменить операцию' })
+      ).not.toBeInTheDocument()
+    })
+
+    it('names the record in the delete confirmation and mentions no loss when undo exists', () => {
+      render(
+        <ExpenseCard expense={mockExpense} onDelete={jest.fn()} canUndoDelete />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+
+      const [year, month, day] = mockExpense.date.split('-')
+      expect(
+        screen.getByText(
+          `«${mockExpense.description}» · ${mockExpense.amount} ₽ · ${day}.${month}.${year}`
+        )
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByText(/без возможности восстановления/)
+      ).not.toBeInTheDocument()
+    })
+
+    it('keeps the irreversible warning where undo is not offered', () => {
+      render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
+      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      expect(
+        screen.getByText(/без возможности восстановления/)
+      ).toBeInTheDocument()
+    })
+  })
 })
