@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { auth } from '@/shared/auth'
 import { db, layoutConfigs } from '@/shared/db'
 import {
+  assertValidHidden,
   DEFAULT_LAYOUT,
   isLayoutEqual,
   normalizeLayoutConfig,
@@ -43,6 +44,7 @@ export async function getLayoutConfig(): Promise<LayoutConfig> {
 
 export async function updateLayoutConfig(config: LayoutConfig): Promise<void> {
   const userId = await getUserId()
+  assertValidHidden(config.hidden)
   const normalized = normalizeLayoutConfig(config)
 
   await db

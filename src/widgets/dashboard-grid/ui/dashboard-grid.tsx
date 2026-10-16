@@ -1,9 +1,13 @@
 'use client'
 
-import { GripVertical } from 'lucide-react'
+import { EyeOff, GripVertical } from 'lucide-react'
 import { useState, useMemo } from 'react'
 
-import { ColumnResizer, useLayoutStore } from '@/features/layout-editor'
+import {
+  ColumnResizer,
+  LayoutVisibilityPanel,
+  useLayoutStore,
+} from '@/features/layout-editor'
 import { MobileWidgetAccordion } from '@/features/mobile-widget-accordion'
 import { WIDGET_REGISTRY } from '@/features/widget-registry'
 import { cn, useViewport, isTabletOrSmaller, isMobile } from '@/shared/lib'
@@ -42,6 +46,9 @@ export function DashboardGrid() {
     moveWidget,
     moveWidgetInColumn,
     resizeColumn,
+    hideWidget,
+    showWidget,
+    resetLayout,
   } = useLayoutStore()
   const viewport = useViewport()
   const mobile = isMobile(viewport)
@@ -154,14 +161,28 @@ export function DashboardGrid() {
     [allWidgets]
   )
 
+  const canHide = allWidgetIds.length > 1
+
   if (isLoading) {
     return <DashboardGridSkeleton />
   }
+
+  const visibilityPanel = isEditMode ? (
+    <LayoutVisibilityPanel
+      hiddenWidgets={(layoutConfig.hidden ?? []).map((id) => ({
+        id,
+        title: WIDGET_REGISTRY[id]?.title ?? id,
+      }))}
+      onShow={showWidget}
+      onReset={resetLayout}
+    />
+  ) : null
 
   // Mobile layout: Accordion-based expandable widgets
   if (mobile) {
     return (
       <div data-grid-container className="h-full overflow-y-auto bg-zinc-950">
+        {visibilityPanel && <div className="p-4 pb-0">{visibilityPanel}</div>}
         <MobileWidgetAccordion
           widgets={allWidgetIds}
           expandedWidgets={expandedWidgets}
@@ -186,6 +207,7 @@ export function DashboardGrid() {
         data-grid-container
         className="grid h-full grid-cols-2 gap-4 overflow-y-auto p-4"
       >
+        {visibilityPanel && <div className="col-span-2">{visibilityPanel}</div>}
         <div className="flex flex-col gap-4">
           {col1Widgets.map(({ widgetId }) => (
             <WidgetRenderer key={widgetId} widgetId={widgetId} />
@@ -202,97 +224,119 @@ export function DashboardGrid() {
 
   // Desktop layout: Original multi-column with drag-and-drop
   return (
-    <div data-grid-container className="flex h-full overflow-hidden p-4">
-      {layoutConfig.columns.map((column, columnIndex) => (
-        <div
-          key={column.id}
-          className="flex h-full overflow-hidden"
-          style={{ width: `${column.width}%` }}
-        >
-          <div className="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
-            {column.widgets.map((widgetId, index) => {
-              const widget = WIDGET_REGISTRY[widgetId]
-              if (!widget) return null
+    <div className="flex h-full flex-col gap-4 p-4">
+      {visibilityPanel}
+      <div data-grid-container className="flex min-h-0 flex-1 overflow-hidden">
+        {layoutConfig.columns.map((column, columnIndex) => (
+          <div
+            key={column.id}
+            className="flex h-full overflow-hidden"
+            style={{ width: `${column.width}%` }}
+          >
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto pr-1">
+              {column.widgets.map((widgetId, index) => {
+                const widget = WIDGET_REGISTRY[widgetId]
+                if (!widget) return null
 
-              const Component = widget.component
-              const Icon = widget.icon
-              const isDragging =
-                draggedWidget?.widgetId === widgetId &&
-                draggedWidget?.fromColumnId === column.id
-              const isDropTarget =
-                dropTarget?.columnId === column.id &&
-                dropTarget?.index === index
-
-              return (
-                <div
-                  key={widgetId}
-                  draggable={isEditMode}
-                  onDragStart={(e) =>
-                    handleDragStart(e, widgetId, column.id, index)
-                  }
-                  onDragOver={(e) => handleDragOver(e, column.id, index)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={(e) => handleDrop(e, column.id, index)}
-                  onDragEnd={handleDragEnd}
-                  className={cn(
-                    'relative transition-all',
-                    isEditMode && 'cursor-grab active:cursor-grabbing',
-                    isDragging && 'opacity-50',
-                    isDropTarget && 'ring-2 ring-emerald-500 rounded-lg'
-                  )}
-                >
-                  {/* Drag handle - desktop only */}
-                  {isEditMode && (
-                    <button
-                      type="button"
-                      aria-label="Перетащить виджет"
-                      className="absolute right-2 top-2 z-10 min-h-11 min-w-11 flex items-center justify-center cursor-grab rounded-md bg-zinc-700/80 p-2 hover:bg-zinc-600 active:bg-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <GripVertical className="h-4 w-4 text-zinc-300" />
-                    </button>
-                  )}
-                  <TerminalPanel
-                    title={widget.title}
-                    icon={<Icon className="h-4 w-4" />}
-                    isEditMode={isEditMode}
-                  >
-                    <Component />
-                  </TerminalPanel>
-                </div>
-              )
-            })}
-
-            {/* Drop zone at end of column */}
-            {isEditMode && draggedWidget && (
-              <div
-                onDragOver={(e) =>
-                  handleDragOver(e, column.id, column.widgets.length)
-                }
-                onDragLeave={handleDragLeave}
-                onDrop={(e) => handleDrop(e, column.id, column.widgets.length)}
-                className={cn(
-                  'min-h-[100px] rounded-lg border-2 border-dashed border-zinc-700 transition-colors',
+                const Component = widget.component
+                const Icon = widget.icon
+                const isDragging =
+                  draggedWidget?.widgetId === widgetId &&
+                  draggedWidget?.fromColumnId === column.id
+                const isDropTarget =
                   dropTarget?.columnId === column.id &&
-                    dropTarget?.index === column.widgets.length &&
-                    'border-emerald-500 bg-emerald-500/10'
-                )}
-              />
+                  dropTarget?.index === index
+
+                return (
+                  <div
+                    key={widgetId}
+                    draggable={isEditMode}
+                    onDragStart={(e) =>
+                      handleDragStart(e, widgetId, column.id, index)
+                    }
+                    onDragOver={(e) => handleDragOver(e, column.id, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, column.id, index)}
+                    onDragEnd={handleDragEnd}
+                    className={cn(
+                      'relative transition-all',
+                      isEditMode && 'cursor-grab active:cursor-grabbing',
+                      isDragging && 'opacity-50',
+                      isDropTarget && 'ring-2 ring-emerald-500 rounded-lg'
+                    )}
+                  >
+                    {/* Drag handle - desktop only */}
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        aria-label="Перетащить виджет"
+                        className="absolute right-2 top-2 z-10 min-h-11 min-w-11 flex items-center justify-center cursor-grab rounded-md bg-zinc-700/80 p-2 hover:bg-zinc-600 active:bg-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors"
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
+                        <GripVertical className="h-4 w-4 text-zinc-300" />
+                      </button>
+                    )}
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        aria-label={`Скрыть виджет: ${widget.title}`}
+                        title={
+                          canHide
+                            ? 'Скрыть виджет'
+                            : 'Последний видимый виджет нельзя скрыть'
+                        }
+                        disabled={!canHide}
+                        className="absolute right-14 top-2 z-10 min-h-11 min-w-11 flex items-center justify-center rounded-md bg-zinc-700/80 p-2 hover:bg-zinc-600 active:bg-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={() => hideWidget(widgetId)}
+                      >
+                        <EyeOff className="h-4 w-4 text-zinc-300" />
+                      </button>
+                    )}
+                    <TerminalPanel
+                      title={widget.title}
+                      icon={<Icon className="h-4 w-4" />}
+                      isEditMode={isEditMode}
+                    >
+                      <Component />
+                    </TerminalPanel>
+                  </div>
+                )
+              })}
+
+              {/* Drop zone at end of column */}
+              {isEditMode && draggedWidget && (
+                <div
+                  onDragOver={(e) =>
+                    handleDragOver(e, column.id, column.widgets.length)
+                  }
+                  onDragLeave={handleDragLeave}
+                  onDrop={(e) =>
+                    handleDrop(e, column.id, column.widgets.length)
+                  }
+                  className={cn(
+                    'min-h-[100px] rounded-lg border-2 border-dashed border-zinc-700 transition-colors',
+                    dropTarget?.columnId === column.id &&
+                      dropTarget?.index === column.widgets.length &&
+                      'border-emerald-500 bg-emerald-500/10'
+                  )}
+                />
+              )}
+            </div>
+
+            {/* Column Resizer - desktop only, between columns */}
+            {columnIndex < layoutConfig.columns.length - 1 && (
+              <div className="mx-2">
+                <ColumnResizer
+                  columnId={column.id}
+                  onResize={handleColumnResize}
+                  isEditMode={isEditMode}
+                />
+              </div>
             )}
           </div>
-
-          {/* Column Resizer - desktop only, between columns */}
-          {columnIndex < layoutConfig.columns.length - 1 && (
-            <div className="mx-2">
-              <ColumnResizer
-                columnId={column.id}
-                onResize={handleColumnResize}
-                isEditMode={isEditMode}
-              />
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   )
 }

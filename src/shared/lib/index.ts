@@ -78,6 +78,12 @@ export {
   DEFAULT_LAYOUT,
   normalizeLayoutConfig,
   isLayoutEqual,
+  assertValidHidden,
+  cloneLayout,
+  getVisibleWidgetIds,
+  hideWidget,
+  showWidget,
+  resetLayout,
 } from './layout-config'
 
 // Income allocation math (kopecks)
