@@ -11,5 +11,5 @@
 
 ## 3. Проверка
 
-- [ ] 3.1 Применить миграцию к development (`npm run db:migrate`) — после решения владельца.
+- [x] 3.1 Применить миграцию к development.
 - [x] 3.2 Выполнить `npm run spec:check` и `npm run validate`.
