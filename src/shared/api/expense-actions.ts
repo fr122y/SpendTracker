@@ -11,7 +11,10 @@ import {
   sharedBudgets,
   users,
 } from '@/shared/db'
-import { isValidMoneyAmount } from '@/shared/lib/money-amount'
+import {
+  isValidMoneyAmount,
+  normalizeMoneyAmount,
+} from '@/shared/lib/money-amount'
 
 import {
   assertCanUsePocket,
@@ -127,8 +130,9 @@ export async function getExpenses(): Promise<Expense[]> {
   }))
 }
 
-export async function addExpense(data: AddExpenseInput): Promise<Expense> {
+export async function addExpense(input: AddExpenseInput): Promise<Expense> {
   const userId = await getUserId()
+  const data = { ...input, amount: normalizeMoneyAmount(input.amount) }
   assertValidOperationAmount(data.amount)
   assertValidOperationDate(data.date)
   if (!data.description.trim()) {
@@ -341,9 +345,13 @@ export async function deleteExpense(id: string): Promise<DeleteExpenseResult> {
 
 export async function updateExpense(
   id: string,
-  data: Partial<Omit<Expense, 'id'>>
+  input: Partial<Omit<Expense, 'id'>>
 ): Promise<void> {
   const userId = await getUserId()
+  let data =
+    input.amount === undefined
+      ? input
+      : { ...input, amount: normalizeMoneyAmount(input.amount) }
   const [existing] = await db
     .select({
       userId: expenses.userId,

@@ -39,6 +39,16 @@ describe('addProject budget validation', () => {
     )
   })
 
+  it('rounds the budget to kopecks before storing it', async () => {
+    await expect(
+      addProject({ name: 'Ремонт', budget: 1500.005 })
+    ).resolves.toMatchObject({ budget: 1500.01 })
+
+    expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ budget: 1500.01 })
+    )
+  })
+
   it.each([0, -1, 100_000_000.01, Number.NaN, Number.POSITIVE_INFINITY])(
     'rejects budget %p before any write',
     async (budget) => {

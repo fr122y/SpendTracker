@@ -7,9 +7,9 @@ import {
   integer,
   index,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
-  real,
   text,
   timestamp,
   unique,
@@ -18,6 +18,10 @@ import {
 
 import type { LayoutConfig } from '@/shared/types'
 import type { AdapterAccountType } from '@auth/core/adapters'
+
+/** Money in rubles with kopecks; Drizzle maps it to a JS number. */
+const money = (name: string) =>
+  numeric(name, { precision: 12, scale: 2, mode: 'number' })
 
 export const users = pgTable('user', {
   id: text('id')
@@ -287,12 +291,18 @@ export const sharedBudgetWeeklyLimits = pgTable(
       .notNull()
       .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
     effectiveWeekStart: text('effectiveWeekStart').notNull(),
-    amount: real('amount').notNull(),
+    amount: money('amount').notNull(),
     createdAt: timestamp('createdAt', { mode: 'date' })
       .notNull()
       .default(sql`now()`),
   },
-  (table) => [unique().on(table.sharedBudgetId, table.effectiveWeekStart)]
+  (table) => [
+    unique().on(table.sharedBudgetId, table.effectiveWeekStart),
+    check(
+      'shared_budget_weekly_limit_amount_check',
+      sql`${table.amount} > 0 and ${table.amount} <= 100000000`
+    ),
+  ]
 )
 
 export const sharedBudgetCategories = pgTable(
@@ -372,7 +382,7 @@ export const pocketMonthBudgets = pgTable(
       .notNull()
       .references(() => pockets.id, { onDelete: 'restrict' }),
     period: text('period').notNull(),
-    budget: real('budget').notNull(),
+    budget: money('budget').notNull(),
     createdAt: timestamp('createdAt', { mode: 'date' })
       .notNull()
       .default(sql`now()`),
@@ -384,6 +394,10 @@ export const pocketMonthBudgets = pgTable(
       sql`${table.period} ~ '^\\d{4}-(0[1-9]|1[0-2])$'`
     ),
     check('pocket_month_budget_amount_check', sql`${table.budget} >= 0`),
+    check(
+      'pocket_month_budget_amount_max_check',
+      sql`${table.budget} <= 100000000`
+    ),
     index('pocket_month_budget_period_idx').on(table.period),
   ]
 )
@@ -398,7 +412,7 @@ export const expenses = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     description: text('description').notNull(),
-    amount: real('amount').notNull(),
+    amount: money('amount').notNull(),
     date: text('date').notNull(),
     category: text('category').notNull(),
     emoji: text('emoji').notNull(),
@@ -426,6 +440,10 @@ export const expenses = pgTable(
     check(
       'expense_pocket_transfer_link_check',
       sql`${table.operationType} <> 'pocket_transfer' or ${table.pocketId} is not null`
+    ),
+    check(
+      'expense_amount_check',
+      sql`(${table.amount} > 0 or (${table.operationType} = 'pocket_transfer' and ${table.amount} = 0)) and ${table.amount} <= 100000000`
     ),
   ]
 )
@@ -465,18 +483,27 @@ export const keywordMappings = pgTable(
   (table) => [unique().on(table.userId, table.keyword)]
 )
 
-export const projects = pgTable('project', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  name: text('name').notNull(),
-  budget: real('budget').notNull(),
-  color: text('color').notNull(),
-  createdAt: text('createdAt').notNull(),
-})
+export const projects = pgTable(
+  'project',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    budget: money('budget').notNull(),
+    color: text('color').notNull(),
+    createdAt: text('createdAt').notNull(),
+  },
+  (table) => [
+    check(
+      'project_budget_check',
+      sql`${table.budget} > 0 and ${table.budget} <= 100000000`
+    ),
+  ]
+)
 
 export const allocationBuckets = pgTable(
   'allocation_bucket',
@@ -511,19 +538,28 @@ export const allocationBuckets = pgTable(
   ]
 )
 
-export const userSettings = pgTable('user_settings', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  userId: text('userId')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' })
-    .unique(),
-  weeklyLimit: real('weeklyLimit').notNull().default(10000),
-  salaryDay: integer('salaryDay').notNull().default(10),
-  advanceDay: integer('advanceDay').notNull().default(25),
-  salary: real('salary').notNull().default(0),
-})
+export const userSettings = pgTable(
+  'user_settings',
+  {
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' })
+      .unique(),
+    weeklyLimit: money('weeklyLimit').notNull().default(10000),
+    salaryDay: integer('salaryDay').notNull().default(10),
+    advanceDay: integer('advanceDay').notNull().default(25),
+    salary: money('salary').notNull().default(0),
+  },
+  (table) => [
+    check(
+      'user_settings_salary_check',
+      sql`${table.salary} >= 0 and ${table.salary} <= 100000000`
+    ),
+  ]
+)
 
 export const weeklyBudgetLimits = pgTable(
   'weekly_budget_limit',
@@ -535,12 +571,18 @@ export const weeklyBudgetLimits = pgTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     effectiveWeekStart: text('effectiveWeekStart').notNull(),
-    amount: real('amount').notNull(),
+    amount: money('amount').notNull(),
     createdAt: timestamp('createdAt', { mode: 'date' })
       .notNull()
       .default(sql`now()`),
   },
-  (table) => [unique().on(table.userId, table.effectiveWeekStart)]
+  (table) => [
+    unique().on(table.userId, table.effectiveWeekStart),
+    check(
+      'weekly_budget_limit_amount_check',
+      sql`${table.amount} > 0 and ${table.amount} <= 100000000`
+    ),
+  ]
 )
 
 export const layoutConfigs = pgTable('layout_config', {

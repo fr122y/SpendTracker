@@ -63,6 +63,7 @@ export {
   MAX_MONEY_AMOUNT,
   getAmountMaxError,
   isValidMoneyAmount,
+  normalizeMoneyAmount,
   parseAmountInput,
   roundToKopecks,
   type MoneyAmountRules,

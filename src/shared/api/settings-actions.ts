@@ -15,7 +15,10 @@ import {
   isWeekStartDate,
   type WeeklyLimitSetting,
 } from '@/shared/lib/finance-selectors'
-import { isValidMoneyAmount } from '@/shared/lib/money-amount'
+import {
+  isValidMoneyAmount,
+  normalizeMoneyAmount,
+} from '@/shared/lib/money-amount'
 import { isValidPaydayDay } from '@/shared/lib/payday'
 
 import {
@@ -124,9 +127,17 @@ export interface UpdateSettingsInput extends Partial<Settings> {
 
 export async function updateSettings(data: UpdateSettingsInput): Promise<void> {
   const userId = await getUserId()
-  const { weeklyLimit, weeklyLimits, weeklyLimitWeekStart, ...settingsData } =
-    data
+  const {
+    weeklyLimit: rawWeeklyLimit,
+    weeklyLimits,
+    weeklyLimitWeekStart,
+    ...settingsData
+  } = data
   void weeklyLimits
+  const weeklyLimit = normalizeMoneyAmount(rawWeeklyLimit)
+  if (settingsData.salary !== undefined) {
+    settingsData.salary = normalizeMoneyAmount(settingsData.salary)
+  }
 
   if (weeklyLimit !== undefined) {
     assertWeeklyLimitInput(weeklyLimitWeekStart, weeklyLimit)
@@ -233,9 +244,10 @@ async function convertLegacyAmountBuckets(
 
 export async function setWeeklyLimitForWeek(
   effectiveWeekStart: string,
-  amount: number
+  rawAmount: number
 ): Promise<void> {
   const userId = await getUserId()
+  const amount = normalizeMoneyAmount(rawAmount)
   assertWeeklyLimitInput(effectiveWeekStart, amount)
 
   await db

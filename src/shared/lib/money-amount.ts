@@ -39,6 +39,15 @@ export function roundToKopecks(value: number): number {
 }
 
 /**
+ * Rounds a numeric money value to kopecks before validation and storage, so a
+ * server action stores the same amount the form parser would. Any other value
+ * is returned unchanged for the validator to reject.
+ */
+export function normalizeMoneyAmount<T>(value: T): T {
+  return (typeof value === 'number' ? roundToKopecks(value) : value) as T
+}
+
+/**
  * Parses what a user typed into an amount field.
  *
  * Whitespace (including NBSP) is a thousands separator, `,` or `.` is the

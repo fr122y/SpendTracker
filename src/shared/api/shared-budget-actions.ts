@@ -13,6 +13,7 @@ import {
   users,
 } from '@/shared/db'
 import { isValidWeeklyLimitAmount } from '@/shared/lib/finance-selectors'
+import { normalizeMoneyAmount } from '@/shared/lib/money-amount'
 
 import type {
   CreateSharedBudgetInput,
@@ -221,9 +222,13 @@ export async function getSharedBudgets(): Promise<SharedBudget[]> {
 }
 
 export async function createSharedBudget(
-  input: CreateSharedBudgetInput
+  rawInput: CreateSharedBudgetInput
 ): Promise<SharedBudget> {
   const userId = await getUserId()
+  const input = {
+    ...rawInput,
+    initialWeeklyLimit: normalizeMoneyAmount(rawInput.initialWeeklyLimit),
+  }
   const name = requireValidBudgetName(input.name)
   requireValidLimit(input.initialWeeklyLimit)
 
@@ -327,9 +332,10 @@ export async function setActiveSharedBudget(
 export async function setSharedWeeklyLimitForWeek(
   sharedBudgetId: string,
   effectiveWeekStart: string,
-  amount: number
+  rawAmount: number
 ): Promise<void> {
   const userId = await getUserId()
+  const amount = normalizeMoneyAmount(rawAmount)
   requireValidLimit(amount)
   await requireActiveMembership(sharedBudgetId, userId)
 
