@@ -85,24 +85,25 @@ export async function reloadPage(page: Page): Promise<void> {
 }
 
 /**
- * Elements that hold exactly one expense card showing this description and
- * amount: the card itself and any wrapper around that single card. Limiting
- * matches to one delete button keeps a list container from matching when the
- * description and the amount sit on different cards.
+ * Expense cards showing this description and amount, one element per card.
+ * A card is the innermost element that holds the description, the amount, and
+ * exactly one delete button; excluding elements that contain such a card
+ * keeps its wrappers (a journal day with a single expense, the list) from
+ * matching too.
  */
 export function expenseRows(
   page: Page,
   description: string,
   amount: number
 ): Locator {
-  return page.locator(
-    `xpath=//div[.//span[normalize-space()="${description}"]` +
-      ` and .//button[@aria-label="edit amount" and normalize-space()="${amount} ₽"]` +
-      ` and count(.//button[@aria-label="delete"])=1]`
-  )
+  const card =
+    `.//span[normalize-space()="${description}"]` +
+    ` and .//button[@aria-label="edit amount" and normalize-space()="${amount} ₽"]` +
+    ` and count(.//button[@aria-label="delete"])=1`
+  return page.locator(`xpath=//div[${card} and not(.//div[${card}])]`)
 }
 
-/** The innermost element holding the card: its wrappers come first. */
+/** The card for this description and amount; the last one if several match. */
 export function expenseRow(
   page: Page,
   description: string,
