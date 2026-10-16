@@ -4,17 +4,26 @@ const mockAuth = jest.fn()
 const mockGetAccountProfile = jest.fn()
 const mockRedirect = jest.fn()
 
+jest.mock('@/features/auth', () => ({
+  PasswordInput: ({ placeholder }: { placeholder: string }) => (
+    <input placeholder={placeholder} readOnly />
+  ),
+}))
+
 jest.mock('@/shared/auth', () => ({
   auth: (...args: unknown[]) => mockAuth(...args),
   getAccountProfile: (...args: unknown[]) => mockGetAccountProfile(...args),
 }))
 
-jest.mock('next/navigation', () => ({
-  redirect: (...args: unknown[]) => mockRedirect(...args),
-}))
-
 jest.mock('../actions', () => ({
   signOutCurrentUser: jest.fn(),
+  updateAccountName: jest.fn(),
+  changeAccountPassword: jest.fn(),
+}))
+
+jest.mock('next/navigation', () => ({
+  redirect: (...args: unknown[]) => mockRedirect(...args),
+  useRouter: () => ({ refresh: jest.fn() }),
 }))
 
 import AccountPage from '../page'
@@ -30,7 +39,8 @@ describe('AccountPage', () => {
       id: 'user-1',
       name: 'Ilya',
       email: 'ilya@example.com',
-      provider: 'Credentials',
+      provider: 'Email и пароль',
+      hasPassword: true,
     })
   })
 
@@ -42,8 +52,31 @@ describe('AccountPage', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('Ilya')).toBeInTheDocument()
     expect(screen.getByText('ilya@example.com')).toBeInTheDocument()
-    expect(screen.getByText('Credentials')).toBeInTheDocument()
+    expect(screen.getByText('Email и пароль')).toBeInTheDocument()
+    expect(screen.getByText('Аккаунт')).toBeInTheDocument()
+    expect(screen.queryByText('Account')).not.toBeInTheDocument()
+    expect(screen.getByText(/вернёт вас на страницу входа/)).toBeInTheDocument()
+    expect(screen.getByDisplayValue('Ilya')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Текущий пароль')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Новый пароль')).toBeInTheDocument()
+    expect(
+      screen.getByPlaceholderText('Повторите новый пароль')
+    ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Выйти' })).toBeInTheDocument()
+  })
+
+  it('hides the password form for accounts without a password', async () => {
+    mockGetAccountProfile.mockResolvedValueOnce({
+      id: 'user-1',
+      name: 'Ilya',
+      email: 'ilya@example.com',
+      provider: 'Google',
+      hasPassword: false,
+    })
+
+    render(await AccountPage())
+
+    expect(screen.queryByPlaceholderText('Текущий пароль')).toBeNull()
   })
 
   it('redirects logged-out users to login', async () => {

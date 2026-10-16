@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { auth, getAccountProfile } from '@/shared/auth'
 import { Button } from '@/shared/ui'
 
+import { ChangeNameForm, ChangePasswordForm } from './account-forms'
 import { signOutCurrentUser } from './actions'
 
 function formatAccountValue(value: string | null | undefined) {
@@ -30,7 +31,7 @@ export default async function AccountPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-400">
-              Account
+              Аккаунт
             </p>
             <h1 className="mt-2 font-mono text-2xl font-bold text-white">
               Личный кабинет
@@ -58,7 +59,7 @@ export default async function AccountPage() {
 
             <div>
               <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
-                Email
+                Эл. почта
               </dt>
               <dd className="mt-2 break-words text-sm text-zinc-100">
                 {formatAccountValue(profile.email)}
@@ -75,13 +76,29 @@ export default async function AccountPage() {
         </div>
 
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
+          <h2 className="mb-4 font-mono text-base font-bold text-white">
+            Изменить имя
+          </h2>
+          <ChangeNameForm initialName={profile.name ?? ''} />
+        </div>
+
+        {profile.hasPassword ? (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
+            <h2 className="mb-4 font-mono text-base font-bold text-white">
+              Сменить пароль
+            </h2>
+            <ChangePasswordForm />
+          </div>
+        ) : null}
+
+        <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="font-mono text-base font-bold text-white">
                 Завершить сессию
               </h2>
               <p className="mt-2 text-sm leading-6 text-zinc-400">
-                Выход завершит текущую сессию и вернет вас на страницу входа.
+                Выход завершит текущую сессию и вернёт вас на страницу входа.
               </p>
             </div>
 

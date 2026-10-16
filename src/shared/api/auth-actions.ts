@@ -15,6 +15,7 @@ import {
   passwordResetTokens,
   users,
 } from '@/shared/db'
+import { accountNameSchema, accountPasswordSchema } from '@/shared/lib'
 import {
   enqueueAccountEmail,
   processAccountEmailOutbox,
@@ -25,16 +26,9 @@ import {
 } from '@/shared/lib/account-email-templates'
 
 const registerSchema = z.object({
-  name: z
-    .string()
-    .min(2, 'Имя должно содержать минимум 2 символа')
-    .max(50)
-    .trim(),
+  name: accountNameSchema,
   email: z.string().email('Некорректный email').trim().toLowerCase(),
-  password: z
-    .string()
-    .min(8, 'Пароль должен содержать минимум 8 символов')
-    .max(100),
+  password: accountPasswordSchema,
 })
 
 const passwordResetRequestSchema = z.object({
@@ -43,10 +37,7 @@ const passwordResetRequestSchema = z.object({
 
 const passwordResetSchema = z.object({
   token: z.string().min(1),
-  password: z
-    .string()
-    .min(8, 'Пароль должен содержать минимум 8 символов')
-    .max(100),
+  password: accountPasswordSchema,
 })
 
 const PASSWORD_RESET_TTL_MINUTES = 15
