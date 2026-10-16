@@ -31,7 +31,71 @@ function FormStatus({ error, message }: { error: string; message: string }) {
   return null
 }
 
-export function ChangeNameForm({ initialName }: { initialName: string }) {
+function formatAccountValue(value: string | null | undefined) {
+  return value?.trim() ? value : 'Не указано'
+}
+
+interface AccountProfileSectionProps {
+  name: string | null
+  email: string | null
+  provider: string
+}
+
+export function AccountProfileSection({
+  name,
+  email,
+  provider,
+}: AccountProfileSectionProps) {
+  const [savedName, setSavedName] = useState(name)
+
+  return (
+    <>
+      <div className="rounded-lg border border-zinc-800 bg-zinc-900/80 p-5 shadow-2xl shadow-black/20">
+        <dl className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
+              Имя
+            </dt>
+            <dd className="mt-2 break-words text-sm text-zinc-100">
+              {formatAccountValue(savedName)}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
+              Эл. почта
+            </dt>
+            <dd className="mt-2 break-words text-sm text-zinc-100">
+              {formatAccountValue(email)}
+            </dd>
+          </div>
+
+          <div>
+            <dt className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-500">
+              Вход
+            </dt>
+            <dd className="mt-2 text-sm text-zinc-100">{provider}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
+        <h2 className="mb-4 font-mono text-base font-bold text-white">
+          Изменить имя
+        </h2>
+        <ChangeNameForm initialName={savedName ?? ''} onSaved={setSavedName} />
+      </div>
+    </>
+  )
+}
+
+export function ChangeNameForm({
+  initialName,
+  onSaved,
+}: {
+  initialName: string
+  onSaved?: (name: string) => void
+}) {
   const router = useRouter()
   const [name, setName] = useState(initialName)
   const [error, setError] = useState('')
@@ -54,6 +118,7 @@ export function ChangeNameForm({ initialName }: { initialName: string }) {
     }
 
     setName(name.trim())
+    onSaved?.(name.trim())
     setMessage('Имя сохранено')
     router.refresh()
   }

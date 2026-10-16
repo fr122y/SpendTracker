@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
 const mockAuth = jest.fn()
 const mockGetAccountProfile = jest.fn()
 const mockRedirect = jest.fn()
+const mockUpdateAccountName = jest.fn()
+const mockRefresh = jest.fn()
 
 jest.mock('@/features/auth', () => ({
   PasswordInput: ({ placeholder }: { placeholder: string }) => (
@@ -17,13 +19,13 @@ jest.mock('@/shared/auth', () => ({
 
 jest.mock('../actions', () => ({
   signOutCurrentUser: jest.fn(),
-  updateAccountName: jest.fn(),
+  updateAccountName: (...args: unknown[]) => mockUpdateAccountName(...args),
   changeAccountPassword: jest.fn(),
 }))
 
 jest.mock('next/navigation', () => ({
   redirect: (...args: unknown[]) => mockRedirect(...args),
-  useRouter: () => ({ refresh: jest.fn() }),
+  useRouter: () => ({ refresh: mockRefresh }),
 }))
 
 import AccountPage from '../page'
@@ -63,6 +65,28 @@ describe('AccountPage', () => {
       screen.getByPlaceholderText('Повторите новый пароль')
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Выйти' })).toBeInTheDocument()
+  })
+
+  it('shows the saved name in the summary without a reload', async () => {
+    mockUpdateAccountName.mockResolvedValueOnce({ success: true })
+    render(await AccountPage())
+
+    fireEvent.change(screen.getByDisplayValue('Ilya'), {
+      target: { value: '  Новое имя  ' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить имя' }))
+
+    await waitFor(() =>
+      expect(screen.getByText('Имя сохранено')).toBeInTheDocument()
+    )
+    expect(mockUpdateAccountName).toHaveBeenCalledWith({
+      name: '  Новое имя  ',
+    })
+    expect(
+      screen.getByText('Новое имя', { selector: 'dd' })
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Ilya', { selector: 'dd' })).toBeNull()
+    expect(mockRefresh).toHaveBeenCalled()
   })
 
   it('hides the password form for accounts without a password', async () => {
