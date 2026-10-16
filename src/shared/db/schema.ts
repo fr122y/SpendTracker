@@ -357,7 +357,12 @@ export const pockets = pgTable(
       .notNull()
       .default(sql`now()`),
   },
-  (table) => [index('pocket_user_idx').on(table.userId)]
+  (table) => [
+    index('pocket_user_idx').on(table.userId),
+    uniqueIndex('pocket_active_name_unique_idx')
+      .on(table.userId, sql`lower(btrim(${table.name}))`)
+      .where(sql`${table.archivedAt} IS NULL`),
+  ]
 )
 
 export const pocketMonthBudgets = pgTable(

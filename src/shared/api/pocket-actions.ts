@@ -78,25 +78,57 @@ export type RenamePocketResult =
   | { status: 'renamed'; pocket: Pocket }
   | PocketNameConflict
 
+/** Partial unique index on active pocket names, see `pockets` in the schema. */
+const POCKET_ACTIVE_NAME_INDEX = 'pocket_active_name_unique_idx'
+
+/**
+ * Checks whether a query error, or the driver error Drizzle wraps in `cause`,
+ * is a unique violation (`23505`) of the active pocket name index.
+ */
+function isActivePocketNameViolation(error: unknown): boolean {
+  let current: unknown = error
+  for (let depth = 0; depth < 3 && current; depth++) {
+    if (typeof current !== 'object') return false
+    const { code, constraint_name: constraintName } = current as {
+      code?: unknown
+      constraint_name?: unknown
+    }
+    if (code === '23505' && constraintName === POCKET_ACTIVE_NAME_INDEX) {
+      return true
+    }
+    current = (current as { cause?: unknown }).cause
+  }
+  return false
+}
+
 /**
  * Runs a pocket name change under a per-user lock. Locking the user row
  * serializes concurrent create, rename, and restore calls of one user, so the
- * second call sees the first one's committed name. The database itself does
- * not enforce the rule yet (T-058): a write that bypasses these actions can
- * still create a duplicate active name.
+ * second call sees the first one's committed name and gets a friendly
+ * conflict. The database enforces the same rule with a partial unique index;
+ * a violation of it (a write outside these actions raced the check) is mapped
+ * to the same `name_conflict` result with the attempted name.
  */
-function withPocketNameLock<T>(
+async function withPocketNameLock<T>(
   userId: string,
+  name: string,
   callback: (transaction: Transaction) => Promise<T>
-): Promise<T> {
-  return db.transaction(async (transaction) => {
-    await transaction
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.id, userId))
-      .for('update')
-    return callback(transaction)
-  })
+): Promise<T | PocketNameConflict> {
+  try {
+    return await db.transaction(async (transaction) => {
+      await transaction
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, userId))
+        .for('update')
+      return callback(transaction)
+    })
+  } catch (error) {
+    if (isActivePocketNameViolation(error)) {
+      return { status: 'name_conflict', conflictingName: name }
+    }
+    throw error
+  }
 }
 
 async function findActivePocketNameConflict(
@@ -125,7 +157,7 @@ export async function createPocket(name: string): Promise<CreatePocketResult> {
   const userId = await getUserId()
   const normalizedName = normalizePocketName(name)
 
-  return withPocketNameLock(userId, async (transaction) => {
+  return withPocketNameLock(userId, normalizedName, async (transaction) => {
     const conflict = await findActivePocketNameConflict(
       transaction,
       userId,
@@ -159,7 +191,7 @@ export async function renamePocket(
   const userId = await getUserId()
   const normalizedName = normalizePocketName(name)
 
-  return withPocketNameLock(userId, async (transaction) => {
+  return withPocketNameLock(userId, normalizedName, async (transaction) => {
     const conflict = await findActivePocketNameConflict(
       transaction,
       userId,
@@ -235,7 +267,7 @@ export async function restorePocket(
     return { status: 'restored', pocket: mapPocket(pocket) }
   }
 
-  return withPocketNameLock(userId, async (transaction) => {
+  return withPocketNameLock(userId, pocket.name, async (transaction) => {
     const conflict = await findActivePocketNameConflict(
       transaction,
       userId,
