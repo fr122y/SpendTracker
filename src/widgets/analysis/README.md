@@ -11,13 +11,14 @@ and visible-expense scope switching.
 
 - `useSessionStore`: selectedDate as the source month for analysis
 - `useExpenseStore`: visible expenses list for aggregation
+- `useCategories`, `useSharedBudgetCategoryLists` (with `useSharedBudgets`): category colors for the tiles
 - Local scope state: all visible, personal, or shared expenses
 
 ## Features
 
 - Header with month name and total spent
 - Local `Все` / `Личные` / `Общие` expense scope filter
-- Visual category boxes with size/opacity scaling
+- Visual category boxes with size/opacity scaling, filled with the category color (stored palette color or the stable fallback by name, `lib/category-tile-color.ts`) and a small scope label (`Личные` / `Общие` / `Проекты`)
 - Hover tooltip showing exact personal, shared, project, and total amounts
 - Activating a category opens a details dialog for the same month and scope
 - Activating a dialog row opens `ExpenseEditDialog` (`@/features/edit-expense`) above it; Escape and outside clicks then close only the editor
@@ -32,4 +33,4 @@ category/month/scope only; they do not change stored expense records.
 
 ## Dependencies
 
-- Uses: `@/entities/session`, `@/entities/expense`, `@/shared/lib`
+- Uses: `@/entities/session`, `@/entities/expense`, `@/entities/category`, `@/entities/shared-budget`, `@/shared/lib`

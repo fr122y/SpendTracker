@@ -12,6 +12,7 @@ const mockAddCategoryIfUnique = jest.fn()
 const mockDeleteCategory = jest.fn()
 const mockAddSharedCategory = jest.fn()
 const mockUpdateSharedCategory = jest.fn()
+const mockUpdateCategory = jest.fn()
 const mockArchiveSharedCategory = jest.fn()
 let mockIsLoading = false
 let mockExpenseCount: number | undefined = 0
@@ -55,6 +56,7 @@ jest.mock('@/entities/category', () => ({
     isPending: false,
   }),
   useDeleteCategory: () => ({ mutate: mockDeleteCategory, isPending: false }),
+  useUpdateCategory: () => ({ mutate: mockUpdateCategory, isPending: false }),
   useCategoryExpenseCount: () => ({
     data: mockExpenseCount,
     isLoading: false,
@@ -301,7 +303,7 @@ describe('CategoryManager', () => {
     expect(screen.getByPlaceholderText(/название/i)).toBeInTheDocument()
     expect(screen.getByPlaceholderText(/эмодзи/i)).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: /добавить категорию/i })
+      screen.getByRole('button', { name: /добавить личную категорию/i })
     ).toBeInTheDocument()
   })
 
@@ -314,7 +316,9 @@ describe('CategoryManager', () => {
     fireEvent.change(screen.getByPlaceholderText(/эмодзи/i), {
       target: { value: '👕' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
+    fireEvent.click(
+      screen.getByRole('button', { name: /добавить личную категорию/i })
+    )
 
     await waitFor(() => {
       expect(mockAddCategoryIfUnique).toHaveBeenCalledWith(
@@ -334,7 +338,9 @@ describe('CategoryManager', () => {
 
     fireEvent.change(nameInput, { target: { value: 'Одежда' } })
     fireEvent.change(emojiInput, { target: { value: '👕' } })
-    fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
+    fireEvent.click(
+      screen.getByRole('button', { name: /добавить личную категорию/i })
+    )
 
     await waitFor(() => {
       expect(nameInput).toHaveValue('')
@@ -353,7 +359,9 @@ describe('CategoryManager', () => {
     fireEvent.change(screen.getByPlaceholderText(/эмодзи/i), {
       target: { value: '🍎' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
+    fireEvent.click(
+      screen.getByRole('button', { name: /добавить личную категорию/i })
+    )
 
     await waitFor(() => {
       expect(screen.getByText(/категория.*существует/i)).toBeInTheDocument()
@@ -365,7 +373,7 @@ describe('CategoryManager', () => {
     render(<CategoryManager />)
 
     const addButton = screen.getByRole('button', {
-      name: /добавить категорию/i,
+      name: /добавить личную категорию/i,
     })
     expect(addButton).toBeDisabled()
   })
@@ -378,7 +386,7 @@ describe('CategoryManager', () => {
     })
 
     const addButton = screen.getByRole('button', {
-      name: /добавить категорию/i,
+      name: /добавить личную категорию/i,
     })
     expect(addButton).toBeDisabled()
   })
@@ -402,7 +410,9 @@ describe('CategoryManager', () => {
     fireEvent.change(screen.getByPlaceholderText(/эмодзи/i), {
       target: { value: '💊' },
     })
-    fireEvent.click(screen.getByRole('button', { name: /добавить категорию/i }))
+    fireEvent.click(
+      screen.getByRole('button', { name: /добавить категорию общего бюджета/i })
+    )
 
     await waitFor(() => {
       expect(mockAddSharedCategory).toHaveBeenCalledWith({
@@ -427,7 +437,7 @@ describe('CategoryManager', () => {
       target: { value: '💊' },
     })
     const form = screen
-      .getByRole('button', { name: /добавить категорию/i })
+      .getByRole('button', { name: /добавить категорию общего бюджета/i })
       .closest('form')!
     fireEvent.submit(form)
     fireEvent.submit(form)
@@ -456,8 +466,94 @@ describe('CategoryManager', () => {
         id: 'shared-category-1',
         name: 'Супермаркет',
         emoji: '🛍️',
+        color: null,
       })
     })
+  })
+
+  it('changes the color of a shared category', async () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить Кафе' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Индиго' }))
+    fireEvent.click(screen.getByRole('button', { name: /сохранить/i }))
+
+    await waitFor(() => {
+      expect(mockUpdateSharedCategory).toHaveBeenCalledWith({
+        id: 'shared-category-2',
+        name: 'Кафе',
+        emoji: '☕',
+        color: '#4338ca',
+      })
+    })
+  })
+
+  it('renames a personal category and changes its emoji and color', () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить Продукты' }))
+    fireEvent.change(screen.getByDisplayValue('Продукты'), {
+      target: { value: '  Еда  ' },
+    })
+    fireEvent.change(screen.getByDisplayValue('🛒'), {
+      target: { value: '👨‍👩‍👧' },
+    })
+    fireEvent.click(screen.getByRole('radio', { name: 'Красный' }))
+    fireEvent.click(screen.getByRole('button', { name: /сохранить/i }))
+
+    expect(mockUpdateCategory).toHaveBeenCalledWith({
+      id: '1',
+      name: 'Еда',
+      emoji: '👨‍👩‍👧',
+      color: '#b91c1c',
+    })
+    expect(mockAddCategoryIfUnique).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole('button', { name: /добавить личную категорию/i })
+    ).toBeInTheDocument()
+  })
+
+  it('rejects renaming a personal category to an existing name', () => {
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить Продукты' }))
+    fireEvent.change(screen.getByDisplayValue('Продукты'), {
+      target: { value: 'транспорт' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /сохранить/i }))
+
+    expect(mockUpdateCategory).not.toHaveBeenCalled()
+    expect(
+      screen.getByText('Категория с таким названием уже существует')
+    ).toBeInTheDocument()
+  })
+
+  it('keeps a ZWJ emoji whole and limits the field to one emoji', () => {
+    render(<CategoryManager />)
+
+    const emojiInput = screen.getByPlaceholderText(/эмодзи/i)
+    fireEvent.change(emojiInput, { target: { value: '👩‍💻🚕' } })
+
+    expect(emojiInput).toHaveValue('👩‍💻')
+    expect(emojiInput).not.toHaveAttribute('maxLength')
+  })
+
+  it('labels the personal and shared add forms differently', () => {
+    render(<CategoryManager />)
+
+    expect(
+      screen.getByPlaceholderText('Название личной категории')
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+    expect(
+      screen.getByPlaceholderText('Название категории общего бюджета')
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: /добавить категорию общего бюджета/i })
+    ).toBeInTheDocument()
   })
 
   it('archives a shared category after confirmation', () => {

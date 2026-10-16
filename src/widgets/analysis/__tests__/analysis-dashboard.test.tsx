@@ -1,6 +1,8 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
+import { getFallbackCategoryColor } from '@/shared/lib/category-color'
+
 import { AnalysisDashboard } from '../ui/analysis-dashboard'
 
 import type { CategoryStat } from '@/shared/lib'
@@ -73,6 +75,23 @@ jest.mock('@/entities/expense', () => ({
   },
 }))
 
+let mockPersonalCategories: Array<{
+  id: string
+  name: string
+  emoji: string
+  color?: string | null
+}> = []
+let mockSharedCategories: Array<{ name: string; color?: string | null }> = []
+
+jest.mock('@/entities/category', () => ({
+  useCategories: () => ({ data: mockPersonalCategories, isLoading: false }),
+  useSharedBudgetCategoryLists: () => mockSharedCategories,
+}))
+
+jest.mock('@/entities/shared-budget', () => ({
+  useSharedBudgets: () => ({ data: [{ id: 'shared-budget-1' }] }),
+}))
+
 jest.mock('@/entities/session', () => ({
   useSessionStore: (selector?: (state: { selectedDate: Date }) => unknown) => {
     const state = { selectedDate: mockSelectedDate }
@@ -82,6 +101,7 @@ jest.mock('@/entities/session', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
+  ...jest.requireActual('@/shared/lib/category-color'),
   getMonthlyExpenses: jest.fn(
     (
       expenses: Expense[],
@@ -208,6 +228,8 @@ jest.mock('@/shared/ui', () => ({
 describe('AnalysisDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockPersonalCategories = []
+    mockSharedCategories = []
     mockIsLoading = false
     mockSelectedDate = new Date(2026, 0, 15) // Reset to Jan 15, 2026
     mockExpenses = [
@@ -937,12 +959,59 @@ describe('AnalysisDashboard', () => {
       )
     })
 
-    it('uses emerald fill for personal-only categories', () => {
+    it('fills a tile with the stored category color', () => {
+      mockPersonalCategories = [
+        { id: 'food', name: 'Продукты', emoji: '🛒', color: '#be185d' },
+      ]
+
       render(<AnalysisDashboard />)
 
       const categoryBox = screen.getByTestId('analysis-category-fill-Продукты')
 
-      expect(categoryBox).toHaveStyle({ backgroundColor: '#10b981' })
+      expect(categoryBox).toHaveStyle({ backgroundColor: '#be185d' })
+      expect(categoryBox).toHaveAttribute('data-color', '#be185d')
+      expect(
+        screen.getByTestId('analysis-category-scope-Продукты')
+      ).toHaveTextContent('Личные')
+    })
+
+    it('falls back to the stable palette color by name', () => {
+      mockPersonalCategories = [
+        { id: 'food', name: 'Продукты', emoji: '🛒', color: null },
+      ]
+
+      render(<AnalysisDashboard />)
+
+      expect(
+        screen.getByTestId('analysis-category-fill-Продукты')
+      ).toHaveAttribute('data-color', getFallbackCategoryColor('Продукты'))
+    })
+
+    it('uses the shared category color for a shared-only tile', () => {
+      mockPersonalCategories = [
+        { id: 'food', name: 'Продукты', emoji: '🛒', color: '#be185d' },
+      ]
+      mockSharedCategories = [{ name: 'Продукты', color: '#0369a1' }]
+      mockExpenses = [
+        {
+          id: 'shared',
+          description: 'Shared groceries',
+          amount: 3000,
+          date: '2026-01-17',
+          category: 'Продукты',
+          emoji: '🛒',
+          sharedBudgetId: 'shared-budget-1',
+        },
+      ]
+
+      render(<AnalysisDashboard />)
+
+      expect(
+        screen.getByTestId('analysis-category-fill-Продукты')
+      ).toHaveAttribute('data-color', '#0369a1')
+      expect(
+        screen.getByTestId('analysis-category-scope-Продукты')
+      ).toHaveTextContent('Общие')
     })
 
     it('uses split fill for mixed categories', () => {
@@ -971,6 +1040,9 @@ describe('AnalysisDashboard', () => {
       const categoryBox = screen.getByTestId('analysis-category-fill-Продукты')
 
       expect(categoryBox).toHaveAttribute('data-fill-mode', 'mixed')
+      expect(
+        screen.getByTestId('analysis-category-scope-Продукты')
+      ).toHaveTextContent('Личные · Проекты')
     })
 
     it('renders category names with correct styling', () => {

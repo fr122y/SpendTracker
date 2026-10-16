@@ -46,6 +46,7 @@ jest.mock('@/shared/db', () => {
       userId: 'category.userId',
       name: 'category.name',
       emoji: 'category.emoji',
+      color: 'category.color',
     },
     expenses: {
       id: 'expense.id',
@@ -63,6 +64,7 @@ import { auth } from '@/shared/auth'
 import {
   countCategoryExpenses,
   deleteCategoryWithReassign,
+  updateCategory,
 } from '../category-actions'
 
 const ownCategories = [
@@ -185,6 +187,129 @@ describe('category-actions', () => {
 
       await expect(countCategoryExpenses('foreign')).rejects.toThrow(
         'Category not found'
+      )
+    })
+  })
+
+  describe('updateCategory', () => {
+    const owned = [
+      { id: 'food', name: 'Продукты', emoji: '🛒', color: null },
+      { id: 'other', name: 'Другое', emoji: '📝', color: '#047857' },
+    ]
+
+    it('renames own personal expenses with the category in one transaction', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      const result = await updateCategory('food', { name: '  Еда  ' })
+
+      expect(result).toEqual({
+        id: 'food',
+        name: 'Еда',
+        emoji: '🛒',
+        color: null,
+      })
+      expect(dbModule.db.transaction).toHaveBeenCalledTimes(1)
+      expect(mocks.updateSet).toHaveBeenNthCalledWith(1, {
+        name: 'Еда',
+        emoji: '🛒',
+        color: null,
+      })
+      expect(mocks.updateWhere).toHaveBeenNthCalledWith(1, {
+        and: [
+          { eq: ['category.id', 'food'] },
+          { eq: ['category.userId', 'user-1'] },
+        ],
+      })
+      expect(mocks.updateSet).toHaveBeenNthCalledWith(2, {
+        category: 'Еда',
+        emoji: '🛒',
+      })
+      // Only the user's expenses outside shared budgets with the old name:
+      // other users and shared-budget expenses are not touched.
+      expect(mocks.updateWhere).toHaveBeenNthCalledWith(2, personalFoodFilter)
+    })
+
+    it('updates the emoji on the expenses when only the emoji changes', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await updateCategory('food', { emoji: '👨‍👩‍👧' })
+
+      expect(mocks.updateSet).toHaveBeenNthCalledWith(2, {
+        category: 'Продукты',
+        emoji: '👨‍👩‍👧',
+      })
+      expect(mocks.updateWhere).toHaveBeenNthCalledWith(2, personalFoodFilter)
+    })
+
+    it('changes only the category row for a color change', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await updateCategory('food', { color: '#be185d' })
+
+      expect(mocks.updateSet).toHaveBeenCalledTimes(1)
+      expect(mocks.updateSet).toHaveBeenCalledWith({
+        name: 'Продукты',
+        emoji: '🛒',
+        color: '#be185d',
+      })
+    })
+
+    it('resets the color to the automatic one with null', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await updateCategory('other', { color: null })
+
+      expect(mocks.updateSet).toHaveBeenCalledWith({
+        name: 'Другое',
+        emoji: '📝',
+        color: null,
+      })
+    })
+
+    it('allows a case-only rename of the same category', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await expect(
+        updateCategory('food', { name: 'продукты' })
+      ).resolves.toMatchObject({ name: 'продукты' })
+    })
+
+    it('rejects a duplicate name regardless of case', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await expect(updateCategory('food', { name: 'ДРУГОЕ' })).rejects.toThrow(
+        'Category with this name already exists'
+      )
+      expect(mocks.updateSet).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      [{ name: '   ' }, 'Category name is required'],
+      [{ emoji: '' }, 'Category emoji must be one character'],
+      [{ emoji: '🛒🚕' }, 'Category emoji must be one character'],
+      [{ emoji: 'ab' }, 'Category emoji must be one character'],
+      [{ color: '#BE185D' }, 'Category color must be a palette color'],
+      [{ color: 'red' }, 'Category color must be a palette color'],
+      [{ color: '#123456' }, 'Category color must be a palette color'],
+    ])('rejects invalid input %j', async (data, message) => {
+      await expect(updateCategory('food', data)).rejects.toThrow(message)
+      expect(dbModule.db.transaction).not.toHaveBeenCalled()
+    })
+
+    it('rejects a category of another user', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await expect(updateCategory('foreign', { name: 'Еда' })).rejects.toThrow(
+        'Category not found'
+      )
+      expect(mocks.updateSet).not.toHaveBeenCalled()
+    })
+
+    it('rejects unauthenticated calls', async () => {
+      ;(auth as jest.Mock).mockResolvedValue(null)
+
+      await expect(updateCategory('food', { name: 'Еда' })).rejects.toThrow(
+        'Unauthorized'
       )
     })
   })

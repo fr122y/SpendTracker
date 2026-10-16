@@ -316,6 +316,7 @@ export const sharedBudgetCategories = pgTable(
       .references(() => sharedBudgets.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     emoji: text('emoji').notNull(),
+    color: text('color'),
     archivedAt: timestamp('archivedAt', { mode: 'date' }),
     createdAt: timestamp('createdAt', { mode: 'date' })
       .notNull()
@@ -326,6 +327,10 @@ export const sharedBudgetCategories = pgTable(
     uniqueIndex('shared_budget_category_active_name_idx')
       .on(table.sharedBudgetId, table.name)
       .where(sql`${table.archivedAt} is null`),
+    check(
+      'shared_budget_category_color_check',
+      sql`${table.color} is null or ${table.color} ~ '^#[0-9a-f]{6}$'`
+    ),
   ]
 )
 
@@ -459,8 +464,15 @@ export const categories = pgTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     emoji: text('emoji').notNull(),
+    color: text('color'),
   },
-  (table) => [unique().on(table.userId, table.name)]
+  (table) => [
+    unique().on(table.userId, table.name),
+    check(
+      'category_color_check',
+      sql`${table.color} is null or ${table.color} ~ '^#[0-9a-f]{6}$'`
+    ),
+  ]
 )
 
 export const keywordMappings = pgTable(

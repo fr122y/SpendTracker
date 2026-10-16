@@ -11,15 +11,22 @@ import {
   useCategoryExpenseCount,
   useCategoryStore,
   useSharedBudgetCategories,
+  useUpdateCategory,
   useUpdateSharedBudgetCategory,
 } from '@/entities/category'
 import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
-import { pluralizeRu, useSubmitLock } from '@/shared/lib'
+import {
+  getCategoryColor,
+  limitGraphemes,
+  pluralizeRu,
+  useSubmitLock,
+} from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, Input, Select } from '@/shared/ui'
 
+import { CategoryColorPicker } from './category-color-picker'
 import { CategoryManagerSkeleton } from './category-manager-skeleton'
 
 import type { Category, SharedBudgetCategory } from '@/shared/types'
@@ -29,7 +36,9 @@ type CategoryMode = 'personal' | 'shared'
 export function CategoryManager() {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState('')
+  const [color, setColor] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const runLocked = useSubmitLock()
   const [categoryPendingDelete, setCategoryPendingDelete] =
     useState<Category | null>(null)
@@ -37,6 +46,7 @@ export function CategoryManager() {
   const [selectedSharedBudgetId, setSelectedSharedBudgetId] = useState('')
   const [sharedName, setSharedName] = useState('')
   const [sharedEmoji, setSharedEmoji] = useState('')
+  const [sharedColor, setSharedColor] = useState<string | null>(null)
   const [sharedError, setSharedError] = useState('')
   const [editingSharedCategory, setEditingSharedCategory] =
     useState<SharedBudgetCategory | null>(null)
@@ -50,6 +60,7 @@ export function CategoryManager() {
       addCategoryIfUnique: state.addCategoryIfUnique,
       deleteCategory: state.deleteCategory,
     }))
+  const updateCategory = useUpdateCategory()
   const { data: sharedBudgets = [], isLoading: isSharedBudgetsLoading } =
     useSharedBudgets()
   const activeSharedBudget = getActiveSharedBudget(sharedBudgets)
@@ -100,6 +111,28 @@ export function CategoryManager() {
 
     if (!name.trim() || !emoji.trim()) return
 
+    if (editingCategory) {
+      const normalized = name.trim().toLowerCase()
+      const isDuplicate = categories.some(
+        (category) =>
+          category.id !== editingCategory.id &&
+          category.name.toLowerCase() === normalized
+      )
+      if (isDuplicate) {
+        setError('Категория с таким названием уже существует')
+        return
+      }
+
+      updateCategory.mutate({
+        id: editingCategory.id,
+        name: name.trim(),
+        emoji: emoji.trim(),
+        color,
+      })
+      resetPersonalForm()
+      return
+    }
+
     const success = addCategoryIfUnique({
       id: crypto.randomUUID(),
       name: name.trim(),
@@ -115,6 +148,22 @@ export function CategoryManager() {
     setEmoji('')
   }
 
+  const resetPersonalForm = () => {
+    setName('')
+    setEmoji('')
+    setColor(null)
+    setError('')
+    setEditingCategory(null)
+  }
+
+  const startPersonalEdit = (category: Category) => {
+    setEditingCategory(category)
+    setName(category.name)
+    setEmoji(category.emoji)
+    setColor(category.color ?? null)
+    setError('')
+  }
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     void runLocked(submit)
@@ -126,6 +175,7 @@ export function CategoryManager() {
   const resetSharedForm = () => {
     setSharedName('')
     setSharedEmoji('')
+    setSharedColor(null)
     setSharedError('')
     setEditingSharedCategory(null)
   }
@@ -156,6 +206,7 @@ export function CategoryManager() {
         await updateSharedCategory.mutateAsync({
           id: editingSharedCategory.id,
           ...nextCategory,
+          color: sharedColor,
         })
       } else {
         await addSharedCategory.mutateAsync(nextCategory)
@@ -175,6 +226,7 @@ export function CategoryManager() {
     setEditingSharedCategory(category)
     setSharedName(category.name)
     setSharedEmoji(category.emoji)
+    setSharedColor(category.color ?? null)
     setSharedError('')
   }
 
@@ -214,19 +266,32 @@ export function CategoryManager() {
                 className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
               >
                 <div className="flex items-center gap-3">
+                  <CategoryColorDot category={category} />
                   <span className="text-xl">{category.emoji}</span>
                   <span className="text-zinc-200">{category.name}</span>
                 </div>
-                <Button
-                  variant="danger"
-                  onClick={() => setCategoryPendingDelete(category)}
-                  disabled={categories.length <= 1}
-                  aria-label={`Удалить ${category.name}`}
-                  className="w-full sm:w-auto"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Удалить
-                </Button>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => startPersonalEdit(category)}
+                    aria-label={`Изменить ${category.name}`}
+                    className="w-full sm:w-auto"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Изменить
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={() => setCategoryPendingDelete(category)}
+                    disabled={categories.length <= 1}
+                    aria-label={`Удалить ${category.name}`}
+                    className="w-full sm:w-auto"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Удалить
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
@@ -250,7 +315,8 @@ export function CategoryManager() {
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <div className="flex-1">
                 <Input
-                  placeholder="Название категории"
+                  placeholder="Название личной категории"
+                  aria-label="Название личной категории"
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value)
@@ -262,20 +328,44 @@ export function CategoryManager() {
               <div className="w-full sm:w-24">
                 <Input
                   placeholder="Эмодзи"
+                  aria-label="Эмодзи личной категории"
                   value={emoji}
-                  onChange={(e) => setEmoji(e.target.value)}
-                  maxLength={2}
+                  onChange={(e) => setEmoji(limitGraphemes(e.target.value, 1))}
                 />
               </div>
             </div>
-            <Button
-              type="submit"
-              disabled={!isFormValid}
-              className="w-full sm:w-auto"
-            >
-              <Plus className="h-4 w-4" />
-              Добавить категорию
-            </Button>
+            {editingCategory && (
+              <CategoryColorPicker
+                name={name}
+                value={color}
+                onChange={setColor}
+              />
+            )}
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button
+                type="submit"
+                disabled={!isFormValid}
+                className="w-full sm:w-auto"
+              >
+                {editingCategory ? (
+                  <Save className="h-4 w-4" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+                {editingCategory ? 'Сохранить' : 'Добавить личную категорию'}
+              </Button>
+              {editingCategory && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={resetPersonalForm}
+                  className="w-full sm:w-auto"
+                >
+                  <X className="h-4 w-4" />
+                  Отмена
+                </Button>
+              )}
+            </div>
           </form>
         </>
       )}
@@ -314,6 +404,7 @@ export function CategoryManager() {
                   className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
                 >
                   <div className="flex items-center gap-3">
+                    <CategoryColorDot category={category} />
                     <span className="text-xl">{category.emoji}</span>
                     <span className="text-zinc-200">{category.name}</span>
                   </div>
@@ -322,6 +413,7 @@ export function CategoryManager() {
                       type="button"
                       variant="ghost"
                       onClick={() => startSharedEdit(category)}
+                      aria-label={`Изменить ${category.name}`}
                       className="w-full sm:w-auto"
                     >
                       <Pencil className="h-4 w-4" />
@@ -369,7 +461,8 @@ export function CategoryManager() {
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <div className="flex-1">
                 <Input
-                  placeholder="Название категории"
+                  placeholder="Название категории общего бюджета"
+                  aria-label="Название категории общего бюджета"
                   value={sharedName}
                   onChange={(e) => {
                     setSharedName(e.target.value)
@@ -381,12 +474,21 @@ export function CategoryManager() {
               <div className="w-full sm:w-24">
                 <Input
                   placeholder="Эмодзи"
+                  aria-label="Эмодзи категории общего бюджета"
                   value={sharedEmoji}
-                  onChange={(e) => setSharedEmoji(e.target.value)}
-                  maxLength={2}
+                  onChange={(e) =>
+                    setSharedEmoji(limitGraphemes(e.target.value, 1))
+                  }
                 />
               </div>
             </div>
+            {editingSharedCategory && (
+              <CategoryColorPicker
+                name={sharedName}
+                value={sharedColor}
+                onChange={setSharedColor}
+              />
+            )}
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button
                 type="submit"
@@ -401,7 +503,9 @@ export function CategoryManager() {
                 ) : (
                   <Plus className="h-4 w-4" />
                 )}
-                {editingSharedCategory ? 'Сохранить' : 'Добавить категорию'}
+                {editingSharedCategory
+                  ? 'Сохранить'
+                  : 'Добавить категорию общего бюджета'}
               </Button>
               {editingSharedCategory && (
                 <Button
@@ -419,6 +523,23 @@ export function CategoryManager() {
         </>
       )}
     </div>
+  )
+}
+
+function CategoryColorDot({
+  category,
+}: {
+  category: Pick<Category, 'name' | 'color'>
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      data-testid={`category-color-${category.name}`}
+      className="h-3 w-3 shrink-0 rounded-full"
+      style={{
+        backgroundColor: getCategoryColor(category.name, category.color),
+      }}
+    />
   )
 }
 

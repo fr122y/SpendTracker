@@ -10,6 +10,7 @@ export {
   addCategory,
   countCategoryExpenses,
   deleteCategoryWithReassign,
+  updateCategory,
 } from './category-actions'
 export {
   getKeywordMappings,

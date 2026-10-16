@@ -4,6 +4,10 @@ import { and, count, eq, isNull } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
 import { categories, db, expenses } from '@/shared/db'
+import {
+  normalizeCategoryUpdate,
+  type CategoryUpdate,
+} from '@/shared/lib/category-update'
 
 import type { Category } from '@/shared/types'
 
@@ -23,6 +27,7 @@ export async function getCategories(): Promise<Category[]> {
       id: categories.id,
       name: categories.name,
       emoji: categories.emoji,
+      color: categories.color,
     })
     .from(categories)
     .where(eq(categories.userId, userId))
@@ -117,5 +122,65 @@ export async function deleteCategoryWithReassign(
       .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
 
     return { moved: moved.length }
+  })
+}
+
+export async function updateCategory(
+  categoryId: string,
+  data: CategoryUpdate
+): Promise<Category> {
+  const userId = await getUserId()
+  const update = normalizeCategoryUpdate(data)
+
+  return db.transaction(async (tx) => {
+    const owned = await tx
+      .select({
+        id: categories.id,
+        name: categories.name,
+        emoji: categories.emoji,
+        color: categories.color,
+      })
+      .from(categories)
+      .where(eq(categories.userId, userId))
+
+    const category = owned.find((item) => item.id === categoryId)
+    if (!category) {
+      throw new Error('Category not found')
+    }
+
+    const next: Category = {
+      id: category.id,
+      name: update.name ?? category.name,
+      emoji: update.emoji ?? category.emoji,
+      color: update.color !== undefined ? update.color : category.color,
+    }
+
+    // The same case-insensitive rule as adding a category.
+    const normalizedName = next.name.toLowerCase()
+    if (
+      owned.some(
+        (item) =>
+          item.id !== categoryId && item.name.toLowerCase() === normalizedName
+      )
+    ) {
+      throw new Error('Category with this name already exists')
+    }
+
+    await tx
+      .update(categories)
+      .set({ name: next.name, emoji: next.emoji, color: next.color })
+      .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+
+    // Expenses keep a text copy of the category name and emoji, so a rename
+    // moves the user's personal expenses with it. keyword_mapping rows point
+    // at categoryId and stay valid.
+    if (next.name !== category.name || next.emoji !== category.emoji) {
+      await tx
+        .update(expenses)
+        .set({ category: next.name, emoji: next.emoji })
+        .where(personalExpensesInCategory(userId, category.name))
+    }
+
+    return next
   })
 }
