@@ -14,6 +14,8 @@ const mockAddSharedCategory = jest.fn()
 const mockUpdateSharedCategory = jest.fn()
 const mockArchiveSharedCategory = jest.fn()
 let mockIsLoading = false
+let mockExpenseCount: number | undefined = 0
+let mockCategoriesList = mockCategories
 let mockSharedBudgets = [
   {
     id: 'shared-1',
@@ -53,6 +55,19 @@ jest.mock('@/entities/category', () => ({
     isPending: false,
   }),
   useDeleteCategory: () => ({ mutate: mockDeleteCategory, isPending: false }),
+  useCategoryExpenseCount: () => ({
+    data: mockExpenseCount,
+    isLoading: false,
+  }),
+  getDefaultReassignTarget: (
+    categories: typeof mockCategories,
+    deletedId: string
+  ) => {
+    const remaining = categories.filter((category) => category.id !== deletedId)
+    return (
+      remaining.find((category) => category.name === 'Другое') ?? remaining[0]
+    )
+  },
   useSharedBudgetCategories: () => ({
     data: mockSharedCategories,
     isLoading: false,
@@ -88,7 +103,7 @@ jest.mock('@/entities/category', () => ({
     }) => unknown
   ) =>
     selector({
-      categories: mockCategories,
+      categories: mockCategoriesList,
       isLoading: mockIsLoading,
       addCategoryIfUnique: mockAddCategoryIfUnique,
       deleteCategory: mockDeleteCategory,
@@ -108,6 +123,8 @@ describe('CategoryManager', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockIsLoading = false
+    mockExpenseCount = 0
+    mockCategoriesList = mockCategories
     mockAddCategoryIfUnique.mockReturnValue(true)
     mockSharedBudgets = [
       {
@@ -202,8 +219,69 @@ describe('CategoryManager', () => {
     fireEvent.click(deleteButtons[0])
     fireEvent.click(screen.getByRole('button', { name: 'Удалить категорию' }))
 
-    expect(mockDeleteCategory).toHaveBeenCalledWith('1')
+    expect(mockDeleteCategory).toHaveBeenCalledWith('1', '6')
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  it('shows a simple confirmation without a target select when empty', () => {
+    mockExpenseCount = 0
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить Продукты' }))
+
+    expect(screen.getByText('В категории нет операций.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Правила автокатегоризации этой категории будут удалены.'
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByLabelText('Перенести в')).not.toBeInTheDocument()
+  })
+
+  it('defaults the target to «Другое» and moves expenses there', () => {
+    mockExpenseCount = 4
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить Продукты' }))
+
+    expect(
+      screen.getByText('В категории 4 операций. Куда перенести?')
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('Перенести в')).toHaveValue('6')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить категорию' }))
+    expect(mockDeleteCategory).toHaveBeenCalledWith('1', '6')
+  })
+
+  it('defaults to the first remaining category when «Другое» is deleted', () => {
+    mockExpenseCount = 2
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить Другое' }))
+
+    expect(screen.getByLabelText('Перенести в')).toHaveValue('1')
+  })
+
+  it('moves expenses to the category the user picks', () => {
+    mockExpenseCount = 2
+    render(<CategoryManager />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить Продукты' }))
+    fireEvent.change(screen.getByLabelText('Перенести в'), {
+      target: { value: '2' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить категорию' }))
+
+    expect(mockDeleteCategory).toHaveBeenCalledWith('1', '2')
+  })
+
+  it('disables delete when only one category remains', () => {
+    mockCategoriesList = [mockCategories[0]]
+    render(<CategoryManager />)
+
+    expect(
+      screen.getByRole('button', { name: 'Удалить Продукты' })
+    ).toBeDisabled()
   })
 
   it('renders form to add new category', () => {

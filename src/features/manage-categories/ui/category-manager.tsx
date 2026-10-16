@@ -4,9 +4,11 @@ import { Archive, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 
 import {
+  getDefaultReassignTarget,
   isSharedCategoryNameDuplicate,
   useAddSharedBudgetCategory,
   useArchiveSharedBudgetCategory,
+  useCategoryExpenseCount,
   useCategoryStore,
   useSharedBudgetCategories,
   useUpdateSharedBudgetCategory,
@@ -218,6 +220,7 @@ export function CategoryManager() {
                 <Button
                   variant="danger"
                   onClick={() => setCategoryPendingDelete(category)}
+                  disabled={categories.length <= 1}
                   aria-label={`Удалить ${category.name}`}
                   className="w-full sm:w-auto"
                 >
@@ -228,18 +231,12 @@ export function CategoryManager() {
             ))}
           </ul>
 
-          <ConfirmDialog
-            isOpen={Boolean(categoryPendingDelete)}
-            title={
-              categoryPendingDelete
-                ? `Удалить категорию «${categoryPendingDelete.name}»?`
-                : 'Удалить категорию?'
-            }
-            description="Связанные правила автокатегоризации для этой категории тоже будут удалены."
-            confirmLabel="Удалить категорию"
-            onConfirm={() => {
+          <DeleteCategoryDialog
+            category={categoryPendingDelete}
+            categories={categories}
+            onConfirm={(targetCategoryId) => {
               if (categoryPendingDelete) {
-                deleteCategory(categoryPendingDelete.id)
+                deleteCategory(categoryPendingDelete.id, targetCategoryId)
                 setCategoryPendingDelete(null)
               }
             }}
@@ -422,5 +419,83 @@ export function CategoryManager() {
         </>
       )}
     </div>
+  )
+}
+
+interface DeleteCategoryDialogProps {
+  category: Category | null
+  categories: Category[]
+  onConfirm: (targetCategoryId: string) => void
+  onClose: () => void
+}
+
+function DeleteCategoryDialog({
+  category,
+  categories,
+  onConfirm,
+  onClose,
+}: DeleteCategoryDialogProps) {
+  const { data: expenseCount, isLoading } = useCategoryExpenseCount(
+    category?.id
+  )
+  const [targetId, setTargetId] = useState('')
+
+  const targets = category
+    ? categories.filter((item) => item.id !== category.id)
+    : []
+  const defaultTarget = category
+    ? getDefaultReassignTarget(categories, category.id)
+    : undefined
+  const selectedTargetId =
+    targets.find((item) => item.id === targetId)?.id ?? defaultTarget?.id ?? ''
+
+  const hasExpenses = (expenseCount ?? 0) > 0
+
+  const description = (
+    <div className="flex flex-col gap-3">
+      {isLoading ? (
+        <p>Считаем операции…</p>
+      ) : hasExpenses ? (
+        <>
+          <p>В категории {expenseCount} операций. Куда перенести?</p>
+          <Select
+            label="Перенести в"
+            id="delete-category-target"
+            value={selectedTargetId}
+            onChange={(event) => setTargetId(event.target.value)}
+            options={targets.map((item) => ({
+              value: item.id,
+              label: `${item.emoji} ${item.name}`,
+            }))}
+          />
+        </>
+      ) : (
+        <p>В категории нет операций.</p>
+      )}
+      <p>Правила автокатегоризации этой категории будут удалены.</p>
+    </div>
+  )
+
+  return (
+    <ConfirmDialog
+      isOpen={Boolean(category)}
+      title={
+        category
+          ? `Удалить категорию «${category.name}»?`
+          : 'Удалить категорию?'
+      }
+      description={description}
+      confirmLabel="Удалить категорию"
+      isConfirming={isLoading}
+      onConfirm={() => {
+        if (isLoading || !selectedTargetId) return
+        onConfirm(selectedTargetId)
+        setTargetId('')
+      }}
+      onClose={() => {
+        setTargetId('')
+        onClose()
+      }}
+    />
   )
 }

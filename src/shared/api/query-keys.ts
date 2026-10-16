@@ -4,6 +4,8 @@ export const queryKeys = {
   },
   categories: {
     all: ['categories'] as const,
+    expenseCount: (categoryId: string) =>
+      ['categories', 'expense-count', categoryId] as const,
   },
   keywordMappings: {
     all: ['keyword-mappings'] as const,

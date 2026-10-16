@@ -10,7 +10,8 @@ CRUD operations for expense categories.
 
 - `useCategories`: Query hook for category data
 - `useAddCategory`: Mutation hook for creating categories
-- `useDeleteCategory`: Mutation hook for removing categories
+- `useDeleteCategory`: Mutation hook for removing categories with expense reassignment
+- `useCategoryExpenseCount`: Query hook for the expense count shown in the delete dialog
 - Duplicate-name validation is handled by the data layer and mirrored in the UI
 
 ## Features

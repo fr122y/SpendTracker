@@ -6,7 +6,8 @@ import {
   addCategory as addCategoryAction,
   addSharedBudgetCategory as addSharedBudgetCategoryAction,
   archiveSharedBudgetCategory as archiveSharedBudgetCategoryAction,
-  deleteCategory as deleteCategoryAction,
+  countCategoryExpenses,
+  deleteCategoryWithReassign,
   getCategories,
   getSharedBudgetCategories,
   queryKeys,
@@ -55,12 +56,26 @@ export function useAddCategory() {
   })
 }
 
+export function useCategoryExpenseCount(categoryId: string | undefined) {
+  return useQuery({
+    enabled: Boolean(categoryId),
+    queryKey: queryKeys.categories.expenseCount(categoryId ?? ''),
+    queryFn: () => countCategoryExpenses(categoryId ?? ''),
+  })
+}
+
+export interface DeleteCategoryInput {
+  id: string
+  targetCategoryId: string
+}
+
 export function useDeleteCategory() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => deleteCategoryAction(id),
-    onMutate: async (id) => {
+    mutationFn: ({ id, targetCategoryId }: DeleteCategoryInput) =>
+      deleteCategoryWithReassign(id, targetCategoryId),
+    onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.categories.all })
       const previous = queryClient.getQueryData<Category[]>(
         queryKeys.categories.all
@@ -71,12 +86,16 @@ export function useDeleteCategory() {
       )
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (_error, _input, context) => {
       queryClient.setQueryData(queryKeys.categories.all, context?.previous)
       showMutationRollbackToast()
     },
     onSettled: () => {
+      // Analysis is derived from the expenses query, so refetching expenses
+      // removes the deleted category's tile and shows moved expenses.
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.keywordMappings.all })
     },
   })
 }
@@ -223,7 +242,7 @@ interface CategoryState {
   isLoading: boolean
   addCategory: (category: Category) => void
   addCategoryIfUnique: (category: Category) => boolean
-  deleteCategory: (id: string) => void
+  deleteCategory: (id: string, targetCategoryId: string) => void
 }
 
 export function useCategoryStore(): CategoryState
@@ -252,8 +271,8 @@ export function useCategoryStore<T>(selector?: (state: CategoryState) => T) {
       })
       return true
     },
-    deleteCategory: (id) => {
-      deleteCategory.mutate(id)
+    deleteCategory: (id, targetCategoryId) => {
+      deleteCategory.mutate({ id, targetCategoryId })
     },
   }
 
@@ -262,4 +281,14 @@ export function useCategoryStore<T>(selector?: (state: CategoryState) => T) {
   }
 
   return state
+}
+
+export function getDefaultReassignTarget(
+  categories: Category[],
+  deletedId: string
+): Category | undefined {
+  const remaining = categories.filter((category) => category.id !== deletedId)
+  return (
+    remaining.find((category) => category.name === 'Другое') ?? remaining[0]
+  )
 }

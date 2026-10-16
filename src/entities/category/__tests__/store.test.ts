@@ -11,6 +11,7 @@ let categories: Category[] = []
 jest.mock('@/shared/api', () => ({
   queryKeys: {
     categories: { all: ['categories'] },
+    expenses: { all: ['expenses'] },
     keywordMappings: { all: ['keyword-mappings'] },
   },
   getCategories: jest.fn(async () => categories),
@@ -22,7 +23,7 @@ jest.mock('@/shared/api', () => ({
     categories = [...categories, nextCategory]
     return nextCategory
   }),
-  deleteCategory: jest.fn(async (id: string) => {
+  deleteCategoryWithReassign: jest.fn(async (id: string) => {
     categories = categories.filter((category) => category.id !== id)
   }),
 }))
@@ -76,7 +77,10 @@ describe('Category entity', () => {
     })
 
     act(() => {
-      result.current.deleteCategory(result.current.categories[2].id)
+      result.current.deleteCategory(
+        result.current.categories[2].id,
+        result.current.categories[0].id
+      )
     })
 
     await waitFor(() => {

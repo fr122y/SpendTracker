@@ -43,7 +43,8 @@ jest.mock('@/shared/api', () => ({
       throw new Error('add failed')
     }
   }),
-  deleteCategory: jest.fn(async () => {
+  countCategoryExpenses: jest.fn(async () => 0),
+  deleteCategoryWithReassign: jest.fn(async () => {
     if (shouldRejectDelete) {
       throw new Error('delete failed')
     }
@@ -152,7 +153,7 @@ describe('category optimistic mutations', () => {
     })
 
     act(() => {
-      result.current.mutate('1')
+      result.current.mutate({ id: '1', targetCategoryId: '2' })
     })
 
     await waitFor(() => {
@@ -160,6 +161,32 @@ describe('category optimistic mutations', () => {
         initialCategories
       )
       expect(showMutationRollbackToast).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('invalidates categories, expenses and rules after deleting', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    })
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+    queryClient.setQueryData(['categories'], initialCategories)
+
+    const { result } = renderHook(() => useDeleteCategory(), {
+      wrapper: createWrapper(queryClient),
+    })
+
+    act(() => {
+      result.current.mutate({ id: '1', targetCategoryId: '2' })
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['categories'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['expenses'] })
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['keyword-mappings'],
     })
   })
 
