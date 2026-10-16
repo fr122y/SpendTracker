@@ -4,6 +4,10 @@ import { and, eq, isNull, ne } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
 import { db, expenses, sharedBudgetCategories } from '@/shared/db'
+import {
+  normalizeCategoryUpdate,
+  type CategoryUpdate,
+} from '@/shared/lib/category-update'
 
 import { assertCanUseSharedBudget } from './shared-budget-actions'
 
@@ -32,6 +36,8 @@ function requireValidCategory(data: { name: string; emoji: string }): {
     throw new Error('Shared category emoji is required')
   }
 
+  normalizeCategoryUpdate({ emoji })
+
   return { name, emoji }
 }
 
@@ -40,6 +46,7 @@ function mapSharedCategory(row: {
   sharedBudgetId: string
   name: string
   emoji: string
+  color: string | null
   archivedAt: Date | null
   createdAt: Date
 }): SharedBudgetCategory {
@@ -48,6 +55,7 @@ function mapSharedCategory(row: {
     sharedBudgetId: row.sharedBudgetId,
     name: row.name,
     emoji: row.emoji,
+    color: row.color,
     archivedAt: row.archivedAt?.toISOString(),
     createdAt: row.createdAt.toISOString(),
   }
@@ -63,6 +71,7 @@ async function getCategoryForActiveMember(
       sharedBudgetId: sharedBudgetCategories.sharedBudgetId,
       name: sharedBudgetCategories.name,
       emoji: sharedBudgetCategories.emoji,
+      color: sharedBudgetCategories.color,
       archivedAt: sharedBudgetCategories.archivedAt,
       createdAt: sharedBudgetCategories.createdAt,
     })
@@ -115,6 +124,7 @@ export async function getSharedBudgetCategories(
       sharedBudgetId: sharedBudgetCategories.sharedBudgetId,
       name: sharedBudgetCategories.name,
       emoji: sharedBudgetCategories.emoji,
+      color: sharedBudgetCategories.color,
       archivedAt: sharedBudgetCategories.archivedAt,
       createdAt: sharedBudgetCategories.createdAt,
     })
@@ -153,6 +163,7 @@ export async function addSharedBudgetCategory(
       sharedBudgetId: sharedBudgetCategories.sharedBudgetId,
       name: sharedBudgetCategories.name,
       emoji: sharedBudgetCategories.emoji,
+      color: sharedBudgetCategories.color,
       archivedAt: sharedBudgetCategories.archivedAt,
       createdAt: sharedBudgetCategories.createdAt,
     })
@@ -168,7 +179,7 @@ export async function addSharedBudgetCategory(
 
 export async function updateSharedBudgetCategory(
   id: string,
-  data: { name: string; emoji: string }
+  data: CategoryUpdate
 ): Promise<void> {
   const userId = await getUserId()
   const category = await getCategoryForActiveMember(id, userId)
@@ -177,29 +188,39 @@ export async function updateSharedBudgetCategory(
     throw new Error('Shared category is archived')
   }
 
-  const nextCategory = requireValidCategory(data)
-  await assertUniqueActiveCategoryName(
-    category.sharedBudgetId,
-    nextCategory.name,
-    id
-  )
+  const update = normalizeCategoryUpdate(data)
+  const nextName = update.name ?? category.name
+  const nextEmoji = update.emoji ?? category.emoji
+  if (nextName !== category.name) {
+    await assertUniqueActiveCategoryName(category.sharedBudgetId, nextName, id)
+  }
 
   await db.transaction(async (tx) => {
     await tx
       .update(sharedBudgetCategories)
       .set({
-        name: nextCategory.name,
-        emoji: nextCategory.emoji,
+        name: nextName,
+        emoji: nextEmoji,
+        ...(update.color !== undefined && { color: update.color }),
       })
       .where(eq(sharedBudgetCategories.id, id))
 
-    await tx
-      .update(expenses)
-      .set({
-        category: nextCategory.name,
-        emoji: nextCategory.emoji,
-      })
-      .where(eq(expenses.sharedBudgetCategoryId, id))
+    // Shared expenses keep a text copy of the name and emoji; only this
+    // budget's expenses of this category move with a rename.
+    if (nextName !== category.name || nextEmoji !== category.emoji) {
+      await tx
+        .update(expenses)
+        .set({
+          category: nextName,
+          emoji: nextEmoji,
+        })
+        .where(
+          and(
+            eq(expenses.sharedBudgetId, category.sharedBudgetId),
+            eq(expenses.sharedBudgetCategoryId, id)
+          )
+        )
+    }
   })
 }
 

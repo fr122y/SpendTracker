@@ -13,6 +13,10 @@ export {
   useDeleteCategory,
   useSharedBudgetCategories,
   useUpdateSharedBudgetCategory,
+  useSharedBudgetCategoryLists,
+  useUpdateCategory,
+  type UpdateCategoryInput,
+  type UpdateSharedCategoryInput,
 } from './model/queries'
 export {
   useCategorize,

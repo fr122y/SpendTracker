@@ -115,3 +115,11 @@ export {
 } from './pocket-name'
 export { pluralizeRu } from './plural'
 export { accountNameSchema, accountPasswordSchema } from './credentials-schema'
+export {
+  CATEGORY_COLORS,
+  getCategoryColor,
+  getFallbackCategoryColor,
+  isCategoryColor,
+  type CategoryColor,
+} from './category-color'
+export { countGraphemes, limitGraphemes } from './grapheme'

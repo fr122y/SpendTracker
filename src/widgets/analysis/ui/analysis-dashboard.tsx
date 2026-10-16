@@ -3,8 +3,13 @@
 import { PieChart } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 
+import {
+  useCategories,
+  useSharedBudgetCategoryLists,
+} from '@/entities/category'
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
+import { useSharedBudgets } from '@/entities/shared-budget'
 import {
   getCategoryStats,
   type CategoryStat,
@@ -15,6 +20,10 @@ import { Button, EmptyState } from '@/shared/ui'
 
 import { AnalysisCategoryDetailsDialog } from './analysis-category-details-dialog'
 import { AnalysisSkeleton } from './analysis-skeleton'
+import {
+  getCategoryTileColor,
+  getCategoryTileScopeLabel,
+} from '../lib/category-tile-color'
 
 const MONTH_NAMES = [
   'Январь',
@@ -35,6 +44,7 @@ interface CategoryBoxProps {
   stat: CategoryStat
   maxPercent: number
   scope: ExpenseScope
+  color: string
   onSelect: (stat: CategoryStat, trigger: HTMLButtonElement) => void
 }
 
@@ -44,7 +54,13 @@ const SCOPE_OPTIONS: Array<{ value: ExpenseScope; label: string }> = [
   { value: 'shared', label: 'Общие' },
 ]
 
-function CategoryBox({ stat, maxPercent, scope, onSelect }: CategoryBoxProps) {
+function CategoryBox({
+  stat,
+  maxPercent,
+  scope,
+  color,
+  onSelect,
+}: CategoryBoxProps) {
   const [showTooltip, setShowTooltip] = useState(false)
 
   // Calculate size based on percentage (min 60px/80px, max 120px/160px for mobile/desktop)
@@ -58,25 +74,12 @@ function CategoryBox({ stat, maxPercent, scope, onSelect }: CategoryBoxProps) {
   const projectShare =
     stat.value > 0 ? (stat.projectValue / stat.value) * 100 : 0
 
-  const segments = [
-    { value: personalShare, color: '#10b981' },
-    { value: sharedShare, color: '#f59e0b' },
-    { value: projectShare, color: '#0ea5e9' },
-  ].filter((segment) => segment.value > 0)
-  const backgroundColor = segments.length === 1 ? segments[0].color : undefined
-  let offset = 0
-  const backgroundImage =
-    segments.length > 1
-      ? `linear-gradient(135deg, ${segments
-          .map((segment) => {
-            const start = offset
-            offset += segment.value
-            return `${segment.color} ${start}%, ${segment.color} ${offset}%`
-          })
-          .join(', ')})`
-      : undefined
+  const segmentCount = [personalShare, sharedShare, projectShare].filter(
+    (share) => share > 0
+  ).length
+  const scopeLabel = getCategoryTileScopeLabel(stat)
   const fillMode =
-    segments.length > 1
+    segmentCount > 1
       ? 'mixed'
       : sharedShare > 0
         ? 'shared'
@@ -101,6 +104,7 @@ function CategoryBox({ stat, maxPercent, scope, onSelect }: CategoryBoxProps) {
         }}
         data-testid={`analysis-category-fill-${stat.name}`}
         data-fill-mode={fillMode}
+        data-color={color}
         className={cn(
           'flex cursor-pointer flex-col items-center justify-center rounded-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500',
           'h-20 w-20 sm:h-24 sm:w-24 md:h-auto md:w-auto'
@@ -110,8 +114,7 @@ function CategoryBox({ stat, maxPercent, scope, onSelect }: CategoryBoxProps) {
           minWidth: sizeScale > 0.5 ? `${60 + sizeScale * 40}px` : undefined,
           minHeight: sizeScale > 0.5 ? `${60 + sizeScale * 40}px` : undefined,
           opacity,
-          backgroundColor,
-          backgroundImage,
+          backgroundColor: color,
         }}
       >
         <span className="text-2xl sm:text-3xl">{stat.emoji}</span>
@@ -120,6 +123,12 @@ function CategoryBox({ stat, maxPercent, scope, onSelect }: CategoryBoxProps) {
         </span>
         <span className="text-xs text-white/80 sm:text-sm">
           {stat.percent.toFixed(0)}%
+        </span>
+        <span
+          className="mt-0.5 rounded bg-black/30 px-1 text-[10px] leading-4 text-white"
+          data-testid={`analysis-category-scope-${stat.name}`}
+        >
+          {scopeLabel}
         </span>
       </button>
 
@@ -177,6 +186,13 @@ export function AnalysisDashboard() {
     expenses: state.expenses,
     isLoading: state.isLoading,
   }))
+  const { data: personalCategories = [] } = useCategories()
+  const { data: sharedBudgets = [] } = useSharedBudgets()
+  const sharedCategories = useSharedBudgetCategoryLists(
+    sharedBudgets
+      .filter((budget) => !budget.archivedAt)
+      .map((budget) => budget.id)
+  )
   const handleSelectCategory = useCallback(
     (category: CategoryStat, trigger: HTMLButtonElement) => {
       activeCategoryTriggerRef.current = trigger
@@ -272,6 +288,11 @@ export function AnalysisDashboard() {
               stat={stat}
               maxPercent={maxPercent}
               scope={scope}
+              color={getCategoryTileColor(
+                stat,
+                personalCategories,
+                sharedCategories
+              )}
               onSelect={handleSelectCategory}
             />
           ))}
