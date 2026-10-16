@@ -10,6 +10,8 @@ edit-mode toggle.
 - `useEditMode`: Reatom-backed toggle for local edit mode
 - `ColumnResizer`: Draggable handle for resizing columns
 - `WidgetPlaceholder`: Drop zone wrapper for widgets
+- `LayoutVisibilityPanel`: Edit-mode panel listing hidden widgets with «Показать» and a confirmed «Сбросить раскладку»
+- `useLayoutStore`: also exposes `hideWidget`, `showWidget`, `resetLayout`
 
 ## State & Data
 
@@ -36,6 +38,7 @@ edit-mode toggle.
 - Uses native HTML5 Drag & Drop API
 - Column widths are percentages (0-100)
 - Widgets can be moved between columns or reordered within a column
+- Hidden widgets are removed from columns and listed in `LayoutConfig.hidden`; the last visible widget cannot be hidden
 
 ## Dependencies
 

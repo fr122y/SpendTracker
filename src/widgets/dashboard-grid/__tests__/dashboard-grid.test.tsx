@@ -6,8 +6,14 @@ import { DashboardGrid } from '../ui/dashboard-grid'
 const mockMoveWidget = jest.fn()
 const mockMoveWidgetInColumn = jest.fn()
 const mockResizeColumn = jest.fn()
+const mockHideWidget = jest.fn()
+const mockShowWidget = jest.fn()
+const mockResetLayout = jest.fn()
 
-const mockLayoutConfig = {
+const mockLayoutConfig: {
+  columns: { id: string; width: number; widgets: string[] }[]
+  hidden?: string[]
+} = {
   columns: [
     { id: 'col-1', width: 50, widgets: ['CALENDAR', 'EXPENSE_LOG'] },
     { id: 'col-2', width: 50, widgets: ['ANALYSIS'] },
@@ -40,7 +46,25 @@ jest.mock('@/features/layout-editor', () => ({
     moveWidget: mockMoveWidget,
     moveWidgetInColumn: mockMoveWidgetInColumn,
     resizeColumn: mockResizeColumn,
+    hideWidget: mockHideWidget,
+    showWidget: mockShowWidget,
+    resetLayout: mockResetLayout,
   }),
+  LayoutVisibilityPanel: ({
+    hiddenWidgets,
+    onShow,
+  }: {
+    hiddenWidgets: { id: string; title: string }[]
+    onShow: (id: string) => void
+  }) => (
+    <div data-testid="visibility-panel">
+      {hiddenWidgets.map(({ id, title }) => (
+        <button key={id} onClick={() => onShow(id)}>
+          {`Показать: ${title}`}
+        </button>
+      ))}
+    </div>
+  ),
   ColumnResizer: ({ columnId }: { columnId: string }) => (
     <div data-testid={`resizer-${columnId}`}>Resizer</div>
   ),
@@ -358,6 +382,43 @@ describe('DashboardGrid', () => {
 
       const dragHandles = screen.getAllByLabelText('Перетащить виджет')
       expect(dragHandles.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('widget visibility', () => {
+    beforeEach(() => {
+      mockViewport = 'desktop'
+      mockIsMobile = false
+      mockIsTabletOrSmaller = false
+      mockIsEditMode = true
+    })
+
+    afterEach(() => {
+      mockIsEditMode = false
+      delete mockLayoutConfig.hidden
+    })
+
+    it('hides a widget from its edit-mode control', () => {
+      render(<DashboardGrid />)
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Скрыть виджет: Анализ' })
+      )
+      expect(mockHideWidget).toHaveBeenCalledWith('ANALYSIS')
+    })
+
+    it('lists hidden widgets in the panel and shows one', () => {
+      mockLayoutConfig.hidden = ['EXPENSE_LOG']
+      render(<DashboardGrid />)
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Показать: Журнал расходов' })
+      )
+      expect(mockShowWidget).toHaveBeenCalledWith('EXPENSE_LOG')
+    })
+
+    it('does not render the panel outside edit mode', () => {
+      mockIsEditMode = false
+      render(<DashboardGrid />)
+      expect(screen.queryByTestId('visibility-panel')).not.toBeInTheDocument()
     })
   })
 })

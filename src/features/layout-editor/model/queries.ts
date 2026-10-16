@@ -4,7 +4,12 @@ import { wrap } from '@reatom/core'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { getLayoutConfig, queryKeys, updateLayoutConfig } from '@/shared/api'
-import { DEFAULT_LAYOUT as SHARED_DEFAULT_LAYOUT } from '@/shared/lib'
+import {
+  DEFAULT_LAYOUT as SHARED_DEFAULT_LAYOUT,
+  hideWidget as hideWidgetInLayout,
+  resetLayout as createDefaultLayout,
+  showWidget as showWidgetInLayout,
+} from '@/shared/lib'
 
 import { resetEditMode, useEditMode } from './edit-mode-store'
 
@@ -59,6 +64,9 @@ interface LayoutState {
     toIndex: number
   ) => void
   resizeColumn: (columnId: string, width: number) => void
+  hideWidget: (widgetId: WidgetId) => void
+  showWidget: (widgetId: WidgetId) => void
+  resetLayout: () => void
 }
 
 export function useLayoutStore(): LayoutState
@@ -91,7 +99,7 @@ export function useLayoutStore<T>(selector?: (state: LayoutState) => T) {
       return column
     })
 
-    updateLayout.mutate({ columns: newColumns })
+    updateLayout.mutate({ ...layoutConfig, columns: newColumns })
   }
 
   const moveWidgetInColumn = (
@@ -111,7 +119,7 @@ export function useLayoutStore<T>(selector?: (state: LayoutState) => T) {
       return { ...column, widgets: newWidgets }
     })
 
-    updateLayout.mutate({ columns: newColumns })
+    updateLayout.mutate({ ...layoutConfig, columns: newColumns })
   }
 
   const resizeColumn = (columnId: string, width: number) => {
@@ -121,7 +129,21 @@ export function useLayoutStore<T>(selector?: (state: LayoutState) => T) {
       column.id === columnId ? { ...column, width: clampedWidth } : column
     )
 
-    updateLayout.mutate({ columns: newColumns })
+    updateLayout.mutate({ ...layoutConfig, columns: newColumns })
+  }
+
+  const hideWidget = (widgetId: WidgetId) => {
+    const next = hideWidgetInLayout(layoutConfig, widgetId)
+    if (next !== layoutConfig) updateLayout.mutate(next)
+  }
+
+  const showWidget = (widgetId: WidgetId) => {
+    const next = showWidgetInLayout(layoutConfig, widgetId)
+    if (next !== layoutConfig) updateLayout.mutate(next)
+  }
+
+  const resetLayout = () => {
+    updateLayout.mutate(createDefaultLayout())
   }
 
   const state: LayoutState = {
@@ -132,6 +154,9 @@ export function useLayoutStore<T>(selector?: (state: LayoutState) => T) {
     moveWidget,
     moveWidgetInColumn,
     resizeColumn,
+    hideWidget,
+    showWidget,
+    resetLayout,
   }
 
   if (selector) {

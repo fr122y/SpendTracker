@@ -78,6 +78,12 @@ export {
   DEFAULT_LAYOUT,
   normalizeLayoutConfig,
   isLayoutEqual,
+  assertValidHidden,
+  cloneLayout,
+  getVisibleWidgetIds,
+  hideWidget,
+  showWidget,
+  resetLayout,
 } from './layout-config'
 
 // Income allocation math (kopecks)
@@ -108,3 +114,4 @@ export {
   POCKET_NAME_CONFLICT_MESSAGE,
 } from './pocket-name'
 export { pluralizeRu } from './plural'
+export { accountNameSchema, accountPasswordSchema } from './credentials-schema'

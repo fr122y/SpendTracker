@@ -9,11 +9,12 @@ export interface AccountProfile {
   name: string | null
   email: string | null
   provider: string
+  hasPassword: boolean
 }
 
 function formatProvider(provider: string | null, hasPassword: boolean) {
   if (hasPassword) {
-    return 'Credentials'
+    return 'Email и пароль'
   }
 
   if (provider === 'google') {
@@ -48,5 +49,6 @@ export async function getAccountProfile(
     name: profile.name,
     email: profile.email,
     provider: formatProvider(profile.provider, Boolean(profile.password)),
+    hasPassword: Boolean(profile.password),
   }
 }

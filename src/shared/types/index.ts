@@ -149,6 +149,8 @@ export interface ColumnConfig {
 
 export interface LayoutConfig {
   columns: ColumnConfig[]
+  /** Widgets the user hid. Missing means none are hidden. */
+  hidden?: WidgetId[]
 }
 
 export interface KeywordMapping {
