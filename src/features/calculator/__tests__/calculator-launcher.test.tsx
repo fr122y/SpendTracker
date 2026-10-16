@@ -9,6 +9,8 @@ import type { AllocationBucket } from '@/shared/types'
 let mockViewport: 'mobile' | 'tablet' | 'desktop' = 'desktop'
 let mockSalary = 80000
 let mockBuckets: AllocationBucket[] = []
+let mockSettingsLoading = false
+let mockBucketsLoading = false
 
 jest.mock('@/shared/lib', () => ({
   ...jest.requireActual('@/shared/lib'),
@@ -21,13 +23,13 @@ jest.mock('@/entities/bucket', () => ({
       buckets: AllocationBucket[]
       isLoading: boolean
     }) => unknown
-  ) => selector({ buckets: mockBuckets, isLoading: false }),
+  ) => selector({ buckets: mockBuckets, isLoading: mockBucketsLoading }),
 }))
 
 jest.mock('@/entities/settings', () => ({
   useSettingsStore: (
     selector: (state: { salary: number; isLoading: boolean }) => unknown
-  ) => selector({ salary: mockSalary, isLoading: false }),
+  ) => selector({ salary: mockSalary, isLoading: mockSettingsLoading }),
 }))
 
 const writeText = jest.fn<Promise<void>, [string]>()
@@ -35,6 +37,8 @@ const writeText = jest.fn<Promise<void>, [string]>()
 beforeEach(() => {
   mockViewport = 'desktop'
   mockSalary = 80000
+  mockSettingsLoading = false
+  mockBucketsLoading = false
   mockBuckets = [
     { id: 'a', label: 'Подушка', percentage: 20 },
     { id: 'b', label: 'Инвестиции', percentage: 10 },
@@ -185,6 +189,45 @@ describe('CalculatorLauncher', () => {
     rerender(<CalculatorLauncher />)
     expect(result()).toHaveTextContent('20 100')
   })
+
+  it.each([
+    ['settings', () => (mockSettingsLoading = true)],
+    ['buckets', () => (mockBucketsLoading = true)],
+  ])(
+    'offers no value chips while %s are loading, then shows real values',
+    (_source, startLoading) => {
+      startLoading()
+      mockSalary = 0
+      const { rerender } = open()
+
+      const group = screen.getByRole('group', {
+        name: 'Значения из «Накоплений» загружаются',
+      })
+      expect(group).toHaveAttribute('aria-busy', 'true')
+      expect(group.querySelectorAll('button')).toHaveLength(0)
+      expect(
+        screen.queryByRole('button', { name: /^Месячный доход · / })
+      ).not.toBeInTheDocument()
+      expect(screen.queryByText(/0 ₽/)).not.toBeInTheDocument()
+
+      mockSettingsLoading = false
+      mockBucketsLoading = false
+      mockSalary = 80000
+      rerender(<CalculatorLauncher />)
+
+      expect(
+        screen.queryByRole('group', {
+          name: 'Значения из «Накоплений» загружаются',
+        })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: 'Месячный доход · 80 000 ₽' })
+      ).toBeInTheDocument()
+      press('1', 'Месячный доход · 80 000 ₽')
+      expect(expression()).toHaveTextContent('1+Мес. д.')
+      expect(result()).toHaveTextContent('80 001')
+    }
+  )
 
   it('separates a digit typed after a value with plus', () => {
     open()

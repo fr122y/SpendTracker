@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useBucketStore } from '@/entities/bucket'
 import { useSettingsStore } from '@/entities/settings'
 import { cn, formatKopecks } from '@/shared/lib'
+import { Skeleton } from '@/shared/ui'
 
 import {
   displayToken,
@@ -140,9 +141,12 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
   const buckets = useBucketStore((store) => store.buckets)
   const isBucketsLoading = useBucketStore((store) => store.isLoading)
 
-  const values = buildSavingsValues(salary, buckets)
+  // Until both sources load, salary and buckets are placeholders; offering
+  // them as chips would insert a value that silently changes later.
+  const isValuesLoading = isSettingsLoading || isBucketsLoading
+  const values = isValuesLoading ? [] : buildSavingsValues(salary, buckets)
   const amounts: Amounts =
-    isSettingsLoading || isBucketsLoading || values.length === 0
+    isValuesLoading || values.length === 0
       ? null
       : new Map(values.map((value) => [value.id, value.kopecks]))
 
@@ -283,6 +287,24 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
           </span>
         </div>
       </div>
+
+      {isValuesLoading && (
+        <div
+          data-testid="calculator-values-loading"
+          aria-label="Значения из «Накоплений» загружаются"
+          aria-busy="true"
+          role="group"
+          className="-mx-1 flex gap-1.5 overflow-hidden px-1 pb-1"
+        >
+          {[0, 1, 2].map((index) => (
+            <Skeleton
+              key={index}
+              aria-hidden="true"
+              className="h-7 w-32 shrink-0 rounded-full"
+            />
+          ))}
+        </div>
+      )}
 
       {values.length > 0 && (
         <div
