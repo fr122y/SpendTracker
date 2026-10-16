@@ -59,6 +59,7 @@ jest.mock('@/entities/expense', () => ({
   useExpenses: () => ({ data: mockExpenses, isLoading: false }),
   useDeleteExpense: () => ({ mutate: mockDeleteExpense, isPending: false }),
   useUpdateExpense: () => ({ mutate: jest.fn(), isPending: false }),
+  useDeleteExpenseWithUndo: () => mockDeleteExpense,
   useExpenseStore: (
     selector?: (state: {
       expenses: Expense[]
@@ -77,13 +78,18 @@ jest.mock('@/entities/expense', () => ({
     ({
       expenses,
       onDelete,
+      onOpenEditor,
     }: {
       expenses: Expense[]
       onDelete: (id: string) => void
+      onOpenEditor?: (expense: Expense) => void
     }) => (
       <div data-testid="expense-list">
         <div data-testid="expense-count">{expenses.length}</div>
         <button onClick={() => onDelete('test-id')}>Delete Test</button>
+        {expenses[0] && (
+          <button onClick={() => onOpenEditor?.(expenses[0])}>Edit Test</button>
+        )}
       </div>
     )
   ),
@@ -102,6 +108,23 @@ jest.mock('@/entities/session', () => ({
     const state = { selectedDate: mockSelectedDate }
     return selector ? selector(state) : state
   },
+}))
+
+jest.mock('@/features/edit-expense', () => ({
+  ExpenseEditDialog: ({
+    expense,
+    onClose,
+  }: {
+    expense: { id: string; description: string }
+    onClose: () => void
+  }) => (
+    <div role="dialog" aria-label="Изменить операцию">
+      <span data-testid="editing-expense">{expense.id}</span>
+      <button type="button" onClick={onClose}>
+        Закрыть редактор
+      </button>
+    </div>
+  ),
 }))
 
 // Mock ExpenseForm component
@@ -805,6 +828,27 @@ describe('ExpenseLog', () => {
       render(<ExpenseLog />)
 
       expect(screen.getByText('Нет операций за этот день')).toBeInTheDocument()
+    })
+  })
+
+  describe('full expense editor', () => {
+    it('opens the editor for the activated record and closes it', () => {
+      render(<ExpenseLog />)
+
+      fireEvent.click(screen.getByText('Edit Test'))
+      expect(screen.getByTestId('editing-expense')).toHaveTextContent('1')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Закрыть редактор' }))
+      expect(screen.queryByTestId('editing-expense')).not.toBeInTheDocument()
+    })
+
+    it('asks the list to mention undo in the delete confirmation', () => {
+      render(<ExpenseLog />)
+      const { ExpenseList } = jest.requireMock('@/entities/expense')
+      expect(ExpenseList).toHaveBeenLastCalledWith(
+        expect.objectContaining({ canUndoDelete: true }),
+        undefined
+      )
     })
   })
 })

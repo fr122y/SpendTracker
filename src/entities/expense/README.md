@@ -9,7 +9,14 @@ real expenses, project withdrawals, project returns, or pocket transfers.
 - `useExpenses`: Query hook for the expense list
 - `useAddExpense`: Mutation hook for creating a new expense
 - `useDeleteExpense`: Mutation hook for deleting an expense by ID
-- `useUpdateExpense`: Mutation hook for partial expense updates
+- `useUpdateExpense`: Mutation hook for partial expense updates; refetches the
+  list (every period derives from it) and, for pocket operations, pocket budgets
+- `useDeleteExpenseWithUndo`: delete that hides the record at once, shows the
+  toast «Расход удалён · Отменить», and commits after `EXPENSE_DELETE_UNDO_MS`
+  (5 s). Waiting deletes commit immediately on page hide or unmount. `useExpenses`
+  hides records whose delete is waiting
+- `describeExpenseForDelete`: «описание» · сумма ₽ · дата, used by the delete
+  confirmation
 - `ExpenseCard`: Presentational component displaying a single operation with
   optional date, type badge, shared budget metadata, and inline amount editing
   for real expenses. The optional `pocketName` prop adds the pocket name to
@@ -25,7 +32,9 @@ real expenses, project withdrawals, project returns, or pocket transfers.
   date display. The optional `pocketNames` prop (pocket id to name) supplies
   `pocketName` to the cards of pocket operations; `arePocketNamesLoading`
   passes `isPocketNameLoading`; `archivedPocketIds` marks
-  operations of archived pockets read-only
+  operations of archived pockets read-only; `onOpenEditor` adds the «Изменить
+  операцию» button; `canUndoDelete` drops the irreversible warning from the
+  delete confirmation
 
 ## State & Data
 

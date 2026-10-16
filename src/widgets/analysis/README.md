@@ -19,7 +19,8 @@ and visible-expense scope switching.
 - Local `Все` / `Личные` / `Общие` expense scope filter
 - Visual category boxes with size/opacity scaling
 - Hover tooltip showing exact personal, shared, project, and total amounts
-- Activating a category opens a read-only dialog for the same month and scope
+- Activating a category opens a details dialog for the same month and scope
+- Activating a dialog row opens `ExpenseEditDialog` (`@/features/edit-expense`) above it; Escape and outside clicks then close only the editor
 - Dialog rows preserve source descriptions and amounts and are grouped by date, newest first
 - Description variants are grouped for local name chips; multiple selections use OR and update count/sum
 - Empty state when no data

@@ -11,7 +11,9 @@ daily real-expense totals.
 
 - `useSessionStore`: selectedDate for filtering
 - `useExpenses`: operation list
-- `useDeleteExpense` and `useUpdateExpense`: mutations for item actions
+- `useDeleteExpenseWithUndo` and `useUpdateExpense`: item actions; a delete
+  hides the row, shows «Расход удалён · Отменить», and commits after 5 s
+- `ExpenseEditDialog` (`@/features/edit-expense`): full editor opened from a card
 - `usePockets`: names of active and archived pockets for operation cards; the
   journal does not wait for this query
 
