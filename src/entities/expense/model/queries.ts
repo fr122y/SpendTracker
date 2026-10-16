@@ -1,6 +1,8 @@
 'use client'
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useCallback, useEffect } from 'react'
+import { toast } from 'sonner'
 
 import {
   addExpense as addExpenseAction,
@@ -11,12 +13,30 @@ import {
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
 
+import {
+  flushExpenseDeletes,
+  scheduleExpenseDelete,
+  undoExpenseDelete,
+  usePendingExpenseDeleteIds,
+} from './pending-deletes'
+
 import type { AddExpenseInput, Expense } from '@/shared/types'
 
 export function useExpenses() {
+  const pendingDeleteIds = usePendingExpenseDeleteIds()
+  // Records waiting for their undo window are hidden from every reader, so the
+  // journal, totals, analysis, and budgets agree before the server delete.
+  const select = useCallback(
+    (data: Expense[]) =>
+      pendingDeleteIds.size === 0
+        ? data
+        : data.filter((expense) => !pendingDeleteIds.has(expense.id)),
+    [pendingDeleteIds]
+  )
   return useQuery({
     queryKey: queryKeys.expenses.all,
     queryFn: getExpenses,
+    select,
   })
 }
 
@@ -123,10 +143,65 @@ export function useUpdateExpense() {
       queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
       showMutationRollbackToast()
     },
-    onSettled: () => {
+    onSettled: (_result, _error, { id }, context) => {
+      // Journal, daily and monthly totals, analysis, and the weekly budget all
+      // derive from this one list, so refetching it refreshes the old and the
+      // new period of a moved record alike.
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
+      const original = context?.previous?.find((expense) => expense.id === id)
+      if (original?.pocketId) {
+        // Pocket month budgets are read per period on the server.
+        queryClient.invalidateQueries({ queryKey: queryKeys.pocketBudgets.all })
+        queryClient.invalidateQueries({ queryKey: queryKeys.pockets.all })
+      }
     },
   })
+}
+
+/** How long a deleted record can be restored from the toast. */
+export const EXPENSE_DELETE_UNDO_MS = 5000
+export const EXPENSE_DELETED_TOAST = 'Расход удалён'
+export const EXPENSE_DELETE_UNDO_LABEL = 'Отменить'
+
+/**
+ * Delete with an undo toast. The record is hidden at once and the server
+ * delete runs after {@link EXPENSE_DELETE_UNDO_MS} unless the user undoes it.
+ * Waiting deletes are committed right away when the page is hidden or the
+ * owning component unmounts, so none is lost or left half-done.
+ */
+export function useDeleteExpenseWithUndo() {
+  const deleteExpense = useDeleteExpense()
+  const { mutateAsync } = deleteExpense
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushExpenseDeletes()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('pagehide', flushExpenseDeletes)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('pagehide', flushExpenseDeletes)
+      flushExpenseDeletes()
+    }
+  }, [])
+
+  return useCallback(
+    (id: string) => {
+      scheduleExpenseDelete(id, () => mutateAsync(id), EXPENSE_DELETE_UNDO_MS)
+      toast(EXPENSE_DELETED_TOAST, {
+        id: `expense-delete-${id}`,
+        duration: EXPENSE_DELETE_UNDO_MS,
+        action: {
+          label: EXPENSE_DELETE_UNDO_LABEL,
+          onClick: () => {
+            undoExpenseDelete(id)
+          },
+        },
+      })
+    },
+    [mutateAsync]
+  )
 }
 
 interface ExpenseState {

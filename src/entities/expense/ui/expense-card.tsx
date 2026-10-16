@@ -4,6 +4,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Briefcase,
+  Pencil,
   Receipt,
   Users,
   Trash2,
@@ -26,6 +27,16 @@ interface ExpenseCardProps {
   isPocketNameLoading?: boolean
   /** The operation belongs to an archived pocket: no edit or delete actions. */
   isPocketArchived?: boolean
+  /** Opens the full editor (amount, description, category, date). */
+  onOpenEditor?: (expense: Expense) => void
+  /** The delete can be undone from a toast; the confirmation says so. */
+  canUndoDelete?: boolean
+}
+
+/** Names a record in a delete confirmation: description, amount, and date. */
+export function describeExpenseForDelete(expense: Expense): string {
+  const description = expense.description.trim() || 'Без описания'
+  return `«${description}» · ${expense.amount} ₽ · ${formatExpenseDate(expense.date)}`
 }
 
 export const ARCHIVED_POCKET_OPERATION_HINT =
@@ -105,9 +116,12 @@ export function ExpenseCard({
   pocketName,
   isPocketNameLoading = false,
   isPocketArchived = false,
+  onOpenEditor: onOpenEditorProp,
+  canUndoDelete = false,
 }: ExpenseCardProps) {
   const onDelete = isPocketArchived ? undefined : onDeleteProp
   const onEdit = isPocketArchived ? undefined : onEditProp
+  const onOpenEditor = isPocketArchived ? undefined : onOpenEditorProp
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editValue, setEditValue] = useState(String(expense.amount))
@@ -253,6 +267,16 @@ export function ExpenseCard({
               {expense.amount} ₽
             </button>
           )}
+          {onOpenEditor && (
+            <button
+              type="button"
+              onClick={() => onOpenEditor(expense)}
+              aria-label="Изменить операцию"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100 sm:min-h-0 sm:min-w-0 sm:p-1"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
           {onDelete && (
             <button
               onClick={() => setIsDeleteDialogOpen(true)}
@@ -267,7 +291,18 @@ export function ExpenseCard({
       <ConfirmDialog
         isOpen={isDeleteDialogOpen}
         title="Удалить операцию?"
-        description="Операция будет удалена без возможности восстановления."
+        description={
+          <>
+            <span className="block text-zinc-200">
+              {describeExpenseForDelete(expense)}
+            </span>
+            {!canUndoDelete && (
+              <span className="mt-1 block">
+                Операция будет удалена без возможности восстановления.
+              </span>
+            )}
+          </>
+        }
         confirmLabel="Удалить"
         onConfirm={() => {
           onDelete?.(expense.id)
