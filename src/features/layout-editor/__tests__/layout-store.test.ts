@@ -149,4 +149,65 @@ describe('useLayoutStore', () => {
       ])
     })
   })
+
+  it('hides a widget, keeps it hidden on move, and shows it again', async () => {
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => {
+      result.current.hideWidget('DYNAMICS')
+    })
+    await waitFor(() => {
+      expect(result.current.layoutConfig.hidden).toEqual(['DYNAMICS'])
+      expect(result.current.layoutConfig.columns[1].widgets).toEqual([
+        'ANALYSIS',
+        'PROJECTS',
+      ])
+    })
+
+    act(() => {
+      result.current.moveWidgetInColumn('col-1', 0, 1)
+    })
+    await waitFor(() => {
+      expect(result.current.layoutConfig.columns[0].widgets[0]).toBe(
+        'EXPENSE_LOG'
+      )
+    })
+    expect(result.current.layoutConfig.hidden).toEqual(['DYNAMICS'])
+
+    act(() => {
+      result.current.showWidget('DYNAMICS')
+    })
+    await waitFor(() => {
+      expect(result.current.layoutConfig.hidden).toBeUndefined()
+      expect(result.current.layoutConfig.columns[1].widgets).toEqual([
+        'ANALYSIS',
+        'DYNAMICS',
+        'PROJECTS',
+      ])
+    })
+  })
+
+  it('resets the layout to the default with every widget visible', async () => {
+    layoutConfig = {
+      columns: [
+        { id: 'col-1', width: 60, widgets: ['CALENDAR'] },
+        { id: 'col-2', width: 40, widgets: [] },
+      ],
+      hidden: ['ANALYSIS'],
+    }
+    const { result } = renderHook(() => useLayoutStore(), {
+      wrapper: createWrapper(),
+    })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => {
+      result.current.resetLayout()
+    })
+    await waitFor(() => {
+      expect(result.current.layoutConfig).toEqual(DEFAULT_LAYOUT)
+    })
+  })
 })
