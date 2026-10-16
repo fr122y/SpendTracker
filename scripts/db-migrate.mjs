@@ -41,6 +41,8 @@ const applied = new Set(
   (await sql`SELECT name FROM __drizzle_migrations`).map((r) => r.name)
 )
 
+const MIGRATION_FILENAME = /^[\w.-]+\.sql$/
+
 const migrationsDir = path.resolve(process.cwd(), 'drizzle')
 const files = fs
   .readdirSync(migrationsDir)
@@ -54,10 +56,20 @@ for (const file of files) {
     continue
   }
 
+  if (!MIGRATION_FILENAME.test(file)) {
+    throw new Error(`Unexpected migration filename: ${JSON.stringify(file)}`)
+  }
+
   const content = fs.readFileSync(path.join(migrationsDir, file), 'utf-8')
   console.log(`  apply: ${file}`)
   await sql.unsafe(content)
-  await sql`INSERT INTO __drizzle_migrations (name) VALUES (${file})`
+  // Parameter-free on purpose. With `prepare: false`, postgres.js 3.4.8 sends a
+  // parameterised query as Parse/Describe + Flush before any Sync
+  // (describeFirst). Through the Supavisor transaction pooler the describe
+  // reply never arrives, so the runner stalls forever. A simple query avoids
+  // it; the strict filename pattern plus quote escaping keep the literal safe.
+  const name = file.replace(/'/g, "''")
+  await sql.unsafe(`INSERT INTO __drizzle_migrations (name) VALUES ('${name}')`)
   count++
 }
 
