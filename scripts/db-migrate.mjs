@@ -1,6 +1,11 @@
 /**
- * Runs all pending SQL migration files from drizzle/ folder
- * via the transaction pooler (IPv4), bypassing the IPv6 issue in WSL2.
+ * Runs all pending SQL migration files from the drizzle/ folder via the
+ * transaction pooler (IPv4), bypassing the IPv6 issue in WSL2.
+ *
+ * Each file and its ledger row are applied in one simple query on a fresh
+ * connection, with a deadline and a ledger-checked retry. See
+ * scripts/db-migrate-runner.mjs for the flow and its limitations (no
+ * `CREATE INDEX CONCURRENTLY` or other transaction-incompatible statements).
  *
  * Usage: node scripts/db-migrate.mjs
  */
@@ -8,6 +13,7 @@
 import fs from 'fs'
 import path from 'path'
 import postgres from 'postgres'
+import { runMigrations } from './db-migrate-runner.mjs'
 
 // Load .env.local
 const envPath = path.resolve(process.cwd(), '.env.local')
@@ -22,56 +28,17 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const sql = postgres(process.env.DATABASE_URL, {
-  ssl: false,
-  prepare: false,
-  connect_timeout: 10,
-})
-
-// Track applied migrations
-await sql`
-  CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-    id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    applied_at TIMESTAMP NOT NULL DEFAULT now()
-  )
-`
-
-const applied = new Set(
-  (await sql`SELECT name FROM __drizzle_migrations`).map((r) => r.name)
-)
-
-const MIGRATION_FILENAME = /^[\w.-]+\.sql$/
-
+const databaseUrl = process.env.DATABASE_URL
 const migrationsDir = path.resolve(process.cwd(), 'drizzle')
-const files = fs
-  .readdirSync(migrationsDir)
-  .filter((f) => f.endsWith('.sql'))
-  .sort()
 
-let count = 0
-for (const file of files) {
-  if (applied.has(file)) {
-    console.log(`  skip: ${file} (already applied)`)
-    continue
-  }
-
-  if (!MIGRATION_FILENAME.test(file)) {
-    throw new Error(`Unexpected migration filename: ${JSON.stringify(file)}`)
-  }
-
-  const content = fs.readFileSync(path.join(migrationsDir, file), 'utf-8')
-  console.log(`  apply: ${file}`)
-  await sql.unsafe(content)
-  // Parameter-free on purpose. With `prepare: false`, postgres.js 3.4.8 sends a
-  // parameterised query as Parse/Describe + Flush before any Sync
-  // (describeFirst). Through the Supavisor transaction pooler the describe
-  // reply never arrives, so the runner stalls forever. A simple query avoids
-  // it; the strict filename pattern plus quote escaping keep the literal safe.
-  const name = file.replace(/'/g, "''")
-  await sql.unsafe(`INSERT INTO __drizzle_migrations (name) VALUES ('${name}')`)
-  count++
-}
-
-console.log(count > 0 ? `\nDone: ${count} migration(s) applied.` : '\nNothing to apply.')
-await sql.end()
+await runMigrations({
+  connect: () =>
+    postgres(databaseUrl, {
+      ssl: false,
+      prepare: false,
+      connect_timeout: 10,
+      max: 1,
+    }),
+  files: fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')),
+  readFile: (file) => fs.readFileSync(path.join(migrationsDir, file), 'utf-8'),
+})
