@@ -703,8 +703,8 @@ describe('ExpenseLog', () => {
       // Phones scroll the page as a whole, so the list has no own height cap.
       const scrollContainer = screen.getByTestId('expense-log-list')
       expect(scrollContainer).toHaveClass(
-        'md:max-h-[500px]',
-        'md:overflow-y-auto'
+        'wide:max-h-[500px]',
+        'wide:overflow-y-auto'
       )
       expect(scrollContainer).not.toHaveClass('max-h-[400px]')
       expect(scrollContainer).not.toHaveClass('overflow-y-auto')

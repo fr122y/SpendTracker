@@ -23,7 +23,7 @@ function PanelSkeleton() {
 /**
  * Layout placeholder that picks its shape with CSS media queries, not with
  * `useViewport`, so it is correct on the first server-rendered paint at any
- * width. Breakpoints match `useViewport`: `md` = 768px, `xl` = 1280px.
+ * width. Breakpoints match `useViewport`: `wide` (see `globals.css`), `xl` = 1280px.
  */
 export function DashboardGridSkeleton() {
   const widgets = DEFAULT_LAYOUT.columns.flatMap((column) => column.widgets)
@@ -33,7 +33,7 @@ export function DashboardGridSkeleton() {
   return (
     <div className="h-full" data-testid="dashboard-grid-skeleton">
       <div
-        className="flex flex-col gap-3 bg-zinc-950 p-4 md:hidden"
+        className="flex flex-col gap-3 bg-zinc-950 p-4 wide:hidden"
         data-skeleton-layout="mobile"
       >
         {widgets.map((widgetId) => (
@@ -42,7 +42,7 @@ export function DashboardGridSkeleton() {
       </div>
 
       <div
-        className="hidden h-full grid-cols-2 gap-4 overflow-y-auto p-4 md:grid xl:hidden"
+        className="hidden h-full grid-cols-2 gap-4 overflow-y-auto p-4 wide:max-xl:grid"
         data-skeleton-layout="tablet"
       >
         <div className="flex flex-col gap-4">

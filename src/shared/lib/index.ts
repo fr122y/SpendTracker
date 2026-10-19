@@ -47,6 +47,7 @@ export { ReatomProvider } from './reatom'
 export {
   useViewport,
   useResolvedViewport,
+  getViewport,
   isMobile,
   isTabletOrSmaller,
   useSubmitLock,

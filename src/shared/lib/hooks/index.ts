@@ -1,6 +1,7 @@
 export {
   useViewport,
   useResolvedViewport,
+  getViewport,
   isMobile,
   isTabletOrSmaller,
   type Viewport,
