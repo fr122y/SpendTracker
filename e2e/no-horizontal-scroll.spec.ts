@@ -125,21 +125,34 @@ test.describe('No Horizontal Scroll Tests', () => {
         const leftover = page.getByRole('button', {
           name: /^Удалить E2E\d{8}Ж+$/,
         })
+        const categoryNames = page.locator('[data-testid^="category-name-"]')
         await reloadPage(page)
         await expect(page.getByLabel('Название личной категории')).toBeVisible(
           TIMEOUT
         )
+        await expect(categoryNames.first()).toBeVisible(TIMEOUT)
         for (let i = 0; i < 20 && (await leftover.count()) > 0; i++) {
           const before = await leftover.count()
           await leftover.first().click()
+          // Wait for the delete server action, so the reload cannot abort it.
+          const deleted = page.waitForResponse(
+            (response) =>
+              response.request().method() === 'POST' &&
+              /^\["[0-9a-f-]{36}","[0-9a-f-]{36}"\]$/.test(
+                response.request().postData() ?? ''
+              )
+          )
           await page
             .getByRole('alertdialog')
             .getByRole('button', { name: 'Удалить категорию' })
             .click()
+          expect((await deleted).ok()).toBe(true)
           await expect(leftover).toHaveCount(before - 1, TIMEOUT)
         }
         await reloadPage(page)
-        await expect(leftover).toHaveCount(0, TIMEOUT)
+        // The list must have loaded before an empty match means anything.
+        await expect(categoryNames.first()).toBeVisible(TIMEOUT)
+        await expect(leftover).toHaveCount(0)
       })
 
       test('long category name and description fit at 375 and 1280 px', async ({
