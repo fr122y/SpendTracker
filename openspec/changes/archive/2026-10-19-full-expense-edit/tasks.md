@@ -15,4 +15,4 @@
 ## 3. Проверка
 
 - [x] 3.1 Выполнить `npm run spec:check` и `npm run validate`.
-- [ ] 3.2 Ручная проверка в Preview.
+- [x] 3.2 Ручная проверка в Preview.

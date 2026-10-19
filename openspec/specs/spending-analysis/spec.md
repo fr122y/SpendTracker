@@ -92,9 +92,9 @@ The analysis MUST let a user activate a category and open its expense details fo
 - **WHEN** the user closes the dialog
 - **THEN** the analysis is visible with its prior month and scope
 
-### Requirement: Show matching expenses as read-only daily groups
+### Requirement: Show matching expenses as editable daily groups
 
-The details MUST contain only `expense` operations for the activated category, selected month, and inherited scope. The `personal` scope MUST continue to include project-linked expenses without a `sharedBudgetId`; transfers and project movements MUST be excluded. Expenses MUST be grouped by date with the newest date first, preserve their stored descriptions and amounts, and provide no edit or delete action.
+The details MUST contain only `expense` operations for the activated category, selected month, and inherited scope. The `personal` scope MUST continue to include project-linked expenses without a `sharedBudgetId`; transfers and project movements MUST be excluded. Expenses MUST be grouped by date with the newest date first, and preserve their stored descriptions and amounts. Activating a row MUST open the expense editor for that record; rows MUST NOT offer a delete action. While the editor is open, Escape and outside clicks MUST close only the editor.
 
 #### Scenario: Keep the category, month, and scope filters
 
@@ -125,9 +125,12 @@ The details MUST contain only `expense` operations for the activated category, s
 #### Scenario: Keep detail rows read-only
 
 - **GIVEN** expense rows appear in category details
-- **WHEN** the user views or activates a row
-- **THEN** the row exposes no edit or delete action
+- **WHEN** the user views a row
+- **THEN** the row itself exposes no inline edit or delete action
 - **AND** its original description and amount remain unchanged
+- **WHEN** the user activates the row
+- **THEN** the expense editor opens for that record above the details
+- **AND** closing the editor returns to the same details
 
 ### Requirement: Group similar expense descriptions for filtering
 
