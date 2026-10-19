@@ -15,4 +15,4 @@
 ## 3. Проверка
 
 - [x] 3.1 Выполнить `npm run spec:check` и `npm run validate`.
-- [ ] 3.2 Проверить скрытие, возврат и сброс вручную на Preview Pull Request.
+- [x] 3.2 Проверить скрытие, возврат и сброс вручную на Preview Pull Request.
