@@ -13,4 +13,4 @@
 ## 3. Проверка
 
 - [x] 3.1 Выполнить `npm run spec:check` и `npm run validate`.
-- [ ] 3.2 Проверить шапку на 768, 820, 900 px и zoom 200% на Preview Pull Request.
+- [x] 3.2 Проверить шапку на 768, 820, 900 px и zoom 200% на Preview Pull Request.
