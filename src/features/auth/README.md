@@ -7,7 +7,10 @@ Authentication UI for the login page (credentials + Google OAuth).
 - `SignInButton`: client-side Google sign-in trigger
 - `AuthTabs`: tab switcher for sign-in/registration
 - `CredentialsSignInForm`: email/password sign-in form
-- `EmailVerificationBanner`: dashboard banner for unverified credentials users
+- `EmailVerificationBanner`: compact dashboard banner for unverified
+  credentials users; «Скрыть напоминание» hides it for the browser session
+  (`sessionStorage`), and it returns in the next session until the email is
+  confirmed
 - `ForgotPasswordForm`: neutral password reset request form
 - `RegisterForm`: credentials registration form
 - `ResetPasswordForm`: new-password form for valid reset tokens
