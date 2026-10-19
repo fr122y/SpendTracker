@@ -166,8 +166,11 @@ export function ExpenseLog() {
         ))}
       </div>
 
-      {/* Expense List */}
-      <div className="max-h-[400px] overflow-y-auto sm:max-h-[500px] lg:max-h-[600px]">
+      {/* Expense List: on phones the page scrolls instead of the list */}
+      <div
+        data-testid="expense-log-list"
+        className="md:max-h-[500px] md:overflow-y-auto lg:max-h-[600px]"
+      >
         {filteredOperations.length > 0 ? (
           <ExpenseList
             expenses={filteredOperations}

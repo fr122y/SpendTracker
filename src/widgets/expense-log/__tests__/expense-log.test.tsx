@@ -697,12 +697,17 @@ describe('ExpenseLog', () => {
   })
 
   describe('scrollable container', () => {
-    it('applies max-height and overflow styles to expense list container', () => {
-      const { container } = render(<ExpenseLog />)
+    it('scrolls the list on its own only from the tablet breakpoint', () => {
+      render(<ExpenseLog />)
 
-      const scrollContainer = container.querySelector('.max-h-\\[400px\\]')
-      expect(scrollContainer).toBeInTheDocument()
-      expect(scrollContainer).toHaveClass('overflow-y-auto')
+      // Phones scroll the page as a whole, so the list has no own height cap.
+      const scrollContainer = screen.getByTestId('expense-log-list')
+      expect(scrollContainer).toHaveClass(
+        'md:max-h-[500px]',
+        'md:overflow-y-auto'
+      )
+      expect(scrollContainer).not.toHaveClass('max-h-[400px]')
+      expect(scrollContainer).not.toHaveClass('overflow-y-auto')
     })
   })
 
