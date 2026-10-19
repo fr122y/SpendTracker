@@ -179,3 +179,13 @@ On the phone layout, text inputs, selects and textareas MUST have a font size of
 - **GIVEN** a 375×667 viewport
 - **WHEN** the expense form is shown
 - **THEN** its inputs and selects have a computed font size of at least 16 px
+
+### Requirement: Phone touch targets are at least 44 px
+
+On a phone viewport every interactive dashboard element MUST have a hit box of at least 44×44 px. Wide viewports MAY keep their compact sizes.
+
+#### Scenario: Header month picker on a phone
+
+- **GIVEN** a 375×667 viewport showing the dashboard
+- **WHEN** the header month picker, filter chips, payday legend, calendar days and journal fields are measured
+- **THEN** each box is at least 44 px wide and 44 px high
