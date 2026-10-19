@@ -30,4 +30,6 @@ jobs:
       - name: Validate pull request title
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          # The title carries no trailers; skip only the `change-trailer` rule.
+          COMMITLINT_PR_TITLE: '1'
         run: printf '%s\n' "$PR_TITLE" | npx commitlint --verbose

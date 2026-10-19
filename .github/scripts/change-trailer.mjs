@@ -1,17 +1,28 @@
-// Fails a pull request that touches an OpenSpec change folder when none of its
-// commit messages carries the trailer `Change: <change-id>` for that change.
+// Fails a pull request when
+//
+// 1. it touches an OpenSpec change folder and none of its commit messages
+//    carries the trailer `Change: <change-id>` for that change (`Change: none`
+//    never satisfies this), or
+// 2. a commit message names a `Change: <id>` that does not exist: neither in
+//    the base checkout (`openspec/changes/<id>/` or
+//    `openspec/changes/archive/YYYY-MM-DD-<id>/`) nor among the change folders
+//    the pull request itself touches. Merge, revert, `fixup!`, `squash!`, and
+//    `amend!` commits are skipped, as commitlint skips them.
+//
+// That every commit carries exactly one `Change:` line is checked per commit
+// by commitlint (`scripts/commitlint/change-trailer-rule.cjs`), not here.
 //
 // Runs on `pull_request_target`, so this script always comes from the base
 // branch. It reads the pull request only through the REST API and never checks
 // out or executes code from the pull request head.
 //
 // Known limits. Only changes whose folders the pull request touches are
-// required; a commit that belongs to a change but touches no change folder is
-// not detected. `Refs: <task-id>` is not checked at all: the task register
+// required; a commit that names the wrong existing change is not detected. `Refs: <task-id>` is not checked at all: the task register
 // lives outside this repository. A `Change:` line counts wherever it stands in
 // a commit message, not only in the final trailer block.
 
-import { appendFileSync } from 'node:fs'
+import { appendFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const PAGE_SIZE = 100
@@ -23,6 +34,10 @@ const ARCHIVE_DIRECTORY = 'archive'
 const DATE_PREFIX = /^\d{4}-\d{2}-\d{2}-/
 // The key is case-sensitive and starts the line; the id is one token.
 const CHANGE_TRAILER = /^Change:\s*(\S+)\s*$/
+/** `Change: none` marks a commit that belongs to no change. */
+export const NO_CHANGE = 'none'
+// The commits commitlint skips by default and this check skips too.
+const IGNORED_MESSAGE = /^(?:Merge |Revert |(?:fixup|squash|amend)! )/
 
 /**
  * Returns the OpenSpec change id a repo-relative path belongs to, or null.
@@ -82,6 +97,72 @@ export function collectTrailerIds(messages) {
 export function findMissing(touchedIds, trailerIds) {
   const present = new Set(trailerIds)
   return touchedIds.filter((id) => !present.has(id))
+}
+
+/**
+ * Lists the change ids that exist under `<root>/openspec/changes/`: active
+ * folders and archived ones without their `YYYY-MM-DD-` prefix. A missing
+ * folder gives an empty set.
+ */
+export function knownChangeIds(root) {
+  const directories = (path) => {
+    try {
+      return readdirSync(path, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+    } catch (error) {
+      if (error.code === 'ENOENT') return []
+      throw error
+    }
+  }
+  const changes = join(root, CHANGES_ROOT)
+  const ids = new Set()
+  for (const name of directories(changes)) {
+    if (name !== ARCHIVE_DIRECTORY) ids.add(name)
+  }
+  for (const name of directories(join(changes, ARCHIVE_DIRECTORY))) {
+    const id = name.replace(DATE_PREFIX, '')
+    if (id) ids.add(id)
+  }
+  return ids
+}
+
+/** True for merge, revert, `fixup!`, `squash!`, and `amend!` commits. */
+export function isIgnoredCommit(commit) {
+  if (Array.isArray(commit?.parents) && commit.parents.length > 1) return true
+  return IGNORED_MESSAGE.test(commit?.commit?.message ?? '')
+}
+
+/**
+ * Returns the `Change:` ids of the commits that name no known change, other
+ * than `none`. Sorted, no duplicates. Ignored commits are skipped.
+ */
+export function findUnknown(commits, knownIds) {
+  const unknown = new Set()
+  for (const commit of commits) {
+    if (isIgnoredCommit(commit)) continue
+    for (const id of parseChangeTrailers(commit.commit.message)) {
+      if (id !== NO_CHANGE && !knownIds.has(id)) unknown.add(id)
+    }
+  }
+  return [...unknown].sort()
+}
+
+/** Builds the Markdown shown on an unknown change id. */
+export function buildUnknownSummary(unknown) {
+  return [
+    '## Change trailer: commits name OpenSpec changes that do not exist',
+    '',
+    'Each id must be an existing change: `openspec/changes/<id>/` on the base',
+    'branch or in this pull request, or',
+    '`openspec/changes/archive/YYYY-MM-DD-<id>/`. Use `Change: none` only for',
+    'ci, build, chore, docs, test, and style commits.',
+    '',
+    ...unknown.map((id) => `- \`Change: ${id}\``),
+    '',
+    'Push a commit with the corrected trailer; do not rewrite pushed history.',
+    '',
+  ].join('\n')
 }
 
 /** Builds the Markdown shown in the workflow run summary on a failure. */
@@ -197,10 +278,6 @@ export async function main(env = process.env) {
   }
 
   const touched = collectTouchedChangeIds(files)
-  if (touched.length === 0) {
-    console.log('change-trailer: no OpenSpec change folder touched.')
-    return 0
-  }
 
   const commits = await listAll(
     env,
@@ -232,15 +309,29 @@ export async function main(env = process.env) {
     )
   }
 
-  const trailers = collectTrailerIds(messages)
+  const known = knownChangeIds(env.REPO_ROOT || process.cwd())
+  for (const id of touched) known.add(id)
+  const unknown = findUnknown(commits, known)
+  const trailers = collectTrailerIds(messages).filter((id) => id !== NO_CHANGE)
   const missing = findMissing(touched, trailers)
 
-  console.log(`change-trailer: OpenSpec changes touched: ${touched.join(', ')}`)
+  console.log(
+    'change-trailer: OpenSpec changes touched: ' +
+      (touched.join(', ') || 'none')
+  )
   console.log(
     `change-trailer: Change trailers in ${commits.length} commit(s): ` +
       (trailers.join(', ') || 'none')
   )
+  if (unknown.length > 0) {
+    console.log('change-trailer: commits name changes that do not exist:')
+    for (const id of unknown) console.log(`  Change: ${id}`)
+    if (env.GITHUB_STEP_SUMMARY) {
+      appendFileSync(env.GITHUB_STEP_SUMMARY, buildUnknownSummary(unknown))
+    }
+  }
   if (missing.length === 0) {
+    if (unknown.length > 0) return 1
     console.log('change-trailer: every touched change is named by a commit.')
     return 0
   }

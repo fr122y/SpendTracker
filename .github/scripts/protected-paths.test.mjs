@@ -36,6 +36,7 @@ describe('parsePatterns', () => {
         'eslint.config.mjs',
         'jest.config.mjs',
         'openspec/config.yaml',
+        'scripts/commitlint/**',
         'playwright.config.ts',
         'src/test/mocks/**',
         'src/test/setup.ts',

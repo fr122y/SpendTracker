@@ -111,14 +111,24 @@ Do not restate the diff line by line.
 Trailers link a commit to the work it belongs to. From any line of code,
 `git blame` leads to a commit, and its `Change:` trailer leads to the
 proposal, design, and tasks that explain why the line exists.
-`git log --grep '^Change: <change-id>'` finds every commit of a change, even
+`git log --grep '^Change: <change-id>$'` finds every commit of a change, even
 one that does not touch the change folder or was made after the folder was
-archived.
+archived. Use `--grep`, not `%(trailers)`: a GitHub squash commit appends
+`Co-authored-by:` after a `---------` line, so the `Change:` lines are no
+longer in the final trailer block that `%(trailers)` reads.
 
-- A commit that implements, continues, fixes, or archives work of an OpenSpec
-  change carries `Change: <change-id>`. `<change-id>` is the kebab-case
-  directory name of the change under `openspec/changes/`; for an archived
-  change, the name without the `YYYY-MM-DD-` date prefix.
+- Every commit message carries exactly one line `Change: <id>`.
+- `<id>` is an existing OpenSpec change: the kebab-case directory name under
+  `openspec/changes/`, or for an archived change, the name under
+  `openspec/changes/archive/` without the `YYYY-MM-DD-` date prefix. A commit
+  that implements, continues, fixes, or archives work of a change names it.
+- `Change: none` marks a commit that belongs to no change. It is allowed only
+  for the types `ci`, `build`, `chore`, `docs`, `test`, and `style`. `feat`,
+  `fix`, `refactor`, and `perf` always name a change; a follow-up or hotfix
+  names the change whose work it fixes. Create the change's proposal before
+  its first commit, so the id exists when the commit is made.
+- Merge commits, `Revert "…"` commits created by `git revert`, and `fixup!` or
+  `squash!` commits are exempt, so `git merge origin/main` keeps working.
 - A commit whose work belongs to a task in the owner's vault task register
   carries `Refs: <task-id>`, for example `Refs: T-027` or
   `Refs: GUARDRAILS-01`. Use it only for a real task; do not invent an id.
@@ -146,20 +156,34 @@ Change: add-monthly-pockets
 Refs: T-027
 ```
 
+A routine commit outside any change:
+
+```text
+ci(ci): pin the Node.js version of the verify job
+
+Change: none
+```
+
 ## Enforcement
 
 Commit messages are enforced locally by the Husky `commit-msg` hook with
 commitlint. The hook validates every new commit message against this document's
-type and scope rules.
+type and scope rules and, through the local rule `change-trailer`
+(`scripts/commitlint/change-trailer-rule.cjs`), the `Change:` trailer rules
+above, checking that the id exists in the working tree.
 
 GitHub Actions also validates Pull Request commit messages and the Pull Request
 title. This catches commits created with `--no-verify` and keeps the eventual
-squash title aligned with the same convention.
+squash title aligned with the same convention. Every commit of the Pull
+Request is linted, including the `Change:` trailer; the title is exempt from
+the trailer rule only.
 
 The `change-trailer` check fails a Pull Request that changes files under
 `openspec/changes/` when no commit message in it carries
-`Change: <change-id>` for each change touched; the fix is one more commit
-with the trailer, and an empty commit is enough. `Refs:` is not checked,
+`Change: <change-id>` for each change touched (`Change: none` does not count);
+the fix is one more commit with the trailer, and an empty commit is enough. It
+also fails when a commit names an id that exists neither on the base branch
+nor among the change folders the Pull Request adds. `Refs:` is not checked,
 because the task register lives outside the repository.
 
 Do not change the scope taxonomy, disable the hook, or weaken CI validation
