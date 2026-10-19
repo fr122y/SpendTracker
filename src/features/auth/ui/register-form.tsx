@@ -118,7 +118,7 @@ export function RegisterForm({
           <button
             type="button"
             onClick={onSwitchToSignIn}
-            className="text-emerald-400 transition-colors hover:text-emerald-300"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-emerald-400 transition-colors hover:text-emerald-300 wide:min-h-0 wide:min-w-0"
           >
             Войти
           </button>

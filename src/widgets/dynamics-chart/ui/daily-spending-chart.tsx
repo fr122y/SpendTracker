@@ -172,7 +172,7 @@ export function DailySpendingChart() {
             type="button"
             variant={scope === option.value ? 'primary' : 'ghost'}
             onClick={() => setScope(option.value)}
-            className="min-h-9 px-3 py-1 text-xs"
+            className="px-3 py-1 text-xs wide:min-h-9"
           >
             {option.label}
           </Button>

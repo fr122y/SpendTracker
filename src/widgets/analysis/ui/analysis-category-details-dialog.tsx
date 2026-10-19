@@ -94,7 +94,7 @@ function NameGroupFilter({
               aria-pressed={selectedGroupKeys.has(group.key)}
               onClick={() => onToggle(group.key)}
               title={group.label}
-              className="flex min-h-9 min-w-0 items-center rounded-full px-3 text-xs text-zinc-200 transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 aria-pressed:bg-emerald-500/20 aria-pressed:text-emerald-200"
+              className="flex min-h-11 min-w-0 items-center rounded-full px-3 text-xs wide:min-h-9 text-zinc-200 transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 aria-pressed:bg-emerald-500/20 aria-pressed:text-emerald-200"
             >
               <span className="truncate">{group.label}</span>
               <span className="ml-1 shrink-0 text-zinc-400">
@@ -104,7 +104,7 @@ function NameGroupFilter({
             <details className="group relative shrink-0">
               <summary
                 aria-label={`Варианты названия ${group.label}`}
-                className="flex min-h-9 min-w-9 cursor-pointer list-none items-center justify-center rounded-full px-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 [&::-webkit-details-marker]:hidden"
+                className="flex min-h-11 min-w-11 cursor-pointer wide:min-h-9 wide:min-w-9 list-none items-center justify-center rounded-full px-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 [&::-webkit-details-marker]:hidden"
               >
                 <span aria-hidden="true">···</span>
               </summary>
@@ -132,7 +132,7 @@ function NameGroupFilter({
           type="button"
           aria-expanded={showAll}
           onClick={onToggleExpanded}
-          className="min-h-9 rounded-md px-2 text-sm text-emerald-300 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          className="min-h-11 rounded-md px-2 text-sm text-emerald-300 wide:min-h-9 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
         >
           {showAll ? 'Свернуть' : `Показать все (${totalGroups})`}
         </button>

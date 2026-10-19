@@ -140,7 +140,7 @@ export function ExpenseLog() {
             type="button"
             variant={scopeFilter === value ? 'primary' : 'ghost'}
             onClick={() => setScopeFilter(value)}
-            className="min-h-9 px-3 py-1 text-xs"
+            className="px-3 py-1 text-xs wide:min-h-9"
           >
             {label}
           </Button>
@@ -162,7 +162,7 @@ export function ExpenseLog() {
             type="button"
             variant={operationFilter === value ? 'primary' : 'ghost'}
             onClick={() => setOperationFilter(value)}
-            className="min-h-9 px-3 py-1 text-xs"
+            className="px-3 py-1 text-xs wide:min-h-9"
           >
             {label}
           </Button>

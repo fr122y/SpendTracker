@@ -267,7 +267,7 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
             onClick={handleCopy}
             disabled={result === null}
             className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-30',
+              'flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-zinc-400 wide:h-9 wide:w-9 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-30',
               copyStatus === 'copied' && 'text-emerald-400',
               copyStatus === 'failed' && 'text-red-400'
             )}
@@ -322,7 +322,7 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
               onClick={() =>
                 dispatch((current) => insertSavings(current, value))
               }
-              className="flex shrink-0 items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-xs whitespace-nowrap text-zinc-200 hover:border-emerald-600"
+              className="flex min-h-11 shrink-0 items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 wide:min-h-0 text-xs whitespace-nowrap text-zinc-200 hover:border-emerald-600"
             >
               <span className="max-w-[11rem] truncate">{value.label}</span>
               <span aria-hidden="true" className="text-zinc-500">

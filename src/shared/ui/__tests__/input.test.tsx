@@ -32,4 +32,9 @@ describe('Input', () => {
     render(<Input disabled />)
     expect(screen.getByRole('textbox')).toBeDisabled()
   })
+
+  it('is at least 44px tall on phones and compact on wide screens', () => {
+    render(<Input />)
+    expect(screen.getByRole('textbox')).toHaveClass('min-h-11', 'wide:min-h-0')
+  })
 })

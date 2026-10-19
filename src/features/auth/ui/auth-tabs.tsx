@@ -49,7 +49,7 @@ export function AuthTabs() {
         <button
           type="button"
           onClick={() => setActiveTab('signin')}
-          className={`flex-1 border-b-2 px-2 pb-3 text-sm font-medium transition-colors ${
+          className={`min-h-11 flex-1 border-b-2 px-2 pb-3 text-sm wide:min-h-0 font-medium transition-colors ${
             activeTab === 'signin'
               ? 'border-emerald-400 text-emerald-400'
               : 'border-transparent text-zinc-400 hover:text-zinc-200'
@@ -60,7 +60,7 @@ export function AuthTabs() {
         <button
           type="button"
           onClick={() => setActiveTab('register')}
-          className={`flex-1 border-b-2 px-2 pb-3 text-sm font-medium transition-colors ${
+          className={`min-h-11 flex-1 border-b-2 px-2 pb-3 text-sm wide:min-h-0 font-medium transition-colors ${
             activeTab === 'register'
               ? 'border-emerald-400 text-emerald-400'
               : 'border-transparent text-zinc-400 hover:text-zinc-200'

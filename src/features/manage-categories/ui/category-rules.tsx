@@ -45,7 +45,7 @@ export function CategoryRules({
         aria-expanded={isOpen}
         aria-controls={listId}
         aria-label={`Правила категории ${categoryName}: ${rules.length}`}
-        className="flex min-h-9 items-center gap-1 self-start rounded px-1 text-xs text-zinc-400 transition hover:text-zinc-100"
+        className="flex min-h-11 items-center gap-1 self-start rounded px-1 text-xs wide:min-h-9 text-zinc-400 transition hover:text-zinc-100"
       >
         <Icon className="h-3 w-3" aria-hidden="true" />
         Правила автокатегоризации: {rules.length}

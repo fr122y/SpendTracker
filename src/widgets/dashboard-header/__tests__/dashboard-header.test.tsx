@@ -68,6 +68,15 @@ describe('DashboardHeader', () => {
     ).toHaveTextContent('15 января 2026 г.')
   })
 
+  it('makes the month picker at least 44px tall on phones only', () => {
+    render(<DashboardHeader />)
+
+    expect(screen.getByRole('button', { name: 'Выбрать месяц' })).toHaveClass(
+      'min-h-11',
+      'wide:min-h-0'
+    )
+  })
+
   it('renders day navigation buttons', () => {
     render(<DashboardHeader />)
 
