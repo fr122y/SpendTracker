@@ -5,6 +5,7 @@ import { ExpenseEditDialog } from '../ui/expense-edit-dialog'
 import type { Category, Expense, Pocket } from '@/shared/types'
 
 const mockMutate = jest.fn()
+const mockSaveRule = jest.fn()
 let mockPockets: Partial<Pocket>[] = []
 const mockCategories: Category[] = [
   { id: 'c-food', name: 'Еда', emoji: '🍔' },
@@ -21,6 +22,10 @@ jest.mock('@/entities/category', () => ({
   useCategoryStore: (
     selector: (state: { categories: Category[] }) => unknown
   ) => selector({ categories: mockCategories }),
+}))
+
+jest.mock('@/entities/keyword-mapping', () => ({
+  useSaveKeywordMapping: () => ({ mutate: mockSaveRule }),
 }))
 
 jest.mock('@/entities/pocket', () => ({
@@ -45,7 +50,38 @@ function renderDialog(expense: Expense) {
 describe('ExpenseEditDialog', () => {
   beforeEach(() => {
     mockMutate.mockReset()
+    mockSaveRule.mockReset()
     mockPockets = []
+  })
+
+  it('saves an exact rule for the new description when the category changes', () => {
+    renderDialog(lunch)
+
+    fireEvent.change(screen.getByLabelText('Описание'), {
+      target: { value: ' Такси домой ' },
+    })
+    fireEvent.change(screen.getByLabelText('Категория'), {
+      target: { value: 'Такси' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
+
+    expect(mockSaveRule).toHaveBeenCalledTimes(1)
+    expect(mockSaveRule).toHaveBeenCalledWith({
+      keyword: 'Такси домой',
+      categoryId: 'c-taxi',
+    })
+  })
+
+  it('does not save a rule when only the description changes', () => {
+    renderDialog(lunch)
+
+    fireEvent.change(screen.getByLabelText('Описание'), {
+      target: { value: 'Бизнес-ланч' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
+
+    expect(mockMutate).toHaveBeenCalledTimes(1)
+    expect(mockSaveRule).not.toHaveBeenCalled()
   })
 
   it('saves amount, description, category, and a move to another month in one update', () => {

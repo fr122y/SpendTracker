@@ -8,6 +8,7 @@ import {
   ARCHIVED_POCKET_OPERATION_HINT,
   useUpdateExpense,
 } from '@/entities/expense'
+import { useSaveKeywordMapping } from '@/entities/keyword-mapping'
 import { usePockets } from '@/entities/pocket'
 import { parseAmountInput } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
@@ -32,6 +33,7 @@ export function ExpenseEditDialog({
   const categories = useCategoryStore((state) => state.categories)
   const { data: pockets } = usePockets()
   const updateExpense = useUpdateExpense()
+  const saveKeywordMapping = useSaveKeywordMapping()
   const rules = getExpenseEditRules(expense)
   const isPocketArchived = Boolean(
     expense.pocketId &&
@@ -97,6 +99,15 @@ export function ExpenseEditDialog({
     // One optimistic update; the server rounds and bounds-checks the amount
     // and rolls back with a toast if it rejects the change.
     updateExpense.mutate({ id: expense.id, data: patch })
+    // A manual category change is remembered as an exact rule for the whole
+    // phrase; the rule mutation rolls back on its own and never blocks the edit.
+    if (patch.category) {
+      const category = categories.find((item) => item.name === patch.category)
+      const phrase = patch.description ?? expense.description
+      if (category && phrase.trim()) {
+        saveKeywordMapping.mutate({ keyword: phrase, categoryId: category.id })
+      }
+    }
     onClose()
   }
 

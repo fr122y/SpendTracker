@@ -71,7 +71,7 @@ export interface ExpenseEditValues {
 /**
  * Builds the partial update for one `updateExpense` call: only fields that
  * changed and that the rules allow. Changing the category sends its emoji too;
- * it does not touch keyword rules.
+ * the dialog saves the keyword rule separately.
  */
 export function buildExpensePatch(
   expense: Expense,
