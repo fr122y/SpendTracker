@@ -16,12 +16,13 @@ function getViewport(width: number): Viewport {
 }
 
 /**
- * Hook to detect current viewport size.
+ * Hook to detect current viewport size, or `null` until it is measured on the
+ * client. Renders on the server and during hydration return `null`, so a
+ * caller can show a viewport-neutral placeholder instead of guessing a layout.
  * Returns 'mobile' for < 768px, 'tablet' for 768px - 1279px, 'desktop' for >= 1280px.
- * SSR-safe: defaults to 'desktop' during server rendering.
  */
-export function useViewport(): Viewport {
-  const [viewport, setViewport] = useState<Viewport>('desktop')
+export function useResolvedViewport(): Viewport | null {
+  const [viewport, setViewport] = useState<Viewport | null>(null)
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -44,6 +45,15 @@ export function useViewport(): Viewport {
   }, [])
 
   return viewport
+}
+
+/**
+ * Hook to detect current viewport size.
+ * Returns 'mobile' for < 768px, 'tablet' for 768px - 1279px, 'desktop' for >= 1280px.
+ * SSR-safe: defaults to 'desktop' during server rendering.
+ */
+export function useViewport(): Viewport {
+  return useResolvedViewport() ?? 'desktop'
 }
 
 /**

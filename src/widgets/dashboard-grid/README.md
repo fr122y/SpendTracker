@@ -16,9 +16,19 @@ Responsive dashboard grid that renders widgets based on viewport size with drag-
 
 ### Mobile Layout (< 768px)
 
-- Full-screen widget list via `MobileWidgetList`
-- Full-screen modal for selected widget via `MobileWidgetModal`
+- Inline accordion via `MobileWidgetAccordion`; expansion state is local
+- The page scrolls as a whole: the grid has no own scroll and keeps `pb-20`
+  clear of the floating calculator button
+- Subscribes to `subscribeWidgetReveal`: a reveal request (a calendar day tap)
+  expands the widget and scrolls to it
 - No drag-and-drop functionality
+
+### Before The Viewport Is Known
+
+`useResolvedViewport` is `null` on the server and during hydration. The grid
+then renders `DashboardGridSkeleton`, which picks its mobile, tablet, or
+desktop shape with CSS media queries (`md`, `xl`), so phones never flash the
+desktop tree and no widget mounts or fetches before the layout is chosen.
 
 ### Tablet Layout (768-1024px)
 
@@ -36,7 +46,7 @@ Responsive dashboard grid that renders widgets based on viewport size with drag-
 
 ## Dependencies
 
-- Uses: `@/features/layout-editor`, `@/features/mobile-widget-list`, `@/features/mobile-widget-modal`
+- Uses: `@/features/layout-editor`, `@/features/mobile-widget-accordion`
 - Uses: `@/shared/lib`, `@/features/widget-registry`, `@/shared/ui`
 - Uses: `lucide-react`
 - Uses: `react`

@@ -46,6 +46,7 @@ export { ReatomProvider } from './reatom'
 // Hooks
 export {
   useViewport,
+  useResolvedViewport,
   isMobile,
   isTabletOrSmaller,
   useSubmitLock,
@@ -125,3 +126,4 @@ export {
 export { countGraphemes, limitGraphemes } from './grapheme'
 
 export { normalizeKeywordPhrase } from './keyword-phrase'
+export { requestWidgetReveal, subscribeWidgetReveal } from './widget-reveal'
