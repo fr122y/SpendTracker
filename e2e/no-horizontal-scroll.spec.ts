@@ -103,30 +103,69 @@ test.describe('No Horizontal Scroll Tests', () => {
       for (const expense of created) await expenses.remove(expense)
     })
 
-    test('long category name and description fit at 375 and 1280 px', async ({
-      page,
-    }) => {
-      test.setTimeout(150000)
-      await page.setViewportSize(VIEWPORTS.desktop)
-      await reloadPage(page)
+    test.describe('long names', () => {
+      /** Expense this test created, removed in afterEach even on failure. */
+      let createdExpense: { description: string; amount: number } | null = null
 
-      const token = String(Date.now()).slice(-8)
-      // 90 characters without spaces: the field keeps the first 40.
-      const typedName = `E2E${token}${'Ж'.repeat(90 - 3 - token.length)}`
-      const categoryName = typedName.slice(0, 40)
-      const emoji = '🧪'
-      // 200 characters, the maximum, with one long spaceless word.
-      const description = `E2E ${token} ${'Щ'.repeat(200 - 5 - token.length)}`
-      const amount = uniqueAmount()
-      let categoryCreated = false
-      let expenseCreated = false
-
-      const categoryInput = page.getByLabel('Название личной категории')
-      const categoryRow = page.locator('li').filter({
-        has: page.getByRole('button', { name: `Удалить ${categoryName}` }),
+      // Removes this test's expense and every category an E2E run of this
+      // test created (`E2E` + 8 digits + `Ж…`), including leftovers of
+      // earlier runs that were interrupted.
+      test.afterEach(async ({ page }) => {
+        test.setTimeout(120000)
+        await page.setViewportSize(VIEWPORTS.desktop)
+        await page.goto('/')
+        if (createdExpense) {
+          await openJournal(page)
+          const { description, amount } = createdExpense
+          if ((await expenseRow(page, description, amount).count()) > 0) {
+            await deleteExpense(page, description, amount)
+          }
+          createdExpense = null
+        }
+        const leftover = page.getByRole('button', {
+          name: /^Удалить E2E\d{8}Ж+$/,
+        })
+        await reloadPage(page)
+        await expect(page.getByLabel('Название личной категории')).toBeVisible(
+          TIMEOUT
+        )
+        for (let i = 0; i < 20 && (await leftover.count()) > 0; i++) {
+          const before = await leftover.count()
+          await leftover.first().click()
+          await page
+            .getByRole('alertdialog')
+            .getByRole('button', { name: 'Удалить категорию' })
+            .click()
+          await expect(leftover).toHaveCount(before - 1, TIMEOUT)
+        }
+        await reloadPage(page)
+        await expect(leftover).toHaveCount(0, TIMEOUT)
       })
 
-      try {
+      test('long category name and description fit at 375 and 1280 px', async ({
+        page,
+      }) => {
+        test.setTimeout(150000)
+        await page.setViewportSize(VIEWPORTS.desktop)
+        await reloadPage(page)
+
+        const token = String(Date.now()).slice(-8)
+        // 90 characters without spaces: the field keeps the first 40.
+        const typedName = `E2E${token}${'Ж'.repeat(90 - 3 - token.length)}`
+        const categoryName = typedName.slice(0, 40)
+        const emoji = '🧪'
+        // 200 characters, the maximum, with one long spaceless word.
+        const description = `E2E ${token} ${'Щ'.repeat(200 - 5 - token.length)}`
+        const amount = uniqueAmount()
+
+        const categoryInput = page.getByLabel('Название личной категории')
+        const deleteCategoryButton = page.getByRole('button', {
+          name: `Удалить ${categoryName}`,
+        })
+        const categoryRow = page
+          .locator('li')
+          .filter({ has: deleteCategoryButton })
+
         await categoryInput.fill(typedName)
         await expect(categoryInput).toHaveValue(categoryName)
         await page.getByLabel('Эмодзи личной категории').fill(emoji)
@@ -139,11 +178,21 @@ test.describe('No Horizontal Scroll Tests', () => {
         await page
           .getByRole('button', { name: 'Добавить личную категорию' })
           .click()
-        categoryCreated = true
         expect((await categorySaved).ok()).toBe(true)
-        await expect(categoryRow).toBeVisible(TIMEOUT)
         await reloadPage(page)
         await expect(categoryRow).toBeVisible(TIMEOUT)
+
+        // The name keeps most of the row next to its buttons.
+        const nameBox = await categoryRow
+          .locator('[data-testid^="category-name-"]')
+          .boundingBox()
+        const rowBox = await categoryRow.boundingBox()
+        const buttonsBox = await deleteCategoryButton
+          .locator('xpath=..')
+          .boundingBox()
+        expect(nameBox!.width).toBeGreaterThanOrEqual(
+          0.5 * (rowBox!.width - buttonsBox!.width)
+        )
 
         const form = journalForm(page)
         await openJournal(page)
@@ -161,7 +210,10 @@ test.describe('No Horizontal Scroll Tests', () => {
           await descriptionInput.blur()
           await expect(categorySelect).toBeVisible({ timeout: 1000 })
         }).toPass(TIMEOUT)
-        await categorySelect.selectOption({ label: `${emoji} ${categoryName}` })
+        await categorySelect.selectOption(
+          { label: `${emoji} ${categoryName}` },
+          TIMEOUT
+        )
 
         const saved = page.waitForResponse(
           (response) =>
@@ -169,10 +221,10 @@ test.describe('No Horizontal Scroll Tests', () => {
             (response.request().postData() ?? '').includes(token) &&
             (response.request().postData() ?? '').includes(`"amount":${amount}`)
         )
+        createdExpense = { description, amount }
         await form
           .getByRole('button', { name: 'Добавить', exact: true })
           .click()
-        expenseCreated = true
         expect((await saved).ok()).toBe(true)
         await reloadPage(page)
 
@@ -191,37 +243,48 @@ test.describe('No Horizontal Scroll Tests', () => {
           )
           await expectNoPageScroll(page)
           await expectNoHorizontalScroll(page)
-        }
 
-        // The analysis tile truncates the name and opens its dialog.
-        await page.setViewportSize(VIEWPORTS.desktop)
-        const tile = page.getByTestId(`analysis-category-fill-${categoryName}`)
-        await expect(tile).toBeVisible(TIMEOUT)
-        await expectNoPageScroll(page)
-        await tile.click()
-        await expect(
-          page.getByRole('dialog', { name: `Расходы: ${categoryName}` })
-        ).toBeVisible(TIMEOUT)
-        await page.keyboard.press('Escape')
-      } finally {
-        await page.setViewportSize(VIEWPORTS.desktop)
-        if (expenseCreated) {
-          await deleteExpense(page, description, amount)
+          // The analysis tile opens its dialog, which fits the screen.
+          const analysisToggle = page.getByRole('button', {
+            name: 'Анализ',
+            expanded: false,
+          })
+          if (await analysisToggle.isVisible()) await analysisToggle.click()
+          const tile = page.getByTestId(
+            `analysis-category-fill-${categoryName}`
+          )
+          await expect(tile).toBeVisible(TIMEOUT)
+          await expectNoPageScroll(page)
+          await tile.click()
+          const dialog = page.getByTestId('analysis-category-details-dialog')
+          await expect(dialog).toBeVisible(TIMEOUT)
+          const overflow = await dialog.evaluate((element) => {
+            const width = window.innerWidth
+            const content = [element, ...element.querySelectorAll('*')]
+            return {
+              scroll: content.some(
+                (node) =>
+                  node.scrollWidth > node.clientWidth + 1 &&
+                  getComputedStyle(node).overflowX !== 'visible' &&
+                  getComputedStyle(node).overflowX !== 'hidden'
+              ),
+              outside: content
+                .filter((node) => node.getClientRects().length > 0)
+                .filter((node) => {
+                  const box = node.getBoundingClientRect()
+                  return box.left < -1 || box.right > width + 1
+                })
+                .map((node) => node.tagName),
+            }
+          })
+          expect(overflow.outside).toEqual([])
+          expect(overflow.scroll).toBe(false)
+          await page
+            .getByRole('button', { name: 'Закрыть расходы категории' })
+            .click()
+          await expect(dialog).toBeHidden(TIMEOUT)
         }
-        if (categoryCreated) {
-          await reloadPage(page)
-          if ((await categoryRow.count()) > 0) {
-            await categoryRow
-              .getByRole('button', { name: `Удалить ${categoryName}` })
-              .click()
-            await page
-              .getByRole('alertdialog')
-              .getByRole('button', { name: 'Удалить категорию' })
-              .click()
-            await expect(categoryRow).toHaveCount(0, TIMEOUT)
-          }
-        }
-      }
+      })
     })
 
     test('no horizontal scroll in edit mode on all viewports', async ({
