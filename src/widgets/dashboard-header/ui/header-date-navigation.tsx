@@ -24,7 +24,7 @@ export function HeaderDateNavigation({
         variant="ghost"
         onClick={onPreviousDay}
         aria-label="Предыдущий день"
-        className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+        className="min-h-[44px] min-w-[44px] shrink-0"
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
@@ -32,7 +32,7 @@ export function HeaderDateNavigation({
       <button
         type="button"
         onClick={onOpenMonthPicker}
-        className="min-w-[180px] rounded px-2 py-1 text-center font-mono text-sm capitalize transition-colors hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-w-[220px]"
+        className="min-w-[180px] shrink-0 whitespace-nowrap rounded px-2 py-1 text-center font-mono text-sm capitalize transition-colors hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-w-[220px]"
         aria-label="Выбрать месяц"
       >
         {formattedDate}
@@ -42,7 +42,7 @@ export function HeaderDateNavigation({
         variant="ghost"
         onClick={onNextDay}
         aria-label="Следующий день"
-        className="min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0"
+        className="min-h-[44px] min-w-[44px] shrink-0"
       >
         <ChevronRight className="h-4 w-4" />
       </Button>
