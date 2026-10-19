@@ -87,31 +87,36 @@ function NameGroupFilter({
         {displayedGroups.map((group) => (
           <div
             key={group.key}
-            className="flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900 p-1"
+            className="flex min-w-0 max-w-full items-center gap-1 rounded-full border border-zinc-700 bg-zinc-900 p-1"
           >
             <button
               type="button"
               aria-pressed={selectedGroupKeys.has(group.key)}
               onClick={() => onToggle(group.key)}
-              className="min-h-11 rounded-full px-3 text-xs wide:min-h-9 text-zinc-200 transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 aria-pressed:bg-emerald-500/20 aria-pressed:text-emerald-200"
+              title={group.label}
+              className="flex min-h-11 min-w-0 items-center rounded-full px-3 text-xs wide:min-h-9 text-zinc-200 transition-colors hover:bg-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 aria-pressed:bg-emerald-500/20 aria-pressed:text-emerald-200"
             >
-              {group.label}
-              <span className="ml-1 text-zinc-400">{group.variantCount}</span>
+              <span className="truncate">{group.label}</span>
+              <span className="ml-1 shrink-0 text-zinc-400">
+                {group.variantCount}
+              </span>
             </button>
-            <details className="group relative">
+            <details className="group relative shrink-0">
               <summary
                 aria-label={`Варианты названия ${group.label}`}
                 className="flex min-h-11 min-w-11 cursor-pointer wide:min-h-9 wide:min-w-9 list-none items-center justify-center rounded-full px-2 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 [&::-webkit-details-marker]:hidden"
               >
                 <span aria-hidden="true">···</span>
               </summary>
-              <ul className="absolute right-0 top-full z-10 mt-1 max-h-48 min-w-44 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-xs text-zinc-200 shadow-xl">
+              <ul className="absolute right-0 top-full z-10 mt-1 max-h-48 min-w-44 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-900 p-2 text-xs text-zinc-200 shadow-xl">
                 {group.variants.map((variant) => (
                   <li
                     key={`${group.key}:${variant.description}`}
                     className="flex items-start justify-between gap-3 px-2 py-1.5"
                   >
-                    <span>{variant.description || 'Без описания'}</span>
+                    <span className="min-w-0 [overflow-wrap:anywhere]">
+                      {variant.description || 'Без описания'}
+                    </span>
                     <span className="shrink-0 text-zinc-500">
                       {variant.count}
                     </span>
@@ -160,7 +165,7 @@ function ExpenseDetailRow({ expense, onOpen }: ExpenseDetailRowProps) {
           {expense.emoji}
         </span>
         <div className="min-w-0">
-          <p className="break-words text-sm font-medium text-zinc-100">
+          <p className="text-sm font-medium text-zinc-100 [overflow-wrap:anywhere]">
             {expense.description || 'Без описания'}
           </p>
           <p className="mt-1 text-xs text-zinc-500">{operationLabel}</p>
@@ -320,8 +325,11 @@ export function AnalysisCategoryDetailsDialog({
         className="flex h-full w-full flex-col overflow-hidden border border-zinc-800 bg-zinc-950 shadow-2xl md:max-h-[90vh] md:max-w-3xl md:rounded-xl"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6">
-          <div>
-            <h2 id={titleId} className="text-lg font-semibold text-zinc-100">
+          <div className="min-w-0">
+            <h2
+              id={titleId}
+              className="text-lg font-semibold text-zinc-100 [overflow-wrap:anywhere]"
+            >
               Расходы: {category.name}
             </h2>
             <p id={descriptionId} className="mt-1 text-sm text-zinc-400">

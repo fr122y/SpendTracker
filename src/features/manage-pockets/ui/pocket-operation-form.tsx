@@ -6,7 +6,10 @@ import { useCategorize, useCategoryStore } from '@/entities/category'
 import { useAddExpense } from '@/entities/expense'
 import { POCKET_PURCHASE_HINT, POCKET_TRANSFER_HINT } from '@/entities/pocket'
 import {
+  EXPENSE_DESCRIPTION_MAX_LENGTH,
+  EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
   formatDate,
+  getTextLimitMessage,
   parseAmountInput,
   useFormDraft,
   useSubmitLock,
@@ -269,7 +272,12 @@ export function PocketOperationForm({
           updateSuggestion(event.target.value)
         }}
         onBlur={() => updateSuggestion(description)}
-        maxLength={240}
+        maxLength={EXPENSE_DESCRIPTION_MAX_LENGTH}
+        error={getTextLimitMessage(
+          description,
+          EXPENSE_DESCRIPTION_MAX_LENGTH,
+          EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE
+        )}
         disabled={isBusy}
       />
       <MathInput

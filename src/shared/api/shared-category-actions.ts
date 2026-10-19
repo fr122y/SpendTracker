@@ -8,6 +8,7 @@ import {
   normalizeCategoryUpdate,
   type CategoryUpdate,
 } from '@/shared/lib/category-update'
+import { assertCategoryNameLength } from '@/shared/lib/text-limits'
 
 import { assertCanUseSharedBudget } from './shared-budget-actions'
 
@@ -37,6 +38,7 @@ function requireValidCategory(data: { name: string; emoji: string }): {
   }
 
   normalizeCategoryUpdate({ emoji })
+  assertCategoryNameLength(name)
 
   return { name, emoji }
 }
@@ -189,6 +191,9 @@ export async function updateSharedBudgetCategory(
   }
 
   const update = normalizeCategoryUpdate(data)
+  if (update.name !== undefined) {
+    assertCategoryNameLength(update.name, category.name)
+  }
   const nextName = update.name ?? category.name
   const nextEmoji = update.emoji ?? category.emoji
   if (nextName !== category.name) {

@@ -577,6 +577,26 @@ describe('AnalysisDashboard', () => {
       ).not.toBeInTheDocument()
     })
 
+    it('does not show a hover tooltip from emulated mouse events after a tap', () => {
+      render(<AnalysisDashboard />)
+
+      const tile = screen.getByTestId('analysis-category-Продукты')
+      fireEvent.touchStart(tile)
+      fireEvent.mouseEnter(tile)
+
+      expect(
+        screen.queryByTestId('analysis-tooltip-Продукты')
+      ).not.toBeInTheDocument()
+    })
+
+    it('truncates a long category name and keeps it in the title', () => {
+      render(<AnalysisDashboard />)
+
+      const name = screen.getByTestId('analysis-category-name-Продукты')
+      expect(name).toHaveClass('truncate')
+      expect(name).toHaveAttribute('title', 'Продукты')
+    })
+
     it('applies correct container styling', () => {
       const { container } = render(<AnalysisDashboard />)
 

@@ -25,7 +25,11 @@ import {
   useSharedBudgets,
 } from '@/entities/shared-budget'
 import {
+  CATEGORY_NAME_MAX_LENGTH,
+  CATEGORY_NAME_TOO_LONG_MESSAGE,
   getCategoryColor,
+  getTextLimitMessage,
+  isCategoryNameTooLong,
   limitGraphemes,
   pluralizeRu,
   useSubmitLock,
@@ -192,8 +196,16 @@ export function CategoryManager() {
     void runLocked(submit)
   }
 
-  const isFormValid = name.trim() && emoji.trim()
-  const isSharedFormValid = sharedName.trim() && sharedEmoji.trim()
+  // A legacy name over the limit stays valid while it is unchanged.
+  const isNameTooLong =
+    name.trim() !== (editingCategory?.name.trim() ?? '') &&
+    isCategoryNameTooLong(name)
+  const isSharedNameTooLong =
+    sharedName.trim() !== (editingSharedCategory?.name.trim() ?? '') &&
+    isCategoryNameTooLong(sharedName)
+  const isFormValid = name.trim() && emoji.trim() && !isNameTooLong
+  const isSharedFormValid =
+    sharedName.trim() && sharedEmoji.trim() && !isSharedNameTooLong
 
   const resetSharedForm = () => {
     setSharedName('')
@@ -282,17 +294,23 @@ export function CategoryManager() {
 
       {mode === 'personal' && (
         <>
-          <ul className="flex flex-col gap-2">
+          <ul className="@container flex flex-col gap-2">
             {categories.map((category) => (
               <li
                 key={category.id}
-                className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
+                className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 @md:flex-row @md:items-start @md:justify-between @md:gap-3 @md:p-3"
               >
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <div className="flex min-w-0 items-center gap-3">
                     <CategoryColorDot category={category} />
-                    <span className="text-xl">{category.emoji}</span>
-                    <span className="text-zinc-200">{category.name}</span>
+                    <span className="shrink-0 text-xl">{category.emoji}</span>
+                    <span
+                      title={category.name}
+                      data-testid={`category-name-${category.id}`}
+                      className="min-w-0 truncate text-zinc-200"
+                    >
+                      {category.name}
+                    </span>
                   </div>
                   <CategoryRules
                     categoryName={category.name}
@@ -300,13 +318,13 @@ export function CategoryManager() {
                     onDelete={(id) => deleteKeywordMapping.mutate(id)}
                   />
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex shrink-0 flex-row gap-2">
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={() => startPersonalEdit(category)}
                     aria-label={`Изменить ${category.name}`}
-                    className="w-full sm:w-auto"
+                    className="flex-1 @md:flex-none"
                   >
                     <Pencil className="h-4 w-4" />
                     Изменить
@@ -316,7 +334,7 @@ export function CategoryManager() {
                     onClick={() => setCategoryPendingDelete(category)}
                     disabled={categories.length <= 1}
                     aria-label={`Удалить ${category.name}`}
-                    className="w-full sm:w-auto"
+                    className="flex-1 @md:flex-none"
                   >
                     <Trash2 className="h-4 w-4" />
                     Удалить
@@ -352,7 +370,16 @@ export function CategoryManager() {
                     setName(e.target.value)
                     setError('')
                   }}
-                  error={error}
+                  maxLength={CATEGORY_NAME_MAX_LENGTH}
+                  error={
+                    error ||
+                    getTextLimitMessage(
+                      name,
+                      CATEGORY_NAME_MAX_LENGTH,
+                      CATEGORY_NAME_TOO_LONG_MESSAGE,
+                      editingCategory?.name
+                    )
+                  }
                 />
               </div>
               <div className="w-full sm:w-24">
@@ -427,17 +454,23 @@ export function CategoryManager() {
           {isSharedCategoriesLoading ? (
             <CategoryManagerSkeleton />
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="@container flex flex-col gap-2">
               {sharedCategories.map((category) => (
                 <li
                   key={category.id}
-                  className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
+                  className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 @md:flex-row @md:items-start @md:justify-between @md:gap-3 @md:p-3"
                 >
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex min-w-0 items-center gap-3">
                       <CategoryColorDot category={category} />
-                      <span className="text-xl">{category.emoji}</span>
-                      <span className="text-zinc-200">{category.name}</span>
+                      <span className="shrink-0 text-xl">{category.emoji}</span>
+                      <span
+                        title={category.name}
+                        data-testid={`category-name-${category.id}`}
+                        className="min-w-0 truncate text-zinc-200"
+                      >
+                        {category.name}
+                      </span>
                     </div>
                     <CategoryRules
                       categoryName={category.name}
@@ -445,13 +478,13 @@ export function CategoryManager() {
                       onDelete={(id) => deleteSharedKeywordMapping.mutate(id)}
                     />
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
+                  <div className="flex shrink-0 flex-row gap-2">
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => startSharedEdit(category)}
                       aria-label={`Изменить ${category.name}`}
-                      className="w-full sm:w-auto"
+                      className="flex-1 @md:flex-none"
                     >
                       <Pencil className="h-4 w-4" />
                       Изменить
@@ -460,7 +493,7 @@ export function CategoryManager() {
                       type="button"
                       variant="danger"
                       onClick={() => setSharedCategoryPendingArchive(category)}
-                      className="w-full sm:w-auto"
+                      className="flex-1 @md:flex-none"
                     >
                       <Archive className="h-4 w-4" />
                       Архив
@@ -505,7 +538,16 @@ export function CategoryManager() {
                     setSharedName(e.target.value)
                     setSharedError('')
                   }}
-                  error={sharedError}
+                  maxLength={CATEGORY_NAME_MAX_LENGTH}
+                  error={
+                    sharedError ||
+                    getTextLimitMessage(
+                      sharedName,
+                      CATEGORY_NAME_MAX_LENGTH,
+                      CATEGORY_NAME_TOO_LONG_MESSAGE,
+                      editingSharedCategory?.name
+                    )
+                  }
                 />
               </div>
               <div className="w-full sm:w-24">

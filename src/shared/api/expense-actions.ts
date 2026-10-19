@@ -15,6 +15,7 @@ import {
   isValidMoneyAmount,
   normalizeMoneyAmount,
 } from '@/shared/lib/money-amount'
+import { assertExpenseDescriptionLength } from '@/shared/lib/text-limits'
 
 import {
   assertCanUsePocket,
@@ -138,6 +139,7 @@ export async function addExpense(input: AddExpenseInput): Promise<Expense> {
   if (!data.description.trim()) {
     throw new Error('Operation comment is required')
   }
+  assertExpenseDescriptionLength(data.description)
   const id = resolveNewExpenseId(data.id)
   const operationType = data.operationType ?? 'expense'
   const isProjectMovement =
@@ -361,6 +363,7 @@ export async function updateExpense(
       sharedBudgetId: expenses.sharedBudgetId,
       sharedBudgetCategoryId: expenses.sharedBudgetCategoryId,
       operationType: expenses.operationType,
+      description: expenses.description,
     })
     .from(expenses)
     .where(eq(expenses.id, id))
@@ -444,6 +447,9 @@ export async function updateExpense(
   if (data.date !== undefined) assertValidOperationDate(data.date)
   if (data.description !== undefined && !data.description.trim()) {
     throw new Error('Operation comment is required')
+  }
+  if (data.description !== undefined) {
+    assertExpenseDescriptionLength(data.description, existing.description)
   }
 
   if (

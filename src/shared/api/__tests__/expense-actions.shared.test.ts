@@ -273,6 +273,58 @@ describe('expense-actions shared budget access', () => {
     expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
   })
 
+  it('rejects a 201-character description with a Russian message', async () => {
+    await expect(
+      addExpense({
+        description: 'а'.repeat(201),
+        amount: 100,
+        date: '2026-06-15',
+        category: 'Еда',
+        emoji: '🍔',
+      })
+    ).rejects.toThrow('Комментарий не длиннее 200 символов')
+
+    expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+  })
+
+  it('rejects a changed description over the limit on update', async () => {
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-1',
+        projectId: null,
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        operationType: 'expense',
+        description: 'Кофе',
+      },
+    ])
+
+    await expect(
+      updateExpense('expense-1', { description: 'б'.repeat(201) })
+    ).rejects.toThrow('Комментарий не длиннее 200 символов')
+    expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
+  })
+
+  it('keeps an unchanged legacy description longer than the limit', async () => {
+    const legacy = 'в'.repeat(500)
+    dbModule.__mocks.expenseWhere.mockResolvedValueOnce([
+      {
+        userId: 'user-1',
+        projectId: null,
+        sharedBudgetId: null,
+        sharedBudgetCategoryId: null,
+        operationType: 'expense',
+        description: legacy,
+      },
+    ])
+
+    await updateExpense('expense-1', { description: legacy, amount: 10 })
+
+    expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith(
+      expect.objectContaining({ description: legacy, amount: 10 })
+    )
+  })
+
   it('rejects project operations linked to a shared budget', async () => {
     await expect(
       addExpense({

@@ -10,7 +10,14 @@ import {
 } from '@/entities/expense'
 import { useSaveKeywordMapping } from '@/entities/keyword-mapping'
 import { usePockets } from '@/entities/pocket'
-import { parseAmountInput, useBackDismiss } from '@/shared/lib'
+import {
+  EXPENSE_DESCRIPTION_MAX_LENGTH,
+  EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
+  getTextLimitMessage,
+  isExpenseDescriptionTooLong,
+  parseAmountInput,
+  useBackDismiss,
+} from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import { buildExpensePatch, getExpenseEditRules } from '../model/edit-rules'
@@ -67,8 +74,13 @@ export function ExpenseEditDialog({
     return options
   }, [categories, expense.category, expense.emoji])
 
+  // A legacy description over the limit stays valid while it is unchanged.
+  const descriptionTooLong =
+    description.trim() !== expense.description.trim() &&
+    isExpenseDescriptionTooLong(description)
   const isValid =
     description.trim().length > 0 &&
+    !descriptionTooLong &&
     DATE_PATTERN.test(date) &&
     (!rules.canEditAmount || parsedAmount.ok)
   const patch = parsedAmount.ok
@@ -144,6 +156,13 @@ export function ExpenseEditDialog({
           id={`${titleId}-description`}
           value={description}
           onChange={(event) => setDescription(event.target.value)}
+          maxLength={EXPENSE_DESCRIPTION_MAX_LENGTH}
+          error={getTextLimitMessage(
+            description,
+            EXPENSE_DESCRIPTION_MAX_LENGTH,
+            EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
+            expense.description
+          )}
           disabled={isReadOnly}
         />
         <MathInput
