@@ -22,4 +22,4 @@
 ## 4. Проверка
 
 - [x] 4.1 `npm run spec:check` и `npm run validate`.
-- [ ] 4.2 Применить миграцию к DEV через `npm run db:migrate` и проверить на Preview.
+- [x] 4.2 Применить миграцию к DEV через `npm run db:migrate` и проверить на Preview.
