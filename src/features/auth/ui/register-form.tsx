@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 
@@ -16,6 +17,7 @@ export function RegisterForm({
   onSwitchToSignIn,
   callbackUrl = '/',
 }: RegisterFormProps) {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -47,11 +49,21 @@ export function RegisterForm({
       return
     }
 
-    await signIn('credentials', {
+    const signInResult = await signIn('credentials', {
       email,
       password,
-      callbackUrl,
+      redirect: false,
     })
+
+    if (signInResult?.error) {
+      setError('Аккаунт создан, но войти не удалось. Войдите вручную.')
+      setIsSubmitting(false)
+      return
+    }
+
+    // Replace, so browser Back does not return to /login.
+    router.replace(callbackUrl)
+    router.refresh()
   }
 
   return (
