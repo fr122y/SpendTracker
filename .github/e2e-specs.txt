@@ -7,6 +7,7 @@
 e2e/app.spec.ts
 e2e/dashboard.spec.ts
 e2e/expenses.spec.ts
+e2e/header-layout.spec.ts
 e2e/layout.spec.ts
 e2e/mobile-forms.spec.ts
 e2e/no-horizontal-scroll.spec.ts
