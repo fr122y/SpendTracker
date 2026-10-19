@@ -43,7 +43,7 @@ The analysis MUST provide `all`, `personal`, and `shared` scopes. `all` includes
 
 ### Requirement: Group spending by category
 
-The analysis MUST combine included expenses with the same category, show each category's share of the included total as a percentage, and order categories by amount from highest to lowest.
+The analysis MUST combine included expenses with the same category, show each category's share of the included total as a percentage, and order categories by amount from highest to lowest. Each category tile MUST be filled with its category's color: the stored color, or the stable palette color chosen by the category name when none is stored. When a tile has personal or project-linked spending, the personal category's color MUST be used; otherwise the shared-budget category's color. The tile MUST show the expense scopes it contains (`Личные`, `Общие`, `Проекты`) as a small text label instead of a scope color, and its text MUST stay readable on every palette color.
 
 #### Scenario: Combine category amounts
 
@@ -52,6 +52,19 @@ The analysis MUST combine included expenses with the same category, show each ca
 - THEN their amounts contribute to one category total
 - AND the category percentage is based on the total for the selected scope
 - AND categories are ordered by descending amount
+
+#### Scenario: Color a tile by its category
+
+- GIVEN a category with a stored color has spending in the selected month
+- WHEN the analysis is rendered
+- THEN the category tile is filled with that color
+- AND the tile label names the scopes of its expenses
+
+#### Scenario: Color a tile without a stored color
+
+- GIVEN a category without a stored color has spending in the selected month
+- WHEN the analysis is rendered
+- THEN the tile is filled with the palette color chosen by the category name
 
 ### Requirement: Show an empty state when there is no spending data
 
@@ -92,9 +105,9 @@ The analysis MUST let a user activate a category and open its expense details fo
 - **WHEN** the user closes the dialog
 - **THEN** the analysis is visible with its prior month and scope
 
-### Requirement: Show matching expenses as read-only daily groups
+### Requirement: Show matching expenses as editable daily groups
 
-The details MUST contain only `expense` operations for the activated category, selected month, and inherited scope. The `personal` scope MUST continue to include project-linked expenses without a `sharedBudgetId`; transfers and project movements MUST be excluded. Expenses MUST be grouped by date with the newest date first, preserve their stored descriptions and amounts, and provide no edit or delete action.
+The details MUST contain only `expense` operations for the activated category, selected month, and inherited scope. The `personal` scope MUST continue to include project-linked expenses without a `sharedBudgetId`; transfers and project movements MUST be excluded. Expenses MUST be grouped by date with the newest date first, and preserve their stored descriptions and amounts. Activating a row MUST open the expense editor for that record; rows MUST NOT offer a delete action. While the editor is open, Escape and outside clicks MUST close only the editor.
 
 #### Scenario: Keep the category, month, and scope filters
 
@@ -125,9 +138,12 @@ The details MUST contain only `expense` operations for the activated category, s
 #### Scenario: Keep detail rows read-only
 
 - **GIVEN** expense rows appear in category details
-- **WHEN** the user views or activates a row
-- **THEN** the row exposes no edit or delete action
+- **WHEN** the user views a row
+- **THEN** the row itself exposes no inline edit or delete action
 - **AND** its original description and amount remain unchanged
+- **WHEN** the user activates the row
+- **THEN** the expense editor opens for that record above the details
+- **AND** closing the editor returns to the same details
 
 ### Requirement: Group similar expense descriptions for filtering
 
