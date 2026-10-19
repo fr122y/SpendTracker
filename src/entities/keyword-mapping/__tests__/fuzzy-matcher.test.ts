@@ -66,6 +66,30 @@ describe('createMatcher', () => {
     )
   })
 
+  describe('inflectional endings', () => {
+    const matcher = createMatcher([
+      rule('m1', 'кафе', 'Кафе'),
+      rule('m2', 'продукты', 'Еда'),
+      rule('m3', 'такси', 'Транспорт'),
+    ])
+
+    it.each(['кафедра', 'кафешка'])('«кафе» does not match «%s»', (text) => {
+      expect(matcher(text)).toEqual({ found: false })
+    })
+
+    it.each(['продуктов', 'продуктами'])('«продукты» matches «%s»', (text) => {
+      expect(matcher(text)).toEqual(
+        expect.objectContaining({ found: true, categoryName: 'Еда' })
+      )
+    })
+
+    it('matches an indeclinable word as is: «такси»', () => {
+      expect(matcher('такси')).toEqual(
+        expect.objectContaining({ found: true, categoryName: 'Транспорт' })
+      )
+    })
+  })
+
   it('returns no match for unknown description', () => {
     expect(createMatcher(mappings)('пылесос')).toEqual({ found: false })
   })

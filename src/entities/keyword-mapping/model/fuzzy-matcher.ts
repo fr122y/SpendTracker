@@ -10,8 +10,72 @@ export type MatchResult =
 
 /** Words shorter than this are matched only exactly, never by prefix or typo. */
 const MIN_APPROXIMATE_LENGTH = 4
-/** A word may extend a keyword by at most this many letters (Russian endings). */
-const MAX_INFLECTION_SUFFIX = 3
+/** Shortest stem left after stripping an inflectional ending. */
+const MIN_STEM_LENGTH = 3
+/** Common Russian noun and adjective inflectional endings, longest first. */
+const INFLECTION_ENDINGS = [
+  'ами',
+  'ями',
+  'ого',
+  'его',
+  'ому',
+  'ему',
+  'ом',
+  'ем',
+  'ой',
+  'ей',
+  'ам',
+  'ям',
+  'ах',
+  'ях',
+  'ов',
+  'ев',
+  'ью',
+  'ье',
+  'ым',
+  'им',
+  'ых',
+  'их',
+  'ую',
+  'юю',
+  'ая',
+  'яя',
+  'ое',
+  'ее',
+  'ые',
+  'ие',
+  'а',
+  'я',
+  'о',
+  'е',
+  'ы',
+  'и',
+  'у',
+  'ю',
+  'ь',
+  'й',
+]
+
+/** The word itself plus every stem left by stripping one known ending. */
+function inflectionStems(word: string): Set<string> {
+  const stems = new Set([word])
+  for (const ending of INFLECTION_ENDINGS) {
+    if (
+      word.endsWith(ending) &&
+      word.length - ending.length >= MIN_STEM_LENGTH
+    ) {
+      stems.add(word.slice(0, -ending.length))
+    }
+  }
+  return stems
+}
+
+function sharesInflectionStem(a: Set<string>, b: Set<string>): boolean {
+  for (const stem of a) {
+    if (stem.length >= MIN_STEM_LENGTH && b.has(stem)) return true
+  }
+  return false
+}
 
 function tokenize(phrase: string): string[] {
   return phrase.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
@@ -52,7 +116,7 @@ function indexOfSequence(haystack: string[], needle: string[]): number {
 
 interface Candidate {
   mapping: MatchableKeywordMapping
-  /** Lower is better: 0 whole word, 1 inflected word, 2 + typos. */
+  /** Lower is better: 0 whole word, 1 same stem with another ending, 2 + typos. */
   rank: number
   position: number
   keywordLength: number
@@ -86,13 +150,11 @@ function matchFuzzyRule(
   const [keyword] = keywordTokens
   if (keyword.length < MIN_APPROXIMATE_LENGTH) return null
 
+  const keywordStems = inflectionStems(keyword)
   let best: Candidate | null = null
   for (const [index, token] of tokens.entries()) {
     let rank: number | null = null
-    if (
-      token.startsWith(keyword) &&
-      token.length - keyword.length <= MAX_INFLECTION_SUFFIX
-    ) {
+    if (sharesInflectionStem(keywordStems, inflectionStems(token))) {
       rank = 1
     } else {
       const limit = allowedTypos(Math.min(token.length, keyword.length))
@@ -113,8 +175,8 @@ function matchFuzzyRule(
  * 1. an `exact` rule equal to the whole normalized description;
  * 2. a `fuzzy` rule whose words appear as whole words of the description
  *    (the longest keyword wins, then the earliest);
- * 3. a `fuzzy` single-word rule matching a whole word with an inflected
- *    ending, then with a small typo.
+ * 3. a `fuzzy` single-word rule sharing a stem with a whole word once a
+ *    known Russian inflectional ending is stripped, then with a small typo.
  */
 export function createMatcher(mappings: MatchableKeywordMapping[]) {
   const exactRules = new Map<string, MatchableKeywordMapping>()
