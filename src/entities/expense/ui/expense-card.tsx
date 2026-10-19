@@ -201,16 +201,22 @@ export function ExpenseCard({
     <>
       <div
         data-operation-type={expense.operationType ?? 'expense'}
-        className={`flex items-center justify-between rounded-lg border ${isPocketTransfer ? 'border-dashed border-violet-500/40' : 'border-zinc-700'} bg-zinc-900/70 shadow-md p-2 sm:p-3 transition-all duration-200 ease-out hover:bg-zinc-800/80 hover:border-zinc-600 hover:-translate-y-0.5 hover:shadow-lg`}
+        className={`flex min-w-0 items-center justify-between gap-2 rounded-lg border ${isPocketTransfer ? 'border-dashed border-violet-500/40' : 'border-zinc-700'} bg-zinc-900/70 shadow-md p-2 sm:p-3 transition-all duration-200 ease-out hover:bg-zinc-800/80 hover:border-zinc-600 hover:-translate-y-0.5 hover:shadow-lg`}
       >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{expense.emoji}</span>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium text-zinc-100">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <span className="shrink-0 text-2xl">{expense.emoji}</span>
+          <div className="flex min-w-0 flex-col">
+            <span
+              data-testid={`expense-description-${expense.id}`}
+              title={expense.description}
+              className="truncate text-sm font-medium text-zinc-100"
+            >
               {expense.description}
             </span>
-            <div className="flex flex-wrap gap-x-2 gap-y-1 text-xs text-zinc-500">
-              <span>{expense.category}</span>
+            <div className="flex min-w-0 flex-wrap gap-x-2 gap-y-1 text-xs text-zinc-500">
+              <span title={expense.category} className="max-w-full truncate">
+                {expense.category}
+              </span>
               {showPocketBadgePlaceholder ? (
                 <span
                   data-testid={`pocket-badge-placeholder-${expense.id}`}
@@ -219,10 +225,11 @@ export function ExpenseCard({
                 />
               ) : (
                 <span
-                  className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ring-1 ${operationMeta.className}`}
+                  title={operationMeta.label}
+                  className={`inline-flex max-w-full items-center gap-1 rounded px-1.5 py-0.5 text-[11px] ring-1 ${operationMeta.className}`}
                 >
-                  <OperationIcon className="h-3 w-3" />
-                  {operationMeta.label}
+                  <OperationIcon className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{operationMeta.label}</span>
                 </span>
               )}
               {isPocketArchived && (
@@ -237,16 +244,18 @@ export function ExpenseCard({
               )}
               {expense.sharedBudgetId && (
                 <>
-                  <span>
+                  <span className="max-w-full truncate">
                     Общий бюджет: {expense.sharedBudgetName ?? 'Общий бюджет'}
                   </span>
-                  <span>Автор: {expense.authorName ?? 'участник'}</span>
+                  <span className="max-w-full truncate">
+                    Автор: {expense.authorName ?? 'участник'}
+                  </span>
                 </>
               )}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           {isEditing ? (
             <MathInput
               ref={inputRef}
@@ -260,7 +269,7 @@ export function ExpenseCard({
           ) : (
             <button
               onClick={handleAmountClick}
-              className={`text-base sm:text-sm font-semibold ${isPocketTransfer ? 'text-violet-300 hover:text-violet-200 active:text-violet-400' : 'text-emerald-400 hover:text-emerald-300 active:text-emerald-500'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 transition-colors cursor-pointer min-h-11 px-2 rounded-md`}
+              className={`whitespace-nowrap text-base sm:text-sm font-semibold ${isPocketTransfer ? 'text-violet-300 hover:text-violet-200 active:text-violet-400' : 'text-emerald-400 hover:text-emerald-300 active:text-emerald-500'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 transition-colors cursor-pointer min-h-11 px-2 rounded-md`}
               aria-label="edit amount"
               disabled={!canEditAmount}
             >
@@ -293,7 +302,7 @@ export function ExpenseCard({
         title="Удалить операцию?"
         description={
           <>
-            <span className="block text-zinc-200">
+            <span className="block text-zinc-200 [overflow-wrap:anywhere]">
               {describeExpenseForDelete(expense)}
             </span>
             {!canUndoDelete && (

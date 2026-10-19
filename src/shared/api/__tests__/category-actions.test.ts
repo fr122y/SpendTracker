@@ -62,6 +62,7 @@ jest.mock('@/shared/db', () => {
 import { auth } from '@/shared/auth'
 
 import {
+  addCategory,
   countCategoryExpenses,
   deleteCategoryWithReassign,
   updateCategory,
@@ -172,6 +173,14 @@ describe('category-actions', () => {
     })
   })
 
+  describe('addCategory', () => {
+    it('rejects a 41-character name with a Russian message', async () => {
+      await expect(
+        addCategory({ name: 'к'.repeat(41), emoji: '🛒' })
+      ).rejects.toThrow('Название категории не длиннее 40 символов')
+    })
+  })
+
   describe('countCategoryExpenses', () => {
     it('counts own personal expenses with the category name', async () => {
       mocks.selectWhere
@@ -239,6 +248,30 @@ describe('category-actions', () => {
         emoji: '👨‍👩‍👧',
       })
       expect(mocks.updateWhere).toHaveBeenNthCalledWith(2, personalFoodFilter)
+    })
+
+    it('rejects a 41-character new name with a Russian message', async () => {
+      mocks.selectWhere.mockResolvedValueOnce(owned)
+
+      await expect(
+        updateCategory('food', { name: 'к'.repeat(41) })
+      ).rejects.toThrow('Название категории не длиннее 40 символов')
+      expect(mocks.updateSet).not.toHaveBeenCalled()
+    })
+
+    it('keeps an unchanged legacy name longer than the limit', async () => {
+      const legacy = 'л'.repeat(90)
+      mocks.selectWhere.mockResolvedValueOnce([
+        { id: 'long', name: legacy, emoji: '🛒', color: null },
+      ])
+
+      await updateCategory('long', { name: legacy, color: '#be185d' })
+
+      expect(mocks.updateSet).toHaveBeenCalledWith({
+        name: legacy,
+        emoji: '🛒',
+        color: '#be185d',
+      })
     })
 
     it('changes only the category row for a color change', async () => {

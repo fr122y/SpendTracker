@@ -265,10 +265,13 @@ function PocketDetail({
             </p>
           )}
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div
+            data-testid={`pocket-history-tiles-${pocket.id}`}
+            className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-2"
+          >
             <button
               type="button"
-              className="flex min-h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="flex min-h-11 min-w-0 items-center justify-between gap-2 rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-expanded={historyKind === 'purchase'}
               onClick={() =>
                 setHistoryKind((kind) =>
@@ -276,16 +279,17 @@ function PocketDetail({
                 )
               }
             >
-              <span className="flex items-center gap-2 text-zinc-300">
-                <ArrowDownToLine className="h-4 w-4 text-emerald-400" /> Покупки
+              <span className="flex min-w-0 items-center gap-2 text-zinc-300">
+                <ArrowDownToLine className="shrink-0 h-4 w-4 text-emerald-400" />
+                <span className="truncate">Покупки</span>
               </span>
-              <span className="font-mono text-zinc-100">
+              <span className="shrink-0 whitespace-nowrap font-mono text-zinc-100">
                 {formatCurrency(stats.purchaseTotal)}
               </span>
             </button>
             <button
               type="button"
-              className="flex min-h-11 items-center justify-between rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="flex min-h-11 min-w-0 items-center justify-between gap-2 rounded-lg border border-zinc-700 bg-zinc-950/50 px-3 py-2 text-left text-sm transition hover:border-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               aria-expanded={historyKind === 'transfer'}
               onClick={() =>
                 setHistoryKind((kind) =>
@@ -293,10 +297,11 @@ function PocketDetail({
                 )
               }
             >
-              <span className="flex items-center gap-2 text-zinc-300">
-                <ArrowUpFromLine className="h-4 w-4 text-violet-300" /> Переводы
+              <span className="flex min-w-0 items-center gap-2 text-zinc-300">
+                <ArrowUpFromLine className="shrink-0 h-4 w-4 text-violet-300" />
+                <span className="truncate">Переводы</span>
               </span>
-              <span className="font-mono text-zinc-100">
+              <span className="shrink-0 whitespace-nowrap font-mono text-zinc-100">
                 {formatCurrency(stats.transferTotal)}
               </span>
             </button>

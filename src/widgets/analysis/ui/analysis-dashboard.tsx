@@ -62,6 +62,10 @@ function CategoryBox({
   onSelect,
 }: CategoryBoxProps) {
   const [showTooltip, setShowTooltip] = useState(false)
+  // A tap fires emulated mouse events after the touch; the hover tooltip is
+  // for mouse users only, so it must not appear (and cover a neighbouring
+  // tile) after a tap.
+  const touchedRef = useRef(false)
 
   // Calculate size based on percentage (min 60px/80px, max 120px/160px for mobile/desktop)
   const sizeScale = maxPercent > 0 ? stat.percent / maxPercent : 0
@@ -91,8 +95,17 @@ function CategoryBox({
     <div
       className="relative"
       data-testid={`analysis-category-${stat.name}`}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
+      onTouchStart={() => {
+        touchedRef.current = true
+        setShowTooltip(false)
+      }}
+      onMouseEnter={() => {
+        if (!touchedRef.current) setShowTooltip(true)
+      }}
+      onMouseLeave={() => {
+        touchedRef.current = false
+        setShowTooltip(false)
+      }}
     >
       <button
         type="button"
@@ -107,7 +120,7 @@ function CategoryBox({
         data-color={color}
         className={cn(
           'flex cursor-pointer flex-col items-center justify-center rounded-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500',
-          'h-20 w-20 sm:h-24 sm:w-24 md:h-auto md:w-auto'
+          'h-20 w-20 min-w-0 px-1 sm:h-24 sm:w-24 md:h-auto md:w-auto md:max-w-40 md:px-2'
         )}
         style={{
           // Only apply dynamic size on larger screens
@@ -118,7 +131,11 @@ function CategoryBox({
         }}
       >
         <span className="text-2xl sm:text-3xl">{stat.emoji}</span>
-        <span className="mt-1 text-xs font-medium text-white sm:mt-1 sm:text-sm">
+        <span
+          title={stat.name}
+          data-testid={`analysis-category-name-${stat.name}`}
+          className="mt-1 block w-full max-w-full truncate text-center text-xs font-medium text-white sm:mt-1 sm:text-sm"
+        >
           {stat.name}
         </span>
         <span className="text-xs text-white/80 sm:text-sm">
@@ -135,7 +152,7 @@ function CategoryBox({
       {/* Tooltip */}
       {showTooltip && (
         <div
-          className="absolute -top-24 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-3 py-2 text-xs text-zinc-100 shadow-lg"
+          className="pointer-events-none absolute -top-24 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-zinc-800 px-3 py-2 text-xs text-zinc-100 shadow-lg"
           data-testid={`analysis-tooltip-${stat.name}`}
         >
           <div
@@ -255,7 +272,7 @@ export function AnalysisDashboard() {
           </div>
         </div>
         <span
-          className="text-base font-semibold text-emerald-400 sm:text-lg"
+          className="whitespace-nowrap text-base font-semibold text-emerald-400 sm:text-lg"
           data-testid="analysis-header-total"
         >
           {totalSpent.toLocaleString('ru-RU')} ₽

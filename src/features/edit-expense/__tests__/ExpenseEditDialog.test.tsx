@@ -127,6 +127,43 @@ describe('ExpenseEditDialog', () => {
     })
   })
 
+  it('caps the description field at 200 characters', () => {
+    renderDialog(lunch)
+    expect(screen.getByLabelText('Описание')).toHaveAttribute(
+      'maxLength',
+      '200'
+    )
+  })
+
+  it('lets a legacy long description stay while another field changes', () => {
+    const legacy = 'д'.repeat(500)
+    renderDialog({ ...lunch, description: legacy })
+
+    fireEvent.change(screen.getByLabelText('Дата'), {
+      target: { value: '2026-01-05' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Сохранить' }))
+
+    expect(mockMutate).toHaveBeenCalledWith({
+      id: 'lunch',
+      data: { date: '2026-01-05' },
+    })
+  })
+
+  it('requires shortening a legacy long description once it is edited', () => {
+    const legacy = 'д'.repeat(500)
+    renderDialog({ ...lunch, description: legacy })
+
+    fireEvent.change(screen.getByLabelText('Описание'), {
+      target: { value: legacy.slice(1) },
+    })
+
+    expect(screen.getByRole('button', { name: 'Сохранить' })).toBeDisabled()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Комментарий не длиннее 200 символов'
+    )
+  })
+
   it('keeps save disabled without changes or with an invalid amount', () => {
     renderDialog(lunch)
     const save = screen.getByRole('button', { name: 'Сохранить' })

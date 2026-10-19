@@ -9,6 +9,9 @@ import {
   formatDate,
   getProjectCashOnHand,
   parseAmountInput,
+  EXPENSE_DESCRIPTION_MAX_LENGTH,
+  EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
+  getTextLimitMessage,
   useSubmitLock,
   useFormDraft,
 } from '@/shared/lib'
@@ -250,6 +253,12 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
           updateSuggestion(e.target.value)
         }}
         onBlur={() => updateSuggestion(description)}
+        maxLength={EXPENSE_DESCRIPTION_MAX_LENGTH}
+        error={getTextLimitMessage(
+          description,
+          EXPENSE_DESCRIPTION_MAX_LENGTH,
+          EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE
+        )}
         disabled={isSubmitting || isSavingMapping}
       />
       <MathInput

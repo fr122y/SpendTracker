@@ -8,6 +8,7 @@ import {
   normalizeCategoryUpdate,
   type CategoryUpdate,
 } from '@/shared/lib/category-update'
+import { assertCategoryNameLength } from '@/shared/lib/text-limits'
 
 import type { Category } from '@/shared/types'
 
@@ -37,6 +38,7 @@ export async function addCategory(
   data: Omit<Category, 'id'>
 ): Promise<Category> {
   const userId = await getUserId()
+  assertCategoryNameLength(data.name)
   const id = crypto.randomUUID()
 
   await db.insert(categories).values({
@@ -146,6 +148,10 @@ export async function updateCategory(
     const category = owned.find((item) => item.id === categoryId)
     if (!category) {
       throw new Error('Category not found')
+    }
+
+    if (update.name !== undefined) {
+      assertCategoryNameLength(update.name, category.name)
     }
 
     const next: Category = {
