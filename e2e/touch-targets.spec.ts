@@ -22,6 +22,8 @@ async function expectTouchTarget(target: Locator): Promise<void> {
 }
 
 async function expectEachTouchTarget(targets: Locator): Promise<void> {
+  // Section content mounts after it expands; wait before counting.
+  await expect(targets.first()).toBeVisible(TIMEOUT)
   const count = await targets.count()
   expect(count).toBeGreaterThan(0)
   for (let index = 0; index < count; index++) {
