@@ -265,6 +265,46 @@ test.describe('Touch Target Accessibility Tests', () => {
       )
       await expectEachTouchTarget(categories.getByRole('textbox'))
     })
+
+    test('category colour swatches meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      const categories = await openSection(page, 'Категории', 'CATEGORIES')
+      await categories
+        .getByRole('button', { name: /^Изменить / })
+        .first()
+        .click()
+
+      const picker = categories.getByRole('radiogroup', {
+        name: 'Цвет категории',
+      })
+      await expectEachTouchTarget(picker.getByRole('radio'))
+
+      // Leave edit mode without saving.
+      await categories.getByRole('button', { name: 'Отмена' }).click()
+      await expect(picker).toBeHidden()
+    })
+
+    test('calculator controls meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      await page.getByRole('button', { name: 'Открыть калькулятор' }).click()
+      const calculator = page.getByRole('dialog', { name: 'Калькулятор' })
+
+      await expectTouchTarget(
+        calculator.getByRole('button', { name: 'Скопировать' })
+      )
+      await expectEachTouchTarget(
+        calculator
+          .locator('[aria-label="Значения из «Накоплений»"]')
+          .getByRole('button')
+      )
+
+      await calculator
+        .getByRole('button', { name: 'Закрыть калькулятор' })
+        .click()
+      await expect(calculator).toBeHidden()
+    })
   })
 })
 

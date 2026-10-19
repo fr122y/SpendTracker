@@ -49,7 +49,7 @@ export function CategoryColorPicker({
               title={option.label}
               onClick={() => onChange(option.value)}
               className={cn(
-                'flex h-9 w-9 items-center justify-center rounded-full border-2 text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500',
+                'flex h-11 w-11 items-center justify-center rounded-full border-2 text-white wide:h-9 wide:w-9 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500',
                 isSelected ? 'border-zinc-100' : 'border-transparent',
                 option.value === null && 'text-[10px] font-semibold'
               )}
