@@ -80,7 +80,13 @@ export function PocketOperationForm({
     (value: string) => {
       const normalizedDescription = value.trim()
       setShouldResolveCategory(false)
-      if (!normalizedDescription) return
+      if (!normalizedDescription) {
+        setSuggestedCategoryId(null)
+        setSuggestedCategoryLabel('')
+        setSelectedCategoryId('')
+        setShowCategorySelect(false)
+        return
+      }
 
       const result = categorize(normalizedDescription)
       if (result.found) {
@@ -101,14 +107,16 @@ export function PocketOperationForm({
     [categorize]
   )
 
-  const handleDescriptionBlur = () => {
+  // Recomputed on every description change, not only on blur, so the
+  // suggestion label always matches the category that submit will save.
+  const updateSuggestion = (value: string) => {
     if (!isPurchase || hasManualCategoryOverride) return
     if (!mappingsLoaded) {
       setShouldResolveCategory(true)
       return
     }
 
-    resolveCategory(description)
+    resolveCategory(value)
   }
 
   useEffect(() => {
@@ -228,8 +236,11 @@ export function PocketOperationForm({
         label="Комментарий"
         placeholder={isPurchase ? 'Что купили?' : 'Назначение перевода'}
         value={description}
-        onChange={(event) => setDescription(event.target.value)}
-        onBlur={handleDescriptionBlur}
+        onChange={(event) => {
+          setDescription(event.target.value)
+          updateSuggestion(event.target.value)
+        }}
+        onBlur={() => updateSuggestion(description)}
         maxLength={240}
         disabled={isBusy}
       />

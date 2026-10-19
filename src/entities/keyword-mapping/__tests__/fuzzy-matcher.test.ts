@@ -54,6 +54,18 @@ describe('createMatcher', () => {
     )
   })
 
+  it('does not extend a keyword shorter than 4 letters: «кот» vs «котлеты»', () => {
+    expect(createMatcher([rule('m1', 'кот', 'Питомцы')])('котлеты')).toEqual({
+      found: false,
+    })
+  })
+
+  it('tolerates an ending on a 4+ letter keyword: «продукты» vs «продуктов»', () => {
+    expect(createMatcher([rule('m1', 'продукты', 'Еда')])('продуктов')).toEqual(
+      expect.objectContaining({ found: true, categoryName: 'Еда' })
+    )
+  })
+
   it('returns no match for unknown description', () => {
     expect(createMatcher(mappings)('пылесос')).toEqual({ found: false })
   })
