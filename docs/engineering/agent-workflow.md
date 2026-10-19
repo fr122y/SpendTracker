@@ -141,7 +141,9 @@ security, or architecture:
    exclusions, dependencies, and risks.
 3. Use `$openspec-apply-change` to implement the approved checklist. Keep the
    delta spec aligned with behavior and existing tests. Each commit carries
-   the trailer `Change: <change-id>`.
+   exactly one trailer `Change: <change-id>`; commits outside any change carry
+   `Change: none`, allowed only for `ci`, `build`, `chore`, `docs`, `test`, and
+   `style`.
 4. Run `npm run spec:check` for OpenSpec structure and specs, then
    `npm run validate` for typecheck, lint, and unit/integration tests. On
    every PR the `commitlint` job runs the OpenSpec check and the `verify` job

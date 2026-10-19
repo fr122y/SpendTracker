@@ -50,8 +50,12 @@ points to the guides that hold the rest.
   one.
 - Archive a change with `$openspec-archive-change` in a separate follow-up
   after the Pull Request is merged and checks are confirmed.
-- Every commit of an OpenSpec change, including the archive commit, ends with
-  the trailer `Change: <change-id>`; see
+- Every commit ends with exactly one trailer line `Change: <change-id>` naming
+  an existing OpenSpec change (including the archive commit), or
+  `Change: none` for `ci`, `build`, `chore`, `docs`, `test`, and `style`
+  commits that belong to no change. `feat`, `fix`, `refactor`, and `perf`
+  always name a change; a follow-up or hotfix names the change it fixes.
+  commitlint enforces this; see
   [Trailers](docs/engineering/change-request.md#trailers).
 
 ## Architecture

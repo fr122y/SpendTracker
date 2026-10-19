@@ -26,7 +26,9 @@ What automated and manual checks were run?
 ## References
 
 Issue, documentation, or related pull request. `Change: <change-id>` and
-`Refs: <task-id>` belong in the commit message, not only here.
+`Refs: <task-id>` belong in the commit message, not only here. Every commit
+carries exactly one `Change: <change-id>`, or `Change: none` for ci, build,
+chore, docs, test, and style commits outside any change.
 
 ## Related issue (if any)
 
