@@ -366,6 +366,14 @@ describe('CategoryManager', () => {
     )
   })
 
+  it('truncates a category name in the list and keeps it in the title', () => {
+    render(<CategoryManager />)
+
+    const name = screen.getAllByTestId(/^category-name-/)[0]
+    expect(name).toHaveClass('truncate', 'min-w-0')
+    expect(name).toHaveAttribute('title', name.textContent)
+  })
+
   it('adds new category when form is submitted', async () => {
     render(<CategoryManager />)
 

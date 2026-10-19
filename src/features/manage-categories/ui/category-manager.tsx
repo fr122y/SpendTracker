@@ -300,11 +300,15 @@ export function CategoryManager() {
                 key={category.id}
                 className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
               >
-                <div className="flex min-w-0 flex-col gap-1">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex min-w-0 items-center gap-3">
                     <CategoryColorDot category={category} />
-                    <span className="text-xl">{category.emoji}</span>
-                    <span className="min-w-0 text-zinc-200 [overflow-wrap:anywhere]">
+                    <span className="shrink-0 text-xl">{category.emoji}</span>
+                    <span
+                      title={category.name}
+                      data-testid={`category-name-${category.id}`}
+                      className="min-w-0 truncate text-zinc-200"
+                    >
                       {category.name}
                     </span>
                   </div>
@@ -314,7 +318,7 @@ export function CategoryManager() {
                     onDelete={(id) => deleteKeywordMapping.mutate(id)}
                   />
                 </div>
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                   <Button
                     type="button"
                     variant="ghost"
@@ -456,11 +460,15 @@ export function CategoryManager() {
                   key={category.id}
                   className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
                 >
-                  <div className="flex min-w-0 flex-col gap-1">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex min-w-0 items-center gap-3">
                       <CategoryColorDot category={category} />
-                      <span className="text-xl">{category.emoji}</span>
-                      <span className="min-w-0 text-zinc-200 [overflow-wrap:anywhere]">
+                      <span className="shrink-0 text-xl">{category.emoji}</span>
+                      <span
+                        title={category.name}
+                        data-testid={`category-name-${category.id}`}
+                        className="min-w-0 truncate text-zinc-200"
+                      >
                         {category.name}
                       </span>
                     </div>
@@ -470,7 +478,7 @@ export function CategoryManager() {
                       onDelete={(id) => deleteSharedKeywordMapping.mutate(id)}
                     />
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row">
+                  <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
                     <Button
                       type="button"
                       variant="ghost"
