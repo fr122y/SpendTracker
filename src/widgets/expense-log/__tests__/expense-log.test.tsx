@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { ExpenseLog } from '../ui/expense-log'
 
 import type { Expense, Pocket } from '@/shared/types'
@@ -176,6 +178,9 @@ jest.mock('@/shared/ui', () => ({
     )
   ),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('ExpenseLog', () => {
   beforeEach(() => {

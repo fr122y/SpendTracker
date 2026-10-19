@@ -1,5 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { CreatePocketForm } from '../ui/create-pocket-form'
 import { RenamePocketForm } from '../ui/rename-pocket-form'
 
@@ -28,6 +30,9 @@ jest.mock('@/entities/pocket', () => ({
 }))
 
 const CONFLICT_MESSAGE = 'Карман с таким названием уже есть'
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('pocket name forms', () => {
   beforeEach(() => {

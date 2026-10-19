@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { POCKET_PURCHASE_HINT } from '@/entities/pocket/model/hints'
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
 
 import { ExpenseForm } from '../ui/expense-form'
 
@@ -112,6 +113,9 @@ jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: new Date('2025-01-15') }),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('ExpenseForm', () => {
   beforeEach(() => {

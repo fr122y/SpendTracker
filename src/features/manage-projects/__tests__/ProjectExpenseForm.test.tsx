@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { ProjectExpenseForm } from '../ui/project-expense-form'
 
 const mockAddExpense = jest.fn()
@@ -38,6 +40,9 @@ jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: new Date('2025-01-15') }),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('ProjectExpenseForm', () => {
   const projectId = 'project-1'
