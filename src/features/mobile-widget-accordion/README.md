@@ -12,6 +12,13 @@ Collapsible accordion interface for mobile dashboard navigation. Replaces modal-
 - **CSS Grid Animation**: Smooth transitions using `grid-template-rows` (no external animation libraries)
 - **Keyboard Accessible**: Full keyboard navigation support with proper ARIA attributes
 - **Chevron Indicators**: Dynamic icons (ChevronDown/ChevronUp) based on expansion state
+- **Lazy Mounting**: A collapsed widget is not mounted until its first
+  expansion, so it fetches no data; once opened it stays mounted to keep its
+  state
+- **Inert When Collapsed**: Collapsed content has `inert`, so it is neither
+  focusable nor read by assistive technology
+- **Item Anchor**: Each section has `data-accordion-item={widgetId}` for
+  scroll-to-widget
 - **No State Persistence**: Expansion state is managed by parent component (not persisted to localStorage)
 
 ## Props
@@ -79,6 +86,7 @@ The inner wrapper uses `overflow-hidden` to hide content during collapse.
 ## Design Decisions
 
 1. **Set-based State**: Uses Set for O(1) lookup performance on expansion checks
-2. **Parent-Controlled**: Stateless component, parent manages expansion state
+2. **Parent-Controlled**: Parent manages expansion state; the component only
+   remembers which widgets were opened, to keep them mounted
 3. **No Persistence**: Unlike layout configuration, accordion state is ephemeral
 4. **CSS-only Animation**: Avoids JavaScript animation libraries for performance

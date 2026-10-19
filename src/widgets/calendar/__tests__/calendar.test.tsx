@@ -1,5 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 
+import { subscribeWidgetReveal } from '@/shared/lib'
+
 import { Calendar } from '../ui/calendar'
 
 // Mock query hooks with legacy aliases for the current component implementation
@@ -190,6 +192,17 @@ describe('Calendar', () => {
       fireEvent.click(day15)
 
       expect(mockSetSelectedDate).toHaveBeenCalled()
+    })
+
+    it('asks the layout to reveal the journal when a day is tapped', () => {
+      const listener = jest.fn()
+      const unsubscribe = subscribeWidgetReveal(listener)
+      render(<Calendar />)
+
+      fireEvent.click(screen.getAllByText('15')[0])
+
+      expect(listener).toHaveBeenCalledWith('EXPENSE_LOG')
+      unsubscribe()
     })
   })
 
