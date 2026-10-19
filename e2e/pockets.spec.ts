@@ -395,10 +395,21 @@ test.describe('Pockets', () => {
     ) {
       await pocketsToggle.click()
     }
+    // The section mounts fresh, so open the pocket and its history again.
+    await openPocket()
+    if ((await toggle.getAttribute('aria-expanded', TIMEOUT)) !== 'true') {
+      await toggle.click()
+    }
     await expect(row).toBeVisible(TIMEOUT)
     await expectNoHorizontalScroll(page)
     await page.setViewportSize({ width: 1280, height: 720 })
-    await toggle.click()
+    // The desktop tree remounts; collapse the history only if it is open.
+    if (
+      (await toggle.isVisible()) &&
+      (await toggle.getAttribute('aria-expanded')) === 'true'
+    ) {
+      await toggle.click()
+    }
   })
 
   test('should record a purchase from the journal form', async () => {
