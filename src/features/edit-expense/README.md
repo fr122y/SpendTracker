@@ -17,11 +17,14 @@ including a move to another day or month.
 ## Rules
 
 - Operations of an archived pocket open read-only with the archive hint.
-- Changing the category does not create or change keyword rules.
+- Changing the category saves an `exact` keyword rule for the whole final
+  description (`useSaveKeywordMapping`); it does not affect other
+  descriptions.
 - Moving a record to another period needs no extra cache work: every period
   derives from the one expense list, which the update refetches.
 
 ## Dependencies
 
-- Uses: `@/entities/expense`, `@/entities/category`, `@/entities/pocket`
+- Uses: `@/entities/expense`, `@/entities/category`, `@/entities/pocket`,
+  `@/entities/keyword-mapping`
 - Uses: `@/shared/ui`, `@/shared/lib`

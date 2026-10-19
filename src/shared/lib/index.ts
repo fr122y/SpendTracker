@@ -123,3 +123,5 @@ export {
   type CategoryColor,
 } from './category-color'
 export { countGraphemes, limitGraphemes } from './grapheme'
+
+export { normalizeKeywordPhrase } from './keyword-phrase'

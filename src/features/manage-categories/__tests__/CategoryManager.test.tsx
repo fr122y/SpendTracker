@@ -112,6 +112,46 @@ jest.mock('@/entities/category', () => ({
     }),
 }))
 
+const mockDeleteRule = jest.fn()
+const mockDeleteSharedRule = jest.fn()
+let mockRules = [
+  {
+    id: 'rule-1',
+    keyword: 'ресторан',
+    matchType: 'fuzzy' as const,
+    categoryId: '1',
+    categoryName: 'Продукты',
+    categoryEmoji: '🛒',
+  },
+  {
+    id: 'rule-2',
+    keyword: 'такси домой',
+    matchType: 'exact' as const,
+    categoryId: '2',
+    categoryName: 'Транспорт',
+    categoryEmoji: '🚕',
+  },
+]
+const mockSharedRules = [
+  {
+    id: 'shared-rule-1',
+    keyword: 'кофе',
+    matchType: 'exact' as const,
+    categoryId: 'shared-category-2',
+    categoryName: 'Кафе',
+    categoryEmoji: '☕',
+  },
+]
+
+jest.mock('@/entities/keyword-mapping', () => ({
+  useKeywordMappings: () => ({ data: mockRules }),
+  useDeleteKeywordMapping: () => ({ mutate: mockDeleteRule }),
+  useSharedKeywordMappings: (sharedBudgetId: string | undefined) => ({
+    data: sharedBudgetId ? mockSharedRules : [],
+  }),
+  useDeleteSharedKeywordMapping: () => ({ mutate: mockDeleteSharedRule }),
+}))
+
 jest.mock('@/entities/shared-budget', () => ({
   getActiveSharedBudget: (budgets: typeof mockSharedBudgets) =>
     budgets.find((budget) => budget.isActive),
@@ -577,5 +617,51 @@ describe('CategoryManager', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
 
     expect(screen.getByText('Нет общих бюджетов')).toBeInTheDocument()
+  })
+
+  it('lists rules of a personal category and deletes one', () => {
+    render(<CategoryManager />)
+
+    expect(screen.queryByText('ресторан')).not.toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Правила категории Продукты: 1' })
+    )
+
+    expect(screen.getByText('ресторан')).toBeInTheDocument()
+    expect(screen.getByText('по слову')).toBeInTheDocument()
+    expect(screen.queryByText('такси домой')).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Удалить правило «ресторан»' })
+    )
+    expect(mockDeleteRule).toHaveBeenCalledWith('rule-1')
+  })
+
+  it('shows an empty rules hint for a category without rules', () => {
+    const allRules = mockRules
+    mockRules = []
+    render(<CategoryManager />)
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Правила категории Другое: 0' })
+    )
+    expect(screen.getByText(/Правил нет/)).toBeInTheDocument()
+    mockRules = allRules
+  })
+
+  it('lists and deletes rules of a shared category', () => {
+    render(<CategoryManager />)
+    fireEvent.click(screen.getByRole('button', { name: 'Общие' }))
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Правила категории Кафе: 1' })
+    )
+    expect(screen.getByText('вся фраза')).toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Удалить правило «кофе»' })
+    )
+    expect(mockDeleteSharedRule).toHaveBeenCalledWith('shared-rule-1')
+    expect(mockDeleteRule).not.toHaveBeenCalled()
   })
 })

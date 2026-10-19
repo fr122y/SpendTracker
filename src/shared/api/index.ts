@@ -20,6 +20,7 @@ export {
 export {
   getSharedKeywordMappings,
   saveSharedKeywordMapping,
+  deleteSharedKeywordMapping,
 } from './shared-keyword-actions'
 export { getProjects, addProject, deleteProject } from './project-actions'
 export {

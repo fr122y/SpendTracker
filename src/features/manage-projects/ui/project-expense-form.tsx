@@ -33,6 +33,8 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
   const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useState('')
   const [showCategorySelect, setShowCategorySelect] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [hasManualCategoryOverride, setHasManualCategoryOverride] =
+    useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
@@ -69,12 +71,22 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
     setSuggestedCategoryLabel('')
     setShowCategorySelect(false)
     setSelectedCategoryId('')
+    setHasManualCategoryOverride(false)
   }
 
-  const handleDescriptionBlur = () => {
-    if (isMovement || !mappingsLoaded) return
-    const normalizedDescription = description.trim()
-    if (!normalizedDescription) return
+  // Recomputed on every description change, not only on blur, so the
+  // suggestion label always matches the category that submit will save.
+  // A manually chosen category is never overwritten.
+  const updateSuggestion = (value: string) => {
+    if (isMovement || !mappingsLoaded || hasManualCategoryOverride) return
+    const normalizedDescription = value.trim()
+    if (!normalizedDescription) {
+      setSuggestedCategoryId(null)
+      setSuggestedCategoryLabel('')
+      setShowCategorySelect(false)
+      setSelectedCategoryId('')
+      return
+    }
 
     const result = categorize(normalizedDescription)
     if (result.found) {
@@ -212,8 +224,11 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
       <Input
         placeholder="Описание расхода"
         value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        onBlur={handleDescriptionBlur}
+        onChange={(e) => {
+          setDescription(e.target.value)
+          updateSuggestion(e.target.value)
+        }}
+        onBlur={() => updateSuggestion(description)}
         disabled={isSubmitting || isSavingMapping}
       />
       <MathInput
@@ -248,7 +263,10 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
           aria-label="Категория"
           options={categoryOptions}
           value={selectedCategoryId}
-          onChange={(e) => setSelectedCategoryId(e.target.value)}
+          onChange={(e) => {
+            setSelectedCategoryId(e.target.value)
+            setHasManualCategoryOverride(true)
+          }}
           placeholder="Выберите категорию"
           disabled={isSubmitting || isSavingMapping}
         />

@@ -15,6 +15,12 @@ import {
   useUpdateSharedBudgetCategory,
 } from '@/entities/category'
 import {
+  useDeleteKeywordMapping,
+  useDeleteSharedKeywordMapping,
+  useKeywordMappings,
+  useSharedKeywordMappings,
+} from '@/entities/keyword-mapping'
+import {
   getActiveSharedBudget,
   useSharedBudgets,
 } from '@/entities/shared-budget'
@@ -28,6 +34,7 @@ import { Button, ConfirmDialog, EmptyState, Input, Select } from '@/shared/ui'
 
 import { CategoryColorPicker } from './category-color-picker'
 import { CategoryManagerSkeleton } from './category-manager-skeleton'
+import { CategoryRules, groupRulesByCategory } from './category-rules'
 
 import type { Category, SharedBudgetCategory } from '@/shared/types'
 
@@ -84,6 +91,22 @@ export function CategoryManager() {
   )
   const archiveSharedCategory = useArchiveSharedBudgetCategory(
     selectedSharedBudget?.id ?? ''
+  )
+  const { data: keywordMappings = [] } = useKeywordMappings()
+  const deleteKeywordMapping = useDeleteKeywordMapping()
+  const { data: sharedKeywordMappings = [] } = useSharedKeywordMappings(
+    mode === 'shared' ? selectedSharedBudget?.id : undefined
+  )
+  const deleteSharedKeywordMapping = useDeleteSharedKeywordMapping(
+    selectedSharedBudget?.id ?? ''
+  )
+  const rulesByCategory = useMemo(
+    () => groupRulesByCategory(keywordMappings),
+    [keywordMappings]
+  )
+  const sharedRulesByCategory = useMemo(
+    () => groupRulesByCategory(sharedKeywordMappings),
+    [sharedKeywordMappings]
   )
 
   useEffect(() => {
@@ -263,12 +286,19 @@ export function CategoryManager() {
             {categories.map((category) => (
               <li
                 key={category.id}
-                className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
+                className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
               >
-                <div className="flex items-center gap-3">
-                  <CategoryColorDot category={category} />
-                  <span className="text-xl">{category.emoji}</span>
-                  <span className="text-zinc-200">{category.name}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-3">
+                    <CategoryColorDot category={category} />
+                    <span className="text-xl">{category.emoji}</span>
+                    <span className="text-zinc-200">{category.name}</span>
+                  </div>
+                  <CategoryRules
+                    categoryName={category.name}
+                    rules={rulesByCategory.get(category.id) ?? []}
+                    onDelete={(id) => deleteKeywordMapping.mutate(id)}
+                  />
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <Button
@@ -401,12 +431,19 @@ export function CategoryManager() {
               {sharedCategories.map((category) => (
                 <li
                   key={category.id}
-                  className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:p-3"
+                  className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
                 >
-                  <div className="flex items-center gap-3">
-                    <CategoryColorDot category={category} />
-                    <span className="text-xl">{category.emoji}</span>
-                    <span className="text-zinc-200">{category.name}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                      <CategoryColorDot category={category} />
+                      <span className="text-xl">{category.emoji}</span>
+                      <span className="text-zinc-200">{category.name}</span>
+                    </div>
+                    <CategoryRules
+                      categoryName={category.name}
+                      rules={sharedRulesByCategory.get(category.id) ?? []}
+                      onDelete={(id) => deleteSharedKeywordMapping.mutate(id)}
+                    />
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row">
                     <Button

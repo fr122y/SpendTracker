@@ -119,6 +119,7 @@ describe('ExpenseForm', () => {
     mockPockets = []
     mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
     mockExpenses = []
+    mockCategorize.mockReturnValue({ found: false })
     mockCategorizeShared.mockReturnValue({ found: false })
     mockSaveSharedMapping.mockResolvedValue(undefined)
     mockSharedBudgets = [
@@ -155,7 +156,7 @@ describe('ExpenseForm', () => {
   })
 
   it('shows suggested category on description blur when match is found', async () => {
-    mockCategorize.mockReturnValueOnce({
+    mockCategorize.mockReturnValue({
       found: true,
       categoryId: '1',
       categoryName: 'Продукты',
@@ -175,8 +176,60 @@ describe('ExpenseForm', () => {
     })
   })
 
+  it('updates the suggestion while typing, without blur', async () => {
+    mockCategorize.mockImplementation((description: string) =>
+      description === 'такси'
+        ? {
+            found: true,
+            categoryId: '2',
+            categoryName: 'Транспорт',
+            categoryEmoji: '🚕',
+          }
+        : {
+            found: true,
+            categoryId: '1',
+            categoryName: 'Продукты',
+            categoryEmoji: '🛒',
+          }
+    )
+
+    render(<ExpenseForm />)
+    const input = screen.getByPlaceholderText(/описание/i)
+
+    fireEvent.change(input, { target: { value: 'молоко' } })
+    expect(screen.getByText(/🛒 Продукты/)).toBeInTheDocument()
+
+    fireEvent.change(input, { target: { value: 'такси' } })
+    expect(screen.getByText(/🚕 Транспорт/)).toBeInTheDocument()
+    expect(screen.queryByText(/🛒 Продукты/)).not.toBeInTheDocument()
+  })
+
+  it('keeps a manually chosen category while the description changes', async () => {
+    mockCategorize.mockReturnValue({ found: false })
+
+    render(<ExpenseForm />)
+    const input = screen.getByPlaceholderText(/описание/i)
+
+    fireEvent.change(input, { target: { value: 'что-то' } })
+    fireEvent.change(screen.getByLabelText(/категория/i), {
+      target: { value: '2' },
+    })
+    mockCategorize.mockReturnValue({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
+    mockCategorize.mockClear()
+
+    fireEvent.change(input, { target: { value: 'молоко' } })
+
+    expect(mockCategorize).not.toHaveBeenCalled()
+    expect(screen.getByLabelText(/категория/i)).toHaveValue('2')
+  })
+
   it('shows category select when no match is found', async () => {
-    mockCategorize.mockReturnValueOnce({ found: false })
+    mockCategorize.mockReturnValue({ found: false })
 
     render(<ExpenseForm />)
 
@@ -191,7 +244,7 @@ describe('ExpenseForm', () => {
   })
 
   it('submits with suggested category without saving mapping', async () => {
-    mockCategorize.mockReturnValueOnce({
+    mockCategorize.mockReturnValue({
       found: true,
       categoryId: '1',
       categoryName: 'Продукты',
@@ -227,7 +280,7 @@ describe('ExpenseForm', () => {
 
   describe('amount input (T-036)', () => {
     const fillDescription = () => {
-      mockCategorize.mockReturnValueOnce({
+      mockCategorize.mockReturnValue({
         found: true,
         categoryId: '1',
         categoryName: 'Продукты',
@@ -420,7 +473,7 @@ describe('ExpenseForm', () => {
   })
 
   it('shows suggested shared category on description blur when match is found', async () => {
-    mockCategorizeShared.mockReturnValueOnce({
+    mockCategorizeShared.mockReturnValue({
       found: true,
       categoryId: 'shared-category-1',
       categoryName: 'Продукты общие',
@@ -446,7 +499,7 @@ describe('ExpenseForm', () => {
   })
 
   it('submits shared expense with suggested category without saving mapping', async () => {
-    mockCategorizeShared.mockReturnValueOnce({
+    mockCategorizeShared.mockReturnValue({
       found: true,
       categoryId: 'shared-category-1',
       categoryName: 'Продукты общие',
@@ -498,7 +551,7 @@ describe('ExpenseForm', () => {
         createdAt: '2026-01-01T00:00:00.000Z',
       },
     ]
-    mockCategorizeShared.mockReturnValueOnce({
+    mockCategorizeShared.mockReturnValue({
       found: true,
       categoryId: 'shared-category-1',
       categoryName: 'Продукты общие',
@@ -670,7 +723,7 @@ describe('ExpenseForm', () => {
   })
 
   it('creates a direct project expense from the project expense scenario', async () => {
-    mockCategorize.mockReturnValueOnce({
+    mockCategorize.mockReturnValue({
       found: true,
       categoryId: '1',
       categoryName: 'Продукты',

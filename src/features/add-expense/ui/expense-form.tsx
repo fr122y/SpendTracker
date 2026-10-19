@@ -195,11 +195,17 @@ export function ExpenseForm() {
     setSelectedCategoryId('')
   }
 
-  const handleDescriptionBlur = () => {
+  // Recomputed on every description change, not only on blur, so the
+  // suggestion label always matches the category that submit will save.
+  // A manually chosen category is never overwritten.
+  const updateSuggestion = (value: string) => {
     if (isMovement) return
-    const normalizedDescription = description.trim()
-    if (!normalizedDescription) return
     if (hasManualCategoryOverride) return
+    const normalizedDescription = value.trim()
+    if (!normalizedDescription) {
+      resetCategorySelection()
+      return
+    }
 
     if (isSharedExpense) {
       if (!sharedMappingsLoaded) return
@@ -510,8 +516,11 @@ export function ExpenseForm() {
         placeholder="Описание расхода"
         aria-label="Описание расхода"
         value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        onBlur={handleDescriptionBlur}
+        onChange={(e) => {
+          setDescription(e.target.value)
+          updateSuggestion(e.target.value)
+        }}
+        onBlur={() => updateSuggestion(description)}
         disabled={isSubmitting || isSavingAnyMapping}
       />
       <MathInput

@@ -44,6 +44,7 @@ describe('ProjectExpenseForm', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockCategorize.mockReturnValue({ found: false })
     mockExpenses = [
       {
         id: 'withdrawal-1',
@@ -69,7 +70,7 @@ describe('ProjectExpenseForm', () => {
   })
 
   it('adds project expense with suggested category', async () => {
-    mockCategorize.mockReturnValueOnce({
+    mockCategorize.mockReturnValue({
       found: true,
       categoryId: '1',
       categoryName: 'Продукты',

@@ -10,15 +10,18 @@ jest.mock('drizzle-orm', () => ({
 jest.mock('@/shared/db', () => {
   const mocks = {
     selectWhere: jest.fn(),
+    categoryWhere: jest.fn(),
+    onConflictDoUpdate: jest.fn(),
     insertValues: jest.fn(),
     insertReturning: jest.fn(),
     deleteWhere: jest.fn(),
   }
 
+  mocks.onConflictDoUpdate.mockImplementation(() => ({
+    returning: mocks.insertReturning,
+  }))
   mocks.insertValues.mockReturnValue({
-    onConflictDoUpdate: jest.fn(() => ({
-      returning: mocks.insertReturning,
-    })),
+    onConflictDoUpdate: mocks.onConflictDoUpdate,
   })
 
   const db = {
@@ -27,6 +30,7 @@ jest.mock('@/shared/db', () => {
         innerJoin: jest.fn(() => ({
           where: mocks.selectWhere,
         })),
+        where: mocks.categoryWhere,
       })),
     })),
     insert: jest.fn(() => ({
@@ -44,12 +48,14 @@ jest.mock('@/shared/db', () => {
       id: 'category.id',
       name: 'category.name',
       emoji: 'category.emoji',
+      userId: 'category.userId',
     },
     keywordMappings: {
       id: 'keyword.id',
       userId: 'keyword.userId',
       keyword: 'keyword.keyword',
       categoryId: 'keyword.categoryId',
+      matchType: 'keyword.matchType',
     },
   }
 })
@@ -66,6 +72,8 @@ describe('keyword-actions', () => {
   const dbModule = jest.requireMock('@/shared/db') as {
     __mocks: {
       selectWhere: jest.Mock
+      categoryWhere: jest.Mock
+      onConflictDoUpdate: jest.Mock
       insertValues: jest.Mock
       insertReturning: jest.Mock
       deleteWhere: jest.Mock
@@ -75,6 +83,7 @@ describe('keyword-actions', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     ;(auth as jest.Mock).mockResolvedValue({ user: { id: 'user-1' } })
+    dbModule.__mocks.categoryWhere.mockResolvedValue([{ id: 'c1' }])
   })
 
   it('returns joined keyword mappings for current user', async () => {
@@ -113,6 +122,12 @@ describe('keyword-actions', () => {
         userId: 'user-1',
         categoryId: 'c1',
         keyword: 'молоко',
+        matchType: 'exact',
+      })
+    )
+    expect(dbModule.__mocks.onConflictDoUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        set: { categoryId: 'c1', matchType: 'exact' },
       })
     )
     expect(result).toEqual(
@@ -122,6 +137,26 @@ describe('keyword-actions', () => {
         categoryName: 'Продукты',
       })
     )
+  })
+
+  it('collapses inner whitespace of the phrase', async () => {
+    dbModule.__mocks.insertReturning.mockResolvedValueOnce([{ id: 'm1' }])
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([{ id: 'm1' }])
+
+    await saveKeywordMapping('  Кофе   С  собой ', 'c1')
+
+    expect(dbModule.__mocks.insertValues).toHaveBeenCalledWith(
+      expect.objectContaining({ keyword: 'кофе с собой' })
+    )
+  })
+
+  it('rejects a category the user does not own', async () => {
+    dbModule.__mocks.categoryWhere.mockResolvedValueOnce([])
+
+    await expect(saveKeywordMapping('кофе', 'foreign')).rejects.toThrow(
+      'Category not found'
+    )
+    expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
   })
 
   it('throws for empty keyword', async () => {

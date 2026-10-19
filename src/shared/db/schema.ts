@@ -16,7 +16,7 @@ import {
   uniqueIndex,
 } from 'drizzle-orm/pg-core'
 
-import type { LayoutConfig } from '@/shared/types'
+import type { KeywordMatchType, LayoutConfig } from '@/shared/types'
 import type { AdapterAccountType } from '@auth/core/adapters'
 
 /** Money in rubles with kopecks; Drizzle maps it to a JS number. */
@@ -347,6 +347,10 @@ export const sharedBudgetKeywordMappings = pgTable(
     sharedBudgetCategoryId: text('sharedBudgetCategoryId')
       .notNull()
       .references(() => sharedBudgetCategories.id, { onDelete: 'cascade' }),
+    matchType: text('matchType')
+      .$type<KeywordMatchType>()
+      .notNull()
+      .default('fuzzy'),
     createdAt: timestamp('createdAt', { mode: 'date' })
       .notNull()
       .default(sql`now()`),
@@ -354,6 +358,10 @@ export const sharedBudgetKeywordMappings = pgTable(
   (table) => [
     index('shared_budget_keyword_mapping_budget_idx').on(table.sharedBudgetId),
     unique().on(table.sharedBudgetId, table.keyword),
+    check(
+      'shared_budget_keyword_mapping_match_type_check',
+      sql`${table.matchType} IN ('exact', 'fuzzy')`
+    ),
   ]
 )
 
@@ -488,11 +496,21 @@ export const keywordMappings = pgTable(
     categoryId: text('categoryId')
       .notNull()
       .references(() => categories.id, { onDelete: 'cascade' }),
+    matchType: text('matchType')
+      .$type<KeywordMatchType>()
+      .notNull()
+      .default('fuzzy'),
     createdAt: timestamp('createdAt', { mode: 'date' })
       .notNull()
       .default(sql`now()`),
   },
-  (table) => [unique().on(table.userId, table.keyword)]
+  (table) => [
+    unique().on(table.userId, table.keyword),
+    check(
+      'keyword_mapping_match_type_check',
+      sql`${table.matchType} IN ('exact', 'fuzzy')`
+    ),
+  ]
 )
 
 export const projects = pgTable(

@@ -10,7 +10,8 @@
 - `useKeywordMappingStore`
 - `useSharedKeywordMappings`
 - `useSaveSharedKeywordMapping`
-- `createMatcher`
+- `useDeleteSharedKeywordMapping`
+- `createMatcher`: порядок — правило `exact`, равное всей нормализованной фразе; затем `fuzzy` целыми словами; затем однословное `fuzzy` с той же основой и другим известным русским окончанием или с опечаткой у целого слова (без подстрок внутри слова)
 
 ## State & Actions
 
@@ -19,7 +20,8 @@
 - Общие query-данные: список `SharedKeywordMapping[]` из Server Action
   `getSharedKeywordMappings(sharedBudgetId)`
 - Личные мутации: `saveKeywordMapping` (upsert) и `deleteKeywordMapping`
-- Общие мутации: `saveSharedKeywordMapping` (upsert внутри общего бюджета)
+- Общие мутации: `saveSharedKeywordMapping` (upsert внутри общего бюджета) и `deleteSharedKeywordMapping`
+- Ручной выбор категории сохраняет правило `exact` (`matchType`); дефолтные и старые правила — `fuzzy`
 - Все user-visible мутации используют optimistic update + rollback + invalidate
 - Общие маппинги принадлежат shared budget, доступны всем его участникам и
   могут ссылаться только на активные категории этого же shared budget
@@ -28,4 +30,4 @@
 
 - `@/shared/api` (`keyword-actions`, `queryKeys`)
 - `@/shared/types`
-- `fuse.js` для fuzzy matching
+- `@/shared/lib` (`normalizeKeywordPhrase`)
