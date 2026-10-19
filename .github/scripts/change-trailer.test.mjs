@@ -1,12 +1,19 @@
 import assert from 'node:assert/strict'
+import { mkdirSync, mkdtempSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, describe, it } from 'node:test'
 
 import {
   buildSummary,
+  buildUnknownSummary,
   changeIdFromPath,
   collectTouchedChangeIds,
   collectTrailerIds,
   findMissing,
+  findUnknown,
+  isIgnoredCommit,
+  knownChangeIds,
   main,
   parseChangeTrailers,
 } from './change-trailer.mjs'
@@ -276,9 +283,96 @@ describe('buildSummary', () => {
   })
 })
 
+/** Creates a repository root with the given active and archived changes. */
+function fixtureRoot({ active = [], archived = [] } = {}) {
+  const root = mkdtempSync(join(tmpdir(), 'change-trailer-'))
+  for (const name of active) {
+    mkdirSync(join(root, 'openspec/changes', name), { recursive: true })
+  }
+  for (const name of archived) {
+    mkdirSync(join(root, 'openspec/changes/archive', name), { recursive: true })
+  }
+  return root
+}
+
+describe('knownChangeIds', () => {
+  it('lists active and archived changes without the date prefix', () => {
+    const root = fixtureRoot({
+      active: ['add-foo'],
+      archived: ['2026-10-13-old-change', 'no-date'],
+    })
+    assert.deepEqual([...knownChangeIds(root)].sort(), [
+      'add-foo',
+      'no-date',
+      'old-change',
+    ])
+  })
+
+  it('returns nothing without an openspec folder', () => {
+    assert.equal(knownChangeIds(fixtureRoot()).size, 0)
+  })
+})
+
+describe('isIgnoredCommit', () => {
+  const commit = (message, parents = [{}]) => ({ commit: { message }, parents })
+  it('skips merges, reverts, fixup, squash, and amend commits', () => {
+    assert.equal(isIgnoredCommit(commit('x', [{}, {}])), true)
+    assert.equal(isIgnoredCommit(commit("Merge branch 'main' into x")), true)
+    assert.equal(isIgnoredCommit(commit('Revert "feat(ui): x"')), true)
+    assert.equal(isIgnoredCommit(commit('fixup! feat(ui): x')), true)
+    assert.equal(isIgnoredCommit(commit('squash! feat(ui): x')), true)
+    assert.equal(isIgnoredCommit(commit('amend! feat(ui): x')), true)
+  })
+
+  it('checks ordinary commits', () => {
+    assert.equal(isIgnoredCommit(commit('feat(ui): x')), false)
+    assert.equal(isIgnoredCommit(commit('revert(ui): x')), false)
+  })
+})
+
+describe('findUnknown', () => {
+  const commits = (...messages) =>
+    messages.map((message) => ({ commit: { message }, parents: [{}] }))
+  const known = new Set(['add-foo'])
+
+  it('returns ids that name no known change, sorted and once', () => {
+    assert.deepEqual(
+      findUnknown(
+        commits(
+          'a\n\nChange: zz-missing',
+          'b\n\nChange: add-foo',
+          'c\n\nChange: aa-missing',
+          'd\n\nChange: zz-missing'
+        ),
+        known
+      ),
+      ['aa-missing', 'zz-missing']
+    )
+  })
+
+  it('accepts none and skips ignored commits', () => {
+    assert.deepEqual(
+      findUnknown(
+        commits('a\n\nChange: none', 'Merge x\n\nChange: gone'),
+        known
+      ),
+      []
+    )
+  })
+})
+
+describe('buildUnknownSummary', () => {
+  it('lists each unknown trailer and the rule for none', () => {
+    const summary = buildUnknownSummary(['gone'])
+    assert.match(summary, /^- `Change: gone`$/m)
+    assert.match(summary, /`Change: none` only for/)
+  })
+})
+
 describe('main', () => {
   const HEAD = 'b'.repeat(40)
   const env = {
+    REPO_ROOT: fixtureRoot({ archived: ['2026-10-01-older-change'] }),
     GITHUB_REPOSITORY: 'owner/repo',
     GITHUB_TOKEN: 'token',
     GITHUB_API_URL: 'https://api.invalid',
@@ -318,6 +412,7 @@ describe('main', () => {
           ? HEAD
           : String(index).padStart(40, '0')),
       commit: { message },
+      parents: [{}],
     }))
     const page = (items, path) => {
       const number = Number(
@@ -347,19 +442,61 @@ describe('main', () => {
     return { requested, lines }
   }
 
-  it('passes a pull request that touches no change folder with one line', async () => {
+  it('passes a pull request that touches no change folder', async () => {
     const { requested, lines } = stub({
       files: [{ filename: 'src/a.ts', status: 'modified' }],
-      messages: ['fix(ui): x'],
+      messages: [
+        'fix(ui): x\n\nChange: older-change',
+        'ci(ci): y\n\nChange: none',
+      ],
     })
     assert.equal(await main(env), 0)
-    assert.deepEqual(lines, [
-      'change-trailer: no OpenSpec change folder touched.',
-    ])
+    assert.match(lines.join('\n'), /changes touched: none/)
+    assert.match(lines.join('\n'), /in 2 commit\(s\): older-change/)
     assert.equal(
       requested.some((path) => path.includes('/commits')),
-      false
+      true
     )
+  })
+
+  it('fails on a trailer that names no existing change', async () => {
+    const { lines } = stub({
+      files: [{ filename: 'src/a.ts', status: 'modified' }],
+      messages: ['fix(ui): x\n\nChange: typo-change'],
+    })
+    assert.equal(await main(env), 1)
+    assert.match(lines.join('\n'), /do not exist:\n {2}Change: typo-change/)
+  })
+
+  it('accepts an id the pull request adds itself', async () => {
+    stub({
+      files: [CHANGE_FILE],
+      messages: [
+        'ci(ci): x\n\nChange: add-foo',
+        'ci(ci): y\n\nChange: add-foo',
+      ],
+    })
+    assert.equal(await main(env), 0)
+  })
+
+  it('does not let Change: none satisfy a touched change folder', async () => {
+    const { lines } = stub({
+      files: [CHANGE_FILE],
+      messages: ['docs(docs): x\n\nChange: none'],
+    })
+    assert.equal(await main(env), 1)
+    assert.match(lines.join('\n'), /add the line: Change: add-foo/)
+  })
+
+  it('skips merge commits when checking ids', async () => {
+    const { lines } = stub({
+      files: [CHANGE_FILE],
+      messages: [
+        "Merge branch 'main'\n\nChange: gone",
+        'ci(ci): x\n\nChange: add-foo',
+      ],
+    })
+    assert.equal(await main(env), 0, lines.join('\n'))
   })
 
   it('passes when a commit names the touched change', async () => {

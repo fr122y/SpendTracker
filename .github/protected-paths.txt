@@ -29,4 +29,5 @@ src/test/mocks/**
 
 # Commit message and OpenSpec configuration
 commitlint.config.cjs
+scripts/commitlint/**
 openspec/config.yaml

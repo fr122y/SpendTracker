@@ -1,3 +1,5 @@
+const changeTrailer = require('./scripts/commitlint/change-trailer-rule.cjs')
+
 const projectScopes = [
   'budget',
   'expense',
@@ -14,6 +16,7 @@ const projectScopes = [
 
 module.exports = {
   extends: ['@commitlint/config-conventional'],
+  plugins: [changeTrailer.plugin],
   rules: {
     'type-enum': [
       2,
@@ -40,5 +43,7 @@ module.exports = {
     'header-max-length': [2, 'always', 100],
     'body-max-line-length': [0],
     'footer-max-line-length': [0],
+    // Exactly one `Change: <id>` line; see docs/engineering/change-request.md.
+    [changeTrailer.RULE_NAME]: [2, 'always'],
   },
 }
