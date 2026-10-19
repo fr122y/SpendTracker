@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+/*
+ * `wide:` is the non-phone layout. It matches `getViewport` in
+ * `src/shared/lib/hooks/use-viewport.ts`: a phone is narrower than 768px or a
+ * landscape screen lower than 500px, so a rotated phone stays a phone.
+ */
+@custom-variant wide {
+  @media (min-width: 768px) and (min-height: 500px),
+    (min-width: 768px) and (orientation: portrait) {
+    @slot;
+  }
+}
+
 /* Font variables */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
@@ -45,12 +57,21 @@
 }
 
 /*
- * Phones scroll the page as a whole. Keep scrolled-to and focused fields clear
- * of the floating calculator button (bottom-4 + h-12 = 4rem).
+ * Phone layout (the inverse of `wide:`). Phones scroll the page as a whole:
+ * keep scrolled-to and focused fields clear of the floating calculator button
+ * (bottom-4 + h-12 = 4rem). Form fields stay at 16px or larger so iOS does not
+ * zoom the page on focus; this rule is unlayered on purpose, so it wins over
+ * `text-sm` utilities.
  */
-@media (max-width: 767px) {
+@media (max-width: 767px), (orientation: landscape) and (max-height: 499px) {
   html {
     scroll-padding-bottom: 5rem;
+  }
+
+  input:not([type='checkbox'], [type='radio'], [type='range']),
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 

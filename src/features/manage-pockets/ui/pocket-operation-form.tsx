@@ -11,6 +11,7 @@ import {
   formatDate,
   getTextLimitMessage,
   parseAmountInput,
+  useFormDraft,
   useSubmitLock,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
@@ -30,16 +31,33 @@ export function PocketOperationForm({
   selectedDate: Date
   onDone?: () => void
 }) {
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
-    null
+  const draftKey = `pocket-operation:${pocketId}:${kind}`
+  const [description, setDescription] = useFormDraft(
+    draftKey,
+    'description',
+    ''
   )
-  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useState('')
-  const [showCategorySelect, setShowCategorySelect] = useState(false)
-  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [amount, setAmount] = useFormDraft(draftKey, 'amount', '')
+  const [suggestedCategoryId, setSuggestedCategoryId] = useFormDraft<
+    string | null
+  >(draftKey, 'suggestedCategoryId', null)
+  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useFormDraft(
+    draftKey,
+    'suggestedCategoryLabel',
+    ''
+  )
+  const [showCategorySelect, setShowCategorySelect] = useFormDraft(
+    draftKey,
+    'showCategorySelect',
+    false
+  )
+  const [selectedCategoryId, setSelectedCategoryId] = useFormDraft(
+    draftKey,
+    'selectedCategoryId',
+    ''
+  )
   const [hasManualCategoryOverride, setHasManualCategoryOverride] =
-    useState(false)
+    useFormDraft(draftKey, 'hasManualCategoryOverride', false)
   const [shouldResolveCategory, setShouldResolveCategory] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const categories = useCategoryStore((state) => state.categories)
@@ -111,7 +129,13 @@ export function PocketOperationForm({
       setSelectedCategoryId('')
       setShowCategorySelect(true)
     },
-    [categorize]
+    [
+      categorize,
+      setSelectedCategoryId,
+      setShowCategorySelect,
+      setSuggestedCategoryId,
+      setSuggestedCategoryLabel,
+    ]
   )
 
   // Recomputed on every description change, not only on blur, so the

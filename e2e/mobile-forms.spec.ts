@@ -1,4 +1,10 @@
 import {
+  getE2ECredentials,
+  loginWithCredentials,
+  MISSING_E2E_CREDENTIALS_MESSAGE,
+  SIGNED_OUT_STATE,
+} from './utils/auth'
+import {
   dailyTotal,
   expenseRow,
   openJournal,
@@ -7,6 +13,8 @@ import {
   test,
   TIMEOUT,
 } from './utils/expenses'
+
+import type { Page } from '@playwright/test'
 
 test.describe('Mobile Form Interaction Tests', () => {
   // Touch input needs a touch-enabled context.
@@ -184,5 +192,99 @@ test.describe('Mobile Form Interaction Tests', () => {
       }
       await expect(submitButton).toBeEnabled()
     })
+  })
+
+  test.describe('Rotation, Back and field size (T-052)', () => {
+    const journalToggle = (page: Page) =>
+      page.getByRole('button', { name: 'Журнал расходов', expanded: true })
+
+    test('rotating a phone keeps the accordion and the typed draft', async ({
+      page,
+    }) => {
+      const form = journalForm(page)
+      const description = form.getByLabel('Описание расхода')
+      const amount = form.getByLabel('Сумма расхода')
+      await description.fill('E2E черновик при повороте')
+      await amount.fill('321')
+
+      for (const size of [
+        { width: 852, height: 393 },
+        { width: 375, height: 667 },
+      ]) {
+        await page.setViewportSize(size)
+        // A landscape phone stays on the phone layout: the accordion remains.
+        await expect(journalToggle(page)).toBeVisible(TIMEOUT)
+        await expect(description).toHaveValue('E2E черновик при повороте')
+        await expect(amount).toHaveValue('321')
+      }
+
+      // A layout switch remounts the form; the draft still survives it.
+      await page.setViewportSize({ width: 1280, height: 720 })
+      await expect(journalToggle(page)).toHaveCount(0, TIMEOUT)
+      await expect(description).toHaveValue('E2E черновик при повороте')
+      await page.setViewportSize({ width: 375, height: 667 })
+      await openJournal(page)
+      await expect(description).toHaveValue('E2E черновик при повороте')
+      await expect(amount).toHaveValue('321')
+    })
+
+    test('browser Back closes an open dialog and stays in the app', async ({
+      page,
+    }) => {
+      const url = page.url()
+      await page.getByRole('button', { name: 'Открыть калькулятор' }).click()
+      const calculator = page.getByRole('dialog', { name: 'Калькулятор' })
+      await expect(calculator).toBeVisible(TIMEOUT)
+
+      await page.goBack()
+
+      await expect(calculator).toBeHidden(TIMEOUT)
+      expect(page.url()).toBe(url)
+      await expect(
+        journalForm(page).getByLabel('Описание расхода')
+      ).toBeVisible()
+
+      // A normal close leaves no extra history entry behind.
+      await page.getByRole('button', { name: 'Открыть калькулятор' }).click()
+      await expect(calculator).toBeVisible(TIMEOUT)
+      await page.keyboard.press('Escape')
+      await expect(calculator).toBeHidden(TIMEOUT)
+      await expect
+        .poll(() => page.evaluate(() => window.history.state?.backDismissEntry))
+        .toBeUndefined()
+    })
+
+    test('form fields are at least 16px on a phone', async ({ page }) => {
+      const fields = journalForm(page).locator('input, select, textarea')
+      expect(await fields.count()).toBeGreaterThan(0)
+      const sizes = await fields.evaluateAll((elements) =>
+        elements.map((element) =>
+          parseFloat(window.getComputedStyle(element).fontSize)
+        )
+      )
+      for (const size of sizes) expect(size).toBeGreaterThanOrEqual(16)
+    })
+  })
+})
+
+test.describe('Login history on mobile (T-052)', () => {
+  test.use({
+    hasTouch: true,
+    viewport: { width: 375, height: 667 },
+    storageState: SIGNED_OUT_STATE,
+  })
+
+  test('browser Back after login does not return to /login', async ({
+    page,
+  }) => {
+    const credentials = getE2ECredentials()
+    if (!credentials) throw new Error(MISSING_E2E_CREDENTIALS_MESSAGE)
+
+    await page.goto('/forgot-password')
+    await loginWithCredentials(page, credentials)
+
+    await page.goBack()
+
+    await expect(page).toHaveURL(/\/forgot-password/, TIMEOUT)
   })
 })

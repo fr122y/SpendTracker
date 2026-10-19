@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { ExpenseEditDialog } from '@/features/edit-expense'
+import { useBackDismiss } from '@/shared/lib/hooks/use-back-dismiss'
 
 import {
   filterExpensesByNameGroups,
@@ -231,6 +232,8 @@ export function AnalysisCategoryDetailsDialog({
   })
 
   const handleClose = useCallback(() => onClose(), [onClose])
+  // Browser Back closes the dialog instead of leaving the page.
+  useBackDismiss(true, handleClose)
 
   useEffect(() => {
     const triggerElement = triggerRef.current

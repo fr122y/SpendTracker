@@ -16,6 +16,7 @@ import {
   getTextLimitMessage,
   isExpenseDescriptionTooLong,
   parseAmountInput,
+  useBackDismiss,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
@@ -35,6 +36,8 @@ export function ExpenseEditDialog({
   onClose,
 }: ExpenseEditDialogProps) {
   const titleId = useId()
+  // Browser Back closes the dialog instead of leaving the page.
+  useBackDismiss(true, onClose)
   const descriptionInputRef = useRef<HTMLInputElement>(null)
   const categories = useCategoryStore((state) => state.categories)
   const { data: pockets } = usePockets()

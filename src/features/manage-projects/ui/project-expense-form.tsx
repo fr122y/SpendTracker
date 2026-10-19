@@ -13,6 +13,7 @@ import {
   EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
   getTextLimitMessage,
   useSubmitLock,
+  useFormDraft,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
@@ -26,18 +27,38 @@ const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
 const PROJECT_MONEY_EMOJI = '💼'
 
 export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
-  const [operationType, setOperationType] =
-    useState<MoneyOperationType>('expense')
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
-    null
+  const draftKey = `project-expense:${projectId}`
+  const [operationType, setOperationType] = useFormDraft<MoneyOperationType>(
+    draftKey,
+    'operationType',
+    'expense'
   )
-  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useState('')
-  const [showCategorySelect, setShowCategorySelect] = useState(false)
-  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [description, setDescription] = useFormDraft(
+    draftKey,
+    'description',
+    ''
+  )
+  const [amount, setAmount] = useFormDraft(draftKey, 'amount', '')
+  const [suggestedCategoryId, setSuggestedCategoryId] = useFormDraft<
+    string | null
+  >(draftKey, 'suggestedCategoryId', null)
+  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useFormDraft(
+    draftKey,
+    'suggestedCategoryLabel',
+    ''
+  )
+  const [showCategorySelect, setShowCategorySelect] = useFormDraft(
+    draftKey,
+    'showCategorySelect',
+    false
+  )
+  const [selectedCategoryId, setSelectedCategoryId] = useFormDraft(
+    draftKey,
+    'selectedCategoryId',
+    ''
+  )
   const [hasManualCategoryOverride, setHasManualCategoryOverride] =
-    useState(false)
+    useFormDraft(draftKey, 'hasManualCategoryOverride', false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)

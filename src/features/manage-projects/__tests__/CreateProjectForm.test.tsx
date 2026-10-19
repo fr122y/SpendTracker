@@ -1,5 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { CreateProjectForm } from '../ui/create-project-form'
 
 const mockProjects = [
@@ -35,6 +37,9 @@ jest.mock('@/entities/project', () => ({
       deleteProject: mockDeleteProject,
     }),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('CreateProjectForm', () => {
   beforeEach(() => {

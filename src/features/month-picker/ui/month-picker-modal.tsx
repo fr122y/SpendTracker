@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { setDateMonth } from '@/entities/session'
-import { cn } from '@/shared/lib'
+import { cn, useBackDismiss } from '@/shared/lib'
 
 interface MonthPickerModalProps {
   isOpen: boolean
@@ -36,6 +36,8 @@ export function MonthPickerModal({
 }: MonthPickerModalProps) {
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
   const [isVisible, setIsVisible] = useState(false)
+  // Browser Back closes the picker instead of leaving the page.
+  useBackDismiss(isOpen, onClose)
 
   const currentMonth = currentDate.getMonth()
   const currentYear = currentDate.getFullYear()

@@ -3,6 +3,8 @@ import userEvent from '@testing-library/user-event'
 
 const mockRegisterUser = jest.fn()
 const mockSignIn = jest.fn()
+const mockReplace = jest.fn()
+const mockRefresh = jest.fn()
 
 jest.mock('@/shared/api', () => ({
   registerUser: (...args: unknown[]) => mockRegisterUser(...args),
@@ -10,6 +12,13 @@ jest.mock('@/shared/api', () => ({
 
 jest.mock('next-auth/react', () => ({
   signIn: (...args: unknown[]) => mockSignIn(...args),
+}))
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    replace: (...args: unknown[]) => mockReplace(...args),
+    refresh: (...args: unknown[]) => mockRefresh(...args),
+  }),
 }))
 
 import { RegisterForm } from '@/features/auth/ui/register-form'
@@ -150,8 +159,10 @@ describe('RegisterForm', () => {
       expect(mockSignIn).toHaveBeenCalledWith('credentials', {
         email: 'test@example.com',
         password: 'password123',
-        callbackUrl: '/',
+        redirect: false,
       })
+      // Replace, so browser Back does not return to /login.
+      expect(mockReplace).toHaveBeenCalledWith('/')
     })
   })
 
@@ -172,8 +183,10 @@ describe('RegisterForm', () => {
       expect(mockSignIn).toHaveBeenCalledWith('credentials', {
         email: 'test@example.com',
         password: 'password123',
-        callbackUrl: '/invite/token-1',
+        redirect: false,
       })
+      // Replace, so browser Back does not return to /login.
+      expect(mockReplace).toHaveBeenCalledWith('/invite/token-1')
     })
   })
 

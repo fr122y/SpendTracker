@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 
 import {
+  getViewport,
   useResolvedViewport,
   useViewport,
   isMobile,
@@ -413,5 +414,19 @@ describe('isTabletOrSmaller utility', () => {
 
   it('should return false for desktop viewport', () => {
     expect(isTabletOrSmaller('desktop')).toBe(false)
+  })
+})
+
+describe('getViewport', () => {
+  it('keeps a phone in landscape on the phone layout', () => {
+    expect(getViewport(393, 852)).toBe('mobile')
+    expect(getViewport(852, 393)).toBe('mobile')
+    expect(getViewport(932, 430)).toBe('mobile')
+  })
+
+  it('keeps tablets and desktops on their layouts', () => {
+    expect(getViewport(768, 1024)).toBe('tablet')
+    expect(getViewport(1024, 768)).toBe('tablet')
+    expect(getViewport(1280, 720)).toBe('desktop')
   })
 })
