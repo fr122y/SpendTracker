@@ -20,12 +20,14 @@ import {
   formatDate,
   getProjectCashOnHand,
   parseAmountInput,
+  useFormDraft,
   useSubmitLock,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import type { MoneyOperationType, SharedBudget } from '@/shared/types'
 
+const DRAFT_KEY = 'expense-form'
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
 const PROJECT_MONEY_EMOJI = '💼'
 type OperationScenario =
@@ -57,21 +59,52 @@ function isProjectScenario(scenario: OperationScenario): boolean {
 }
 
 export function ExpenseForm() {
-  const [chosenScenario, setScenario] =
-    useState<OperationScenario>('personal_expense')
-  const [selectedProjectId, setSelectedProjectId] = useState('')
-  const [selectedPocketId, setSelectedPocketId] = useState('')
-  const [selectedSharedBudgetId, setSelectedSharedBudgetId] = useState('')
-  const [description, setDescription] = useState('')
-  const [amount, setAmount] = useState('')
-  const [suggestedCategoryId, setSuggestedCategoryId] = useState<string | null>(
-    null
+  const [chosenScenario, setScenario] = useFormDraft<OperationScenario>(
+    DRAFT_KEY,
+    'chosenScenario',
+    'personal_expense'
   )
-  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useState('')
-  const [showCategorySelect, setShowCategorySelect] = useState(false)
-  const [selectedCategoryId, setSelectedCategoryId] = useState('')
+  const [selectedProjectId, setSelectedProjectId] = useFormDraft(
+    DRAFT_KEY,
+    'selectedProjectId',
+    ''
+  )
+  const [selectedPocketId, setSelectedPocketId] = useFormDraft(
+    DRAFT_KEY,
+    'selectedPocketId',
+    ''
+  )
+  const [selectedSharedBudgetId, setSelectedSharedBudgetId] = useFormDraft(
+    DRAFT_KEY,
+    'selectedSharedBudgetId',
+    ''
+  )
+  const [description, setDescription] = useFormDraft(
+    DRAFT_KEY,
+    'description',
+    ''
+  )
+  const [amount, setAmount] = useFormDraft(DRAFT_KEY, 'amount', '')
+  const [suggestedCategoryId, setSuggestedCategoryId] = useFormDraft<
+    string | null
+  >(DRAFT_KEY, 'suggestedCategoryId', null)
+  const [suggestedCategoryLabel, setSuggestedCategoryLabel] = useFormDraft(
+    DRAFT_KEY,
+    'suggestedCategoryLabel',
+    ''
+  )
+  const [showCategorySelect, setShowCategorySelect] = useFormDraft(
+    DRAFT_KEY,
+    'showCategorySelect',
+    false
+  )
+  const [selectedCategoryId, setSelectedCategoryId] = useFormDraft(
+    DRAFT_KEY,
+    'selectedCategoryId',
+    ''
+  )
   const [hasManualCategoryOverride, setHasManualCategoryOverride] =
-    useState(false)
+    useFormDraft(DRAFT_KEY, 'hasManualCategoryOverride', false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const addExpense = useExpenseStore((state) => state.addExpense)
@@ -139,7 +172,12 @@ export function ExpenseForm() {
     }
 
     setSelectedSharedBudgetId(selectedSharedBudget?.id ?? '')
-  }, [selectedSharedBudget?.id, selectedSharedBudgetId, sharedBudgetOptions])
+  }, [
+    selectedSharedBudget?.id,
+    selectedSharedBudgetId,
+    setSelectedSharedBudgetId,
+    sharedBudgetOptions,
+  ])
 
   const personalCategoryOptions = categories.map((category) => ({
     value: category.id,

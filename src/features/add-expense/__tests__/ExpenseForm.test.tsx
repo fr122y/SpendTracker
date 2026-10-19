@@ -278,6 +278,36 @@ describe('ExpenseForm', () => {
     })
   })
 
+  it('keeps the draft when the form remounts and clears it after submit', async () => {
+    mockCategorize.mockReturnValue({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
+
+    // A layout switch (rotation) unmounts and mounts the form again.
+    const { unmount } = render(<ExpenseForm />)
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '100' },
+    })
+    unmount()
+
+    render(<ExpenseForm />)
+    expect(screen.getByPlaceholderText(/описание/i)).toHaveValue('молоко')
+    expect(screen.getByPlaceholderText(/сумма/i)).toHaveValue('100')
+
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/описание/i)).toHaveValue('')
+    )
+    expect(screen.getByPlaceholderText(/сумма/i)).toHaveValue('')
+  })
+
   describe('amount input (T-036)', () => {
     const fillDescription = () => {
       mockCategorize.mockReturnValue({

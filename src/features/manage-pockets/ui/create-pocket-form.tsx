@@ -11,11 +11,12 @@ import {
   findPocketNameConflict,
   POCKET_NAME_CONFLICT_MESSAGE,
   useSubmitLock,
+  useFormDraft,
 } from '@/shared/lib'
 import { Button, Input } from '@/shared/ui'
 
 export function CreatePocketForm({ onCreated }: { onCreated?: () => void }) {
-  const [name, setName] = useState('')
+  const [name, setName] = useFormDraft('create-pocket', 'name', '')
   const [submitError, setSubmitError] = useState<
     'name_conflict' | 'failed' | null
   >(null)

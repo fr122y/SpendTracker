@@ -1,5 +1,7 @@
 import '@testing-library/jest-dom'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 // Polyfill Request/Response for @reatom/core v1000 web modules
 if (typeof globalThis.Request === 'undefined') {
   globalThis.Request = class Request {
@@ -63,4 +65,6 @@ Object.defineProperty(globalThis.crypto, 'randomUUID', {
 // Reset mocks between tests
 beforeEach(() => {
   localStorageMock.clear()
+  // Form drafts are module-level state that outlives a rendered form.
+  resetFormDrafts()
 })
