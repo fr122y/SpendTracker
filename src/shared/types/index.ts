@@ -89,6 +89,8 @@ export interface SharedBudgetCategory {
   sharedBudgetId: string
   name: string
   emoji: string
+  /** Palette color; null or absent shows the fallback color by name. */
+  color?: string | null
   archivedAt?: string
   createdAt: string
 }
@@ -98,6 +100,8 @@ export interface Category {
   id: string
   name: string
   emoji: string
+  /** Palette color; null or absent shows the fallback color by name. */
+  color?: string | null
 }
 
 // Project entity

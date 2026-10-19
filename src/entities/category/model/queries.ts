@@ -1,6 +1,11 @@
 'use client'
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
 import {
   addCategory as addCategoryAction,
@@ -11,6 +16,7 @@ import {
   getCategories,
   getSharedBudgetCategories,
   queryKeys,
+  updateCategory as updateCategoryAction,
   updateSharedBudgetCategory as updateSharedBudgetCategoryAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
@@ -38,6 +44,7 @@ export function useAddCategory() {
         id: `temp-${crypto.randomUUID()}`,
         name: data.name,
         emoji: data.emoji,
+        color: data.color ?? null,
       }
       queryClient.setQueryData(
         queryKeys.categories.all,
@@ -51,6 +58,53 @@ export function useAddCategory() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.keywordMappings.all })
+    },
+  })
+}
+
+export interface UpdateCategoryInput {
+  id: string
+  name?: string
+  emoji?: string
+  color?: string | null
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: UpdateCategoryInput) =>
+      updateCategoryAction(id, data),
+    onMutate: async ({ id, ...data }) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.categories.all })
+      const previous = queryClient.getQueryData<Category[]>(
+        queryKeys.categories.all
+      )
+      queryClient.setQueryData(
+        queryKeys.categories.all,
+        (old: Category[] = []) =>
+          old.map((category) =>
+            category.id === id
+              ? {
+                  ...category,
+                  ...(data.name !== undefined && { name: data.name.trim() }),
+                  ...(data.emoji !== undefined && { emoji: data.emoji.trim() }),
+                  ...(data.color !== undefined && { color: data.color }),
+                }
+              : category
+          )
+      )
+      return { previous }
+    },
+    onError: (_error, _input, context) => {
+      queryClient.setQueryData(queryKeys.categories.all, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
+      // A rename rewrites the category text on expenses; analysis reads them.
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.keywordMappings.all })
     },
   })
@@ -111,6 +165,19 @@ export function useSharedBudgetCategories(sharedBudgetId: string | undefined) {
   })
 }
 
+/** Active categories of several shared budgets, flattened. */
+export function useSharedBudgetCategoryLists(
+  sharedBudgetIds: string[]
+): SharedBudgetCategory[] {
+  return useQueries({
+    queries: sharedBudgetIds.map((sharedBudgetId) => ({
+      queryKey: queryKeys.sharedBudgetCategories.list(sharedBudgetId),
+      queryFn: () => getSharedBudgetCategories(sharedBudgetId),
+    })),
+    combine: (results) => results.flatMap((result) => result.data ?? []),
+  })
+}
+
 export function useAddSharedBudgetCategory(sharedBudgetId: string) {
   const queryClient = useQueryClient()
   const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
@@ -149,17 +216,18 @@ export function useAddSharedBudgetCategory(sharedBudgetId: string) {
   })
 }
 
+export type UpdateSharedCategoryInput = Pick<
+  SharedBudgetCategory,
+  'id' | 'name' | 'emoji'
+> & { color?: string | null }
+
 export function useUpdateSharedBudgetCategory(sharedBudgetId: string) {
   const queryClient = useQueryClient()
   const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
 
   return useMutation({
-    mutationFn: ({
-      id,
-      name,
-      emoji,
-    }: Pick<SharedBudgetCategory, 'id' | 'name' | 'emoji'>) =>
-      updateSharedBudgetCategoryAction(id, { name, emoji }),
+    mutationFn: ({ id, name, emoji, color }: UpdateSharedCategoryInput) =>
+      updateSharedBudgetCategoryAction(id, { name, emoji, color }),
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey })
       const previous =
@@ -167,7 +235,12 @@ export function useUpdateSharedBudgetCategory(sharedBudgetId: string) {
       queryClient.setQueryData(queryKey, (old: SharedBudgetCategory[] = []) =>
         old.map((category) =>
           category.id === data.id
-            ? { ...category, name: data.name, emoji: data.emoji }
+            ? {
+                ...category,
+                name: data.name,
+                emoji: data.emoji,
+                ...(data.color !== undefined && { color: data.color }),
+              }
             : category
         )
       )

@@ -48,6 +48,7 @@ jest.mock('@/shared/db', () => {
     __mocks: mocks,
     db,
     expenses: {
+      sharedBudgetId: 'expense.sharedBudgetId',
       sharedBudgetCategoryId: 'expense.sharedBudgetCategoryId',
       category: 'expense.category',
       emoji: 'expense.emoji',
@@ -57,6 +58,7 @@ jest.mock('@/shared/db', () => {
       sharedBudgetId: 'sharedCategory.sharedBudgetId',
       name: 'sharedCategory.name',
       emoji: 'sharedCategory.emoji',
+      color: 'sharedCategory.color',
       archivedAt: 'sharedCategory.archivedAt',
       createdAt: 'sharedCategory.createdAt',
     },
@@ -180,6 +182,55 @@ describe('shared-category-actions', () => {
       category: 'Супермаркет',
       emoji: '🛍️',
     })
+  })
+
+  it('changes only the color of a shared category', async () => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты',
+        emoji: '🛒',
+        color: null,
+        archivedAt: null,
+        createdAt: new Date('2026-06-15T00:00:00.000Z'),
+      },
+    ])
+
+    await updateSharedBudgetCategory('shared-category-1', {
+      name: 'Продукты',
+      emoji: '🛒',
+      color: '#0369a1',
+    })
+
+    expect(assertCanUseSharedBudget).toHaveBeenCalledWith('shared-1', 'user-1')
+    expect(dbModule.__mocks.updateSet).toHaveBeenCalledTimes(1)
+    expect(dbModule.__mocks.updateSet).toHaveBeenCalledWith({
+      name: 'Продукты',
+      emoji: '🛒',
+      color: '#0369a1',
+    })
+  })
+
+  it.each([
+    [{ color: '#zzzzzz' }, 'Category color must be a palette color'],
+    [{ emoji: '🛒🚕' }, 'Category emoji must be one character'],
+  ])('rejects invalid shared category input %j', async (data, message) => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты',
+        emoji: '🛒',
+        archivedAt: null,
+        createdAt: new Date('2026-06-15T00:00:00.000Z'),
+      },
+    ])
+
+    await expect(
+      updateSharedBudgetCategory('shared-category-1', data)
+    ).rejects.toThrow(message)
+    expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
   })
 
   it('rejects duplicate active shared category names', async () => {
