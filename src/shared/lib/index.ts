@@ -125,3 +125,12 @@ export {
 export { countGraphemes, limitGraphemes } from './grapheme'
 
 export { normalizeKeywordPhrase } from './keyword-phrase'
+export {
+  CATEGORY_NAME_MAX_LENGTH,
+  CATEGORY_NAME_TOO_LONG_MESSAGE,
+  EXPENSE_DESCRIPTION_MAX_LENGTH,
+  EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
+  getTextLimitMessage,
+  isCategoryNameTooLong,
+  isExpenseDescriptionTooLong,
+} from './text-limits'

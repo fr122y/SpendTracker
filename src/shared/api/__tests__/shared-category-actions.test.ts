@@ -233,6 +233,31 @@ describe('shared-category-actions', () => {
     expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
   })
 
+  it('rejects a 41-character shared category name', async () => {
+    await expect(
+      addSharedBudgetCategory('shared-1', { name: 'к'.repeat(41), emoji: '🛒' })
+    ).rejects.toThrow('Название категории не длиннее 40 символов')
+    expect(dbModule.__mocks.insertValues).not.toHaveBeenCalled()
+  })
+
+  it('rejects renaming a shared category to 41 characters', async () => {
+    dbModule.__mocks.selectWhere.mockResolvedValueOnce([
+      {
+        id: 'shared-category-1',
+        sharedBudgetId: 'shared-1',
+        name: 'Продукты',
+        emoji: '🛒',
+        archivedAt: null,
+        createdAt: new Date('2026-06-15T00:00:00.000Z'),
+      },
+    ])
+
+    await expect(
+      updateSharedBudgetCategory('shared-category-1', { name: 'к'.repeat(41) })
+    ).rejects.toThrow('Название категории не длиннее 40 символов')
+    expect(dbModule.__mocks.updateSet).not.toHaveBeenCalled()
+  })
+
   it('rejects duplicate active shared category names', async () => {
     dbModule.__mocks.selectWhere.mockResolvedValueOnce([
       { id: 'shared-category-existing' },
