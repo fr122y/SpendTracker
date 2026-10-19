@@ -386,7 +386,16 @@ test.describe('Pockets', () => {
     )
 
     await page.setViewportSize({ width: 375, height: 740 })
-    await expect(row).toBeVisible()
+    // Collapsed accordion sections are not mounted on mobile: open pockets.
+    const pocketsToggle = page.locator(
+      'nav[data-testid="mobile-widget-list"] div:has(> [data-accordion-content="POCKETS"]) > button[aria-expanded]'
+    )
+    if (
+      (await pocketsToggle.getAttribute('aria-expanded', TIMEOUT)) !== 'true'
+    ) {
+      await pocketsToggle.click()
+    }
+    await expect(row).toBeVisible(TIMEOUT)
     await expectNoHorizontalScroll(page)
     await page.setViewportSize({ width: 1280, height: 720 })
     await toggle.click()
