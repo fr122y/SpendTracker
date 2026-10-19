@@ -1,5 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { ProjectsSection } from '../ui/projects-section'
 
 import type { Project, Expense } from '@/shared/types'
@@ -220,6 +222,9 @@ jest.mock('@/shared/ui', () => ({
     )
   ),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('ProjectsSection', () => {
   beforeEach(() => {

@@ -4,6 +4,7 @@ import {
   POCKET_PURCHASE_HINT,
   POCKET_TRANSFER_HINT,
 } from '@/entities/pocket/model/hints'
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
 
 import { PocketOperationForm } from '../ui/pocket-operation-form'
 
@@ -87,6 +88,9 @@ jest.mock('@/entities/expense', () => ({
 jest.mock('@/entities/pocket', () =>
   jest.requireActual('@/entities/pocket/model/hints')
 )
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('PocketOperationForm effect hints', () => {
   it('explains a purchase', () => {

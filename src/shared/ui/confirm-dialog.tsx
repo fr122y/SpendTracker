@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react'
 
 import { cn } from '@/shared/lib'
+import { useBackDismiss } from '@/shared/lib/hooks/use-back-dismiss'
 
 import { Button } from './button'
 
@@ -32,6 +33,11 @@ export function ConfirmDialog({
   const titleId = useId()
   const descriptionId = useId()
   const cancelButtonRef = useRef<HTMLButtonElement>(null)
+
+  // Browser Back closes the dialog instead of leaving the page.
+  useBackDismiss(isOpen, () => {
+    if (!isConfirming) onClose()
+  })
 
   useEffect(() => {
     if (!isOpen) return

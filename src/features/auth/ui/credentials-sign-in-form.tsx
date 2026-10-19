@@ -42,7 +42,8 @@ export function CredentialsSignInForm({
       return
     }
 
-    router.push(callbackUrl)
+    // Replace, so browser Back does not return to /login.
+    router.replace(callbackUrl)
     router.refresh()
   }
 

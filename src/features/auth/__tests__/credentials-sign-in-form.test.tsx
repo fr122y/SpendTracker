@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 const mockSignIn = jest.fn()
-const mockPush = jest.fn()
+const mockReplace = jest.fn()
 const mockRefresh = jest.fn()
 
 jest.mock('next-auth/react', () => ({
@@ -11,7 +11,7 @@ jest.mock('next-auth/react', () => ({
 
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: (...args: unknown[]) => mockPush(...args),
+    replace: (...args: unknown[]) => mockReplace(...args),
     refresh: (...args: unknown[]) => mockRefresh(...args),
   }),
 }))
@@ -81,7 +81,7 @@ describe('CredentialsSignInForm', () => {
     await user.click(screen.getByRole('button', { name: 'Войти' }))
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/')
+      expect(mockReplace).toHaveBeenCalledWith('/')
       expect(mockRefresh).toHaveBeenCalled()
     })
   })
@@ -97,7 +97,7 @@ describe('CredentialsSignInForm', () => {
     await user.click(screen.getByRole('button', { name: 'Войти' }))
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/invite/token-1')
+      expect(mockReplace).toHaveBeenCalledWith('/invite/token-1')
       expect(mockRefresh).toHaveBeenCalled()
     })
   })

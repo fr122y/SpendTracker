@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { POCKET_PURCHASE_HINT } from '@/entities/pocket/model/hints'
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
 
 import { ExpenseForm } from '../ui/expense-form'
 
@@ -112,6 +113,9 @@ jest.mock('@/entities/session', () => ({
   useSessionStore: (selector: (state: { selectedDate: Date }) => unknown) =>
     selector({ selectedDate: new Date('2025-01-15') }),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('ExpenseForm', () => {
   beforeEach(() => {
@@ -276,6 +280,36 @@ describe('ExpenseForm', () => {
       )
       expect(mockSaveMapping).not.toHaveBeenCalled()
     })
+  })
+
+  it('keeps the draft when the form remounts and clears it after submit', async () => {
+    mockCategorize.mockReturnValue({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
+
+    // A layout switch (rotation) unmounts and mounts the form again.
+    const { unmount } = render(<ExpenseForm />)
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '100' },
+    })
+    unmount()
+
+    render(<ExpenseForm />)
+    expect(screen.getByPlaceholderText(/описание/i)).toHaveValue('молоко')
+    expect(screen.getByPlaceholderText(/сумма/i)).toHaveValue('100')
+
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+    await waitFor(() => expect(mockAddExpense).toHaveBeenCalled())
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/описание/i)).toHaveValue('')
+    )
+    expect(screen.getByPlaceholderText(/сумма/i)).toHaveValue('')
   })
 
   describe('amount input (T-036)', () => {

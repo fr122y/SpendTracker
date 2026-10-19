@@ -3,7 +3,7 @@
 import { Calculator } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { cn, isMobile, useViewport } from '@/shared/lib'
+import { cn, isMobile, useBackDismiss, useViewport } from '@/shared/lib'
 
 import { CalculatorPanel } from './calculator-panel'
 import { shouldCloseOnSwipe } from '../lib/swipe'
@@ -40,6 +40,8 @@ export function CalculatorLauncher() {
   const swipeStartY = useRef<number | null>(null)
 
   const close = () => setIsOpen(false)
+  // Browser Back closes the calculator instead of leaving the page.
+  useBackDismiss(isOpen, close)
 
   useScrollLock(isOpen && isSheet)
 

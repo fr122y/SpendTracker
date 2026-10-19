@@ -1,5 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { ExpenseLog } from '../ui/expense-log'
 
 import type { Expense, Pocket } from '@/shared/types'
@@ -176,6 +178,9 @@ jest.mock('@/shared/ui', () => ({
     )
   ),
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('ExpenseLog', () => {
   beforeEach(() => {
@@ -703,8 +708,8 @@ describe('ExpenseLog', () => {
       // Phones scroll the page as a whole, so the list has no own height cap.
       const scrollContainer = screen.getByTestId('expense-log-list')
       expect(scrollContainer).toHaveClass(
-        'md:max-h-[500px]',
-        'md:overflow-y-auto'
+        'wide:max-h-[500px]',
+        'wide:overflow-y-auto'
       )
       expect(scrollContainer).not.toHaveClass('max-h-[400px]')
       expect(scrollContainer).not.toHaveClass('overflow-y-auto')

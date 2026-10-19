@@ -14,14 +14,14 @@ interface DashboardProps {
 
 export function Dashboard({ emailVerification }: DashboardProps) {
   return (
-    // Phones scroll the page as a whole; from 768px the dashboard fills the
+    // Phones scroll the page as a whole; on wider screens the dashboard fills the
     // screen and its columns scroll on their own.
-    <div className="flex min-h-dvh flex-col md:h-screen md:min-h-0">
+    <div className="flex min-h-dvh flex-col wide:h-screen wide:min-h-0">
       <DashboardHeader />
       {emailVerification?.requiresVerification && emailVerification.email ? (
         <EmailVerificationBanner email={emailVerification.email} />
       ) : null}
-      <main className="flex-1 md:min-h-0 md:overflow-hidden">
+      <main className="flex-1 wide:min-h-0 wide:overflow-hidden">
         <DashboardGrid />
       </main>
       <CalculatorLauncherDynamic />

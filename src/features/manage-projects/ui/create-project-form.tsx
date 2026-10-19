@@ -1,9 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-
 import { useProjectStore } from '@/entities/project'
-import { parseAmountInput, useSubmitLock } from '@/shared/lib'
+import { parseAmountInput, useFormDraft, useSubmitLock } from '@/shared/lib'
 import { Button, Input, MathInput } from '@/shared/ui'
 
 interface CreateProjectFormProps {
@@ -12,8 +10,8 @@ interface CreateProjectFormProps {
 }
 
 export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
-  const [name, setName] = useState('')
-  const [budget, setBudget] = useState('')
+  const [name, setName] = useFormDraft('create-project', 'name', '')
+  const [budget, setBudget] = useFormDraft('create-project', 'budget', '')
 
   const addProject = useProjectStore((state) => state.addProject)
   const runLocked = useSubmitLock()

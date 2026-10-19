@@ -6,6 +6,8 @@ import {
   within,
 } from '@testing-library/react'
 
+import { resetFormDrafts } from '@/shared/lib/hooks/use-form-draft'
+
 import { PocketsSection } from '../ui/pockets-section'
 
 import type { Expense, Pocket, PocketMonthBudget } from '@/shared/types'
@@ -204,6 +206,9 @@ jest.mock('@/shared/lib', () => ({
     }
   },
 }))
+
+// Form drafts outlive a rendered form; start every test with empty ones.
+beforeEach(() => resetFormDrafts())
 
 describe('PocketsSection', () => {
   beforeEach(() => {
