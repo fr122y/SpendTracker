@@ -347,6 +347,25 @@ describe('CategoryManager', () => {
     ).toBeInTheDocument()
   })
 
+  it('caps the category name at 40 characters and blocks a longer one', () => {
+    render(<CategoryManager />)
+
+    const nameInput = screen.getByPlaceholderText(/название/i)
+    expect(nameInput).toHaveAttribute('maxLength', '40')
+
+    fireEvent.change(nameInput, { target: { value: 'к'.repeat(41) } })
+    fireEvent.change(screen.getByPlaceholderText(/эмодзи/i), {
+      target: { value: '👕' },
+    })
+
+    expect(
+      screen.getByRole('button', { name: /добавить личную категорию/i })
+    ).toBeDisabled()
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'Название категории не длиннее 40 символов'
+    )
+  })
+
   it('adds new category when form is submitted', async () => {
     render(<CategoryManager />)
 

@@ -25,7 +25,11 @@ import {
   useSharedBudgets,
 } from '@/entities/shared-budget'
 import {
+  CATEGORY_NAME_MAX_LENGTH,
+  CATEGORY_NAME_TOO_LONG_MESSAGE,
   getCategoryColor,
+  getTextLimitMessage,
+  isCategoryNameTooLong,
   limitGraphemes,
   pluralizeRu,
   useSubmitLock,
@@ -192,8 +196,16 @@ export function CategoryManager() {
     void runLocked(submit)
   }
 
-  const isFormValid = name.trim() && emoji.trim()
-  const isSharedFormValid = sharedName.trim() && sharedEmoji.trim()
+  // A legacy name over the limit stays valid while it is unchanged.
+  const isNameTooLong =
+    name.trim() !== (editingCategory?.name.trim() ?? '') &&
+    isCategoryNameTooLong(name)
+  const isSharedNameTooLong =
+    sharedName.trim() !== (editingSharedCategory?.name.trim() ?? '') &&
+    isCategoryNameTooLong(sharedName)
+  const isFormValid = name.trim() && emoji.trim() && !isNameTooLong
+  const isSharedFormValid =
+    sharedName.trim() && sharedEmoji.trim() && !isSharedNameTooLong
 
   const resetSharedForm = () => {
     setSharedName('')
@@ -288,11 +300,13 @@ export function CategoryManager() {
                 key={category.id}
                 className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
               >
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-3">
+                <div className="flex min-w-0 flex-col gap-1">
+                  <div className="flex min-w-0 items-center gap-3">
                     <CategoryColorDot category={category} />
                     <span className="text-xl">{category.emoji}</span>
-                    <span className="text-zinc-200">{category.name}</span>
+                    <span className="min-w-0 text-zinc-200 [overflow-wrap:anywhere]">
+                      {category.name}
+                    </span>
                   </div>
                   <CategoryRules
                     categoryName={category.name}
@@ -352,7 +366,16 @@ export function CategoryManager() {
                     setName(e.target.value)
                     setError('')
                   }}
-                  error={error}
+                  maxLength={CATEGORY_NAME_MAX_LENGTH}
+                  error={
+                    error ||
+                    getTextLimitMessage(
+                      name,
+                      CATEGORY_NAME_MAX_LENGTH,
+                      CATEGORY_NAME_TOO_LONG_MESSAGE,
+                      editingCategory?.name
+                    )
+                  }
                 />
               </div>
               <div className="w-full sm:w-24">
@@ -433,11 +456,13 @@ export function CategoryManager() {
                   key={category.id}
                   className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
                 >
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-col gap-1">
+                    <div className="flex min-w-0 items-center gap-3">
                       <CategoryColorDot category={category} />
                       <span className="text-xl">{category.emoji}</span>
-                      <span className="text-zinc-200">{category.name}</span>
+                      <span className="min-w-0 text-zinc-200 [overflow-wrap:anywhere]">
+                        {category.name}
+                      </span>
                     </div>
                     <CategoryRules
                       categoryName={category.name}
@@ -505,7 +530,16 @@ export function CategoryManager() {
                     setSharedName(e.target.value)
                     setSharedError('')
                   }}
-                  error={sharedError}
+                  maxLength={CATEGORY_NAME_MAX_LENGTH}
+                  error={
+                    sharedError ||
+                    getTextLimitMessage(
+                      sharedName,
+                      CATEGORY_NAME_MAX_LENGTH,
+                      CATEGORY_NAME_TOO_LONG_MESSAGE,
+                      editingSharedCategory?.name
+                    )
+                  }
                 />
               </div>
               <div className="w-full sm:w-24">

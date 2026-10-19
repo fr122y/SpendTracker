@@ -116,7 +116,10 @@ export function ExpenseLog() {
         <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           Операции за {formattedDate}
         </h2>
-        <span className="text-base font-semibold text-emerald-400 sm:text-lg">
+        <span
+          data-testid="expense-log-total"
+          className="whitespace-nowrap text-base font-semibold text-emerald-400 sm:text-lg"
+        >
           {dailyTotal.toLocaleString('ru-RU')} ₽
         </span>
       </div>

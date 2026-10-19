@@ -159,7 +159,7 @@ function ExpenseDetailRow({ expense, onOpen }: ExpenseDetailRowProps) {
           {expense.emoji}
         </span>
         <div className="min-w-0">
-          <p className="break-words text-sm font-medium text-zinc-100">
+          <p className="text-sm font-medium text-zinc-100 [overflow-wrap:anywhere]">
             {expense.description || 'Без описания'}
           </p>
           <p className="mt-1 text-xs text-zinc-500">{operationLabel}</p>
@@ -317,8 +317,11 @@ export function AnalysisCategoryDetailsDialog({
         className="flex h-full w-full flex-col overflow-hidden border border-zinc-800 bg-zinc-950 shadow-2xl md:max-h-[90vh] md:max-w-3xl md:rounded-xl"
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-900 px-4 py-3 sm:px-6">
-          <div>
-            <h2 id={titleId} className="text-lg font-semibold text-zinc-100">
+          <div className="min-w-0">
+            <h2
+              id={titleId}
+              className="text-lg font-semibold text-zinc-100 [overflow-wrap:anywhere]"
+            >
               Расходы: {category.name}
             </h2>
             <p id={descriptionId} className="mt-1 text-sm text-zinc-400">
