@@ -130,13 +130,20 @@ test.describe('No Horizontal Scroll Tests', () => {
         await categoryInput.fill(typedName)
         await expect(categoryInput).toHaveValue(categoryName)
         await page.getByLabel('Эмодзи личной категории').fill(emoji)
+        // Wait for the add server action, so the reload cannot abort it.
+        const categorySaved = page.waitForResponse(
+          (response) =>
+            response.request().method() === 'POST' &&
+            (response.request().postData() ?? '').includes(categoryName)
+        )
         await page
           .getByRole('button', { name: 'Добавить личную категорию' })
           .click()
         categoryCreated = true
+        expect((await categorySaved).ok()).toBe(true)
         await expect(categoryRow).toBeVisible(TIMEOUT)
-        // The new category id must reach the server before it is used.
         await reloadPage(page)
+        await expect(categoryRow).toBeVisible(TIMEOUT)
 
         const form = journalForm(page)
         await openJournal(page)
