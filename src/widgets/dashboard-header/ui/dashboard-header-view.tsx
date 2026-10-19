@@ -16,6 +16,12 @@ export interface DashboardHeaderViewProps {
   title?: string
 }
 
+/**
+ * One flex row from the tablet breakpoint (`md`, 768 px) up: brand and actions
+ * take the side slots, the date navigation stays in the middle, and the actions
+ * never shrink below their content, so controls cannot overlap. Below `md` the
+ * date navigation wraps to a second row under the brand and actions.
+ */
 export function DashboardHeaderView({
   formattedDate,
   isEditMode,
@@ -31,21 +37,11 @@ export function DashboardHeaderView({
     <header
       className={cn(
         'border-b border-zinc-700 bg-zinc-900/50 px-3 py-3 sm:px-4 sm:py-4',
-        'flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center'
+        'flex flex-wrap items-center gap-x-2 gap-y-3 md:flex-nowrap md:gap-x-3'
       )}
     >
-      <div className="flex items-center justify-between sm:min-w-0 sm:justify-self-start">
+      <div className="order-1 flex min-w-0 flex-1 items-center">
         <HeaderBrand title={title} />
-
-        <div className="flex items-center gap-2 sm:hidden">
-          <HeaderActions
-            isEditMode={isEditMode}
-            isToday={isToday}
-            onSetToday={onSetToday}
-            onToggleEditMode={onToggleEditMode}
-            showEditLabel={false}
-          />
-        </div>
       </div>
 
       <HeaderDateNavigation
@@ -53,16 +49,18 @@ export function DashboardHeaderView({
         onNextDay={onNextDay}
         onOpenMonthPicker={onOpenMonthPicker}
         onPreviousDay={onPreviousDay}
-        className="sm:justify-self-center"
+        className="order-3 w-full md:order-2 md:w-auto md:flex-none"
       />
 
-      <div className="hidden items-center justify-end gap-2 sm:flex sm:justify-self-end">
+      <div
+        data-testid="header-actions"
+        className="order-2 flex shrink-0 items-center justify-end gap-2 md:order-3 md:flex-1"
+      >
         <HeaderActions
           isEditMode={isEditMode}
           isToday={isToday}
           onSetToday={onSetToday}
           onToggleEditMode={onToggleEditMode}
-          showEditLabel
         />
       </div>
     </header>

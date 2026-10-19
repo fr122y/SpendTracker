@@ -31,10 +31,16 @@ account navigation, and dashboard edit-mode entry.
 - Displays the selected date using localized formatting
 - Supports previous/next day navigation
 - Opens `MonthPickerModal` from the date trigger
-- Shows a `Today` shortcut only when the selected date is not today
-- Exposes an edit-mode toggle for dashboard layout editing
-- Keeps mobile-friendly touch targets, while responsive layout is handled in UI
-  composition rather than via viewport-specific store logic
+- Reserves the `Today` slot; the button is visible only when the selected date
+  is not today, so other actions do not move
+- Exposes an edit-mode toggle with a fixed width, hidden below 768 px (the
+  layout editor is not available on phones)
+- From 768 px the header is one flex row that cannot overlap: the brand
+  truncates and the actions never shrink below their content; below 768 px the
+  date navigation wraps to a second row
+- Below 1280 px actions are 44 px icon buttons with Russian `aria-label` and
+  `title`; from 1280 px they show text labels
+- Layout is handled with CSS breakpoints, not viewport-specific store logic
 
 ## Dependencies
 

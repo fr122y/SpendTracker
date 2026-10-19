@@ -75,14 +75,13 @@ describe('DashboardHeader', () => {
     expect(screen.getByLabelText('Следующий день')).toBeInTheDocument()
   })
 
-  it('renders account navigation actions', () => {
+  it('renders a single account link', () => {
     render(<DashboardHeader />)
 
-    const accountLinks = screen.getAllByRole('link', { name: 'Аккаунт' })
+    const accountLink = screen.getByRole('link', { name: 'Аккаунт' })
 
-    expect(accountLinks).toHaveLength(2)
-    expect(accountLinks[0]).toHaveAttribute('href', '/account')
-    expect(accountLinks[1]).toHaveAttribute('href', '/account')
+    expect(accountLink).toHaveAttribute('href', '/account')
+    expect(accountLink).toHaveAttribute('title', 'Аккаунт')
   })
 
   it('calls prevDay when clicking previous button', () => {
@@ -114,13 +113,20 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    expect(screen.getAllByRole('button', { name: 'Сегодня' })).toHaveLength(2)
+    const todayButton = screen.getByRole('button', { name: 'Сегодня' })
+    expect(todayButton).toHaveAttribute('title', 'Сегодня')
+    expect(screen.getByTestId('header-today-slot')).not.toHaveClass('invisible')
   })
 
-  it('hides today button when selected date is today', () => {
+  it('keeps the today slot in the layout but hidden when selected date is today', () => {
     render(<DashboardHeader />)
 
-    expect(screen.queryByText('Сегодня')).not.toBeInTheDocument()
+    const slot = screen.getByTestId('header-today-slot')
+    expect(slot).toHaveClass('invisible')
+    expect(slot).toHaveAttribute('aria-hidden', 'true')
+    expect(
+      screen.queryByRole('button', { name: 'Сегодня' })
+    ).not.toBeInTheDocument()
   })
 
   it('calls setToday when clicking today button', () => {
@@ -128,7 +134,7 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Сегодня' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Сегодня' }))
 
     expect(mockSetToday).toHaveBeenCalledTimes(1)
   })
@@ -136,7 +142,7 @@ describe('DashboardHeader', () => {
   it('calls toggleEditMode when clicking edit button', () => {
     render(<DashboardHeader />)
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Редактировать' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'Редактировать' }))
 
     expect(mockToggleEditMode).toHaveBeenCalledTimes(1)
   })
@@ -146,10 +152,35 @@ describe('DashboardHeader', () => {
 
     render(<DashboardHeader />)
 
-    expect(screen.getAllByRole('button', { name: 'Готово' })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Готово' })).toBeInTheDocument()
   })
 
-  it('shows mobile touch-friendly button sizing', () => {
+  it('hides the edit button on phones and gives it a fixed width', () => {
+    render(<DashboardHeader />)
+
+    expect(screen.getByRole('button', { name: 'Редактировать' })).toHaveClass(
+      'hidden',
+      'md:inline-flex',
+      'w-11',
+      'xl:w-44'
+    )
+  })
+
+  it('uses icon buttons with fixed widths for header actions', () => {
+    mockSelectedDate = new Date(2026, 0, 16)
+
+    render(<DashboardHeader />)
+
+    for (const control of [
+      screen.getByRole('button', { name: 'Сегодня' }),
+      screen.getByRole('link', { name: 'Аккаунт' }),
+      screen.getByRole('button', { name: 'Редактировать' }),
+    ]) {
+      expect(control).toHaveClass('min-h-11', 'w-11', 'shrink-0')
+    }
+  })
+
+  it('shows touch-friendly day navigation buttons', () => {
     render(<DashboardHeader />)
 
     expect(screen.getByLabelText('Предыдущий день')).toHaveClass(
@@ -160,29 +191,15 @@ describe('DashboardHeader', () => {
       'min-h-[44px]',
       'min-w-[44px]'
     )
-    expect(
-      screen.getAllByRole('button', { name: 'Редактировать' })[0]
-    ).toHaveClass('min-h-11', 'min-w-[44px]')
-    expect(screen.getAllByRole('link', { name: 'Аккаунт' })[0]).toHaveClass(
-      'min-h-11',
-      'min-w-[44px]'
-    )
   })
 
-  it('keeps desktop date navigation centered independently from actions', () => {
-    mockSelectedDate = new Date(2026, 0, 16)
-
+  it('keeps the header on one non-wrapping row from the tablet breakpoint', () => {
     render(<DashboardHeader />)
 
-    expect(screen.getByRole('banner')).toHaveClass(
-      'sm:grid',
-      'sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+    expect(screen.getByRole('banner')).toHaveClass('flex', 'md:flex-nowrap')
+    expect(screen.getByTestId('header-actions')).toHaveClass(
+      'shrink-0',
+      'md:flex-1'
     )
-    expect(screen.getByLabelText('Выбрать месяц').parentElement).toHaveClass(
-      'sm:justify-self-center'
-    )
-    expect(
-      screen.getAllByRole('button', { name: 'Сегодня' })[1].parentElement
-    ).toHaveClass('sm:justify-self-end')
   })
 })
