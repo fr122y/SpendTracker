@@ -61,6 +61,17 @@ describe('AuthTabs', () => {
     mockSearchParamsGet.mockReturnValue(null)
   })
 
+  it('makes both tabs at least 44px tall on phones only', () => {
+    render(<AuthTabs />)
+
+    for (const name of ['Вход', 'Регистрация']) {
+      expect(screen.getByRole('button', { name })).toHaveClass(
+        'min-h-11',
+        'wide:min-h-0'
+      )
+    }
+  })
+
   it('shows sign-in tab as active by default', () => {
     render(<AuthTabs />)
 

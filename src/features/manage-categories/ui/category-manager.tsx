@@ -259,7 +259,7 @@ export function CategoryManager() {
         <button
           type="button"
           onClick={() => setMode('personal')}
-          className={`min-h-10 rounded px-3 text-sm font-medium transition ${
+          className={`min-h-11 rounded px-3 text-sm font-medium transition wide:min-h-10 ${
             mode === 'personal'
               ? 'bg-zinc-700 text-zinc-100'
               : 'text-zinc-400 hover:text-zinc-100'
@@ -270,7 +270,7 @@ export function CategoryManager() {
         <button
           type="button"
           onClick={() => setMode('shared')}
-          className={`min-h-10 rounded px-3 text-sm font-medium transition ${
+          className={`min-h-11 rounded px-3 text-sm font-medium transition wide:min-h-10 ${
             mode === 'shared'
               ? 'bg-zinc-700 text-zinc-100'
               : 'text-zinc-400 hover:text-zinc-100'

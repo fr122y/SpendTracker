@@ -32,7 +32,7 @@ export function HeaderDateNavigation({
       <button
         type="button"
         onClick={onOpenMonthPicker}
-        className="min-w-[180px] shrink-0 whitespace-nowrap rounded px-2 py-1 text-center font-mono text-sm capitalize transition-colors hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-w-[220px]"
+        className="min-h-11 min-w-[180px] shrink-0 whitespace-nowrap rounded px-2 py-1 wide:min-h-0 text-center font-mono text-sm capitalize transition-colors hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-w-[220px]"
         aria-label="Выбрать месяц"
       >
         {formattedDate}

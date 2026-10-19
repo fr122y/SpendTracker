@@ -277,7 +277,7 @@ export function Calendar() {
       <div className="flex items-center justify-between">
         <button
           onClick={prevMonth}
-          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-h-0 sm:min-w-0"
+          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 wide:min-h-0 wide:min-w-0"
           aria-label="Предыдущий месяц"
         >
           <svg
@@ -296,14 +296,14 @@ export function Calendar() {
         </button>
         <button
           onClick={() => setIsMonthPickerOpen(true)}
-          className="text-base font-medium text-zinc-100 sm:text-lg hover:text-zinc-300 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1"
+          className="text-base font-medium text-zinc-100 sm:text-lg hover:text-zinc-300 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-2 py-1 min-h-11 wide:min-h-0"
           aria-label="Выбрать месяц"
         >
           {monthName} {year}
         </button>
         <button
           onClick={nextMonth}
-          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 sm:min-h-0 sm:min-w-0"
+          className="min-h-[44px] min-w-[44px] rounded p-2 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 wide:min-h-0 wide:min-w-0"
           aria-label="Следующий месяц"
         >
           <svg
@@ -329,7 +329,7 @@ export function Calendar() {
             type="button"
             variant={scope === option.value ? 'primary' : 'ghost'}
             onClick={() => setScope(option.value)}
-            className="min-h-9 px-3 py-1 text-xs"
+            className="px-3 py-1 text-xs wide:min-h-9"
           >
             {option.label}
           </Button>
@@ -337,7 +337,7 @@ export function Calendar() {
       </div>
 
       {/* Weekday Headers */}
-      <div className="grid grid-cols-7 gap-2 sm:gap-3">
+      <div className="grid grid-cols-7 gap-1 sm:gap-3">
         {WEEKDAY_HEADERS.map((day, index) => (
           <div
             key={day}
@@ -352,7 +352,7 @@ export function Calendar() {
       </div>
 
       {/* Calendar Days */}
-      <div className="grid grid-cols-7 gap-2 sm:gap-3">
+      <div className="grid grid-cols-7 gap-1 sm:gap-3">
         {days.map((day, index) => (
           <button
             key={index}
@@ -533,7 +533,7 @@ function PaydayLegendItem({
       <button
         onClick={() => onStartEdit(field)}
         className={cn(
-          'flex items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2',
+          'flex min-h-11 items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-zinc-800 wide:min-h-0 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-2',
           colors.focus
         )}
       >

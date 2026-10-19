@@ -69,7 +69,7 @@ export function CredentialsSignInForm({
       <div className="text-right">
         <Link
           href="/forgot-password"
-          className="text-sm text-emerald-400 transition-colors hover:text-emerald-300"
+          className="inline-flex min-h-11 items-center text-sm text-emerald-400 transition-colors hover:text-emerald-300 wide:min-h-0"
         >
           Забыли пароль?
         </Link>
@@ -91,7 +91,7 @@ export function CredentialsSignInForm({
           <button
             type="button"
             onClick={onSwitchToRegister}
-            className="text-emerald-400 transition-colors hover:text-emerald-300"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center text-emerald-400 transition-colors hover:text-emerald-300 wide:min-h-0 wide:min-w-0"
           >
             Зарегистрироваться
           </button>
