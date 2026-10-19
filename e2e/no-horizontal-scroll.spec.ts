@@ -5,6 +5,7 @@ import {
   expenseRow,
   journalForm,
   openJournal,
+  parseRubles,
   reloadPage,
   test,
   TIMEOUT,
@@ -107,7 +108,8 @@ test.describe('No Horizontal Scroll Tests', () => {
       /** Expense this test created, removed in afterEach even on failure. */
       let createdExpense: { description: string; amount: number } | null = null
 
-      // Removes this test's expense and every category an E2E run of this
+      // Removes this test's expense, stray `E2E <8 digits> Щ…` expenses of
+      // the selected day, and every category an E2E run of this
       // test created (`E2E` + 8 digits + `Ж…`), including leftovers of
       // earlier runs that were interrupted.
       test.afterEach(async ({ page }) => {
@@ -121,6 +123,20 @@ test.describe('No Horizontal Scroll Tests', () => {
             await deleteExpense(page, description, amount)
           }
           createdExpense = null
+        }
+        // Expenses of interrupted earlier runs on the selected day.
+        await openJournal(page)
+        const strayDescriptions = page
+          .locator('[data-testid^="expense-description-"]')
+          .filter({ hasText: /^E2E \d{8} Щ+$/ })
+        for (let i = 0; i < 10 && (await strayDescriptions.count()) > 0; i++) {
+          const stray = strayDescriptions.first()
+          const strayDescription = (await stray.textContent()) ?? ''
+          const strayAmount = await stray
+            .locator('xpath=ancestor::div[.//button[@aria-label="delete"]][1]')
+            .getByRole('button', { name: 'edit amount' })
+            .textContent()
+          await deleteExpense(page, strayDescription, parseRubles(strayAmount))
         }
         const leftover = page.getByRole('button', {
           name: /^Удалить E2E\d{8}Ж+$/,
