@@ -403,7 +403,13 @@ test.describe('Pockets', () => {
     await expect(row).toBeVisible(TIMEOUT)
     await expectNoHorizontalScroll(page)
     await page.setViewportSize({ width: 1280, height: 720 })
-    // The desktop tree remounts; collapse the history only if it is open.
+    // Wait for the desktop tree to replace the accordion, then collapse the
+    // history only if the remounted pocket shows it open.
+    await expect(
+      page.locator('nav[data-testid="mobile-widget-list"]')
+    ).toHaveCount(0, TIMEOUT)
+    // Later steps expect the pocket open on desktop, as before the resize.
+    if (!(await region.isVisible())) await openPocket()
     if (
       (await toggle.isVisible()) &&
       (await toggle.getAttribute('aria-expanded')) === 'true'
