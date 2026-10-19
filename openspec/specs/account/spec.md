@@ -52,3 +52,23 @@
 
 - **WHEN** новый пароль совпадает с текущим
 - **THEN** пароль не меняется и показано сообщение «Новый пароль должен отличаться от текущего»
+
+### Requirement: Leave the login page out of history after sign-in
+
+After a successful sign-in or registration, the app MUST replace the current history entry with the destination page, so browser Back MUST NOT return to /login.
+
+#### Scenario: Back after login
+
+- **GIVEN** a user signed in on /login and redirected to the dashboard
+- **WHEN** the user presses Back
+- **THEN** the browser does not show /login
+
+### Requirement: Phone touch targets on the login page are at least 44 px
+
+On a phone viewport the sign-in and register tabs, the «Забыли пароль?» link and the switch links between the forms MUST have a hit box of at least 44×44 px.
+
+#### Scenario: Login tabs on a phone
+
+- **GIVEN** a 375×667 viewport on /login
+- **WHEN** the tabs and links are measured
+- **THEN** each box is at least 44 px wide and 44 px high

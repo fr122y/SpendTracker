@@ -20,4 +20,4 @@
 
 - [x] 4.1 Прогнать правило по последним 60 коммитам `origin/main` и записать результат в описание Pull Request.
 - [x] 4.2 Выполнить `npm run validate` и `npm run spec:check`.
-- [ ] 4.3 Открыть Pull Request: все проверки, кроме ожидаемо красной `protected-paths`, зелёные.
+- [x] 4.3 Открыть Pull Request: все проверки, кроме ожидаемо красной `protected-paths`, зелёные.
