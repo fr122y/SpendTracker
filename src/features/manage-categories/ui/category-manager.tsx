@@ -294,11 +294,11 @@ export function CategoryManager() {
 
       {mode === 'personal' && (
         <>
-          <ul className="flex flex-col gap-2">
+          <ul className="@container flex flex-col gap-2">
             {categories.map((category) => (
               <li
                 key={category.id}
-                className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
+                className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 @md:flex-row @md:items-start @md:justify-between @md:gap-3 @md:p-3"
               >
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex min-w-0 items-center gap-3">
@@ -318,13 +318,13 @@ export function CategoryManager() {
                     onDelete={(id) => deleteKeywordMapping.mutate(id)}
                   />
                 </div>
-                <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                <div className="flex shrink-0 flex-row gap-2">
                   <Button
                     type="button"
                     variant="ghost"
                     onClick={() => startPersonalEdit(category)}
                     aria-label={`Изменить ${category.name}`}
-                    className="w-full sm:w-auto"
+                    className="flex-1 @md:flex-none"
                   >
                     <Pencil className="h-4 w-4" />
                     Изменить
@@ -334,7 +334,7 @@ export function CategoryManager() {
                     onClick={() => setCategoryPendingDelete(category)}
                     disabled={categories.length <= 1}
                     aria-label={`Удалить ${category.name}`}
-                    className="w-full sm:w-auto"
+                    className="flex-1 @md:flex-none"
                   >
                     <Trash2 className="h-4 w-4" />
                     Удалить
@@ -454,11 +454,11 @@ export function CategoryManager() {
           {isSharedCategoriesLoading ? (
             <CategoryManagerSkeleton />
           ) : (
-            <ul className="flex flex-col gap-2">
+            <ul className="@container flex flex-col gap-2">
               {sharedCategories.map((category) => (
                 <li
                   key={category.id}
-                  className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:p-3"
+                  className="flex flex-col gap-2 rounded-lg bg-zinc-800/50 p-2 @md:flex-row @md:items-start @md:justify-between @md:gap-3 @md:p-3"
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex min-w-0 items-center gap-3">
@@ -478,13 +478,13 @@ export function CategoryManager() {
                       onDelete={(id) => deleteSharedKeywordMapping.mutate(id)}
                     />
                   </div>
-                  <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                  <div className="flex shrink-0 flex-row gap-2">
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={() => startSharedEdit(category)}
                       aria-label={`Изменить ${category.name}`}
-                      className="w-full sm:w-auto"
+                      className="flex-1 @md:flex-none"
                     >
                       <Pencil className="h-4 w-4" />
                       Изменить
@@ -493,7 +493,7 @@ export function CategoryManager() {
                       type="button"
                       variant="danger"
                       onClick={() => setSharedCategoryPendingArchive(category)}
-                      className="w-full sm:w-auto"
+                      className="flex-1 @md:flex-none"
                     >
                       <Archive className="h-4 w-4" />
                       Архив

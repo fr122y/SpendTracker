@@ -16,3 +16,15 @@ A personal or shared category name MUST NOT exceed 40 characters, counted as Jav
 - **GIVEN** a stored category with a 90-character name
 - **WHEN** the user changes only its color
 - **THEN** the color is saved and the name is unchanged
+
+### Requirement: Show long category names in the category list
+
+The category list MUST show as much of a category name as fits on one line, truncated with an ellipsis and with the full name as the element title. When the categories widget is wide, the edit and delete actions MUST sit beside the name and MUST NOT shrink; the name MUST take at least half of the remaining row width. When the widget is narrow, the actions MUST move to a compact row under the name, and the name MUST take at least half of the row width. The layout MUST follow the widget width (a container query), not the viewport width.
+
+#### Scenario: Narrow categories widget on a desktop
+
+- **GIVEN** the categories widget sits in a narrow dashboard column at 1280 px
+- **AND** a category is named with 40 characters without spaces
+- **WHEN** the category list is shown
+- **THEN** «Изменить» and «Удалить» are under the name
+- **AND** the name takes at least half of the row width

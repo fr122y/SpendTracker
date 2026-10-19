@@ -190,8 +190,10 @@ test.describe('No Horizontal Scroll Tests', () => {
         const buttonsBox = await deleteCategoryButton
           .locator('xpath=..')
           .boundingBox()
+        // A narrow widget stacks the buttons under the name.
+        const stacked = buttonsBox!.y >= nameBox!.y + nameBox!.height
         expect(nameBox!.width).toBeGreaterThanOrEqual(
-          0.5 * (rowBox!.width - buttonsBox!.width)
+          0.5 * (stacked ? rowBox!.width : rowBox!.width - buttonsBox!.width)
         )
 
         const form = journalForm(page)
