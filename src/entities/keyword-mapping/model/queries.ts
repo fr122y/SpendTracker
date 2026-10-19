@@ -4,13 +4,14 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
   deleteKeywordMapping as deleteKeywordMappingAction,
+  deleteSharedKeywordMapping as deleteSharedKeywordMappingAction,
   getKeywordMappings,
   getSharedKeywordMappings,
   queryKeys,
   saveKeywordMapping as saveKeywordMappingAction,
   saveSharedKeywordMapping as saveSharedKeywordMappingAction,
 } from '@/shared/api'
-import { showMutationRollbackToast } from '@/shared/lib'
+import { normalizeKeywordPhrase, showMutationRollbackToast } from '@/shared/lib'
 
 import type {
   Category,
@@ -18,10 +19,6 @@ import type {
   SharedBudgetCategory,
   SharedKeywordMapping,
 } from '@/shared/types'
-
-function normalizeKeyword(keyword: string): string {
-  return keyword.trim().toLowerCase()
-}
 
 function getCategoryMeta(
   categories: Category[] | undefined,
@@ -64,7 +61,7 @@ export function useSaveKeywordMapping() {
       categoryId: string
     }) => saveKeywordMappingAction(keyword, categoryId),
     onMutate: async ({ keyword, categoryId }) => {
-      const normalizedKeyword = normalizeKeyword(keyword)
+      const normalizedKeyword = normalizeKeywordPhrase(keyword)
       if (!normalizedKeyword) {
         return { previous: undefined as KeywordMapping[] | undefined }
       }
@@ -82,6 +79,7 @@ export function useSaveKeywordMapping() {
       const optimisticRow: KeywordMapping = {
         id: `temp-${crypto.randomUUID()}`,
         keyword: normalizedKeyword,
+        matchType: 'exact',
         categoryId,
         categoryName: categoryMeta.name,
         categoryEmoji: categoryMeta.emoji,
@@ -135,7 +133,7 @@ export function useSaveSharedKeywordMapping(sharedBudgetId: string) {
       categoryId: string
     }) => saveSharedKeywordMappingAction(sharedBudgetId, keyword, categoryId),
     onMutate: async ({ keyword, categoryId }) => {
-      const normalizedKeyword = normalizeKeyword(keyword)
+      const normalizedKeyword = normalizeKeywordPhrase(keyword)
       if (!normalizedKeyword) {
         return { previous: undefined as SharedKeywordMapping[] | undefined }
       }
@@ -150,6 +148,7 @@ export function useSaveSharedKeywordMapping(sharedBudgetId: string) {
       const optimisticRow: SharedKeywordMapping = {
         id: `temp-${crypto.randomUUID()}`,
         keyword: normalizedKeyword,
+        matchType: 'exact',
         categoryId,
         categoryName: categoryMeta.name,
         categoryEmoji: categoryMeta.emoji,
@@ -202,6 +201,34 @@ export function useDeleteKeywordMapping() {
       queryClient.invalidateQueries({
         queryKey: queryKeys.keywordMappings.all,
       })
+    },
+  })
+}
+
+export function useDeleteSharedKeywordMapping(sharedBudgetId: string) {
+  const queryClient = useQueryClient()
+  const queryKey = queryKeys.sharedKeywordMappings.list(sharedBudgetId)
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      deleteSharedKeywordMappingAction(sharedBudgetId, id),
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previous =
+        queryClient.getQueryData<SharedKeywordMapping[]>(queryKey)
+
+      queryClient.setQueryData(queryKey, (old: SharedKeywordMapping[] = []) =>
+        old.filter((item) => item.id !== id)
+      )
+
+      return { previous }
+    },
+    onError: (_error, _id, context) => {
+      queryClient.setQueryData(queryKey, context?.previous)
+      showMutationRollbackToast()
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
     },
   })
 }

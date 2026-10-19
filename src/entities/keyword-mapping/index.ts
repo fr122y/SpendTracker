@@ -1,5 +1,6 @@
 export {
   useDeleteKeywordMapping,
+  useDeleteSharedKeywordMapping,
   useKeywordMappings,
   useKeywordMappingStore,
   useSaveKeywordMapping,

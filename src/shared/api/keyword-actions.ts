@@ -4,12 +4,9 @@ import { and, eq } from 'drizzle-orm'
 
 import { auth } from '@/shared/auth'
 import { categories, db, keywordMappings } from '@/shared/db'
+import { normalizeKeywordPhrase } from '@/shared/lib/keyword-phrase'
 
-import type { KeywordMapping } from '@/shared/types'
-
-function normalizeKeyword(keyword: string): string {
-  return keyword.trim().toLowerCase()
-}
+import type { KeywordMapping, KeywordMatchType } from '@/shared/types'
 
 async function getUserId(): Promise<string> {
   const session = await auth()
@@ -26,6 +23,7 @@ export async function getKeywordMappings(): Promise<KeywordMapping[]> {
     .select({
       id: keywordMappings.id,
       keyword: keywordMappings.keyword,
+      matchType: keywordMappings.matchType,
       categoryId: categories.id,
       categoryName: categories.name,
       categoryEmoji: categories.emoji,
@@ -35,15 +33,32 @@ export async function getKeywordMappings(): Promise<KeywordMapping[]> {
     .where(eq(keywordMappings.userId, userId))
 }
 
+/**
+ * Upserts the user's rule for a phrase. A manual category choice saves an
+ * `exact` rule, which replaces any earlier rule with the same phrase.
+ */
 export async function saveKeywordMapping(
   keyword: string,
-  categoryId: string
+  categoryId: string,
+  matchType: KeywordMatchType = 'exact'
 ): Promise<KeywordMapping> {
   const userId = await getUserId()
-  const normalizedKeyword = normalizeKeyword(keyword)
+  const normalizedKeyword = normalizeKeywordPhrase(keyword)
 
   if (!normalizedKeyword) {
     throw new Error('Keyword is required')
+  }
+  if (matchType !== 'exact' && matchType !== 'fuzzy') {
+    throw new Error('Invalid match type')
+  }
+
+  const [category] = await db
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+
+  if (!category) {
+    throw new Error('Category not found')
   }
 
   const inserted = await db
@@ -53,10 +68,11 @@ export async function saveKeywordMapping(
       userId,
       keyword: normalizedKeyword,
       categoryId,
+      matchType,
     })
     .onConflictDoUpdate({
       target: [keywordMappings.userId, keywordMappings.keyword],
-      set: { categoryId },
+      set: { categoryId, matchType },
     })
     .returning({ id: keywordMappings.id })
 
@@ -64,6 +80,7 @@ export async function saveKeywordMapping(
     .select({
       id: keywordMappings.id,
       keyword: keywordMappings.keyword,
+      matchType: keywordMappings.matchType,
       categoryId: categories.id,
       categoryName: categories.name,
       categoryEmoji: categories.emoji,

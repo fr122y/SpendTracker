@@ -157,9 +157,17 @@ export interface LayoutConfig {
   hidden?: WidgetId[]
 }
 
+/**
+ * `exact` matches only the whole normalized description (rules created by a
+ * manual category choice); `fuzzy` matches a whole word of the description,
+ * tolerating small typos (default and legacy rules).
+ */
+export type KeywordMatchType = 'exact' | 'fuzzy'
+
 export interface KeywordMapping {
   id: string
   keyword: string
+  matchType: KeywordMatchType
   categoryId: string
   categoryName: string
   categoryEmoji: string
@@ -168,6 +176,7 @@ export interface KeywordMapping {
 export interface SharedKeywordMapping {
   id: string
   keyword: string
+  matchType: KeywordMatchType
   categoryId: string
   categoryName: string
   categoryEmoji: string

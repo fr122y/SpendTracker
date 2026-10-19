@@ -18,6 +18,7 @@ jest.mock('@/shared/db', () => {
     insertValues: jest.fn(),
     insertReturning: jest.fn(),
     mappingSelectWhere: jest.fn(),
+    deleteWhere: jest.fn(),
   }
 
   mocks.insertValues.mockReturnValue({
@@ -44,6 +45,9 @@ jest.mock('@/shared/db', () => {
     }),
     insert: jest.fn(() => ({
       values: mocks.insertValues,
+    })),
+    delete: jest.fn(() => ({
+      where: mocks.deleteWhere,
     })),
   }
 
@@ -75,6 +79,7 @@ import { auth } from '@/shared/auth'
 
 import { assertCanUseSharedBudget } from '../shared-budget-actions'
 import {
+  deleteSharedKeywordMapping,
   getSharedKeywordMappings,
   saveSharedKeywordMapping,
 } from '../shared-keyword-actions'
@@ -86,6 +91,7 @@ describe('shared-keyword-actions', () => {
       insertValues: jest.Mock
       insertReturning: jest.Mock
       mappingSelectWhere: jest.Mock
+      deleteWhere: jest.Mock
       resetSelectCall: () => void
     }
   }
@@ -152,6 +158,7 @@ describe('shared-keyword-actions', () => {
         sharedBudgetId: 'shared-1',
         keyword: 'молоко',
         sharedBudgetCategoryId: 'shared-category-1',
+        matchType: 'exact',
       })
     )
     expect(result).toEqual(
@@ -175,6 +182,26 @@ describe('shared-keyword-actions', () => {
     await expect(
       saveSharedKeywordMapping('shared-1', 'молоко', 'shared-category-2')
     ).rejects.toThrow('Shared category not found')
+  })
+
+  it('deletes a rule only after the membership check', async () => {
+    dbModule.__mocks.deleteWhere.mockResolvedValueOnce(undefined)
+
+    await deleteSharedKeywordMapping('shared-1', 'm1')
+
+    expect(assertCanUseSharedBudget).toHaveBeenCalledWith('shared-1', 'user-1')
+    expect(dbModule.__mocks.deleteWhere).toHaveBeenCalled()
+  })
+
+  it('does not delete when the user cannot use the budget', async () => {
+    ;(assertCanUseSharedBudget as jest.Mock).mockRejectedValueOnce(
+      new Error('Shared budget not found')
+    )
+
+    await expect(deleteSharedKeywordMapping('shared-1', 'm1')).rejects.toThrow(
+      'Shared budget not found'
+    )
+    expect(dbModule.__mocks.deleteWhere).not.toHaveBeenCalled()
   })
 
   it('throws unauthorized when no session user id', async () => {

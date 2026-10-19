@@ -8,14 +8,11 @@ import {
   sharedBudgetCategories,
   sharedBudgetKeywordMappings,
 } from '@/shared/db'
+import { normalizeKeywordPhrase } from '@/shared/lib/keyword-phrase'
 
 import { assertCanUseSharedBudget } from './shared-budget-actions'
 
-import type { SharedKeywordMapping } from '@/shared/types'
-
-function normalizeKeyword(keyword: string): string {
-  return keyword.trim().toLowerCase()
-}
+import type { KeywordMatchType, SharedKeywordMapping } from '@/shared/types'
 
 async function getUserId(): Promise<string> {
   const session = await auth()
@@ -35,6 +32,7 @@ export async function getSharedKeywordMappings(
     .select({
       id: sharedBudgetKeywordMappings.id,
       keyword: sharedBudgetKeywordMappings.keyword,
+      matchType: sharedBudgetKeywordMappings.matchType,
       categoryId: sharedBudgetCategories.id,
       categoryName: sharedBudgetCategories.name,
       categoryEmoji: sharedBudgetCategories.emoji,
@@ -59,14 +57,18 @@ export async function getSharedKeywordMappings(
 export async function saveSharedKeywordMapping(
   sharedBudgetId: string,
   keyword: string,
-  sharedBudgetCategoryId: string
+  sharedBudgetCategoryId: string,
+  matchType: KeywordMatchType = 'exact'
 ): Promise<SharedKeywordMapping> {
   const userId = await getUserId()
   await assertCanUseSharedBudget(sharedBudgetId, userId)
 
-  const normalizedKeyword = normalizeKeyword(keyword)
+  const normalizedKeyword = normalizeKeywordPhrase(keyword)
   if (!normalizedKeyword) {
     throw new Error('Keyword is required')
+  }
+  if (matchType !== 'exact' && matchType !== 'fuzzy') {
+    throw new Error('Invalid match type')
   }
 
   const [category] = await db
@@ -95,13 +97,14 @@ export async function saveSharedKeywordMapping(
       sharedBudgetId,
       keyword: normalizedKeyword,
       sharedBudgetCategoryId,
+      matchType,
     })
     .onConflictDoUpdate({
       target: [
         sharedBudgetKeywordMappings.sharedBudgetId,
         sharedBudgetKeywordMappings.keyword,
       ],
-      set: { sharedBudgetCategoryId },
+      set: { sharedBudgetCategoryId, matchType },
     })
     .returning({ id: sharedBudgetKeywordMappings.id })
 
@@ -109,6 +112,7 @@ export async function saveSharedKeywordMapping(
     .select({
       id: sharedBudgetKeywordMappings.id,
       keyword: sharedBudgetKeywordMappings.keyword,
+      matchType: sharedBudgetKeywordMappings.matchType,
       categoryId: sharedBudgetCategories.id,
       categoryName: sharedBudgetCategories.name,
       categoryEmoji: sharedBudgetCategories.emoji,
@@ -133,4 +137,21 @@ export async function saveSharedKeywordMapping(
   }
 
   return row
+}
+
+export async function deleteSharedKeywordMapping(
+  sharedBudgetId: string,
+  id: string
+): Promise<void> {
+  const userId = await getUserId()
+  await assertCanUseSharedBudget(sharedBudgetId, userId)
+
+  await db
+    .delete(sharedBudgetKeywordMappings)
+    .where(
+      and(
+        eq(sharedBudgetKeywordMappings.id, id),
+        eq(sharedBudgetKeywordMappings.sharedBudgetId, sharedBudgetId)
+      )
+    )
 }

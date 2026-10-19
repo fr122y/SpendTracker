@@ -21,6 +21,7 @@ let shouldRejectSave = false
 let shouldRejectDelete = false
 
 jest.mock('@/shared/lib', () => ({
+  ...jest.requireActual('@/shared/lib/keyword-phrase'),
   showMutationRollbackToast: jest.fn(),
 }))
 
@@ -69,6 +70,7 @@ const initialMappings: KeywordMapping[] = [
   {
     id: '1',
     keyword: 'молоко',
+    matchType: 'fuzzy',
     categoryId: 'c1',
     categoryName: 'Продукты',
     categoryEmoji: '🛒',
@@ -84,6 +86,7 @@ const sharedMappings: SharedKeywordMapping[] = [
   {
     id: 'shared-mapping-1',
     keyword: 'молоко',
+    matchType: 'fuzzy',
     categoryId: 'shared-category-1',
     categoryName: 'Продукты общие',
     categoryEmoji: '🧺',
@@ -145,6 +148,7 @@ describe('keyword mapping optimistic mutations', () => {
       expect(optimistic?.[1]).toEqual(
         expect.objectContaining({
           keyword: 'такси',
+          matchType: 'exact',
           categoryName: 'Транспорт',
           categoryEmoji: '🚕',
         })
