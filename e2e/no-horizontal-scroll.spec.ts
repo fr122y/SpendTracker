@@ -245,6 +245,8 @@ test.describe('No Horizontal Scroll Tests', () => {
 
         for (const viewport of [VIEWPORTS.desktop, VIEWPORTS.mobile_small]) {
           await page.setViewportSize(viewport)
+          // Load each layout from scratch: a resize remounts the grid.
+          await reloadPage(page)
           await openJournal(page)
           const row = expenseRow(page, description, amount)
           await expect(row).toBeVisible(TIMEOUT)
