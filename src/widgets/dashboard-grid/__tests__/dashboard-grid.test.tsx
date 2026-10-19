@@ -1,4 +1,6 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { act, render, screen, fireEvent } from '@testing-library/react'
+
+import { requestWidgetReveal } from '@/shared/lib'
 
 import { DashboardGrid } from '../ui/dashboard-grid'
 
@@ -82,26 +84,28 @@ jest.mock('@/features/mobile-widget-accordion', () => ({
   }) => (
     <div data-testid="mobile-widget-list">
       {widgets.map((id: string) => (
-        <button
-          key={id}
-          onClick={() => onToggle(id, !expandedWidgets.has(id))}
-          aria-expanded={expandedWidgets.has(id)}
-        >
-          {id}
-        </button>
+        <div key={id} data-accordion-item={id}>
+          <button
+            onClick={() => onToggle(id, !expandedWidgets.has(id))}
+            aria-expanded={expandedWidgets.has(id)}
+          >
+            {id}
+          </button>
+        </div>
       ))}
     </div>
   ),
 }))
 
 // Mock viewport hook
-let mockViewport = 'desktop'
+let mockViewport: string | null = 'desktop'
 let mockIsMobile = false
 let mockIsTabletOrSmaller = false
 
 jest.mock('@/shared/lib', () => ({
   ...jest.requireActual('@/shared/lib'),
-  useViewport: () => mockViewport,
+  useViewport: () => mockViewport ?? 'desktop',
+  useResolvedViewport: () => mockViewport,
   isMobile: () => mockIsMobile,
   isTabletOrSmaller: () => mockIsTabletOrSmaller,
 }))
@@ -144,6 +148,56 @@ describe('DashboardGrid', () => {
 
     expect(screen.getByTestId('dashboard-grid-skeleton')).toBeInTheDocument()
     expect(screen.queryByText('Calendar Widget')).not.toBeInTheDocument()
+  })
+
+  it('renders the CSS-responsive skeleton until the viewport is measured', () => {
+    mockViewport = null
+
+    render(<DashboardGrid />)
+
+    expect(screen.getByTestId('dashboard-grid-skeleton')).toBeInTheDocument()
+    expect(screen.queryByText('Calendar Widget')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('mobile-widget-list')).not.toBeInTheDocument()
+  })
+
+  describe('widget reveal requests', () => {
+    const scrollIntoView = jest.fn()
+
+    beforeEach(() => {
+      scrollIntoView.mockClear()
+      Element.prototype.scrollIntoView = scrollIntoView
+    })
+
+    it('expands the requested widget on mobile and scrolls to it', () => {
+      mockViewport = 'mobile'
+      mockIsMobile = true
+      mockIsTabletOrSmaller = true
+      render(<DashboardGrid />)
+
+      act(() => requestWidgetReveal('EXPENSE_LOG'))
+
+      expect(screen.getByText('EXPENSE_LOG')).toHaveAttribute(
+        'aria-expanded',
+        'true'
+      )
+      expect(screen.getByText('CALENDAR')).toHaveAttribute(
+        'aria-expanded',
+        'false'
+      )
+      expect(scrollIntoView).toHaveBeenCalledTimes(1)
+      expect(scrollIntoView.mock.contexts[0]).toHaveAttribute(
+        'data-accordion-item',
+        'EXPENSE_LOG'
+      )
+    })
+
+    it('ignores reveal requests outside the mobile layout', () => {
+      render(<DashboardGrid />)
+
+      act(() => requestWidgetReveal('EXPENSE_LOG'))
+
+      expect(scrollIntoView).not.toHaveBeenCalled()
+    })
   })
 
   describe('desktop layout', () => {
@@ -257,6 +311,16 @@ describe('DashboardGrid', () => {
       render(<DashboardGrid />)
 
       expect(screen.getByTestId('mobile-widget-list')).toBeInTheDocument()
+    })
+
+    it('lets the page scroll instead of an inner container', () => {
+      const { container } = render(<DashboardGrid />)
+
+      const grid = container.querySelector('[data-grid-container]')
+      expect(grid).not.toHaveClass('overflow-y-auto')
+      expect(grid).not.toHaveClass('h-full')
+      // Room for the floating calculator button below the last section
+      expect(grid).toHaveClass('pb-20')
     })
 
     it('shows all widget IDs in accordion list', () => {

@@ -70,6 +70,12 @@ Utility functions and helpers used across the application.
   by the forms and the pocket Server Actions
 - `pluralizeRu(count, [one, few, many])` (`plural.ts`): Russian plural form
   for a count, with the 11–14 exceptions
+- `useViewport()` / `useResolvedViewport()`: viewport category; the second
+  returns `null` on the server and during hydration, so a layout can show a
+  neutral placeholder instead of a guessed desktop tree
+- `requestWidgetReveal(id)` / `subscribeWidgetReveal(listener)`
+  (`widget-reveal.ts`): ask the mounted mobile accordion to open a widget and
+  scroll to it; a no-op when no layout listens
 
 ### Widget Registry (moved to features layer)
 

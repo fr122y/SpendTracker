@@ -54,6 +54,9 @@ export function dailyTotal(page: Page): Locator {
  * On wider layouts the journal has no toggle and this does nothing.
  */
 export async function openJournal(page: Page): Promise<void> {
+  // The grid shows a skeleton until the layout and viewport are known; decide
+  // only once the real layout is there.
+  await expect(page.locator('[data-grid-container]')).toBeVisible(TIMEOUT)
   const toggle = page.getByRole('button', {
     name: 'Журнал расходов',
     expanded: false,

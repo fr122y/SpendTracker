@@ -13,6 +13,7 @@ import {
   getPaydayInMonth,
   getScopedOperations,
   isValidPaydayDay,
+  requestWidgetReveal,
   type ExpenseScope,
 } from '@/shared/lib'
 import { Button } from '@/shared/ui'
@@ -355,7 +356,12 @@ export function Calendar() {
         {days.map((day, index) => (
           <button
             key={index}
-            onClick={() => setSelectedDate(day.date)}
+            onClick={() => {
+              setSelectedDate(day.date)
+              // On phones the journal is a collapsed section below: open it
+              // so the tap has a visible effect.
+              requestWidgetReveal('EXPENSE_LOG')
+            }}
             aria-label={getDayLabel(day)}
             className={cn(
               'relative flex min-h-[48px] items-center justify-center rounded text-sm transition-colors sm:h-14 sm:text-base',

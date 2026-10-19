@@ -2,6 +2,7 @@ import {
   expect,
   expenseRow,
   journalForm,
+  openJournal,
   reloadPage,
   test,
   TIMEOUT,
@@ -112,7 +113,8 @@ test.describe('Viewport Resize Adaptation Tests', () => {
       // Layout should not break
       await expectNoHorizontalScroll(page)
 
-      // Form should remain functional
+      // Form should remain functional (on mobile, open the journal section)
+      await openJournal(page)
       await expect(
         journalForm(page).getByLabel('Описание расхода')
       ).toBeVisible()

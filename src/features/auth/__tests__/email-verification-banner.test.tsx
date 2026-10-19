@@ -8,11 +8,15 @@ jest.mock('@/shared/api', () => ({
     mockResendEmailVerification(...args),
 }))
 
-import { EmailVerificationBanner } from '@/features/auth/ui/email-verification-banner'
+import {
+  EMAIL_BANNER_DISMISSED_KEY,
+  EmailVerificationBanner,
+} from '@/features/auth/ui/email-verification-banner'
 
 describe('EmailVerificationBanner', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    window.sessionStorage.clear()
     mockResendEmailVerification.mockResolvedValue({
       success: true,
       message: 'Мы отправили письмо для подтверждения email.',
@@ -51,5 +55,30 @@ describe('EmailVerificationBanner', () => {
     expect(
       await screen.findByText('Не удалось отправить письмо. Попробуйте ещё раз')
     ).toBeInTheDocument()
+  })
+
+  it('hides for the rest of the session when dismissed', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(
+      <EmailVerificationBanner email="user@example.com" />
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Скрыть напоминание' }))
+
+    expect(screen.queryByText('Подтвердите email')).not.toBeInTheDocument()
+    expect(window.sessionStorage.getItem(EMAIL_BANNER_DISMISSED_KEY)).toBe('1')
+
+    // A later page view in the same session keeps it hidden
+    unmount()
+    render(<EmailVerificationBanner email="user@example.com" />)
+    expect(screen.queryByText('Подтвердите email')).not.toBeInTheDocument()
+  })
+
+  it('shows again in a new session', () => {
+    window.sessionStorage.removeItem(EMAIL_BANNER_DISMISSED_KEY)
+
+    render(<EmailVerificationBanner email="user@example.com" />)
+
+    expect(screen.getByText('Подтвердите email')).toBeInTheDocument()
   })
 })

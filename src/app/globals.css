@@ -44,6 +44,16 @@
   }
 }
 
+/*
+ * Phones scroll the page as a whole. Keep scrolled-to and focused fields clear
+ * of the floating calculator button (bottom-4 + h-12 = 4rem).
+ */
+@media (max-width: 767px) {
+  html {
+    scroll-padding-bottom: 5rem;
+  }
+}
+
 /* CSS Custom Properties (Design Tokens) */
 @layer base {
   :root {

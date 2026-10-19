@@ -46,6 +46,7 @@ export { ReatomProvider } from './reatom'
 // Hooks
 export {
   useViewport,
+  useResolvedViewport,
   isMobile,
   isTabletOrSmaller,
   useSubmitLock,
@@ -134,3 +135,4 @@ export {
   isCategoryNameTooLong,
   isExpenseDescriptionTooLong,
 } from './text-limits'
+export { requestWidgetReveal, subscribeWidgetReveal } from './widget-reveal'

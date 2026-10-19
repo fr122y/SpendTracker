@@ -20,6 +20,8 @@ for expenses, salary, and advance days.
 - Month navigation derived from `selectedDate` (prev/next month)
 - Local `Все` / `Личные` / `Общие` operation scope filter for day markers
 - Selected date highlight (blue)
+- A day tap also calls `requestWidgetReveal('EXPENSE_LOG')`: on phones the
+  accordion opens the journal and scrolls to it
 - Today highlight (dark grey)
 - Visual indicators for expense/salary/advance days
 - Salary/advance marker on day `min(saved day, days in month)` via
