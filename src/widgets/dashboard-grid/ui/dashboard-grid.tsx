@@ -1,7 +1,7 @@
 'use client'
 
 import { EyeOff, GripVertical } from 'lucide-react'
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   ColumnResizer,
@@ -10,7 +10,13 @@ import {
 } from '@/features/layout-editor'
 import { MobileWidgetAccordion } from '@/features/mobile-widget-accordion'
 import { WIDGET_REGISTRY } from '@/features/widget-registry'
-import { cn, useViewport, isTabletOrSmaller, isMobile } from '@/shared/lib'
+import {
+  cn,
+  useResolvedViewport,
+  isTabletOrSmaller,
+  isMobile,
+  subscribeWidgetReveal,
+} from '@/shared/lib'
 import { TerminalPanel } from '@/shared/ui'
 
 import { DashboardGridSkeleton } from './dashboard-grid-skeleton'
@@ -50,9 +56,11 @@ export function DashboardGrid() {
     showWidget,
     resetLayout,
   } = useLayoutStore()
-  const viewport = useViewport()
-  const mobile = isMobile(viewport)
-  const tabletOrSmaller = isTabletOrSmaller(viewport)
+  // `null` until measured on the client: render the CSS-responsive skeleton
+  // instead of guessing a layout, so phones never flash the desktop tree.
+  const viewport = useResolvedViewport()
+  const mobile = viewport !== null && isMobile(viewport)
+  const tabletOrSmaller = viewport !== null && isTabletOrSmaller(viewport)
 
   const handleColumnResize = (columnId: string, deltaPercent: number) => {
     const column = layoutConfig.columns.find((c) => c.id === columnId)
@@ -146,6 +154,25 @@ export function DashboardGrid() {
     })
   }
 
+  // Widget to scroll to once its accordion section has expanded
+  const [revealTarget, setRevealTarget] = useState<WidgetId | null>(null)
+
+  useEffect(() => {
+    if (!mobile) return
+    return subscribeWidgetReveal((widgetId) => {
+      setExpandedWidgets((prev) => new Set(prev).add(widgetId))
+      setRevealTarget(widgetId)
+    })
+  }, [mobile])
+
+  useEffect(() => {
+    if (!revealTarget) return
+    document
+      .querySelector(`[data-accordion-item="${revealTarget}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setRevealTarget(null)
+  }, [revealTarget])
+
   // Flatten all widgets for mobile/tablet view (memoized for performance)
   const allWidgets = useMemo(
     () =>
@@ -163,7 +190,7 @@ export function DashboardGrid() {
 
   const canHide = allWidgetIds.length > 1
 
-  if (isLoading) {
+  if (isLoading || viewport === null) {
     return <DashboardGridSkeleton />
   }
 
@@ -181,7 +208,9 @@ export function DashboardGrid() {
   // Mobile layout: Accordion-based expandable widgets
   if (mobile) {
     return (
-      <div data-grid-container className="h-full overflow-y-auto bg-zinc-950">
+      // The page scrolls as a whole; the bottom padding keeps the last content
+      // clear of the floating calculator button.
+      <div data-grid-container className="bg-zinc-950 pb-20">
         {visibilityPanel && <div className="p-4 pb-0">{visibilityPanel}</div>}
         <MobileWidgetAccordion
           widgets={allWidgetIds}

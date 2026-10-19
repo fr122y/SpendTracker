@@ -386,10 +386,36 @@ test.describe('Pockets', () => {
     )
 
     await page.setViewportSize({ width: 375, height: 740 })
-    await expect(row).toBeVisible()
+    // Collapsed accordion sections are not mounted on mobile: open pockets.
+    const pocketsToggle = page.locator(
+      'nav[data-testid="mobile-widget-list"] div:has(> [data-accordion-content="POCKETS"]) > button[aria-expanded]'
+    )
+    if (
+      (await pocketsToggle.getAttribute('aria-expanded', TIMEOUT)) !== 'true'
+    ) {
+      await pocketsToggle.click()
+    }
+    // The section mounts fresh, so open the pocket and its history again.
+    await openPocket()
+    if ((await toggle.getAttribute('aria-expanded', TIMEOUT)) !== 'true') {
+      await toggle.click()
+    }
+    await expect(row).toBeVisible(TIMEOUT)
     await expectNoHorizontalScroll(page)
     await page.setViewportSize({ width: 1280, height: 720 })
-    await toggle.click()
+    // Wait for the desktop tree to replace the accordion, then collapse the
+    // history only if the remounted pocket shows it open.
+    await expect(
+      page.locator('nav[data-testid="mobile-widget-list"]')
+    ).toHaveCount(0, TIMEOUT)
+    // Later steps expect the pocket open on desktop, as before the resize.
+    if (!(await region.isVisible())) await openPocket()
+    if (
+      (await toggle.isVisible()) &&
+      (await toggle.getAttribute('aria-expanded')) === 'true'
+    ) {
+      await toggle.click()
+    }
   })
 
   test('should record a purchase from the journal form', async () => {

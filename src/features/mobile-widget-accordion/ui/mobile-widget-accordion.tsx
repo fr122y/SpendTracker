@@ -1,6 +1,7 @@
 'use client'
 
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useState } from 'react'
 
 import { WIDGET_REGISTRY } from '@/features/widget-registry'
 import { cn } from '@/shared/lib'
@@ -18,6 +19,18 @@ export function MobileWidgetAccordion({
   expandedWidgets,
   onToggle,
 }: MobileWidgetAccordionProps) {
+  // A widget mounts on its first expansion and stays mounted after collapsing,
+  // so collapsed widgets never fetch data and an opened one keeps its state.
+  const [openedWidgets, setOpenedWidgets] = useState<ReadonlySet<WidgetId>>(
+    () => new Set(expandedWidgets)
+  )
+  const hasNewlyExpanded = [...expandedWidgets].some(
+    (widgetId) => !openedWidgets.has(widgetId)
+  )
+  if (hasNewlyExpanded) {
+    setOpenedWidgets(new Set([...openedWidgets, ...expandedWidgets]))
+  }
+
   return (
     <nav
       data-testid="mobile-widget-list"
@@ -31,10 +44,15 @@ export function MobileWidgetAccordion({
         const Icon = widget.icon
         const Component = widget.component
         const isExpanded = expandedWidgets.has(widgetId)
+        const isMounted = isExpanded || openedWidgets.has(widgetId)
         const ChevronIcon = isExpanded ? ChevronUp : ChevronDown
 
         return (
-          <div key={widgetId} className="bg-zinc-900/50">
+          <div
+            key={widgetId}
+            data-accordion-item={widgetId}
+            className="bg-zinc-900/50"
+          >
             {/* Toggle Button */}
             <button
               type="button"
@@ -58,15 +76,18 @@ export function MobileWidgetAccordion({
             {/* Collapsible Content */}
             <div
               data-accordion-content={widgetId}
+              inert={!isExpanded}
               className={cn(
                 'grid transition-[grid-template-rows] duration-300 ease-in-out',
                 isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
               )}
             >
               <div className="overflow-hidden">
-                <div className="p-4">
-                  <Component />
-                </div>
+                {isMounted ? (
+                  <div className="p-4">
+                    <Component />
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>

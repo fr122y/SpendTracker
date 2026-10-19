@@ -25,7 +25,7 @@ daily real-expense totals.
   budget operations
 - Operation filters: all, real expenses, project-linked operations, pocket
   operations, movements
-- Scrollable ExpenseList
+- ExpenseList scrolls on its own from 768px; on phones the page scrolls
 - Pocket operation cards show the pocket name, including an archived pocket;
   until pockets are loaded the cards keep the badge without a name
 - Operations of an archived pocket have no edit or delete actions and show a

@@ -253,6 +253,58 @@ describe('MobileWidgetAccordion', () => {
         '[data-accordion-content="CALENDAR"]'
       )
       expect(contentGrid).toHaveClass('grid-rows-[0fr]')
+      // Not mounted, so a collapsed widget fetches nothing
+      expect(screen.queryByTestId('widget-calendar')).not.toBeInTheDocument()
+    })
+
+    test('should make collapsed content inert and expanded content interactive', () => {
+      const { container } = render(
+        <MobileWidgetAccordion
+          widgets={['CALENDAR', 'EXPENSE_LOG']}
+          expandedWidgets={new Set(['EXPENSE_LOG'])}
+          onToggle={mockOnToggle}
+        />
+      )
+
+      expect(
+        container.querySelector('[data-accordion-content="CALENDAR"]')
+      ).toHaveAttribute('inert')
+      expect(
+        container.querySelector('[data-accordion-content="EXPENSE_LOG"]')
+      ).not.toHaveAttribute('inert')
+    })
+
+    test('should mount a widget on first expansion and keep it after collapsing', () => {
+      const { container, rerender } = render(
+        <MobileWidgetAccordion
+          widgets={['CALENDAR']}
+          expandedWidgets={new Set()}
+          onToggle={mockOnToggle}
+        />
+      )
+      expect(screen.queryByTestId('widget-calendar')).not.toBeInTheDocument()
+
+      rerender(
+        <MobileWidgetAccordion
+          widgets={['CALENDAR']}
+          expandedWidgets={new Set(['CALENDAR'])}
+          onToggle={mockOnToggle}
+        />
+      )
+      expect(screen.getByTestId('widget-calendar')).toBeInTheDocument()
+
+      rerender(
+        <MobileWidgetAccordion
+          widgets={['CALENDAR']}
+          expandedWidgets={new Set()}
+          onToggle={mockOnToggle}
+        />
+      )
+      // Kept mounted (state preserved) but inert while collapsed
+      expect(screen.getByTestId('widget-calendar')).toBeInTheDocument()
+      expect(
+        container.querySelector('[data-accordion-content="CALENDAR"]')
+      ).toHaveAttribute('inert')
     })
 
     test('should show multiple widget components when multiple are expanded', () => {

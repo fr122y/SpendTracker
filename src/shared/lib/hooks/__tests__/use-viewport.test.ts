@@ -1,6 +1,12 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 
-import { useViewport, isMobile, isTabletOrSmaller } from '../use-viewport'
+import {
+  useResolvedViewport,
+  useViewport,
+  isMobile,
+  isTabletOrSmaller,
+  type Viewport,
+} from '../use-viewport'
 
 describe('useViewport', () => {
   let originalInnerWidth: number
@@ -319,6 +325,25 @@ describe('useViewport', () => {
       // After useEffect runs, it will be updated to actual viewport
       // But the hook is designed to handle SSR where useEffect doesn't run
       expect(['mobile', 'tablet', 'desktop']).toContain(result.current)
+    })
+
+    it('resolves to null before measuring, then to the real viewport', () => {
+      Object.defineProperty(window, 'innerWidth', {
+        writable: true,
+        configurable: true,
+        value: 375,
+      })
+      const seen: Array<Viewport | null> = []
+
+      // The first render matches the server render: nothing is measured yet.
+      const { result } = renderHook(() => {
+        const viewport = useResolvedViewport()
+        seen.push(viewport)
+        return viewport
+      })
+
+      expect(seen[0]).toBeNull()
+      expect(result.current).toBe('mobile')
     })
   })
 

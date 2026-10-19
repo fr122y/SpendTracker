@@ -14,8 +14,9 @@ test.describe('Mobile Form Interaction Tests', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    await expect(dailyTotal(page)).toBeVisible(TIMEOUT)
+    // The journal mounts only once its accordion section is opened.
     await openJournal(page)
+    await expect(dailyTotal(page)).toBeVisible(TIMEOUT)
   })
 
   test.describe('Expense Form on Mobile', () => {
