@@ -177,6 +177,9 @@ describe('DashboardHeader', () => {
       screen.getByRole('button', { name: 'Редактировать' }),
     ]) {
       expect(control).toHaveClass('min-h-11', 'w-11', 'shrink-0')
+      // Widths must not animate between breakpoints.
+      expect(control).toHaveClass('transition-colors')
+      expect(control).not.toHaveClass('transition-all')
     }
   })
 

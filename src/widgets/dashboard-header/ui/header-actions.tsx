@@ -16,7 +16,9 @@ export interface HeaderActionsProps {
 const labelClassName = 'hidden xl:inline'
 
 /** Square icon button below `xl`, fixed-width labelled button from `xl`. */
-const actionSizeClassName = 'min-h-11 w-11 shrink-0 px-0'
+// `transition-colors` (not `transition-all`): size changes only at breakpoints
+// and must apply at once, never animate through intermediate widths.
+const actionSizeClassName = 'min-h-11 w-11 shrink-0 px-0 transition-colors'
 
 export function HeaderActions({
   accountHref = '/account',
@@ -54,7 +56,7 @@ export function HeaderActions({
         aria-label="Аккаунт"
         title="Аккаунт"
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-800/50 py-2 font-mono text-xs font-bold uppercase tracking-wider text-zinc-400 transition-all hover:border-zinc-600 hover:bg-zinc-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
+          'inline-flex items-center justify-center gap-2 rounded-md border border-zinc-700 bg-zinc-800/50 py-2 font-mono text-xs font-bold uppercase tracking-wider text-zinc-400 hover:border-zinc-600 hover:bg-zinc-800 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
           actionSizeClassName,
           'xl:w-32'
         )}
