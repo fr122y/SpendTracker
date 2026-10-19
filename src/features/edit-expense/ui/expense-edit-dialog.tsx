@@ -10,7 +10,7 @@ import {
 } from '@/entities/expense'
 import { useSaveKeywordMapping } from '@/entities/keyword-mapping'
 import { usePockets } from '@/entities/pocket'
-import { parseAmountInput } from '@/shared/lib'
+import { parseAmountInput, useBackDismiss } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
 import { buildExpensePatch, getExpenseEditRules } from '../model/edit-rules'
@@ -29,6 +29,8 @@ export function ExpenseEditDialog({
   onClose,
 }: ExpenseEditDialogProps) {
   const titleId = useId()
+  // Browser Back closes the dialog instead of leaving the page.
+  useBackDismiss(true, onClose)
   const descriptionInputRef = useRef<HTMLInputElement>(null)
   const categories = useCategoryStore((state) => state.categories)
   const { data: pockets } = usePockets()
