@@ -1,3 +1,4 @@
+import { SIGNED_OUT_STATE } from './utils/auth'
 import {
   expect,
   expenseRow,
@@ -8,7 +9,7 @@ import {
   TIMEOUT,
 } from './utils/expenses'
 
-import type { Locator } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 
 async function expectTouchTarget(target: Locator): Promise<void> {
   await expect(target).toBeVisible()
@@ -18,6 +19,34 @@ async function expectTouchTarget(target: Locator): Promise<void> {
     expect(box.width).toBeGreaterThanOrEqual(44)
     expect(box.height).toBeGreaterThanOrEqual(44)
   }
+}
+
+async function expectEachTouchTarget(targets: Locator): Promise<void> {
+  const count = await targets.count()
+  expect(count).toBeGreaterThan(0)
+  for (let index = 0; index < count; index++) {
+    await expectTouchTarget(targets.nth(index))
+  }
+}
+
+/** Expands a collapsed phone accordion section and waits for its panel. */
+async function openSection(
+  page: Page,
+  title: string,
+  widgetId: string
+): Promise<Locator> {
+  await expect(page.locator('[data-grid-container]')).toBeVisible(TIMEOUT)
+  const toggle = page.getByRole('button', { name: title, exact: true })
+  if ((await toggle.getAttribute('aria-expanded')) === 'false') {
+    await toggle.click()
+  }
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  const panel = page.locator(`[data-accordion-content="${widgetId}"]`)
+  // Wait for the expand transition, so the boxes are final.
+  await panel.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished))
+  )
+  return panel
 }
 
 test.describe('Touch Target Accessibility Tests', () => {
@@ -156,5 +185,110 @@ test.describe('Touch Target Accessibility Tests', () => {
 
       expect(hasGap).toBe(true)
     })
+  })
+
+  test.describe('Phone dashboard targets', () => {
+    test.beforeEach(async ({ page }) => {
+      await page.setViewportSize({ width: 375, height: 667 })
+      await reloadPage(page)
+    })
+
+    test('header month picker meets 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      await expectTouchTarget(
+        page.getByRole('banner').getByRole('button', { name: 'Выбрать месяц' })
+      )
+    })
+
+    test('calendar controls meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      const calendar = await openSection(page, 'Календарь', 'CALENDAR')
+
+      await expectTouchTarget(
+        calendar.getByRole('button', { name: 'Выбрать месяц' })
+      )
+      await expectEachTouchTarget(
+        calendar.locator('[aria-label="Фильтр календаря"]').getByRole('button')
+      )
+      await expectEachTouchTarget(calendar.getByRole('button', { name: /^\d/ }))
+      await expectTouchTarget(
+        calendar.getByRole('button', { name: /^Зарплата:/ })
+      )
+      await expectTouchTarget(calendar.getByRole('button', { name: /^Аванс:/ }))
+    })
+
+    test('journal fields and filter chips meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      const journal = await openSection(page, 'Журнал расходов', 'EXPENSE_LOG')
+
+      await expectEachTouchTarget(
+        journal.locator('[aria-label="Фильтр бюджета"]').getByRole('button')
+      )
+      await expectEachTouchTarget(
+        journal.locator('[aria-label="Фильтр операций"]').getByRole('button')
+      )
+      await expectTouchTarget(journalForm(page).getByLabel('Описание расхода'))
+      await expectTouchTarget(journalForm(page).getByLabel('Сумма расхода'))
+    })
+
+    test('analysis and dynamics filter chips meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      const analysis = await openSection(page, 'Анализ', 'ANALYSIS')
+      await expectEachTouchTarget(
+        analysis.locator('[aria-label="Фильтр аналитики"]').getByRole('button')
+      )
+
+      const dynamics = await openSection(page, 'Динамика', 'DYNAMICS')
+      await expectEachTouchTarget(
+        dynamics.locator('[aria-label="Фильтр динамики"]').getByRole('button')
+      )
+    })
+
+    test('category manager controls meet 44x44px minimum on mobile', async ({
+      page,
+    }) => {
+      const categories = await openSection(page, 'Категории', 'CATEGORIES')
+
+      for (const name of ['Личные', 'Общие']) {
+        await expectTouchTarget(
+          categories.getByRole('button', { name, exact: true })
+        )
+      }
+      await expectEachTouchTarget(
+        categories.getByRole('button', { name: /^Правила категории/ })
+      )
+      await expectEachTouchTarget(categories.getByRole('textbox'))
+    })
+  })
+})
+
+test.describe('Phone login targets', () => {
+  test.use({ storageState: SIGNED_OUT_STATE })
+
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 })
+    await page.goto('/login')
+    await expect(page.getByPlaceholder('Email')).toBeVisible(TIMEOUT)
+  })
+
+  test('login tabs and links meet 44x44px minimum on mobile', async ({
+    page,
+  }) => {
+    for (const name of ['Вход', 'Регистрация']) {
+      await expectTouchTarget(page.getByRole('button', { name, exact: true }))
+    }
+    await expectTouchTarget(page.getByRole('link', { name: 'Забыли пароль?' }))
+    await expectTouchTarget(
+      page.getByRole('button', { name: 'Зарегистрироваться', exact: true })
+    )
+
+    await page.getByRole('button', { name: 'Регистрация', exact: true }).click()
+    await expectTouchTarget(
+      page.getByRole('button', { name: 'Войти', exact: true })
+    )
   })
 })
