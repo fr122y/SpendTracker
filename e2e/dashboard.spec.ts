@@ -6,10 +6,13 @@ test.describe('Dashboard Smoke Tests', () => {
   })
 
   test('should display critical widgets', async ({ page }) => {
-    test.skip(
-      (page.viewportSize()?.width ?? 1280) < 768,
-      'The layout editor is not available on phones'
-    )
+    // The layout editor is not available on phones: the button is hidden.
+    if ((page.viewportSize()?.width ?? 1280) < 768) {
+      await expect(
+        page.getByRole('banner').getByRole('button', { name: /Редактировать/ })
+      ).toBeHidden()
+      return
+    }
     const header = page.getByRole('banner')
 
     // Enter edit mode to see widget titles

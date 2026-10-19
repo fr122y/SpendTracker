@@ -57,11 +57,7 @@ async function expectNoOverlap(page: Page): Promise<void> {
 }
 
 test.describe('Dashboard header layout', () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== 'chromium',
-      'Widths are set explicitly; one browser is enough'
-    )
+  test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('banner')).toBeVisible()
   })

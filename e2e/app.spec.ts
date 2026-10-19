@@ -235,10 +235,15 @@ test.describe('SpendTracker', () => {
     })
 
     test('should toggle layout edit mode from the header', async ({ page }) => {
-      test.skip(
-        (page.viewportSize()?.width ?? 1280) < 768,
-        'The layout editor is not available on phones'
-      )
+      // The layout editor is not available on phones: the button is hidden.
+      if ((page.viewportSize()?.width ?? 1280) < 768) {
+        await expect(
+          page
+            .getByRole('banner')
+            .getByRole('button', { name: /Редактировать/ })
+        ).toBeHidden()
+        return
+      }
       const header = page.getByRole('banner')
 
       await header.getByRole('button', { name: /Редактировать/ }).click()
@@ -292,10 +297,15 @@ test.describe('SpendTracker', () => {
 
   test.describe('Edit Mode', () => {
     test('should toggle edit mode', async ({ page }) => {
-      test.skip(
-        (page.viewportSize()?.width ?? 1280) < 768,
-        'The layout editor is not available on phones'
-      )
+      // The layout editor is not available on phones: the button is hidden.
+      if ((page.viewportSize()?.width ?? 1280) < 768) {
+        await expect(
+          page
+            .getByRole('banner')
+            .getByRole('button', { name: /Редактировать/ })
+        ).toBeHidden()
+        return
+      }
       const header = page.getByRole('banner')
 
       await header.getByRole('button', { name: 'Редактировать' }).click()
@@ -308,10 +318,15 @@ test.describe('SpendTracker', () => {
     })
 
     test('should show widget titles in edit mode', async ({ page }) => {
-      test.skip(
-        (page.viewportSize()?.width ?? 1280) < 768,
-        'The layout editor is not available on phones'
-      )
+      // The layout editor is not available on phones: the button is hidden.
+      if ((page.viewportSize()?.width ?? 1280) < 768) {
+        await expect(
+          page
+            .getByRole('banner')
+            .getByRole('button', { name: /Редактировать/ })
+        ).toBeHidden()
+        return
+      }
       const header = page.getByRole('banner')
 
       await header.getByRole('button', { name: 'Редактировать' }).click()
