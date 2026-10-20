@@ -22,4 +22,5 @@ e2e/touch-targets.spec.ts
 e2e/viewport-resize.spec.ts
 e2e/pending-records.spec.ts
 e2e/tabs-session-offline.spec.ts
+e2e/ui-polish.spec.ts
 e2e/session-revocation.spec.ts

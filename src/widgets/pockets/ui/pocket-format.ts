@@ -1,5 +1,7 @@
+import { formatMoney } from '@/shared/lib'
+
 export function formatPocketCurrency(amount: number) {
-  return `${amount.toLocaleString('ru-RU')} ₽`
+  return formatMoney(amount)
 }
 
 /** Month name in the nominative case, lowercase: `октябрь`. */

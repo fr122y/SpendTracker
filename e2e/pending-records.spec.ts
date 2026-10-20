@@ -12,7 +12,11 @@ import {
   TIMEOUT,
   uniqueAmount,
 } from './utils/expenses'
-import { archivePocket, ensureActivePocket } from './utils/pockets'
+import {
+  archivePocket,
+  ensureActivePocket,
+  waitForPockets,
+} from './utils/pockets'
 
 /**
  * Operations on records the server has not saved yet (T-034): they run once
@@ -75,7 +79,9 @@ function watchServerErrors(page: Page): string[] {
 async function confirmDelete(page: Page, row: Locator): Promise<void> {
   const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
   await expect(async () => {
-    await row.getByRole('button', { name: 'delete' }).click({ timeout: 2000 })
+    await row
+      .getByRole('button', { name: 'Удалить операцию' })
+      .click({ timeout: 2000 })
     await expect(dialog).toBeVisible({ timeout: 2000 })
   }).toPass(TIMEOUT)
   await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
@@ -179,9 +185,7 @@ test.describe('Records that are still being saved', () => {
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto('/')
     const serverErrors = watchServerErrors(page)
-    await expect(
-      page.getByRole('heading', { name: 'Карманы', level: 2 })
-    ).toBeVisible(TIMEOUT)
+    await waitForPockets(page)
 
     // Pockets cannot be deleted. The first pocket is reused across runs; the
     // second must be created by every run, so each run leaves exactly one

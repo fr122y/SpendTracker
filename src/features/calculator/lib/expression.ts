@@ -263,6 +263,12 @@ export function evaluateTokens(
   return evaluateExpression(toEvaluable(tokens, amounts))
 }
 
+/** True when the expression is complete but divides by zero, e.g. `1/0`. */
+export function isDivisionByZero(tokens: Token[], amounts: Amounts): boolean {
+  const value = evaluateMathExpression(toEvaluable(tokens, amounts))
+  return value === Infinity || value === -Infinity
+}
+
 export function applyEquals(
   state: CalculatorState,
   amounts: Amounts

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { ExpenseEditDialog } from '@/features/edit-expense'
+import { formatMoney } from '@/shared/lib'
 import { useBackDismiss } from '@/shared/lib/hooks/use-back-dismiss'
 
 import {
@@ -146,7 +147,9 @@ function ExpenseDetailRow({ expense, onOpen }: ExpenseDetailRowProps) {
     ? 'Общий расход'
     : expense.projectId
       ? 'Проектный расход'
-      : 'Личный расход'
+      : expense.pocketId
+        ? 'Покупка из кармана'
+        : 'Личный расход'
 
   return (
     <article
@@ -172,7 +175,7 @@ function ExpenseDetailRow({ expense, onOpen }: ExpenseDetailRowProps) {
         </div>
       </div>
       <span className="shrink-0 text-sm font-semibold text-emerald-300">
-        {expense.amount.toLocaleString('ru-RU')} ₽
+        {formatMoney(expense.amount)}
       </span>
     </article>
   )
@@ -364,8 +367,7 @@ export function AnalysisCategoryDetailsDialog({
             className="text-sm text-zinc-400"
           >
             Найдено: {filteredExpenses.length} из {baseExpenses.length} ·{' '}
-            {filteredSum.toLocaleString('ru-RU')} ₽ из{' '}
-            {baseSum.toLocaleString('ru-RU')} ₽
+            {formatMoney(filteredSum)} из {formatMoney(baseSum)}
           </p>
 
           {baseExpenses.length === 0 ? (

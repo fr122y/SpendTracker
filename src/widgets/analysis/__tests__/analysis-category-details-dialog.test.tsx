@@ -81,6 +81,27 @@ function DialogHarness({ expenses, scope = 'all' }: DialogHarnessProps) {
 }
 
 describe('AnalysisCategoryDetailsDialog', () => {
+  it('labels a pocket purchase and shows amounts in the Russian format', () => {
+    render(
+      <DialogHarness
+        expenses={[
+          expense('pocket', 'кофе', 350.5, '2026-01-15', {
+            pocketId: 'pocket-1',
+          }),
+          expense('personal', 'обед', 1234),
+        ]}
+      />
+    )
+
+    const pocketRow = screen.getByTestId('category-expense-pocket')
+    expect(pocketRow).toHaveTextContent('Покупка из кармана')
+    expect(pocketRow).not.toHaveTextContent('Личный расход')
+    expect(pocketRow.textContent).toContain('350,50\u00A0₽')
+    const personalRow = screen.getByTestId('category-expense-personal')
+    expect(personalRow).toHaveTextContent('Личный расход')
+    expect(personalRow.textContent).toContain('1\u00A0234\u00A0₽')
+  })
+
   it('shows expense rows grouped by descending date', () => {
     const expenses = [
       expense('older', 'столовка', 300, '2026-01-03'),

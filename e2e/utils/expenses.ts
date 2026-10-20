@@ -29,9 +29,23 @@ export function uniqueAmount(): number {
   return 101 + Math.floor(Math.random() * 889)
 }
 
+/**
+ * An amount as the app renders it (ru-RU, kopecks only when not zero), with
+ * plain spaces: Playwright text matching treats the app's non-breaking spaces
+ * as plain ones. `1500.5` → `1 500,50 ₽`.
+ */
+export function rubles(amount: number): string {
+  const hasKopecks = Math.round(Math.abs(amount) * 100) % 100 !== 0
+  const [whole, fraction] = Math.abs(amount)
+    .toFixed(hasKopecks ? 2 : 0)
+    .split('.')
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+  return `${amount < 0 ? '-' : ''}${grouped}${fraction ? `,${fraction}` : ''} ₽`
+}
+
 /** Parses a rendered ruble amount such as `7 200 ₽`. */
 export function parseRubles(text: string | null): number {
-  const digits = (text ?? '').replace(/[^\d-]/g, '')
+  const digits = (text ?? '').replace(',', '.').replace(/[^\d.-]/g, '')
   return digits ? Number(digits) : 0
 }
 
@@ -101,8 +115,8 @@ export function expenseRows(
 ): Locator {
   const card =
     `.//span[normalize-space()="${description}"]` +
-    ` and .//button[@aria-label="edit amount" and normalize-space()="${amount} ₽"]` +
-    ` and count(.//button[@aria-label="delete"])=1`
+    ` and .//button[@aria-label="Изменить сумму" and normalize-space(translate(., "\u00A0", " "))="${rubles(amount)}"]` +
+    ` and count(.//button[@aria-label="Удалить операцию"])=1`
   return page.locator(`xpath=//div[${card} and not(.//div[${card}])]`)
 }
 
@@ -225,7 +239,7 @@ export async function deleteExpense(
     await openJournal(page)
     await rows
       .last()
-      .getByRole('button', { name: 'delete' })
+      .getByRole('button', { name: 'Удалить операцию' })
       .click({ timeout: 2000 })
     await expect(dialog).toBeVisible({ timeout: 2000 })
   }).toPass(TIMEOUT)

@@ -102,9 +102,7 @@ export function formatKopecks(kopecks: number): string {
     return `${isNegative ? '−' : ''}${formattedRubles}`
   }
 
-  return `${isNegative ? '−' : ''}${formattedRubles},${String(fraction)
-    .padStart(2, '0')
-    .replace(/0$/, '')}`
+  return `${isNegative ? '−' : ''}${formattedRubles},${String(fraction).padStart(2, '0')}`
 }
 
 export function formatEditableKopecks(kopecks: number): string {
@@ -114,7 +112,7 @@ export function formatEditableKopecks(kopecks: number): string {
   const fraction = kopecks % KOPECKS_PER_RUBLE
   if (fraction === 0) return String(rubles)
 
-  return `${rubles}.${String(fraction).padStart(2, '0').replace(/0$/, '')}`
+  return `${rubles},${String(fraction).padStart(2, '0')}`
 }
 
 export function getBucketAmountKopecks(

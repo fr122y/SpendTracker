@@ -3,7 +3,13 @@
 import { Calculator } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-import { cn, isMobile, useBackDismiss, useViewport } from '@/shared/lib'
+import {
+  HIDES_CALCULATOR_ATTRIBUTE,
+  cn,
+  isMobile,
+  useBackDismiss,
+  useViewport,
+} from '@/shared/lib'
 
 import { CalculatorPanel } from './calculator-panel'
 import { shouldCloseOnSwipe } from '../lib/swipe'
@@ -32,12 +38,33 @@ function useScrollLock(active: boolean) {
   }, [active])
 }
 
+/** True while the page holds an element that asks to hide the floating button. */
+function useHiddenByPage() {
+  const [isHidden, setIsHidden] = useState(false)
+
+  useEffect(() => {
+    const selector = `[${HIDES_CALCULATOR_ATTRIBUTE}]`
+    const update = () => setIsHidden(document.querySelector(selector) !== null)
+    update()
+    const observer = new MutationObserver(update)
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributeFilter: [HIDES_CALCULATOR_ATTRIBUTE],
+    })
+    return () => observer.disconnect()
+  }, [])
+
+  return isHidden
+}
+
 /** Floating button that opens the calculator: a dialog on desktop, a bottom sheet on mobile. */
 export function CalculatorLauncher() {
   const [isOpen, setIsOpen] = useState(false)
   const viewport = useViewport()
   const isSheet = isMobile(viewport)
   const swipeStartY = useRef<number | null>(null)
+  const isHiddenByPage = useHiddenByPage()
 
   const close = () => setIsOpen(false)
   // Browser Back closes the calculator instead of leaving the page.
@@ -82,6 +109,7 @@ export function CalculatorLauncher() {
     : {}
 
   if (!isOpen) {
+    if (isHiddenByPage) return null
     return (
       <button
         type="button"

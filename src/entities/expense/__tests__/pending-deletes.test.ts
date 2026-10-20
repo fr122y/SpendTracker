@@ -141,6 +141,37 @@ describe('deferred expense deletes', () => {
     expect(stored()).toEqual([{ id: OTHER, dueAt: now + 4000 }])
   })
 
+  it('resends and hides on the next load a delete whose keepalive request has not returned', async () => {
+    // The keepalive request of the hidden page never answers before reload.
+    fetchMock.mockImplementationOnce(() => new Promise(() => undefined))
+    const scheduledAt = Date.now()
+    scheduleExpenseDelete(ID, jest.fn(), 5000)
+    flushExpenseDeletesOnHide(jest.fn())
+    expect(stored()).toEqual([{ id: ID, dueAt: expect.any(Number) }])
+    expect(stored()[0].dueAt).toBeLessThan(scheduledAt + 5000)
+
+    // Reload inside the original undo window.
+    resetPendingExpenseDeletes()
+    let finish!: (value: { ok: boolean }) => void
+    fetchMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve
+        })
+    )
+    const onConfirmed = jest.fn()
+    const { result } = renderHook(() => usePendingExpenseDeleteIds())
+
+    act(() => recoverExpenseDeletes(onConfirmed))
+
+    expect(sentIds(1)).toEqual([ID])
+    expect(result.current.has(ID)).toBe(true)
+    await act(async () => finish({ ok: true }))
+    expect(onConfirmed).toHaveBeenCalledWith([ID])
+    expect(result.current.has(ID)).toBe(false)
+    expect(stored()).toEqual([])
+  })
+
   it('keeps unconfirmed deletes for the next load', async () => {
     fetchMock.mockRejectedValue(new Error('offline'))
     window.localStorage.setItem(

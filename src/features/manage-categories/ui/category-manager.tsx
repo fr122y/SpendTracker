@@ -33,6 +33,7 @@ import {
   limitGraphemes,
   pluralizeRu,
   useSubmitLock,
+  HIDES_CALCULATOR_PROPS,
 } from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, Input, Select } from '@/shared/ui'
 
@@ -96,11 +97,13 @@ export function CategoryManager() {
   const archiveSharedCategory = useArchiveSharedBudgetCategory(
     selectedSharedBudget?.id ?? ''
   )
-  const { data: keywordMappings = [] } = useKeywordMappings()
+  const { data: keywordMappings = [], isLoading: areRulesLoading } =
+    useKeywordMappings()
   const deleteKeywordMapping = useDeleteKeywordMapping()
-  const { data: sharedKeywordMappings = [] } = useSharedKeywordMappings(
-    mode === 'shared' ? selectedSharedBudget?.id : undefined
-  )
+  const { data: sharedKeywordMappings = [], isLoading: areSharedRulesLoading } =
+    useSharedKeywordMappings(
+      mode === 'shared' ? selectedSharedBudget?.id : undefined
+    )
   const deleteSharedKeywordMapping = useDeleteSharedKeywordMapping(
     selectedSharedBudget?.id ?? ''
   )
@@ -315,6 +318,7 @@ export function CategoryManager() {
                   <CategoryRules
                     categoryName={category.name}
                     rules={rulesByCategory.get(category.id) ?? []}
+                    isLoading={areRulesLoading}
                     onDelete={(id) => deleteKeywordMapping.mutate(id)}
                   />
                 </div>
@@ -358,6 +362,7 @@ export function CategoryManager() {
 
           <form
             onSubmit={handleSubmit}
+            {...(editingCategory ? HIDES_CALCULATOR_PROPS : {})}
             className="flex flex-col gap-3 sm:gap-4"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -475,6 +480,7 @@ export function CategoryManager() {
                     <CategoryRules
                       categoryName={category.name}
                       rules={sharedRulesByCategory.get(category.id) ?? []}
+                      isLoading={areSharedRulesLoading}
                       onDelete={(id) => deleteSharedKeywordMapping.mutate(id)}
                     />
                   </div>
@@ -526,6 +532,7 @@ export function CategoryManager() {
 
           <form
             onSubmit={handleSharedSubmit}
+            {...(editingSharedCategory ? HIDES_CALCULATOR_PROPS : {})}
             className="flex flex-col gap-3 sm:gap-4"
           >
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
