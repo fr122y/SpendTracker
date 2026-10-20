@@ -3,7 +3,7 @@
 // state it is really in, judging by the job steps. See "Waiting For CI" in
 // docs/engineering/agent-workflow.md.
 //
-// Usage: node scripts/ci/wait-for-check.mjs <pr-number|sha> [--workflow NAME]
+// Usage: npm run ci:wait -- <pr-number|sha> [--workflow NAME]
 //   [--expected 12] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]
 //
 // Calls GitHub through the `gh` CLI, so it uses the caller's `gh` login.
@@ -135,7 +135,7 @@ async function main() {
   } catch (error) {
     console.error(`ci:wait: ${error.message}`)
     console.error(
-      'usage: wait-for-check.mjs <pr-number|sha> [--workflow NAME] [--expected 12] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]'
+      'usage: npm run ci:wait -- <pr-number|sha> [--workflow NAME] [--expected 12] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]'
     )
     return EXIT.error
   }

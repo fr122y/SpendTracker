@@ -22,6 +22,7 @@
     "test:watch": "jest --watch",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
+    "ci:wait": "node scripts/ci/wait-for-check.mjs",
     "spec:check": "openspec validate --all --strict --no-interactive",
     "validate": "npm run typecheck && npm run lint && npm run test",
     "prepare": "husky"
