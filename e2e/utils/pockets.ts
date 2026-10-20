@@ -35,13 +35,22 @@ export function pocketRegion(page: Page, name: string): Locator {
   return page.getByRole('region', { name: `Карман ${name}` })
 }
 
+/**
+ * The «Создать карман» button of the pockets widget header. Unlike the
+ * «Карманы» heading it is unique: the dashboard panel around the widget has a
+ * «Карманы» heading of its own, and the widget adds a second one once the list
+ * has loaded, so a heading locator fails strict mode whenever the list is fast.
+ */
+export function createPocketButton(page: Page): Locator {
+  return page.getByRole('button', { name: 'Создать карман' }).first()
+}
+
 /** Waits until the pockets widget has loaded its list. */
 export async function waitForPockets(page: Page): Promise<void> {
-  await expect(
-    page.getByRole('heading', { name: 'Карманы', level: 2 })
-  ).toBeVisible(TIMEOUT)
-  // The heading can render before the pocket list has been fetched; a chip
-  // missing at this point must not lead to a duplicate create or restore.
+  // The skeleton has no header; the button renders with the loaded list.
+  await expect(createPocketButton(page)).toBeVisible(TIMEOUT)
+  // Pending refetches may still change the list; a chip missing at this point
+  // must not lead to a duplicate create or restore.
   await page.waitForLoadState('networkidle')
 }
 
@@ -79,7 +88,7 @@ export async function ensureActivePocket(
         .click()
       origin = 'restored'
     } else {
-      await page.getByRole('button', { name: 'Создать карман' }).first().click()
+      await createPocketButton(page).click()
       const createForm = page
         .locator('form')
         .filter({ has: page.getByLabel('Название кармана') })
