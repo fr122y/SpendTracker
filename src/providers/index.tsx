@@ -26,6 +26,7 @@ export function Providers({ children }: ProvidersProps) {
           <NetworkStatus />
           <Toaster
             position="bottom-right"
+            containerAriaLabel="Уведомления"
             richColors
             closeButton
             toastOptions={{

@@ -117,7 +117,7 @@ export function ExpenseLog() {
     <div className="flex flex-col gap-3 sm:gap-4">
       {/* Header. On phones the right padding keeps the day total and the
           filter chips clear of the floating calculator button at any scroll. */}
-      <div className="flex flex-col gap-1 pr-[4.5rem] sm:flex-row sm:items-center sm:justify-between wide:pr-0">
+      <div className="flex flex-col gap-1 calculator-clearance sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           Операции за {formattedDate}
         </h2>
@@ -130,10 +130,13 @@ export function ExpenseLog() {
       </div>
 
       {/* Expense Form */}
-      <ExpenseForm />
+      {/* On phones the form keeps clear of the floating calculator button. */}
+      <div className="calculator-clearance">
+        <ExpenseForm />
+      </div>
 
       <div
-        className="flex flex-wrap gap-2 pr-[4.5rem] wide:pr-0"
+        className="flex flex-wrap gap-2 calculator-clearance"
         aria-label="Фильтр бюджета"
       >
         {(
@@ -156,7 +159,7 @@ export function ExpenseLog() {
       </div>
 
       <div
-        className="flex flex-wrap gap-2 pr-[4.5rem] wide:pr-0"
+        className="flex flex-wrap gap-2 calculator-clearance"
         aria-label="Фильтр операций"
       >
         {(

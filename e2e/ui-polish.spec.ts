@@ -2,6 +2,7 @@ import {
   dailyTotal,
   expect,
   expenseRow,
+  journalForm,
   openJournal,
   rubles,
   test,
@@ -50,6 +51,17 @@ test.describe('Russian money format and labels', () => {
 
     await expenses.remove(expense)
   })
+
+  test('names the notification region in Russian', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('[data-grid-container]')).toBeVisible(TIMEOUT)
+    await expect(
+      page.getByRole('region', { name: /^Уведомления/ })
+    ).toHaveCount(1)
+    await expect(
+      page.getByRole('region', { name: /Notifications/ })
+    ).toHaveCount(0)
+  })
 })
 
 /** Area in px² where two client rectangles intersect. */
@@ -90,6 +102,31 @@ async function expectNeverCoveredByCalculator(
   }
 }
 
+/**
+ * Scrolls the whole page top to bottom in small steps and checks that the
+ * floating button never covers any of the targets.
+ */
+async function expectNoOverlapWhileScrolling(
+  page: Page,
+  targets: Record<string, Locator>
+): Promise<void> {
+  for (const target of Object.values(targets)) {
+    await expect(target).toBeVisible(TIMEOUT)
+  }
+  const maxScroll = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight
+  )
+  for (let y = 0; y <= maxScroll + 25; y += 25) {
+    await page.evaluate((top) => window.scrollTo(0, top), y)
+    for (const [name, target] of Object.entries(targets)) {
+      expect(
+        await overlapWithCalculator(page, target),
+        `calculator button covers ${name} at scroll ${y}px`
+      ).toBe(0)
+    }
+  }
+}
+
 for (const viewport of [
   { name: 'phone portrait', width: 375, height: 667 },
   { name: 'phone landscape', width: 667, height: 375 },
@@ -113,6 +150,30 @@ for (const viewport of [
           .getByRole('button', { name: 'Карманы', exact: true })
       )
       await expectNeverCoveredByCalculator(page, dailyTotal(page))
+    })
+
+    test('does not cover the add-expense form at any scroll position', async ({
+      page,
+    }) => {
+      await page.goto('/')
+      await openJournal(page)
+      await expect(
+        page.getByRole('button', { name: CALCULATOR_BUTTON })
+      ).toBeVisible(TIMEOUT)
+      const form = journalForm(page)
+
+      await expectNoOverlapWhileScrolling(page, {
+        description: form.getByLabel('Описание расхода'),
+        amount: form.getByLabel('Сумма расхода'),
+        'the add button': form.getByRole('button', {
+          name: 'Добавить',
+          exact: true,
+        }),
+        'the «Карманы» chip': page
+          .locator('[aria-label="Фильтр операций"]')
+          .getByRole('button', { name: 'Карманы', exact: true }),
+        'the day total': dailyTotal(page),
+      })
     })
   })
 }
