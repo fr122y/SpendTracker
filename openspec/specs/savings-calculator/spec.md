@@ -151,3 +151,12 @@ The result line MUST contain an icon-only copy control named «Скопиров�
 - **WHEN** the user taps «Скопировать»
 - **THEN** the clipboard contains `12345.67`
 - **AND** the control briefly shows a check mark and «Скопировано» is announced
+
+### Requirement: Name a division by zero
+
+When a complete expression divides by zero, the calculator MUST show «деление на 0» instead of a result.
+
+#### Scenario: One divided by zero
+
+- **WHEN** the user enters `1÷0`
+- **THEN** the result line shows «деление на 0»
