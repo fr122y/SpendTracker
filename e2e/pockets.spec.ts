@@ -7,7 +7,11 @@ import {
   SIGNED_OUT_STATE,
 } from './utils/auth'
 import { rubles } from './utils/expenses'
-import { ensureActivePocket, reloadPockets } from './utils/pockets'
+import {
+  ensureActivePocket,
+  reloadPockets,
+  waitForPockets,
+} from './utils/pockets'
 import { expectNoHorizontalScroll } from './utils/viewport-helpers'
 
 const TIMEOUT = { timeout: 10000 }
@@ -275,9 +279,7 @@ test.describe('Pockets', () => {
 
     // Close the form without creating anything.
     await page.goto('/')
-    await expect(
-      page.getByRole('heading', { name: 'Карманы', level: 2 })
-    ).toBeVisible(TIMEOUT)
+    await waitForPockets(page)
     await openPocket()
   })
 
