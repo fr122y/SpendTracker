@@ -12,13 +12,13 @@ export default async function AccountPage() {
   const userId = session?.user?.id
 
   if (!userId) {
-    redirect('/login')
+    redirect('/login?callbackUrl=%2Faccount')
   }
 
   const profile = await getAccountProfile(userId)
 
   if (!profile) {
-    redirect('/login')
+    redirect('/login?callbackUrl=%2Faccount')
   }
 
   return (

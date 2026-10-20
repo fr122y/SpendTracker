@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   useCategorize,
@@ -23,12 +23,13 @@ import {
   EXPENSE_DESCRIPTION_MAX_LENGTH,
   EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
   getTextLimitMessage,
+  holdSubmittedDraft,
   useFormDraft,
   useSubmitLock,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
-import type { MoneyOperationType, SharedBudget } from '@/shared/types'
+import type { Expense, MoneyOperationType, SharedBudget } from '@/shared/types'
 
 const DRAFT_KEY = 'expense-form'
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
@@ -85,9 +86,12 @@ export function ExpenseForm() {
   const [description, setDescription] = useFormDraft(
     DRAFT_KEY,
     'description',
-    ''
+    '',
+    { input: true }
   )
-  const [amount, setAmount] = useFormDraft(DRAFT_KEY, 'amount', '')
+  const [amount, setAmount] = useFormDraft(DRAFT_KEY, 'amount', '', {
+    input: true,
+  })
   const [suggestedCategoryId, setSuggestedCategoryId] = useFormDraft<
     string | null
   >(DRAFT_KEY, 'suggestedCategoryId', null)
@@ -114,6 +118,7 @@ export function ExpenseForm() {
   const runLocked = useSubmitLock()
   const expenses = useExpenseStore((state) => state.expenses)
   const categories = useCategoryStore((state) => state.categories)
+  const categoriesLoading = useCategoryStore((state) => state.isLoading)
   const projects = useProjectStore((state) => state.projects)
   const selectedDate = useSessionStore((state) => state.selectedDate)
   const { data: sharedBudgets = [] } = useSharedBudgets()
@@ -219,6 +224,15 @@ export function ExpenseForm() {
     parsedAmountInput.ok &&
     parsedAmountValue > projectCashOnHand
 
+  // The form clears at once for the next entry, but keeps what was submitted
+  // until the save succeeds: an expired session brings it back after sign-in.
+  const submitExpense = (expense: Expense) => {
+    const release = holdSubmittedDraft(DRAFT_KEY)
+    void Promise.resolve(addExpense(expense)).then((saved) => {
+      if (saved !== false) release()
+    })
+  }
+
   const resetForm = () => {
     setDescription('')
     setAmount('')
@@ -300,7 +314,7 @@ export function ExpenseForm() {
     setIsSubmitting(true)
 
     if (isMovement) {
-      addExpense({
+      submitExpense({
         id: crypto.randomUUID(),
         description: normalizedDescription,
         amount: parsedAmount,
@@ -372,7 +386,7 @@ export function ExpenseForm() {
         }
       }
 
-      addExpense({
+      submitExpense({
         id: crypto.randomUUID(),
         description: normalizedDescription,
         amount: parsedAmount,
@@ -412,6 +426,7 @@ export function ExpenseForm() {
     const shouldUseManualCategory =
       resolvedShowCategorySelect || !resolvedSuggestedCategoryId
     if (shouldUseManualCategory && !selectedCategoryId) {
+      setShowCategorySelect(true)
       setIsSubmitting(false)
       return
     }
@@ -420,6 +435,10 @@ export function ExpenseForm() {
       ? categories.find((item) => item.id === selectedCategoryId)
       : categories.find((item) => item.id === resolvedSuggestedCategoryId)
     if (!category) {
+      // The suggested category is gone: let the user pick one.
+      setSuggestedCategoryId(null)
+      setSuggestedCategoryLabel('')
+      setShowCategorySelect(true)
       setIsSubmitting(false)
       return
     }
@@ -432,7 +451,7 @@ export function ExpenseForm() {
       }
     }
 
-    addExpense({
+    submitExpense({
       id: crypto.randomUUID(),
       description: normalizedDescription,
       amount: parsedAmount,
@@ -450,11 +469,25 @@ export function ExpenseForm() {
     setIsSubmitting(false)
   }
 
+  // Picking the category needs the keyword rules and the categories. A submit
+  // made before they load (right after sign-in or a fresh load) waits for them
+  // with the button in its loading state instead of being dropped.
+  const categoryDataReady =
+    isMovement ||
+    (isSharedExpense
+      ? sharedMappingsLoaded
+      : mappingsLoaded && !categoriesLoading)
+  const [queuedSubmit, setQueuedSubmit] = useState(false)
+
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
     // Enter in the amount field submits through requestSubmit, which does not
     // respect the disabled submit button.
     if (!isFormValid) return
+    if (!categoryDataReady) {
+      setQueuedSubmit(true)
+      return
+    }
     void runLocked(submit)
   }
 
@@ -467,6 +500,17 @@ export function ExpenseForm() {
     (!isSharedExpense ||
       (!!selectedSharedBudget?.id && !!selectedCategoryId)) &&
     (!showCategorySelect || !!selectedCategoryId)
+
+  // The queued submit runs with this render's values.
+  const submitRef = useRef(submit)
+  useEffect(() => {
+    submitRef.current = submit
+  })
+  useEffect(() => {
+    if (!queuedSubmit || !categoryDataReady) return
+    setQueuedSubmit(false)
+    if (isFormValid) void runLocked(() => submitRef.current())
+  }, [queuedSubmit, categoryDataReady, isFormValid, runLocked])
 
   const scenarioOptions = [
     { value: 'personal_expense', label: 'Личный расход' },
@@ -626,8 +670,10 @@ export function ExpenseForm() {
       )}
       <Button
         type="submit"
-        disabled={!isFormValid || isSubmitting || isSavingAnyMapping}
-        isLoading={isSubmitting || isSavingAnyMapping}
+        disabled={
+          !isFormValid || isSubmitting || isSavingAnyMapping || queuedSubmit
+        }
+        isLoading={isSubmitting || isSavingAnyMapping || queuedSubmit}
         className="w-full sm:w-auto"
       >
         Добавить

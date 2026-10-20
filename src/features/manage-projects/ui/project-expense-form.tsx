@@ -36,9 +36,12 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
   const [description, setDescription] = useFormDraft(
     draftKey,
     'description',
-    ''
+    '',
+    { input: true }
   )
-  const [amount, setAmount] = useFormDraft(draftKey, 'amount', '')
+  const [amount, setAmount] = useFormDraft(draftKey, 'amount', '', {
+    input: true,
+  })
   const [suggestedCategoryId, setSuggestedCategoryId] = useFormDraft<
     string | null
   >(draftKey, 'suggestedCategoryId', null)

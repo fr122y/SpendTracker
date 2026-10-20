@@ -23,7 +23,9 @@ export function CreatePocketForm({
   /** Receives the saved pocket, with its stored id. */
   onCreated?: (pocket: Pocket | undefined) => void
 }) {
-  const [name, setName] = useFormDraft('create-pocket', 'name', '')
+  const [name, setName] = useFormDraft('create-pocket', 'name', '', {
+    input: true,
+  })
   const [submitError, setSubmitError] = useState<
     'name_conflict' | 'failed' | null
   >(null)

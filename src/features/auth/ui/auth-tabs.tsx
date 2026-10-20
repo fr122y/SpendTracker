@@ -4,6 +4,10 @@ import { useSearchParams } from 'next/navigation'
 import { useMemo, useState } from 'react'
 
 import { getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
+import {
+  SESSION_EXPIRED_MESSAGE,
+  SESSION_EXPIRED_REASON,
+} from '@/shared/lib/session-expiry'
 
 import { CredentialsSignInForm } from './credentials-sign-in-form'
 import { RegisterForm } from './register-form'
@@ -38,6 +42,7 @@ export function AuthTabs() {
 
     return ''
   }, [searchParams])
+  const sessionExpired = searchParams.get('reason') === SESSION_EXPIRED_REASON
   const callbackUrl = useMemo(
     () => getSafeCallbackUrl(searchParams.get('callbackUrl')),
     [searchParams]
@@ -72,6 +77,14 @@ export function AuthTabs() {
 
       {activeTab === 'signin' ? (
         <>
+          {sessionExpired ? (
+            <p
+              role="status"
+              className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm leading-6 text-amber-200"
+            >
+              {SESSION_EXPIRED_MESSAGE}
+            </p>
+          ) : null}
           {resetSuccessMessage ? (
             <p className="mb-4 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm leading-6 text-emerald-200">
               {resetSuccessMessage}

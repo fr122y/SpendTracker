@@ -74,9 +74,16 @@ export function AppFreshnessController() {
       lastRefreshAt = now
       lastKnownDay = currentDay
       syncTodayIfFollowing()
-      queryClient.invalidateQueries({ refetchType: 'active' })
 
-      if (dayChanged || wasLongPause) {
+      // A short return relies on TanStack Query: stale queries refetch on
+      // focus and reconnect, fresh ones do not. Only a new day or a long
+      // pause refreshes everything that is shown, unless a mutation is
+      // pending: its optimistic rows must not be overwritten.
+      if ((dayChanged || wasLongPause) && queryClient.isMutating() === 0) {
+        void queryClient.invalidateQueries(
+          { refetchType: 'active' },
+          { cancelRefetch: false }
+        )
         toast(REFRESHED_TOAST)
       }
 

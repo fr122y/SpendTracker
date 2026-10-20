@@ -10,8 +10,12 @@ interface CreateProjectFormProps {
 }
 
 export function CreateProjectForm({ onCreated }: CreateProjectFormProps = {}) {
-  const [name, setName] = useFormDraft('create-project', 'name', '')
-  const [budget, setBudget] = useFormDraft('create-project', 'budget', '')
+  const [name, setName] = useFormDraft('create-project', 'name', '', {
+    input: true,
+  })
+  const [budget, setBudget] = useFormDraft('create-project', 'budget', '', {
+    input: true,
+  })
 
   const addProject = useProjectStore((state) => state.addProject)
   const runLocked = useSubmitLock()

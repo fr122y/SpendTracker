@@ -108,7 +108,7 @@ describe('AccountPage', () => {
 
     await expect(AccountPage()).rejects.toThrow('NEXT_REDIRECT:/login')
 
-    expect(mockRedirect).toHaveBeenCalledWith('/login')
+    expect(mockRedirect).toHaveBeenCalledWith('/login?callbackUrl=%2Faccount')
     expect(mockGetAccountProfile).not.toHaveBeenCalled()
   })
 
@@ -117,6 +117,6 @@ describe('AccountPage', () => {
 
     await expect(AccountPage()).rejects.toThrow('NEXT_REDIRECT:/login')
 
-    expect(mockRedirect).toHaveBeenCalledWith('/login')
+    expect(mockRedirect).toHaveBeenCalledWith('/login?callbackUrl=%2Faccount')
   })
 })

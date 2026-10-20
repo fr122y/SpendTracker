@@ -63,6 +63,8 @@ const ARCHIVED_POCKET: Pocket = {
 }
 
 let mockPockets: Pocket[] | undefined = []
+let mockMappingsLoaded = true
+let mockCategoriesLoading = false
 
 jest.mock('@/entities/expense', () => ({
   useExpenseStore: (
@@ -77,7 +79,7 @@ jest.mock('@/entities/category', () => ({
   useCategorize: () => ({
     categorize: mockCategorize,
     saveMappingAndGetResult: mockSaveMapping,
-    mappingsLoaded: true,
+    mappingsLoaded: mockMappingsLoaded,
     isSavingMapping: false,
   }),
   useSharedCategorize: () => ({
@@ -87,8 +89,15 @@ jest.mock('@/entities/category', () => ({
     isSavingMapping: false,
   }),
   useCategoryStore: (
-    selector: (state: { categories: typeof mockCategories }) => unknown
-  ) => selector({ categories: mockCategories }),
+    selector: (state: {
+      categories: typeof mockCategories
+      isLoading: boolean
+    }) => unknown
+  ) =>
+    selector({
+      categories: mockCategoriesLoading ? [] : mockCategories,
+      isLoading: mockCategoriesLoading,
+    }),
   useSharedBudgetCategories: () => ({ data: mockSharedCategories }),
 }))
 
@@ -120,6 +129,8 @@ beforeEach(() => resetFormDrafts())
 describe('ExpenseForm', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockMappingsLoaded = true
+    mockCategoriesLoading = false
     mockPockets = []
     mockProjects = [{ id: 'project-1', name: 'Отпуск' }]
     mockExpenses = []
@@ -245,6 +256,40 @@ describe('ExpenseForm', () => {
     await waitFor(() => {
       expect(screen.getByLabelText(/категория/i)).toBeInTheDocument()
     })
+  })
+
+  it('runs a submit made while categories load once they are loaded', async () => {
+    mockMappingsLoaded = false
+    mockCategoriesLoading = true
+    mockCategorize.mockReturnValue({
+      found: true,
+      categoryId: '1',
+      categoryName: 'Продукты',
+      categoryEmoji: '🛒',
+    })
+
+    const { rerender } = render(<ExpenseForm />)
+    fireEvent.change(screen.getByPlaceholderText(/описание/i), {
+      target: { value: 'молоко' },
+    })
+    fireEvent.blur(screen.getByPlaceholderText(/описание/i))
+    fireEvent.change(screen.getByPlaceholderText(/сумма/i), {
+      target: { value: '100' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /добавить/i }))
+
+    expect(mockAddExpense).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /добавить/i })).toBeDisabled()
+
+    mockMappingsLoaded = true
+    mockCategoriesLoading = false
+    rerender(<ExpenseForm />)
+
+    await waitFor(() =>
+      expect(mockAddExpense).toHaveBeenCalledWith(
+        expect.objectContaining({ description: 'молоко', category: 'Продукты' })
+      )
+    )
   })
 
   it('submits with suggested category without saving mapping', async () => {
