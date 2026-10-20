@@ -5,14 +5,17 @@ import { type ChangeEvent, useState } from 'react'
 
 interface PasswordInputProps {
   placeholder: string
-  value: string
-  onChange: (event: ChangeEvent<HTMLInputElement>) => void
+  /** Form field name; without `value` the input is uncontrolled. */
+  name?: string
+  value?: string
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void
   showLabel: string
   hideLabel: string
 }
 
 export function PasswordInput({
   placeholder,
+  name,
   value,
   onChange,
   showLabel,
@@ -26,6 +29,7 @@ export function PasswordInput({
       <input
         type={isVisible ? 'text' : 'password'}
         placeholder={placeholder}
+        name={name}
         value={value}
         onChange={onChange}
         required
