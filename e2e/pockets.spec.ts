@@ -161,6 +161,33 @@ test.describe('Pockets', () => {
   }
 
   /**
+   * Types a month budget and waits until the server saved it. The field shows
+   * the new value at once, so a reload right after it would abort the save.
+   */
+  async function saveBudget(input: Locator, budget: number): Promise<void> {
+    const shown = Number(
+      (await input.inputValue()).replace(/[\s\u00a0]/g, '').replace(',', '.')
+    )
+    // The app sends nothing when the budget does not change.
+    const saved =
+      shown === budget
+        ? null
+        : page.waitForResponse(
+            (response) =>
+              response.request().method() === 'POST' &&
+              response.request().headers()['next-action'] !== undefined &&
+              new RegExp(
+                `^\\["[0-9a-f-]{36}","\\d{4}-\\d{2}",${budget}\\]$`
+              ).test(response.request().postData() ?? ''),
+            TIMEOUT
+          )
+    await input.fill(String(budget))
+    await input.press('Enter')
+    if (saved) expect((await saved).ok(), 'budget save').toBe(true)
+    await expect(input).toHaveValue(String(budget), TIMEOUT)
+  }
+
+  /**
    * Deletes every operation of the displayed month, including leftovers of an
    * earlier run that failed before its own cleanup.
    */
@@ -221,9 +248,7 @@ test.describe('Pockets', () => {
     // and a zero budget (a new month copies the previous month's budget).
     await clearMonthOperations(region)
     const budgetInput = region.getByLabel(`Бюджет кармана ${pocketName}`)
-    await budgetInput.fill('0')
-    await budgetInput.press('Enter')
-    await expect(budgetInput).toHaveValue('0', TIMEOUT)
+    await saveBudget(budgetInput, 0)
     await page.reload()
     const reloaded = await openPocket()
     await expect(
@@ -263,10 +288,7 @@ test.describe('Pockets', () => {
     const budgetInput = region.getByLabel(`Бюджет кармана ${pocketName}`)
 
     await expect(budgetInput).toHaveValue('0', TIMEOUT)
-    await budgetInput.fill(String(BUDGET))
-    await budgetInput.press('Enter')
-
-    await expect(budgetInput).toHaveValue(String(BUDGET), TIMEOUT)
+    await saveBudget(budgetInput, BUDGET)
     await expectTotals(region, 0, BUDGET)
   })
 
