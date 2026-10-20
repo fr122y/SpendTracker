@@ -120,12 +120,21 @@ test.describe('Tabs, session and offline', () => {
   }) => {
     const credentials = getE2ECredentials()
     if (!credentials) throw new Error(MISSING_E2E_CREDENTIALS_MESSAGE)
-    const amount = uniqueAmount()
 
     // The session ends in another tab: the session cookie is gone for every
     // tab. Wait for the initial reads first: each response refreshes the
     // session cookie and would bring it back.
+    await openJournal(page)
+    await expect(
+      page.getByRole('heading', { name: /^Операции за / })
+    ).toBeVisible(TIMEOUT)
     await page.waitForLoadState('networkidle')
+    // «Saved exactly once» below counts rows of this description and
+    // amount, so the amount must be free of rows an earlier failed run left.
+    let amount = uniqueAmount()
+    while ((await expenseRows(page, DESCRIPTION, amount).count()) > 0) {
+      amount = uniqueAmount()
+    }
     await context.clearCookies({ name: /authjs\.session-token/ })
 
     await fillExpense(page, DESCRIPTION, amount)

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { renderToString } from 'react-dom/server.node'
 
 const mockSignIn = jest.fn()
 const mockReplace = jest.fn()
@@ -53,6 +54,40 @@ describe('CredentialsSignInForm', () => {
 
     expect(passwordInput).toHaveAttribute('type', 'password')
     expect(passwordInput).toHaveValue('password123')
+  })
+
+  it('signs in with what the fields show, even if typed before hydration', async () => {
+    mockSignIn.mockResolvedValueOnce({ ok: true })
+    render(<CredentialsSignInForm />)
+
+    // Text typed into server-rendered HTML before React hydrated it reaches
+    // the DOM but fires no change event React sees.
+    const setValue = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype,
+      'value'
+    )!.set!
+    setValue.call(screen.getByPlaceholderText('Email'), 'test@example.com')
+    setValue.call(screen.getByPlaceholderText('Пароль'), 'password123')
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Войти' }).closest('form')!
+    )
+
+    await waitFor(() =>
+      expect(mockSignIn).toHaveBeenCalledWith('credentials', {
+        email: 'test@example.com',
+        password: 'password123',
+        redirect: false,
+      })
+    )
+  })
+
+  it('keeps the server-rendered form from submitting natively', () => {
+    const container = document.createElement('div')
+    container.innerHTML = renderToString(<CredentialsSignInForm />)
+
+    // A native submit before hydration must not put credentials in a URL.
+    expect(container.querySelector('form')).toHaveAttribute('method', 'post')
+    expect(container.querySelector('button[type="submit"]')).toBeDisabled()
   })
 
   it('shows error on failed sign-in', async () => {

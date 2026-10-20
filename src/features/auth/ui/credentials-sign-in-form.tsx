@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { PasswordInput } from './password-input'
 
@@ -19,13 +19,20 @@ export function CredentialsSignInForm({
   callbackUrl = '/',
 }: CredentialsSignInFormProps) {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState(defaultError ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Until React hydrates the form, a click would submit it natively and put
+  // the credentials into a URL; the button waits for hydration instead.
+  const [isHydrated, setIsHydrated] = useState(false)
+  useEffect(() => setIsHydrated(true), [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    // Read the fields, not React state: text typed into the server-rendered
+    // form before hydration is in the DOM but never reached state.
+    const fields = new FormData(event.currentTarget)
+    const email = String(fields.get('email') ?? '')
+    const password = String(fields.get('password') ?? '')
 
     setError('')
     setIsSubmitting(true)
@@ -48,20 +55,18 @@ export function CredentialsSignInForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form method="post" onSubmit={handleSubmit} className="space-y-4">
       <input
         type="email"
+        name="email"
         placeholder="Email"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
         required
         className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-500 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
       />
 
       <PasswordInput
         placeholder="Пароль"
-        value={password}
-        onChange={(event) => setPassword(event.target.value)}
+        name="password"
         showLabel="Показать пароль"
         hideLabel="Скрыть пароль"
       />
@@ -79,7 +84,7 @@ export function CredentialsSignInForm({
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={!isHydrated || isSubmitting}
         className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? 'Вход...' : 'Войти'}
