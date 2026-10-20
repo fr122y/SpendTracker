@@ -54,3 +54,54 @@ export async function loginWithCredentials(
 
   await expect(page).not.toHaveURL(/\/login/, { timeout: 10000 })
 }
+
+/**
+ * Temporary password `e2e/session-revocation.spec.ts` sets while it tests a
+ * password change. The spec changes it back; `auth.setup.ts` also does if a
+ * run was interrupted in between.
+ */
+export function getTemporaryPassword(credentials: E2ECredentials): string {
+  return `${credentials.password}-T064`
+}
+
+/**
+ * Tries to sign in; returns false when the login page rejects the password
+ */
+export async function tryLoginWithCredentials(
+  page: Page,
+  credentials: E2ECredentials
+): Promise<boolean> {
+  await page.goto('/login')
+
+  await page.getByPlaceholder('Email').fill(credentials.email)
+  await page.getByPlaceholder('Пароль').fill(credentials.password)
+  await page.getByRole('button', { name: 'Войти', exact: true }).click()
+
+  return page
+    .waitForURL((url) => !url.pathname.startsWith('/login'), {
+      timeout: 10000,
+    })
+    .then(
+      () => true,
+      () => false
+    )
+}
+
+/**
+ * Changes the password on /account and waits for «Пароль изменён»
+ */
+export async function changePasswordOnAccountPage(
+  page: Page,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await page.goto('/account')
+  await expect(page).toHaveURL(/\/account$/, { timeout: 15000 })
+  await page.getByPlaceholder('Текущий пароль').fill(currentPassword)
+  await page.getByPlaceholder('Новый пароль', { exact: true }).fill(newPassword)
+  await page.getByPlaceholder('Повторите новый пароль').fill(newPassword)
+  await page.getByRole('button', { name: 'Сменить пароль' }).click()
+  await expect(page.getByText('Пароль изменён')).toBeVisible({
+    timeout: 15000,
+  })
+}

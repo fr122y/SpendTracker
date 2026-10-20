@@ -13,7 +13,9 @@
 import { expect, test, type Page } from '@playwright/test'
 
 import {
+  changePasswordOnAccountPage,
   E2E_STORAGE_STATE,
+  getTemporaryPassword,
   getE2ECredentials,
   loginWithCredentials,
   MISSING_E2E_CREDENTIALS_MESSAGE,
@@ -59,10 +61,6 @@ async function submitPasswordChange(
   await page.getByRole('button', { name: 'Сменить пароль' }).click()
 }
 
-async function expectPasswordChanged(page: Page): Promise<void> {
-  await expect(page.getByText('Пароль изменён')).toBeVisible(TIMEOUT)
-}
-
 /**
  * Puts the original password back, from the current session or, if that
  * session is gone, from a new sign-in with the temporary password.
@@ -75,12 +73,15 @@ async function restorePassword(
   await page.goto('/account')
   if (/\/login/.test(page.url())) {
     await loginWithCredentials(page, {
-      email: credentials.email,
+      ...credentials,
       password: temporaryPassword,
     })
   }
-  await submitPasswordChange(page, temporaryPassword, credentials.password)
-  await expectPasswordChanged(page)
+  await changePasswordOnAccountPage(
+    page,
+    temporaryPassword,
+    credentials.password
+  )
 }
 
 test('a session cookie saved before sign-out does not open /account', async ({
@@ -106,7 +107,7 @@ test('a password change ends other sessions and keeps the current one', async ({
   page,
 }) => {
   const credentials = requireCredentials()
-  const temporaryPassword = `${credentials.password}-T064`
+  const temporaryPassword = getTemporaryPassword(credentials)
   const otherDevice = await browser.newContext({
     storageState: SIGNED_OUT_STATE,
   })
@@ -120,7 +121,7 @@ test('a password change ends other sessions and keeps the current one', async ({
   try {
     await submitPasswordChange(page, credentials.password, temporaryPassword)
     submitted = true
-    await expectPasswordChanged(page)
+    await expect(page.getByText('Пароль изменён')).toBeVisible(TIMEOUT)
 
     await expectLoginPage(otherPage)
     await expectAccountPage(page)
