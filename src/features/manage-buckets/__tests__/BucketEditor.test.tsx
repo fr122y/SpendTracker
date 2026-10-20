@@ -220,7 +220,7 @@ describe('BucketEditor', () => {
     render(<BucketEditor />)
 
     const savingsInput = screen.getByLabelText('Сумма категории Накопления')
-    fireEvent.change(savingsInput, { target: { value: '333333.33' } })
+    fireEvent.change(savingsInput, { target: { value: '333333,33' } })
     fireEvent.blur(savingsInput)
 
     await waitFor(() => expect(mockUpdateBuckets).toHaveBeenCalledTimes(1))
@@ -232,7 +232,7 @@ describe('BucketEditor', () => {
       '33,33'
     )
     expect(screen.getByLabelText('Сумма категории Накопления')).toHaveValue(
-      '333333.33'
+      '333333,33'
     )
   })
 

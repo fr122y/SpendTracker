@@ -160,13 +160,14 @@ describe('CalculatorLauncher', () => {
     expect(expression()).toHaveTextContent('1501')
   })
 
-  it('supports backspace, clear, and shows no result for division by zero', () => {
+  it('supports backspace, clear, and names a division by zero', () => {
     open()
     press('5', 'Разделить', '0')
-    expect(result()).toHaveTextContent('—')
+    expect(result()).toHaveTextContent('деление на 0')
 
     press('Стереть')
     expect(expression()).toHaveTextContent('5÷')
+    expect(result()).toHaveTextContent('—')
     press('Очистить')
     expect(expression()).toHaveTextContent('0')
   })
@@ -422,5 +423,30 @@ describe('CalculatorLauncher', () => {
       expect(fireEvent.keyDown(seven, { key: 'Enter' })).toBe(true)
       expect(expression()).toHaveTextContent('2+3')
     })
+  })
+})
+
+describe('hiding the floating button', () => {
+  it('hides the button while the page holds an element that asks for it', async () => {
+    render(<CalculatorLauncher />)
+    expect(
+      screen.getByRole('button', { name: launcherName })
+    ).toBeInTheDocument()
+
+    const form = document.createElement('form')
+    form.setAttribute('data-hides-calculator', '')
+    await act(async () => {
+      document.body.appendChild(form)
+    })
+    expect(
+      screen.queryByRole('button', { name: launcherName })
+    ).not.toBeInTheDocument()
+
+    await act(async () => {
+      form.remove()
+    })
+    expect(
+      screen.getByRole('button', { name: launcherName })
+    ).toBeInTheDocument()
   })
 })

@@ -15,7 +15,7 @@ import {
 
 import { useExpenseStore } from '@/entities/expense'
 import { useSessionStore } from '@/entities/session'
-import { type ExpenseScope } from '@/shared/lib'
+import { type ExpenseScope, formatMoney } from '@/shared/lib'
 import { Button } from '@/shared/ui'
 
 import { DailySpendingChartSkeleton } from './daily-spending-chart-skeleton'
@@ -61,21 +61,21 @@ function CustomTooltip({ active, payload, scope }: CustomTooltipProps) {
           {data.weekdayLabel}, день {data.day}
         </p>
         <p className="font-semibold text-zinc-100">
-          Всего: {data.amount.toLocaleString('ru-RU')} ₽
+          Всего: {formatMoney(data.amount)}
         </p>
         {(scope === 'all' || scope === 'personal') && (
           <p className="text-emerald-400">
-            Личные: {data.personalAmount.toLocaleString('ru-RU')} ₽
+            Личные: {formatMoney(data.personalAmount)}
           </p>
         )}
         {(scope === 'all' || scope === 'shared') && (
           <p className="text-amber-400">
-            Общие: {data.sharedAmount.toLocaleString('ru-RU')} ₽
+            Общие: {formatMoney(data.sharedAmount)}
           </p>
         )}
         {(scope === 'all' || scope === 'personal') && (
           <p className="text-sky-400">
-            Проекты: {data.projectAmount.toLocaleString('ru-RU')} ₽
+            Проекты: {formatMoney(data.projectAmount)}
           </p>
         )}
       </div>
@@ -136,7 +136,7 @@ export function DailySpendingChart() {
                 className="text-emerald-400"
                 data-testid="dynamics-header-personal"
               >
-                Личные: {personalTotal.toLocaleString('ru-RU')} ₽
+                Личные: {formatMoney(personalTotal)}
               </span>
             )}
             {(scope === 'all' || scope === 'shared') && (
@@ -144,7 +144,7 @@ export function DailySpendingChart() {
                 className="text-amber-400"
                 data-testid="dynamics-header-shared"
               >
-                Общие: {sharedTotal.toLocaleString('ru-RU')} ₽
+                Общие: {formatMoney(sharedTotal)}
               </span>
             )}
             {(scope === 'all' || scope === 'personal') && (
@@ -152,7 +152,7 @@ export function DailySpendingChart() {
                 className="text-sky-400"
                 data-testid="dynamics-header-project"
               >
-                Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
+                Проекты: {formatMoney(projectTotal)}
               </span>
             )}
           </div>
@@ -161,7 +161,7 @@ export function DailySpendingChart() {
           className="text-base font-semibold text-emerald-400 sm:text-lg"
           data-testid="dynamics-header-total"
         >
-          {totalMonthly.toLocaleString('ru-RU')} ₽
+          {formatMoney(totalMonthly)}
         </span>
       </div>
 

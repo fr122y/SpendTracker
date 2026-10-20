@@ -138,6 +138,11 @@ jest.mock('@/features/add-expense', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
+  formatMoney: jest.requireActual('@/shared/lib/money-amount').formatMoney,
+  formatMoneyNumber: jest.requireActual('@/shared/lib/money-amount')
+    .formatMoneyNumber,
+  formatAmountInput: jest.requireActual('@/shared/lib/money-amount')
+    .formatAmountInput,
   getDailyOperations: jest.fn((expenses: Expense[], date: Date) => {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')

@@ -83,6 +83,9 @@ export {
   AMOUNT_NEGATIVE_ERROR,
   AMOUNT_POSITIVE_ERROR,
   MAX_MONEY_AMOUNT,
+  formatAmountInput,
+  formatMoney,
+  formatMoneyNumber,
   getAmountMaxError,
   isValidMoneyAmount,
   normalizeMoneyAmount,
@@ -163,3 +166,7 @@ export {
   isExpenseDescriptionTooLong,
 } from './text-limits'
 export { requestWidgetReveal, subscribeWidgetReveal } from './widget-reveal'
+export {
+  HIDES_CALCULATOR_ATTRIBUTE,
+  HIDES_CALCULATOR_PROPS,
+} from './floating-action'

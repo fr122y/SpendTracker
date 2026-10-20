@@ -101,6 +101,11 @@ jest.mock('@/entities/session', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
+  formatMoney: jest.requireActual('@/shared/lib/money-amount').formatMoney,
+  formatMoneyNumber: jest.requireActual('@/shared/lib/money-amount')
+    .formatMoneyNumber,
+  formatAmountInput: jest.requireActual('@/shared/lib/money-amount')
+    .formatAmountInput,
   ...jest.requireActual('@/shared/lib/category-color'),
   getMonthlyExpenses: jest.fn(
     (

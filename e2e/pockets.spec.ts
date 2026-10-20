@@ -6,6 +6,7 @@ import {
   MISSING_E2E_CREDENTIALS_MESSAGE,
   SIGNED_OUT_STATE,
 } from './utils/auth'
+import { rubles } from './utils/expenses'
 import {
   ensureActivePocket,
   reloadPockets,
@@ -148,7 +149,7 @@ test.describe('Pockets', () => {
 
   async function deleteOnlyOperation(history: Locator): Promise<void> {
     await expect(history.getByRole('listitem')).toHaveCount(1, TIMEOUT)
-    await history.getByRole('button', { name: 'delete' }).click()
+    await history.getByRole('button', { name: 'Удалить операцию' }).click()
 
     const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
     await expect(dialog).toBeVisible(TIMEOUT)
@@ -178,7 +179,10 @@ test.describe('Pockets', () => {
       await expect(history).toBeVisible(TIMEOUT)
       const items = history.getByRole('listitem')
       for (let left = await items.count(); left > 0; left -= 1) {
-        await items.first().getByRole('button', { name: 'delete' }).click()
+        await items
+          .first()
+          .getByRole('button', { name: 'Удалить операцию' })
+          .click()
         const dialog = page.getByRole('alertdialog', {
           name: 'Удалить операцию?',
         })
@@ -324,8 +328,8 @@ test.describe('Pockets', () => {
     await expect(purchases.getByText(PURCHASE_DESCRIPTION)).toBeVisible()
     await expect(operationBadge(purchases, 'Покупка из кармана')).toBeVisible()
     await expect(
-      purchases.getByRole('button', { name: 'edit amount' })
-    ).toHaveText(`${PURCHASE_AMOUNT} ₽`)
+      purchases.getByRole('button', { name: 'Изменить сумму' })
+    ).toHaveText(rubles(PURCHASE_AMOUNT))
 
     const transfers = await openHistory(region, 'Переводы', TRANSFER_AMOUNT)
     await expect(region.getByLabel('История покупок')).toHaveCount(0)
@@ -333,8 +337,8 @@ test.describe('Pockets', () => {
     await expect(transfers.getByText(TRANSFER_DESCRIPTION)).toBeVisible()
     await expect(operationBadge(transfers, 'Перевод из кармана')).toBeVisible()
     await expect(
-      transfers.getByRole('button', { name: 'edit amount' })
-    ).toHaveText(`${TRANSFER_AMOUNT} ₽`)
+      transfers.getByRole('button', { name: 'Изменить сумму' })
+    ).toHaveText(rubles(TRANSFER_AMOUNT))
   })
 
   test('should keep the budget and operations after reload', async () => {
@@ -504,12 +508,14 @@ test.describe('Pockets', () => {
       .filter({ hasText: JOURNAL_PURCHASE_DESCRIPTION })
     await expect(journalPurchase).toHaveCount(1)
     await expect(
-      journalPurchase.getByRole('button', { name: 'edit amount' })
-    ).toHaveText(`${JOURNAL_PURCHASE_AMOUNT} ₽`)
+      journalPurchase.getByRole('button', { name: 'Изменить сумму' })
+    ).toHaveText(rubles(JOURNAL_PURCHASE_AMOUNT))
 
     // Remove the journal purchase so the following steps see the totals and
     // the single purchase they were written for.
-    await journalPurchase.getByRole('button', { name: 'delete' }).click()
+    await journalPurchase
+      .getByRole('button', { name: 'Удалить операцию' })
+      .click()
     const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
     await expect(dialog).toBeVisible(TIMEOUT)
     await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()

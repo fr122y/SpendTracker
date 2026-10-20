@@ -68,6 +68,18 @@
     scroll-padding-bottom: 5rem;
   }
 
+  /* Keeps a row's right end clear of the floating calculator button at any
+     scroll position: right-4 + h-12 = 4rem, sm:right-6 + sm:h-14 = 5rem. */
+  .calculator-clearance {
+    padding-right: 4.5rem;
+  }
+
+  @media (min-width: 640px) {
+    .calculator-clearance {
+      padding-right: 5.5rem;
+    }
+  }
+
   input:not([type='checkbox'], [type='radio'], [type='range']),
   select,
   textarea {

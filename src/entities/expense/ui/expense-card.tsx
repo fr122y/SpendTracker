@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
+import { formatAmountInput, formatMoney } from '@/shared/lib'
 import { ConfirmDialog, MathInput } from '@/shared/ui'
 
 import type { Expense } from '@/shared/types'
@@ -36,7 +37,7 @@ interface ExpenseCardProps {
 /** Names a record in a delete confirmation: description, amount, and date. */
 export function describeExpenseForDelete(expense: Expense): string {
   const description = expense.description.trim() || 'Без описания'
-  return `«${description}» · ${expense.amount} ₽ · ${formatExpenseDate(expense.date)}`
+  return `«${description}» · ${formatMoney(expense.amount)} · ${formatExpenseDate(expense.date)}`
 }
 
 export const ARCHIVED_POCKET_OPERATION_HINT =
@@ -124,7 +125,7 @@ export function ExpenseCard({
   const onOpenEditor = isPocketArchived ? undefined : onOpenEditorProp
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [editValue, setEditValue] = useState(String(expense.amount))
+  const [editValue, setEditValue] = useState(formatAmountInput(expense.amount))
   const inputRef = useRef<HTMLInputElement>(null)
   const cancelPendingBlurRef = useRef(false)
   const lastSavedAmountRef = useRef<number | null>(null)
@@ -144,7 +145,7 @@ export function ExpenseCard({
     ) {
       cancelPendingBlurRef.current = false
       lastSavedAmountRef.current = null
-      setEditValue(String(expense.amount))
+      setEditValue(formatAmountInput(expense.amount))
       setIsEditing(true)
     }
   }
@@ -181,7 +182,7 @@ export function ExpenseCard({
     if (event.key !== 'Escape') return
     event.preventDefault()
     cancelPendingBlurRef.current = true
-    setEditValue(String(expense.amount))
+    setEditValue(formatAmountInput(expense.amount))
     setIsEditing(false)
     event.currentTarget.blur()
   }
@@ -264,16 +265,16 @@ export function ExpenseCard({
               onBlur={handleBlur}
               onKeyDown={handleKeyDown}
               className="w-24 sm:w-20 text-right text-base sm:text-sm font-semibold min-h-11"
-              aria-label="edit amount"
+              aria-label="Изменить сумму"
             />
           ) : (
             <button
               onClick={handleAmountClick}
               className={`whitespace-nowrap text-base sm:text-sm font-semibold ${isPocketTransfer ? 'text-violet-300 hover:text-violet-200 active:text-violet-400' : 'text-emerald-400 hover:text-emerald-300 active:text-emerald-500'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-900 transition-colors cursor-pointer min-h-11 px-2 rounded-md`}
-              aria-label="edit amount"
+              aria-label="Изменить сумму"
               disabled={!canEditAmount}
             >
-              {expense.amount} ₽
+              {formatMoney(expense.amount)}
             </button>
           )}
           {onOpenEditor && (
@@ -289,7 +290,7 @@ export function ExpenseCard({
           {onDelete && (
             <button
               onClick={() => setIsDeleteDialogOpen(true)}
-              aria-label="delete"
+              aria-label="Удалить операцию"
               className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-400 sm:min-h-0 sm:min-w-0 sm:p-1"
             >
               <Trash2 className="h-4 w-4" />
