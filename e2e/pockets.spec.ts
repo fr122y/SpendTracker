@@ -6,7 +6,7 @@ import {
   MISSING_E2E_CREDENTIALS_MESSAGE,
   SIGNED_OUT_STATE,
 } from './utils/auth'
-import { ensureActivePocket } from './utils/pockets'
+import { ensureActivePocket, reloadPockets } from './utils/pockets'
 import { expectNoHorizontalScroll } from './utils/viewport-helpers'
 
 const TIMEOUT = { timeout: 10000 }
@@ -647,10 +647,11 @@ test.describe('Pockets', () => {
     await dialog
       .getByRole('button', { name: 'Архивировать', exact: true })
       .click()
+    // The dialog closes only after the server action resolves; then reload to
+    // confirm the server archived it before the page closes.
+    await expect(dialog).toBeHidden(TIMEOUT)
     await expect(archivedButton).toBeVisible(TIMEOUT)
-    // The list updates optimistically; reload to confirm the server archived
-    // it before the page closes.
-    await page.reload()
+    await reloadPockets(page)
     await expect(archivedButton).toBeVisible(TIMEOUT)
     await expect(
       pocketList.getByRole('button', { name: pocketName, exact: true })

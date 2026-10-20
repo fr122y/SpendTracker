@@ -117,6 +117,8 @@ export async function archivePocket(page: Page, name: string): Promise<void> {
   await dialog
     .getByRole('button', { name: 'Архивировать', exact: true })
     .click()
+  // The dialog closes only after the server action resolves.
+  await expect(dialog).toBeHidden(TIMEOUT)
   await expect(active).toHaveCount(0, TIMEOUT)
   // The list updates optimistically; reload to confirm the server archived it.
   await reloadPockets(page)
