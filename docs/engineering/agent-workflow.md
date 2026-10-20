@@ -119,8 +119,10 @@ Do not claim checks passed unless they were actually run.
 Wait for the `e2e` check of a Pull Request with:
 
 ```sh
-node scripts/ci/wait-for-check.mjs <pr-number|sha> --rerun
+npm run ci:wait -- <pr-number|sha> --rerun
 ```
+
+The `--` is required: without it npm takes the flags for itself.
 
 It polls the latest E2E Preview run of the Pull Request's head commit through
 `gh`, judges it by the job steps rather than the run status, prints one line

@@ -36,7 +36,8 @@ points to the guides that hold the rest.
 - Run `npm run validate` for application changes and `npm run spec:check` when
   OpenSpec artifacts change. State any check that was skipped and why.
 - Commit meaningful changes unless the owner asks for work in progress.
-- Wait for CI with `node scripts/ci/wait-for-check.mjs <pr> --rerun`; see
+- Wait for CI with `npm run ci:wait -- <pr> --rerun` (`--` passes the flags to
+  the script); see
   [Waiting For CI](docs/engineering/agent-workflow.md#waiting-for-ci).
 
 ## OpenSpec
