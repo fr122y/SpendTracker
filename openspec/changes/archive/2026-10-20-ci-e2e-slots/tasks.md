@@ -12,4 +12,4 @@
 ## 3. Проверка
 
 - [x] 3.1 `npm run validate`, `npm run spec:check`.
-- [ ] 3.2 Pull Request: `e2e` выполнился в своём slot; владелец задаёт secrets slot 1 и 2 до слияния.
+- [x] 3.2 Pull Request: `e2e` выполнился в своём slot; владелец задаёт secrets slot 1 и 2 до слияния.
