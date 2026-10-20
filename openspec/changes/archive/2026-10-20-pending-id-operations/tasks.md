@@ -21,4 +21,4 @@
 ## 3. Проверка
 
 - [x] 3.1 `npm run spec:check` и `npm run validate`.
-- [ ] 3.2 E2E против Preview.
+- [x] 3.2 E2E против Preview.
