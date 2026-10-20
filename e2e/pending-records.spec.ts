@@ -12,6 +12,7 @@ import {
   TIMEOUT,
   uniqueAmount,
 } from './utils/expenses'
+import { archivePocket, ensureActivePocket } from './utils/pockets'
 
 /**
  * Operations on records the server has not saved yet (T-034): they run once
@@ -182,9 +183,11 @@ test.describe('Records that are still being saved', () => {
       page.getByRole('heading', { name: 'Карманы', level: 2 })
     ).toBeVisible(TIMEOUT)
 
-    const stamp = Date.now()
-    const first = `E2E первый карман ${stamp}`
-    const second = `E2E новый карман ${stamp}`
+    // Pockets cannot be deleted. The first pocket is reused across runs; the
+    // second must be created by every run, so each run leaves exactly one
+    // more archived «E2E карман (pending-new)».
+    const first = 'E2E карман (pending)'
+    const second = 'E2E карман (pending-new)'
     const pocketList = page.getByLabel('Список карманов')
     const createForm = page
       .locator('form')
@@ -193,33 +196,21 @@ test.describe('Records that are still being saved', () => {
       pocketList.getByRole('button', { name, exact: true })
     const region = (name: string) =>
       page.getByRole('region', { name: `Карман ${name}` })
-    const toArchive = new Set<string>()
+    const toArchive = new Set<string>([first, second])
 
     async function startCreate(name: string) {
       await page.getByRole('button', { name: 'Создать карман' }).first().click()
       await createForm.getByLabel('Название кармана').fill(name)
       await createForm.getByRole('button', { name: 'Создать карман' }).click()
-      toArchive.add(name)
-    }
-
-    async function archive(name: string) {
-      await chip(name).click()
-      await region(name).getByRole('button', { name: 'Архивировать' }).click()
-      const dialog = page.getByRole('alertdialog', {
-        name: `Архивировать карман «${name}»?`,
-      })
-      await dialog
-        .getByRole('button', { name: 'Архивировать', exact: true })
-        .click()
-      await expect(chip(`${name} · архив`)).toBeVisible(TIMEOUT)
-      toArchive.delete(name)
     }
 
     try {
-      // A new pocket is selected as soon as it is saved.
-      await startCreate(first)
-      await expect(chip(first)).toHaveAttribute('aria-pressed', 'true', TIMEOUT)
-      await archive(first)
+      // A retry or an earlier failed run may have left the new pocket active.
+      await archivePocket(page, second)
+      // Take the reused pocket and archive it again, so the create below
+      // follows an archive just like in T-034.
+      await ensureActivePocket(page, first)
+      await archivePocket(page, first)
 
       // While the create is in flight the chip is marked and ignores clicks.
       const create = await holdServerAction(page, (body) =>
@@ -247,10 +238,8 @@ test.describe('Records that are still being saved', () => {
       expect(serverErrors, 'server errors').toEqual([])
     } finally {
       await page.unrouteAll({ behavior: 'ignoreErrors' })
-      // Pockets cannot be deleted; archive what this test created.
-      for (const name of toArchive) {
-        if (await chip(name).isVisible()) await archive(name)
-      }
+      // Pockets cannot be deleted; leave both pockets archived.
+      for (const name of toArchive) await archivePocket(page, name)
     }
   })
 })

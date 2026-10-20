@@ -14,10 +14,11 @@ End-to-end tests using Playwright.
   sign-in
 - `pending-records.spec.ts` - Operations on records that are still being
   saved: delete before the create returns, reload inside the undo window,
-  and a new pocket after the only active one is archived (no 5xx). The pocket
-  test leaves two archived pockets per run, since pockets cannot be deleted
+  and a new pocket after the only active one is archived (no 5xx). See
+  [Reused Pockets](#reused-pockets)
 - `utils/auth.ts` - Credentials and login helper
 - `utils/expenses.ts` - Expense helper and `expenses` fixture
+- `utils/pockets.ts` - Restore-or-create and archive helpers for reused pockets
 - `utils/layout.ts` - Read, swap, and restore the server-side desktop layout
 - `utils/viewport-helpers.ts` - Responsive assertions
 
@@ -49,7 +50,8 @@ restores the original server-side layout after it swaps two widgets.
 ## Pockets Scenario
 
 `pockets.spec.ts` signs in through `/login` and walks one pocket through its
-dashboard flow: create, set the month budget, add a purchase and a transfer,
+dashboard flow: restore (or, in a fresh account, create) the pocket and clear
+its month, reject a duplicate name, set the month budget, add a purchase and a transfer,
 check the used/remaining totals and both histories, reload, open the pocket in
 the mobile accordion, then delete the operations and archive the pocket.
 
@@ -59,8 +61,8 @@ Requirements:
   email/password user. Without them the scenario is skipped.
 - A database with the current schema, including the pockets tables, reachable
   through the app's usual `DATABASE_URL`. The user needs at least one category.
-- Use a disposable account: every run leaves one archived pocket (pockets
-  cannot be deleted) and may save one keyword mapping for the purchase comment.
+- Use a disposable account: the run may save one keyword mapping for the
+  purchase comment, and the pocket stays in the account archived.
 
 The scenario is serial, writes to that single account, and therefore runs only
 in the `chromium` project; other projects skip it.
@@ -69,6 +71,26 @@ in the `chromium` project; other projects skip it.
 E2E_USER_EMAIL=... E2E_USER_PASSWORD=... \
   npx playwright test e2e/pockets.spec.ts --project=chromium
 ```
+
+## Reused Pockets
+
+Pockets cannot be deleted, so pocket scenarios reuse pockets with fixed names
+instead of creating one per run (`utils/pockets.ts`):
+
+- `E2E карман (pockets)` - `pockets.spec.ts`. Restored at the start, its
+  operations of the month deleted and its budget reset to 0, archived at the
+  end. No growth per run.
+- `E2E карман (pending)` - `pending-records.spec.ts`. Restored and archived
+  again before the create under test.
+- `E2E карман (pending-new)` - `pending-records.spec.ts`. The regression test
+  must create a pocket right after an archive, so every run adds one archived
+  pocket with this name. This is the only growth left: one archived pocket per
+  run.
+
+Active pocket names are unique, so a helper uses an existing active pocket
+before it restores an archived one. Pockets named `E2E карман <timestamp>`,
+`E2E первый карман …`, and `E2E новый карман …` are leftovers of runs before
+reuse and stay archived in the test accounts.
 
 ## Test Coverage
 
