@@ -1,11 +1,4 @@
-import {
-  test,
-  expect,
-  type Locator,
-  type Page,
-  type Request,
-  type Response,
-} from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import {
   getE2ECredentials,
@@ -13,6 +6,7 @@ import {
   MISSING_E2E_CREDENTIALS_MESSAGE,
   SIGNED_OUT_STATE,
 } from './utils/auth'
+import { ensureActivePocket, reloadPockets } from './utils/pockets'
 import { expectNoHorizontalScroll } from './utils/viewport-helpers'
 
 const TIMEOUT = { timeout: 10000 }
@@ -55,7 +49,9 @@ test.describe('Pockets', () => {
   test.describe.configure({ mode: 'serial' })
 
   const credentials = getE2ECredentials()
-  const pocketName = `E2E карман ${Date.now()}`
+  // Pockets cannot be deleted, so every run reuses this one pocket: it is
+  // restored from the archive at the start and archived again at the end.
+  const pocketName = 'E2E карман (pockets)'
 
   let page: Page
 
@@ -159,70 +155,52 @@ test.describe('Pockets', () => {
     )
   }
 
-  test('should create a pocket', async () => {
+  /**
+   * Deletes every operation of the displayed month, including leftovers of an
+   * earlier run that failed before its own cleanup.
+   */
+  async function clearMonthOperations(region: Locator): Promise<void> {
+    for (const label of ['Покупки', 'Переводы'] as const) {
+      const toggle = region.getByRole('button', {
+        name: new RegExp(`${label}\\s*-?\\d`),
+      })
+      await expect(toggle).toBeVisible(TIMEOUT)
+      if ((await toggle.getAttribute('aria-expanded')) !== 'true') {
+        await toggle.click()
+      }
+      const history = region.getByLabel(
+        label === 'Покупки' ? 'История покупок' : 'История переводов'
+      )
+      await expect(history).toBeVisible(TIMEOUT)
+      const items = history.getByRole('listitem')
+      for (let left = await items.count(); left > 0; left -= 1) {
+        await items.first().getByRole('button', { name: 'delete' }).click()
+        const dialog = page.getByRole('alertdialog', {
+          name: 'Удалить операцию?',
+        })
+        await dialog
+          .getByRole('button', { name: 'Удалить', exact: true })
+          .click()
+        await expect(items).toHaveCount(left - 1, TIMEOUT)
+      }
+      await expect(
+        history.getByText('Операций за этот месяц нет.')
+      ).toBeVisible(TIMEOUT)
+      await toggle.click()
+      await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    }
+  }
+
+  test('should open the scenario pocket with an empty month', async () => {
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto('/')
 
-    await expect(
-      page.getByRole('heading', { name: 'Карманы', level: 2 })
-    ).toBeVisible(TIMEOUT)
-
-    await page.getByRole('button', { name: 'Создать карман' }).click()
-
-    const createForm = page
-      .locator('form')
-      .filter({ has: page.getByLabel('Название кармана') })
-    await createForm.getByLabel('Название кармана').fill(pocketName)
-
-    // The chip appears at once with a temporary id; the server action then
-    // returns the real pocket and the list is refetched. Selecting the chip
-    // before the refetch selects the temporary id, which vanishes, so wait
-    // for the create action and for the refetched list holding the pocket.
-    const isServerAction = (response: Response) =>
-      response.request().method() === 'POST' &&
-      response.request().headers()['next-action'] !== undefined
-    let createRequests = 0
-    const countCreateRequest = (request: Request) => {
-      if (
-        request.method() === 'POST' &&
-        request.headers()['next-action'] !== undefined &&
-        (request.postData() ?? '').includes(pocketName)
-      ) {
-        createRequests += 1
-      }
-    }
-    page.on('request', countCreateRequest)
-    let createDone = false
-    const created = page.waitForResponse((response) => {
-      const done =
-        isServerAction(response) &&
-        (response.request().postData() ?? '').includes(pocketName)
-      if (done) createDone = true
-      return done
-    })
-    // TanStack Query refetches the pocket list through its query function
-    // server action, whose arguments carry the `pockets` query key.
-    const refetched = page.waitForResponse(
-      (response) =>
-        createDone &&
-        isServerAction(response) &&
-        (response.request().postData() ?? '').includes('"queryKey":["pockets"]')
-    )
-    // A rapid triple click must still send exactly one create request.
-    await createForm
-      .getByRole('button', { name: 'Создать карман' })
-      .click({ clickCount: 3 })
-    const createResponse = await created
-    expect(createResponse.ok(), 'create pocket server action').toBe(true)
-    expect((await refetched).ok(), 'pocket list refetch').toBe(true)
-    page.off('request', countCreateRequest)
-    expect(createRequests, 'create pocket requests').toBe(1)
-
-    await expect(createForm).toBeHidden(TIMEOUT)
+    // Restores the pocket of an earlier run; creates it only in an account
+    // that has never had it.
+    await ensureActivePocket(page, pocketName)
     const chip = page
       .getByLabel('Список карманов')
       .getByRole('button', { name: pocketName, exact: true })
-    await expect(chip).toBeVisible(TIMEOUT)
     await expect(chip).toHaveCount(1)
 
     const region = await openPocket()
@@ -230,7 +208,20 @@ test.describe('Pockets', () => {
     await expect(
       region.getByRole('heading', { name: pocketName, level: 3 })
     ).toBeVisible()
-    await expectTotals(region, 0, 0)
+
+    // Reset the state the later steps depend on: no operations this month
+    // and a zero budget (a new month copies the previous month's budget).
+    await clearMonthOperations(region)
+    const budgetInput = region.getByLabel(`Бюджет кармана ${pocketName}`)
+    await budgetInput.fill('0')
+    await budgetInput.press('Enter')
+    await expect(budgetInput).toHaveValue('0', TIMEOUT)
+    await page.reload()
+    const reloaded = await openPocket()
+    await expect(
+      reloaded.getByLabel(`Бюджет кармана ${pocketName}`)
+    ).toHaveValue('0', TIMEOUT)
+    await expectTotals(reloaded, 0, 0)
   })
 
   test('should reject a second active pocket with the same name', async () => {
@@ -238,9 +229,9 @@ test.describe('Pockets', () => {
     const createForm = page
       .locator('form')
       .filter({ has: page.getByLabel('Название кармана') })
-    await createForm
-      .getByLabel('Название кармана')
-      .fill(`  ${pocketName.toUpperCase()} `)
+    const duplicateName = `  ${pocketName.toUpperCase()} `
+    await createForm.getByLabel('Название кармана').fill(duplicateName)
+
     await createForm.getByRole('button', { name: 'Создать карман' }).click()
 
     await expect(createForm.getByRole('alert')).toHaveText(
@@ -376,9 +367,9 @@ test.describe('Pockets', () => {
     await toggle.click()
     await expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
-    // The pocket was created in this run, so the current month is its only one.
+    // The pocket is reused across runs, so earlier months may be listed too.
     const history = region.getByLabel('История кармана по месяцам')
-    await expect(history.getByRole('listitem')).toHaveCount(1, TIMEOUT)
+    await expect(history.getByRole('listitem').first()).toBeVisible(TIMEOUT)
     const row = history.getByTestId(`pocket-history-${period}`)
     await expect(row).toContainText(monthLabel)
     await expect(row).toContainText(
@@ -656,6 +647,14 @@ test.describe('Pockets', () => {
     await dialog
       .getByRole('button', { name: 'Архивировать', exact: true })
       .click()
+    // The dialog closes only after the server action resolves; then reload to
+    // confirm the server archived it before the page closes.
+    await expect(dialog).toBeHidden(TIMEOUT)
     await expect(archivedButton).toBeVisible(TIMEOUT)
+    await reloadPockets(page)
+    await expect(archivedButton).toBeVisible(TIMEOUT)
+    await expect(
+      pocketList.getByRole('button', { name: pocketName, exact: true })
+    ).toHaveCount(0)
   })
 })
