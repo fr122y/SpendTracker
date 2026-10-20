@@ -20,3 +20,4 @@ e2e/responsive-layout.spec.ts
 e2e/savings-calculator.spec.ts
 e2e/touch-targets.spec.ts
 e2e/viewport-resize.spec.ts
+e2e/pending-records.spec.ts

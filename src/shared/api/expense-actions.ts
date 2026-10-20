@@ -17,6 +17,7 @@ import {
 } from '@/shared/lib/money-amount'
 import { assertExpenseDescriptionLength } from '@/shared/lib/text-limits'
 
+import { deleteExpenseForUser } from './expense-delete'
 import {
   assertCanUsePocket,
   assertValidOperationAmount,
@@ -28,14 +29,15 @@ import {
   assertProjectCashCovers,
   getProjectCashEffect,
   isProjectCashOperation,
-  PROJECT_RETURN_EXCEEDS_CASH_ERROR,
 } from './project-helpers'
 import {
   assertCanManageSharedBudgetExpense,
   assertCanUseSharedBudget,
 } from './shared-budget-actions'
 import { getSharedCategoryForExpense } from './shared-category-actions'
+import { isUnsavedRecordId } from './unsaved-record'
 
+import type { DeleteExpenseResult } from './expense-delete'
 import type { AddExpenseInput, Expense } from '@/shared/types'
 
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
@@ -284,65 +286,12 @@ export async function addExpense(input: AddExpenseInput): Promise<Expense> {
   return result
 }
 
-/**
- * `project_cash_negative` is returned instead of thrown so the client can show
- * a specific message: production builds hide thrown Server Action messages.
- */
-export type DeleteExpenseResult =
-  | { status: 'deleted' }
-  | { status: 'project_cash_negative' }
+export type { DeleteExpenseResult } from './expense-delete'
 
 export async function deleteExpense(id: string): Promise<DeleteExpenseResult> {
   const userId = await getUserId()
-  const [expense] = await db
-    .select({
-      userId: expenses.userId,
-      sharedBudgetId: expenses.sharedBudgetId,
-      pocketId: expenses.pocketId,
-      projectId: expenses.projectId,
-      operationType: expenses.operationType,
-    })
-    .from(expenses)
-    .where(eq(expenses.id, id))
-
-  if (!expense) return { status: 'deleted' }
-
-  if (expense.sharedBudgetId) {
-    await assertCanManageSharedBudgetExpense(expense.sharedBudgetId, userId)
-  } else if (expense.userId !== userId) {
-    throw new Error('Expense not found')
-  }
-
-  if (expense.pocketId) {
-    await assertCanUsePocket(expense.pocketId, userId)
-  }
-
-  const projectId = expense.projectId
-  if (projectId && isProjectCashOperation(expense.operationType)) {
-    return db.transaction(async (transaction) => {
-      try {
-        await assertProjectCashCovers(transaction, {
-          userId,
-          projectId,
-          excludeExpenseId: id,
-          delta: 0,
-        })
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === PROJECT_RETURN_EXCEEDS_CASH_ERROR
-        ) {
-          return { status: 'project_cash_negative' as const }
-        }
-        throw error
-      }
-      await transaction.delete(expenses).where(eq(expenses.id, id))
-      return { status: 'deleted' as const }
-    })
-  }
-
-  await db.delete(expenses).where(eq(expenses.id, id))
-  return { status: 'deleted' }
+  if (isUnsavedRecordId(id)) return { status: 'deleted' }
+  return deleteExpenseForUser(id, userId)
 }
 
 export async function updateExpense(
@@ -350,6 +299,7 @@ export async function updateExpense(
   input: Partial<Omit<Expense, 'id'>>
 ): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(id)) return
   let data =
     input.amount === undefined
       ? input

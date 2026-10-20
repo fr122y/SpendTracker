@@ -118,3 +118,21 @@ Production environment:
 - `ACCOUNT_EMAIL_REPLY_TO` (optional)
 
 Development and tests without `RESEND_API_KEY` use console preview mode.
+
+## Unsaved Record Ids
+
+`isUnsavedRecordId(id)` (`unsaved-record.ts`) guards every action that takes
+the id of an existing record. A `temp-` id names no stored record, so reads
+return an empty result, deletes and archives do nothing, and writes return
+without change: `null` from `updateCategory` and `setPocketMonthBudget`,
+`{ status: 'unsaved_record' }` from `renamePocket` and `restorePocket`. The
+client never sends such an id (`@/shared/lib/pending-ids`); the guard keeps a
+client bug from becoming an HTTP 500.
+
+## Deferred Expense Delete Flush
+
+`deleteExpenseForUser(id, userId)` (`expense-delete.ts`) is the delete shared by
+`deleteExpense` and `flushExpenseDeletes(request)` (`expense-flush.ts`), which
+backs the route `POST /api/expenses/flush-deletes` (ADR 0003). It takes
+`{ ids }` (at most 100) from the signed-in user, rejects a foreign origin, and
+skips temporary, malformed, foreign, and guarded ids; a repeat is safe.

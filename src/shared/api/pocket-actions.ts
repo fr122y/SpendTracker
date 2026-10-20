@@ -14,7 +14,9 @@ import {
   getPocketForUser,
   normalizePocketName,
 } from './pocket-helpers'
+import { isUnsavedRecordId } from './unsaved-record'
 
+import type { UnsavedRecordResult } from './unsaved-record'
 import type { Pocket, PocketMonthBudget } from '@/shared/types'
 
 async function getUserId(): Promise<string> {
@@ -78,6 +80,7 @@ export type CreatePocketResult =
 export type RenamePocketResult =
   | { status: 'renamed'; pocket: Pocket }
   | PocketNameConflict
+  | UnsavedRecordResult
 
 /** Partial unique index on active pocket names, see `pockets` in the schema. */
 const POCKET_ACTIVE_NAME_INDEX = 'pocket_active_name_unique_idx'
@@ -190,6 +193,7 @@ export async function renamePocket(
   name: string
 ): Promise<RenamePocketResult> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(pocketId)) return { status: 'unsaved_record' }
   const normalizedName = normalizePocketName(name)
 
   return withPocketNameLock(userId, normalizedName, async (transaction) => {
@@ -228,6 +232,7 @@ export async function renamePocket(
 
 export async function archivePocket(pocketId: string): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(pocketId)) return
   const [row] = await db
     .update(pockets)
     .set({ archivedAt: new Date() })
@@ -251,6 +256,7 @@ export async function archivePocket(pocketId: string): Promise<void> {
 export type RestorePocketResult =
   | { status: 'restored'; pocket: Pocket }
   | PocketNameConflict
+  | UnsavedRecordResult
 
 /**
  * Returns an archived pocket to the active list. A conflict with an active
@@ -262,6 +268,7 @@ export async function restorePocket(
   pocketId: string
 ): Promise<RestorePocketResult> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(pocketId)) return { status: 'unsaved_record' }
   const pocket = await getPocketForUser(pocketId, userId)
 
   if (!pocket.archivedAt) {
@@ -300,6 +307,7 @@ export async function getPocketMonthBudgets(
   pocketId: string
 ): Promise<PocketMonthBudget[]> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(pocketId)) return []
   await getPocketForUser(pocketId, userId)
   const rows = await db
     .select()
@@ -315,6 +323,7 @@ export async function initializePocketMonthBudget(
   period: string
 ): Promise<PocketMonthBudget | null> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(pocketId)) return null
   assertValidPocketPeriod(period)
 
   const [existingBudget] = await db
@@ -418,8 +427,9 @@ export async function setPocketMonthBudget(
   pocketId: string,
   period: string,
   rawBudget: number
-): Promise<PocketMonthBudget> {
+): Promise<PocketMonthBudget | null> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(pocketId)) return null
   const budget = normalizeMoneyAmount(rawBudget)
   assertValidPocketPeriod(period)
   assertValidPocketBudget(budget)

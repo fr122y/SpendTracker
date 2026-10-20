@@ -10,6 +10,8 @@ import {
 } from '@/shared/lib/category-update'
 import { assertCategoryNameLength } from '@/shared/lib/text-limits'
 
+import { isUnsavedRecordId } from './unsaved-record'
+
 import type { Category } from '@/shared/types'
 
 async function getUserId(): Promise<string> {
@@ -63,6 +65,7 @@ export async function countCategoryExpenses(
   categoryId: string
 ): Promise<number> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(categoryId)) return 0
 
   const [category] = await db
     .select({ name: categories.name })
@@ -85,6 +88,8 @@ export async function deleteCategoryWithReassign(
   targetCategoryId: string
 ): Promise<{ moved: number }> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(categoryId) || isUnsavedRecordId(targetCategoryId))
+    return { moved: 0 }
 
   if (categoryId === targetCategoryId) {
     throw new Error('Target category must differ from the deleted one')
@@ -130,8 +135,9 @@ export async function deleteCategoryWithReassign(
 export async function updateCategory(
   categoryId: string,
   data: CategoryUpdate
-): Promise<Category> {
+): Promise<Category | null> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(categoryId)) return null
   const update = normalizeCategoryUpdate(data)
 
   return db.transaction(async (tx) => {

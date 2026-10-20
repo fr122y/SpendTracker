@@ -401,6 +401,71 @@ describe('PocketsSection', () => {
     )
   })
 
+  it('never opens a pocket that is still being created by default', () => {
+    mockPockets[0].archivedAt = '2026-01-22T00:00:00.000Z'
+    mockPockets.push({
+      id: 'temp-new',
+      name: 'Ноутбук',
+      createdAt: '2026-01-21',
+    })
+    render(<PocketsSection />)
+
+    expect(
+      screen.getByRole('region', { name: 'Карман Отпуск' })
+    ).toBeInTheDocument()
+    expect(mockUsePocketMonthBudget).not.toHaveBeenCalledWith(
+      'temp-new',
+      expect.anything()
+    )
+  })
+
+  it('shows a saving pocket chip that ignores clicks', () => {
+    mockPockets.push({
+      id: 'temp-new',
+      name: 'Ноутбук',
+      createdAt: '2026-01-21',
+    })
+    render(<PocketsSection />)
+
+    const chip = screen.getByRole('button', { name: 'Ноутбук · сохраняется…' })
+    expect(chip).toBeDisabled()
+    fireEvent.click(chip)
+
+    expect(chip).toHaveAttribute('aria-pressed', 'false')
+    expect(
+      screen.getByRole('region', { name: 'Карман Отпуск' })
+    ).toBeInTheDocument()
+    expect(mockUsePocketMonthBudget).not.toHaveBeenCalledWith(
+      'temp-new',
+      expect.anything()
+    )
+  })
+
+  it('opens a new pocket once it has its stored id', async () => {
+    const saved = { id: 'pocket-2', name: 'Ноутбук', createdAt: '2026-01-21' }
+    mockCreatePocket.mockImplementationOnce(async () => {
+      mockPockets.push(saved)
+      return saved
+    })
+    render(<PocketsSection />)
+    fireEvent.click(screen.getByRole('button', { name: /Создать карман/ }))
+    fireEvent.change(screen.getByLabelText('Название кармана'), {
+      target: { value: 'Ноутбук' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Создать карман' }))
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('region', { name: 'Карман Ноутбук' })
+      ).toBeInTheDocument()
+    )
+    expect(screen.getByRole('button', { name: 'Ноутбук' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    expect(mockUsePocketMonthBudget).toHaveBeenCalledWith('pocket-2', '2026-01')
+  })
+
   it('updates the selected month budget only', () => {
     render(<PocketsSection />)
     const budget = screen.getByLabelText('Бюджет кармана Отпуск')

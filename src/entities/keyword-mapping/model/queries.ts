@@ -12,6 +12,15 @@ import {
   saveSharedKeywordMapping as saveSharedKeywordMappingAction,
 } from '@/shared/api'
 import { normalizeKeywordPhrase, showMutationRollbackToast } from '@/shared/lib'
+import {
+  createTempId,
+  isPendingIdLostError,
+  isTempId,
+  replaceRecordId,
+  resolveId,
+  trackPendingId,
+  type PendingIdHandle,
+} from '@/shared/lib/pending-ids'
 
 import type {
   Category,
@@ -40,7 +49,7 @@ export function useKeywordMappings() {
 
 export function useSharedKeywordMappings(sharedBudgetId: string | undefined) {
   return useQuery({
-    enabled: Boolean(sharedBudgetId),
+    enabled: Boolean(sharedBudgetId) && !isTempId(sharedBudgetId),
     queryKey: queryKeys.sharedKeywordMappings.list(sharedBudgetId ?? ''),
     queryFn: () => {
       if (!sharedBudgetId) return Promise.resolve([])
@@ -53,17 +62,21 @@ export function useSaveKeywordMapping() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       keyword,
       categoryId,
     }: {
       keyword: string
       categoryId: string
-    }) => saveKeywordMappingAction(keyword, categoryId),
+    }) => saveKeywordMappingAction(keyword, await resolveId(categoryId)),
     onMutate: async ({ keyword, categoryId }) => {
       const normalizedKeyword = normalizeKeywordPhrase(keyword)
       if (!normalizedKeyword) {
-        return { previous: undefined as KeywordMapping[] | undefined }
+        return {
+          previous: undefined as KeywordMapping[] | undefined,
+          tempId: undefined as string | undefined,
+          pending: undefined as PendingIdHandle | undefined,
+        }
       }
 
       await queryClient.cancelQueries({
@@ -77,7 +90,7 @@ export function useSaveKeywordMapping() {
       )
       const categoryMeta = getCategoryMeta(categories, categoryId)
       const optimisticRow: KeywordMapping = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         keyword: normalizedKeyword,
         matchType: 'exact',
         categoryId,
@@ -95,11 +108,22 @@ export function useSaveKeywordMapping() {
         }
       )
 
-      return { previous }
+      const pending = trackPendingId(optimisticRow.id)
+      return { previous, tempId: optimisticRow.id, pending }
     },
-    onError: (_error, _payload, context) => {
+    onSuccess: (mapping, _payload, context) => {
+      if (!context.tempId) return
+      const storedId = mapping?.id ?? context.tempId
+      queryClient.setQueryData<KeywordMapping[]>(
+        queryKeys.keywordMappings.all,
+        (old) => replaceRecordId(old, context.tempId!, storedId)
+      )
+      context.pending?.resolve(storedId)
+    },
+    onError: (error, _payload, context) => {
       queryClient.setQueryData(queryKeys.keywordMappings.all, context?.previous)
-      showMutationRollbackToast()
+      context?.pending?.reject()
+      if (!isPendingIdLostError(error)) showMutationRollbackToast()
     },
     onSettled: () => {
       queryClient.invalidateQueries({
@@ -125,17 +149,26 @@ export function useSaveSharedKeywordMapping(sharedBudgetId: string) {
   const queryKey = queryKeys.sharedKeywordMappings.list(sharedBudgetId)
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       keyword,
       categoryId,
     }: {
       keyword: string
       categoryId: string
-    }) => saveSharedKeywordMappingAction(sharedBudgetId, keyword, categoryId),
+    }) =>
+      saveSharedKeywordMappingAction(
+        await resolveId(sharedBudgetId),
+        keyword,
+        await resolveId(categoryId)
+      ),
     onMutate: async ({ keyword, categoryId }) => {
       const normalizedKeyword = normalizeKeywordPhrase(keyword)
       if (!normalizedKeyword) {
-        return { previous: undefined as SharedKeywordMapping[] | undefined }
+        return {
+          previous: undefined as SharedKeywordMapping[] | undefined,
+          tempId: undefined as string | undefined,
+          pending: undefined as PendingIdHandle | undefined,
+        }
       }
 
       await queryClient.cancelQueries({ queryKey })
@@ -146,7 +179,7 @@ export function useSaveSharedKeywordMapping(sharedBudgetId: string) {
       )
       const categoryMeta = getSharedCategoryMeta(categories, categoryId)
       const optimisticRow: SharedKeywordMapping = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         keyword: normalizedKeyword,
         matchType: 'exact',
         categoryId,
@@ -161,11 +194,21 @@ export function useSaveSharedKeywordMapping(sharedBudgetId: string) {
         return [...withoutDuplicateKeyword, optimisticRow]
       })
 
-      return { previous }
+      const pending = trackPendingId(optimisticRow.id)
+      return { previous, tempId: optimisticRow.id, pending }
     },
-    onError: (_error, _payload, context) => {
+    onSuccess: (mapping, _payload, context) => {
+      if (!context.tempId) return
+      const storedId = mapping?.id ?? context.tempId
+      queryClient.setQueryData<SharedKeywordMapping[]>(queryKey, (old) =>
+        replaceRecordId(old, context.tempId!, storedId)
+      )
+      context.pending?.resolve(storedId)
+    },
+    onError: (error, _payload, context) => {
       queryClient.setQueryData(queryKey, context?.previous)
-      showMutationRollbackToast()
+      context?.pending?.reject()
+      if (!isPendingIdLostError(error)) showMutationRollbackToast()
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey })
@@ -177,7 +220,8 @@ export function useDeleteKeywordMapping() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => deleteKeywordMappingAction(id),
+    mutationFn: async (id: string) =>
+      deleteKeywordMappingAction(await resolveId(id)),
     onMutate: async (id) => {
       await queryClient.cancelQueries({
         queryKey: queryKeys.keywordMappings.all,
@@ -193,7 +237,8 @@ export function useDeleteKeywordMapping() {
 
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.keywordMappings.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -210,8 +255,11 @@ export function useDeleteSharedKeywordMapping(sharedBudgetId: string) {
   const queryKey = queryKeys.sharedKeywordMappings.list(sharedBudgetId)
 
   return useMutation({
-    mutationFn: (id: string) =>
-      deleteSharedKeywordMappingAction(sharedBudgetId, id),
+    mutationFn: async (id: string) =>
+      deleteSharedKeywordMappingAction(
+        await resolveId(sharedBudgetId),
+        await resolveId(id)
+      ),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey })
       const previous =
@@ -223,7 +271,8 @@ export function useDeleteSharedKeywordMapping(sharedBudgetId: string) {
 
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKey, context?.previous)
       showMutationRollbackToast()
     },

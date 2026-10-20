@@ -12,6 +12,10 @@ End-to-end tests using Playwright.
   `viewport-resize.spec.ts` - Responsive and mobile checks
 - `pockets.spec.ts`, `savings-calculator.spec.ts` - Scenarios with their own
   sign-in
+- `pending-records.spec.ts` - Operations on records that are still being
+  saved: delete before the create returns, reload inside the undo window,
+  and a new pocket after the only active one is archived (no 5xx). The pocket
+  test leaves two archived pockets per run, since pockets cannot be deleted
 - `utils/auth.ts` - Credentials and login helper
 - `utils/expenses.ts` - Expense helper and `expenses` fixture
 - `utils/layout.ts` - Read, swap, and restore the server-side desktop layout

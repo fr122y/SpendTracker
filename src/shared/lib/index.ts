@@ -40,6 +40,21 @@ export {
 
 export { cn } from './cn'
 
+export {
+  createTempId,
+  getKnownId,
+  isPendingId,
+  isPendingIdLostError,
+  isTempId,
+  PendingIdLostError,
+  replaceRecordId,
+  resolveId,
+  resolveIdFields,
+  subscribePendingIds,
+  trackPendingId,
+  type PendingIdHandle,
+} from './pending-ids'
+
 // Reatom
 export { ReatomProvider } from './reatom'
 

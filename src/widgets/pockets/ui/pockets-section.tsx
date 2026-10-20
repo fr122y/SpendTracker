@@ -24,7 +24,7 @@ import {
   PocketOperationForm,
   RenamePocketForm,
 } from '@/features/manage-pockets'
-import { getPocketMonthSummary } from '@/shared/lib'
+import { getPocketMonthSummary, isTempId } from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, MathInput } from '@/shared/ui'
 
 import {
@@ -426,11 +426,13 @@ export function PocketsSection() {
   const [isCreating, setIsCreating] = useState(false)
 
   // Without an explicit choice, open the first active pocket; an archived one
-  // is shown by default only when no active pocket exists.
+  // is shown by default only when no active pocket exists. A pocket that is
+  // still being created is never selected: the server does not know its id.
+  const savedPockets = pockets.filter((pocket) => !isTempId(pocket.id))
   const selectedPocket =
-    pockets.find((pocket) => pocket.id === selectedPocketId) ??
-    pockets.find((pocket) => !pocket.archivedAt) ??
-    pockets[0]
+    savedPockets.find((pocket) => pocket.id === selectedPocketId) ??
+    savedPockets.find((pocket) => !pocket.archivedAt) ??
+    savedPockets[0]
   const selectedPeriod = getPeriod(selectedDate)
   const selectedMonthBudget = usePocketMonthBudget(
     selectedPocket?.id ?? '',
@@ -475,7 +477,13 @@ export function PocketsSection() {
 
       {isCreating && (
         <div className="rounded-lg border border-zinc-700 bg-zinc-900/70 p-3 sm:p-4">
-          <CreatePocketForm onCreated={() => setIsCreating(false)} />
+          <CreatePocketForm
+            onCreated={(pocket) => {
+              setIsCreating(false)
+              // The new pocket opens as soon as it has its stored id.
+              if (pocket) setSelectedPocketId(pocket.id)
+            }}
+          />
         </div>
       )}
 
@@ -491,18 +499,23 @@ export function PocketsSection() {
             className="flex gap-2 overflow-x-auto pb-1"
             aria-label="Список карманов"
           >
-            {pockets.map((pocket) => (
-              <button
-                key={pocket.id}
-                type="button"
-                aria-pressed={selectedPocket?.id === pocket.id}
-                onClick={() => setSelectedPocketId(pocket.id)}
-                className={`min-h-11 shrink-0 rounded-lg border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${selectedPocket?.id === pocket.id ? 'border-blue-500 bg-blue-500/10 text-blue-200' : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200'}`}
-              >
-                {pocket.name}
-                {pocket.archivedAt ? ' · архив' : ''}
-              </button>
-            ))}
+            {pockets.map((pocket) => {
+              const isSaving = isTempId(pocket.id)
+              return (
+                <button
+                  key={pocket.id}
+                  type="button"
+                  aria-pressed={selectedPocket?.id === pocket.id}
+                  disabled={isSaving}
+                  onClick={() => setSelectedPocketId(pocket.id)}
+                  className={`min-h-11 shrink-0 rounded-lg border px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-wait disabled:opacity-60 ${selectedPocket?.id === pocket.id ? 'border-blue-500 bg-blue-500/10 text-blue-200' : 'border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200'}`}
+                >
+                  {pocket.name}
+                  {pocket.archivedAt ? ' · архив' : ''}
+                  {isSaving ? ' · сохраняется…' : ''}
+                </button>
+              )
+            })}
           </div>
           {selectedPocket && (
             <PocketDetail

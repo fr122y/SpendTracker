@@ -9,6 +9,8 @@ import {
   normalizeMoneyAmount,
 } from '@/shared/lib/money-amount'
 
+import { isUnsavedRecordId } from './unsaved-record'
+
 import type { Project } from '@/shared/types'
 
 const COLORS = [
@@ -77,6 +79,7 @@ export async function addProject(
 
 export async function deleteProject(id: string): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(id)) return
 
   await db.transaction(async (tx) => {
     await tx

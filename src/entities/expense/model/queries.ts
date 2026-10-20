@@ -12,9 +12,19 @@ import {
   updateExpense as updateExpenseAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
+import {
+  createTempId,
+  isPendingIdLostError,
+  replaceRecordId,
+  resolveId,
+  resolveIdFields,
+  trackPendingId,
+} from '@/shared/lib/pending-ids'
 
 import {
   flushExpenseDeletes,
+  flushExpenseDeletesOnHide,
+  recoverExpenseDeletes,
   scheduleExpenseDelete,
   undoExpenseDelete,
   usePendingExpenseDeleteIds,
@@ -22,8 +32,28 @@ import {
 
 import type { AddExpenseInput, Expense } from '@/shared/types'
 
+/** Drops server-confirmed deletes from the cache, then refetches. */
+function useConfirmDeletedExpenses() {
+  const queryClient = useQueryClient()
+  return useCallback(
+    (ids: string[]) => {
+      const deleted = new Set(ids)
+      queryClient.setQueryData<Expense[]>(queryKeys.expenses.all, (old) =>
+        old?.filter((expense) => !deleted.has(expense.id))
+      )
+      void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
+    },
+    [queryClient]
+  )
+}
+
 export function useExpenses() {
   const pendingDeleteIds = usePendingExpenseDeleteIds()
+  const confirmDeleted = useConfirmDeletedExpenses()
+  useEffect(() => {
+    // Deletes a previous page load could not confirm are sent again once.
+    recoverExpenseDeletes(confirmDeleted)
+  }, [confirmDeleted])
   // Records waiting for their undo window are hidden from every reader, so the
   // journal, totals, analysis, and budgets agree before the server delete.
   const select = useCallback(
@@ -44,7 +74,15 @@ export function useAddExpense() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: AddExpenseInput) => addExpenseAction(data),
+    mutationFn: async (data: AddExpenseInput) =>
+      addExpenseAction(
+        await resolveIdFields(data, [
+          'pocketId',
+          'projectId',
+          'sharedBudgetId',
+          'sharedBudgetCategoryId',
+        ])
+      ),
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
       const previous = queryClient.getQueryData<Expense[]>(
@@ -52,8 +90,8 @@ export function useAddExpense() {
       )
       const isPocketTransfer = data.operationType === 'pocket_transfer'
       const optimisticExpense: Expense = {
-        id: `temp-${crypto.randomUUID()}`,
         ...data,
+        id: data.id ?? createTempId(),
         category:
           data.category ?? (isPocketTransfer ? 'Перевод из кармана' : ''),
         emoji: data.emoji ?? (isPocketTransfer ? '↗️' : ''),
@@ -62,11 +100,22 @@ export function useAddExpense() {
         queryKeys.expenses.all,
         (old: Expense[] = []) => [...old, optimisticExpense]
       )
-      return { previous }
+      // A client id is the stored id, but the record exists only after the
+      // insert: operations on it wait for this create.
+      const pending = trackPendingId(optimisticExpense.id)
+      return { previous, id: optimisticExpense.id, pending }
     },
-    onError: (_error, _data, context) => {
+    onSuccess: (expense, _data, context) => {
+      const storedId = expense?.id ?? context.id
+      queryClient.setQueryData<Expense[]>(queryKeys.expenses.all, (old) =>
+        replaceRecordId(old, context.id, storedId)
+      )
+      context.pending.resolve(storedId)
+    },
+    onError: (error, _data, context) => {
       queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
-      showMutationRollbackToast()
+      context?.pending.reject()
+      if (!isPendingIdLostError(error)) showMutationRollbackToast()
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all })
@@ -89,7 +138,7 @@ export function useDeleteExpense() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const result = await deleteExpenseAction(id)
+      const result = await deleteExpenseAction(await resolveId(id))
       if (result?.status === 'project_cash_negative') {
         throw new ProjectCashNegativeError()
       }
@@ -105,6 +154,8 @@ export function useDeleteExpense() {
       return { previous }
     },
     onError: (error, _id, context) => {
+      // The record was never saved: its create rolled back and told the user.
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
       showMutationRollbackToast(
         error instanceof ProjectCashNegativeError ? error.message : undefined
@@ -120,13 +171,17 @@ export function useUpdateExpense() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       id,
       data,
     }: {
       id: string
       data: Partial<Omit<Expense, 'id'>>
-    }) => updateExpenseAction(id, data),
+    }) =>
+      updateExpenseAction(
+        await resolveId(id),
+        await resolveIdFields(data, ['pocketId', 'projectId'])
+      ),
     onMutate: async ({ id, data }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
       const previous = queryClient.getQueryData<Expense[]>(
@@ -139,7 +194,8 @@ export function useUpdateExpense() {
       )
       return { previous }
     },
-    onError: (_error, _payload, context) => {
+    onError: (error, _payload, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.expenses.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -167,24 +223,29 @@ export const EXPENSE_DELETE_UNDO_LABEL = 'Отменить'
  * Delete with an undo toast. The record is hidden at once and the server
  * delete runs after {@link EXPENSE_DELETE_UNDO_MS} unless the user undoes it.
  * Waiting deletes are committed right away when the page is hidden or the
- * owning component unmounts, so none is lost or left half-done.
+ * owning component unmounts, and are kept in storage until the server confirms
+ * them, so none is lost to a reload or a closed tab.
  */
 export function useDeleteExpenseWithUndo() {
   const deleteExpense = useDeleteExpense()
   const { mutateAsync } = deleteExpense
+  const confirmDeleted = useConfirmDeletedExpenses()
 
   useEffect(() => {
+    // A Server Action started while the page unloads does not complete, so
+    // hiding the page sends the waiting deletes with a keepalive request.
+    const flushOnHide = () => flushExpenseDeletesOnHide(confirmDeleted)
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') flushExpenseDeletes()
+      if (document.visibilityState === 'hidden') flushOnHide()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('pagehide', flushExpenseDeletes)
+    window.addEventListener('pagehide', flushOnHide)
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('pagehide', flushExpenseDeletes)
+      window.removeEventListener('pagehide', flushOnHide)
       flushExpenseDeletes()
     }
-  }, [])
+  }, [confirmDeleted])
 
   return useCallback(
     (id: string) => {

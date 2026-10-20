@@ -11,6 +11,7 @@ import {
 import { normalizeKeywordPhrase } from '@/shared/lib/keyword-phrase'
 
 import { assertCanUseSharedBudget } from './shared-budget-actions'
+import { isUnsavedRecordId } from './unsaved-record'
 
 import type { KeywordMatchType, SharedKeywordMapping } from '@/shared/types'
 
@@ -26,6 +27,7 @@ export async function getSharedKeywordMappings(
   sharedBudgetId: string
 ): Promise<SharedKeywordMapping[]> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(sharedBudgetId)) return []
   await assertCanUseSharedBudget(sharedBudgetId, userId)
 
   return db
@@ -144,6 +146,7 @@ export async function deleteSharedKeywordMapping(
   id: string
 ): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(sharedBudgetId) || isUnsavedRecordId(id)) return
   await assertCanUseSharedBudget(sharedBudgetId, userId)
 
   await db

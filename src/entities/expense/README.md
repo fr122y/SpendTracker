@@ -13,8 +13,14 @@ real expenses, project withdrawals, project returns, or pocket transfers.
   list (every period derives from it) and, for pocket operations, pocket budgets
 - `useDeleteExpenseWithUndo`: delete that hides the record at once, shows the
   toast «Расход удалён · Отменить», and commits after `EXPENSE_DELETE_UNDO_MS`
-  (5 s). Waiting deletes commit immediately on page hide or unmount. `useExpenses`
-  hides records whose delete is waiting
+  (5 s). Waiting deletes commit immediately on unmount; on page hide they are
+  sent with a keepalive request to `POST /api/expenses/flush-deletes`. Each
+  waiting delete stays in `localStorage` until the server confirms it, and the
+  next app load resends past-due ones (`recoverExpenseDeletes`). `useExpenses`
+  hides records whose delete is waiting or being resent
+- Every mutation awaits the stored id of a record that is still being created
+  (`@/shared/lib/pending-ids`); `useAddExpense` registers its client id until
+  the insert returns
 - `describeExpenseForDelete`: «описание» · сумма ₽ · дата, used by the delete
   confirmation
 - `ExpenseCard`: Presentational component displaying a single operation with

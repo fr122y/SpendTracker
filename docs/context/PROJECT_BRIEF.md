@@ -22,7 +22,8 @@ categorization workflows. The user interface is Russian.
 - Do not introduce React Context for app state.
 - User-visible TanStack Query mutations must use optimistic updates with
   rollback and refetch.
-- Backend and AI integrations must use Server Actions, not API Routes.
+- Backend and AI integrations must use Server Actions, not API Routes. The one
+  exception is the keepalive flush of deferred expense deletes (ADR 0003).
 - Secrets belong in `.env.local` and must not use `NEXT_PUBLIC_` for API keys.
 - UI that depends on localStorage should be isolated behind
   `next/dynamic(..., { ssr: false })`.
