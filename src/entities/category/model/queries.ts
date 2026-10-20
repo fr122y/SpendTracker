@@ -20,6 +20,14 @@ import {
   updateSharedBudgetCategory as updateSharedBudgetCategoryAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
+import {
+  createTempId,
+  isPendingIdLostError,
+  isTempId,
+  replaceRecordId,
+  resolveId,
+  trackPendingId,
+} from '@/shared/lib/pending-ids'
 
 import type { Category, SharedBudgetCategory } from '@/shared/types'
 
@@ -41,7 +49,7 @@ export function useAddCategory() {
         queryKeys.categories.all
       )
       const optimisticCategory: Category = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         name: data.name,
         emoji: data.emoji,
         color: data.color ?? null,
@@ -50,10 +58,19 @@ export function useAddCategory() {
         queryKeys.categories.all,
         (old: Category[] = []) => [...old, optimisticCategory]
       )
-      return { previous }
+      const pending = trackPendingId(optimisticCategory.id)
+      return { previous, tempId: optimisticCategory.id, pending }
+    },
+    onSuccess: (category, _data, context) => {
+      const storedId = category?.id ?? context.tempId
+      queryClient.setQueryData<Category[]>(queryKeys.categories.all, (old) =>
+        replaceRecordId(old, context.tempId, storedId)
+      )
+      context.pending.resolve(storedId)
     },
     onError: (_error, _data, context) => {
       queryClient.setQueryData(queryKeys.categories.all, context?.previous)
+      context?.pending.reject()
       showMutationRollbackToast()
     },
     onSettled: () => {
@@ -74,8 +91,8 @@ export function useUpdateCategory() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, ...data }: UpdateCategoryInput) =>
-      updateCategoryAction(id, data),
+    mutationFn: async ({ id, ...data }: UpdateCategoryInput) =>
+      updateCategoryAction(await resolveId(id), data),
     onMutate: async ({ id, ...data }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.categories.all })
       const previous = queryClient.getQueryData<Category[]>(
@@ -97,7 +114,8 @@ export function useUpdateCategory() {
       )
       return { previous }
     },
-    onError: (_error, _input, context) => {
+    onError: (error, _input, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.categories.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -112,7 +130,8 @@ export function useUpdateCategory() {
 
 export function useCategoryExpenseCount(categoryId: string | undefined) {
   return useQuery({
-    enabled: Boolean(categoryId),
+    // A category that is still being created has no expenses yet.
+    enabled: Boolean(categoryId) && !isTempId(categoryId),
     queryKey: queryKeys.categories.expenseCount(categoryId ?? ''),
     queryFn: () => countCategoryExpenses(categoryId ?? ''),
   })
@@ -127,8 +146,11 @@ export function useDeleteCategory() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, targetCategoryId }: DeleteCategoryInput) =>
-      deleteCategoryWithReassign(id, targetCategoryId),
+    mutationFn: async ({ id, targetCategoryId }: DeleteCategoryInput) =>
+      deleteCategoryWithReassign(
+        await resolveId(id),
+        await resolveId(targetCategoryId)
+      ),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.categories.all })
       const previous = queryClient.getQueryData<Category[]>(
@@ -140,7 +162,8 @@ export function useDeleteCategory() {
       )
       return { previous }
     },
-    onError: (_error, _input, context) => {
+    onError: (error, _input, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.categories.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -156,7 +179,7 @@ export function useDeleteCategory() {
 
 export function useSharedBudgetCategories(sharedBudgetId: string | undefined) {
   return useQuery({
-    enabled: Boolean(sharedBudgetId),
+    enabled: Boolean(sharedBudgetId) && !isTempId(sharedBudgetId),
     queryKey: queryKeys.sharedBudgetCategories.list(sharedBudgetId ?? ''),
     queryFn: () => {
       if (!sharedBudgetId) return Promise.resolve([])
@@ -171,6 +194,7 @@ export function useSharedBudgetCategoryLists(
 ): SharedBudgetCategory[] {
   return useQueries({
     queries: sharedBudgetIds.map((sharedBudgetId) => ({
+      enabled: !isTempId(sharedBudgetId),
       queryKey: queryKeys.sharedBudgetCategories.list(sharedBudgetId),
       queryFn: () => getSharedBudgetCategories(sharedBudgetId),
     })),
@@ -183,15 +207,15 @@ export function useAddSharedBudgetCategory(sharedBudgetId: string) {
   const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
 
   return useMutation({
-    mutationFn: (data: Pick<SharedBudgetCategory, 'name' | 'emoji'>) =>
-      addSharedBudgetCategoryAction(sharedBudgetId, data),
+    mutationFn: async (data: Pick<SharedBudgetCategory, 'name' | 'emoji'>) =>
+      addSharedBudgetCategoryAction(await resolveId(sharedBudgetId), data),
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey })
       const previous =
         queryClient.getQueryData<SharedBudgetCategory[]>(queryKey)
       const now = new Date().toISOString()
       const optimisticCategory: SharedBudgetCategory = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         sharedBudgetId,
         name: data.name,
         emoji: data.emoji,
@@ -201,11 +225,20 @@ export function useAddSharedBudgetCategory(sharedBudgetId: string) {
         ...old,
         optimisticCategory,
       ])
-      return { previous }
+      const pending = trackPendingId(optimisticCategory.id)
+      return { previous, tempId: optimisticCategory.id, pending }
     },
-    onError: (_error, _data, context) => {
+    onSuccess: (category, _data, context) => {
+      const storedId = category?.id ?? context.tempId
+      queryClient.setQueryData<SharedBudgetCategory[]>(queryKey, (old) =>
+        replaceRecordId(old, context.tempId, storedId)
+      )
+      context.pending.resolve(storedId)
+    },
+    onError: (error, _data, context) => {
       queryClient.setQueryData(queryKey, context?.previous)
-      showMutationRollbackToast()
+      context?.pending.reject()
+      if (!isPendingIdLostError(error)) showMutationRollbackToast()
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey })
@@ -226,8 +259,12 @@ export function useUpdateSharedBudgetCategory(sharedBudgetId: string) {
   const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
 
   return useMutation({
-    mutationFn: ({ id, name, emoji, color }: UpdateSharedCategoryInput) =>
-      updateSharedBudgetCategoryAction(id, { name, emoji, color }),
+    mutationFn: async ({ id, name, emoji, color }: UpdateSharedCategoryInput) =>
+      updateSharedBudgetCategoryAction(await resolveId(id), {
+        name,
+        emoji,
+        color,
+      }),
     onMutate: async (data) => {
       await queryClient.cancelQueries({ queryKey })
       const previous =
@@ -246,7 +283,8 @@ export function useUpdateSharedBudgetCategory(sharedBudgetId: string) {
       )
       return { previous }
     },
-    onError: (_error, _data, context) => {
+    onError: (error, _data, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKey, context?.previous)
       showMutationRollbackToast()
     },
@@ -265,7 +303,8 @@ export function useArchiveSharedBudgetCategory(sharedBudgetId: string) {
   const queryKey = queryKeys.sharedBudgetCategories.list(sharedBudgetId)
 
   return useMutation({
-    mutationFn: (id: string) => archiveSharedBudgetCategoryAction(id),
+    mutationFn: async (id: string) =>
+      archiveSharedBudgetCategoryAction(await resolveId(id)),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey })
       const previous =
@@ -275,7 +314,8 @@ export function useArchiveSharedBudgetCategory(sharedBudgetId: string) {
       )
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKey, context?.previous)
       showMutationRollbackToast()
     },

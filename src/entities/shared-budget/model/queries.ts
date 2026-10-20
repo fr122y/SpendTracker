@@ -15,6 +15,13 @@ import {
   getEffectiveWeeklyLimit,
   showMutationRollbackToast,
 } from '@/shared/lib'
+import {
+  createTempId,
+  isPendingIdLostError,
+  replaceRecordId,
+  resolveId,
+  trackPendingId,
+} from '@/shared/lib/pending-ids'
 
 import type {
   CreateSharedBudgetInput,
@@ -74,7 +81,7 @@ export function useCreateSharedBudget() {
       )
       const now = new Date().toISOString()
       const optimisticBudget: SharedBudget = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         name: data.name.trim(),
         createdByUserId: 'current-user',
         createdAt: now,
@@ -97,10 +104,20 @@ export function useCreateSharedBudget() {
         ]
       )
 
-      return { previous }
+      const pending = trackPendingId(optimisticBudget.id)
+      return { previous, tempId: optimisticBudget.id, pending }
+    },
+    onSuccess: (budget, _data, context) => {
+      const storedId = budget?.id ?? context.tempId
+      queryClient.setQueryData<SharedBudget[]>(
+        queryKeys.sharedBudgets.all,
+        (old) => replaceRecordId(old, context.tempId, storedId)
+      )
+      context.pending.resolve(storedId)
     },
     onError: (_error, _data, context) => {
       queryClient.setQueryData(queryKeys.sharedBudgets.all, context?.previous)
+      context?.pending.reject()
       showMutationRollbackToast()
     },
     onSettled: () => {
@@ -113,8 +130,8 @@ export function useSetActiveSharedBudget() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (sharedBudgetId: string) =>
-      setActiveSharedBudgetAction(sharedBudgetId),
+    mutationFn: async (sharedBudgetId: string) =>
+      setActiveSharedBudgetAction(await resolveId(sharedBudgetId)),
     onMutate: async (sharedBudgetId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.sharedBudgets.all })
       const previous = queryClient.getQueryData<SharedBudget[]>(
@@ -132,7 +149,8 @@ export function useSetActiveSharedBudget() {
 
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.sharedBudgets.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -146,13 +164,13 @@ export function useSetSharedWeeklyLimitForWeek() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       sharedBudgetId,
       effectiveWeekStart,
       amount,
     }: SetSharedWeeklyLimitForWeekInput) =>
       setSharedWeeklyLimitForWeekAction(
-        sharedBudgetId,
+        await resolveId(sharedBudgetId),
         effectiveWeekStart,
         amount
       ),
@@ -174,7 +192,8 @@ export function useSetSharedWeeklyLimitForWeek() {
 
       return { previous }
     },
-    onError: (_error, _data, context) => {
+    onError: (error, _data, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.sharedBudgets.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -188,8 +207,8 @@ export function useArchiveSharedBudget() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (sharedBudgetId: string) =>
-      archiveSharedBudgetAction(sharedBudgetId),
+    mutationFn: async (sharedBudgetId: string) =>
+      archiveSharedBudgetAction(await resolveId(sharedBudgetId)),
     onMutate: async (sharedBudgetId) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.sharedBudgets.all })
       const previous = queryClient.getQueryData<SharedBudget[]>(
@@ -209,7 +228,8 @@ export function useArchiveSharedBudget() {
 
       return { previous }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.sharedBudgets.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -221,10 +241,10 @@ export function useArchiveSharedBudget() {
 
 export function useCreateSharedBudgetInvite() {
   return useMutation<SharedBudgetInviteResult, Error, string>({
-    mutationFn: (sharedBudgetId) =>
-      createSharedBudgetInviteAction(sharedBudgetId),
-    onError: () => {
-      showMutationRollbackToast()
+    mutationFn: async (sharedBudgetId) =>
+      createSharedBudgetInviteAction(await resolveId(sharedBudgetId)),
+    onError: (error) => {
+      if (!isPendingIdLostError(error)) showMutationRollbackToast()
     },
   })
 }

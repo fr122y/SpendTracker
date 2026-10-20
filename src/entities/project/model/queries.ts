@@ -9,6 +9,13 @@ import {
   queryKeys,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
+import {
+  createTempId,
+  isPendingIdLostError,
+  replaceRecordId,
+  resolveId,
+  trackPendingId,
+} from '@/shared/lib/pending-ids'
 
 import type { Expense, Project } from '@/shared/types'
 
@@ -31,7 +38,7 @@ export function useAddProject() {
         queryKeys.projects.all
       )
       const optimisticProject: Project = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         name: data.name,
         budget: data.budget,
         color: '#94a3b8',
@@ -41,10 +48,19 @@ export function useAddProject() {
         queryKeys.projects.all,
         (old: Project[] = []) => [...old, optimisticProject]
       )
-      return { previous }
+      const pending = trackPendingId(optimisticProject.id)
+      return { previous, tempId: optimisticProject.id, pending }
+    },
+    onSuccess: (project, _data, context) => {
+      const storedId = project?.id ?? context.tempId
+      queryClient.setQueryData<Project[]>(queryKeys.projects.all, (old) =>
+        replaceRecordId(old, context.tempId, storedId)
+      )
+      context.pending.resolve(storedId)
     },
     onError: (_error, _data, context) => {
       queryClient.setQueryData(queryKeys.projects.all, context?.previous)
+      context?.pending.reject()
       showMutationRollbackToast()
     },
     onSettled: () => {
@@ -57,7 +73,7 @@ export function useDeleteProject() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => deleteProjectAction(id),
+    mutationFn: async (id: string) => deleteProjectAction(await resolveId(id)),
     onMutate: async (id) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.projects.all })
       await queryClient.cancelQueries({ queryKey: queryKeys.expenses.all })
@@ -78,7 +94,8 @@ export function useDeleteProject() {
 
       return { previousProjects, previousExpenses }
     },
-    onError: (_error, _id, context) => {
+    onError: (error, _id, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(
         queryKeys.projects.all,
         context?.previousProjects

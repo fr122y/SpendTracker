@@ -29,6 +29,17 @@ Utility functions and helpers used across the application.
 - `getWeekBoundaries(date)`: Return Monday-Sunday ISO date boundaries for a
   date
 
+### Pending Ids (`pending-ids.ts`)
+
+- `createTempId()`, `isTempId(id)`: the `temp-` id of an optimistic row
+- `trackPendingId(id)`: called by a create mutation; returns `resolve(storedId)`
+  and `reject()` for its success and failure
+- `resolveId(id)`, `resolveIdFields(input, keys)`: the stored id, at once for a
+  saved record and after the create for a pending one; reject with
+  `PendingIdLostError` (`isPendingIdLostError`) when the create failed
+- `isPendingId(id)`, `getKnownId(id)`, `subscribePendingIds(listener)`,
+  `replaceRecordId(list, fromId, toId)`
+
 ### Pocket History (`pocket-history.ts`)
 
 - `getPocketMonthHistory({ pocketId, pocketCreatedAt, budgets, expenses, selectedPeriod })`:

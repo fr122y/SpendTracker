@@ -73,7 +73,10 @@ shared`.
   optimistic: `onMutate`, rollback in `onError`, refetch in `onSettled`.
 - Backend and AI integration uses Server Actions (`'use server'`). The three
   existing API Routes are callbacks for the auth framework, the Vercel cron,
-  and the email provider webhook; a new API Route is an architecture change.
+  and the email provider webhook, plus the keepalive flush of deferred
+  expense deletes (ADR 0003); a new API Route is an architecture change.
+- An operation on an optimistic record awaits its stored id through
+  `src/shared/lib/pending-ids.ts`; never send a `temp-` id to the server.
 - Secrets stay server-side in environment variables, never under
   `NEXT_PUBLIC_`.
 - UI that depends on `localStorage` loads through `next/dynamic` with

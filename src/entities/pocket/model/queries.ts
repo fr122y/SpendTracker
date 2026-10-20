@@ -14,6 +14,14 @@ import {
   setPocketMonthBudget as setPocketMonthBudgetAction,
 } from '@/shared/api'
 import { showMutationRollbackToast } from '@/shared/lib'
+import {
+  createTempId,
+  isPendingIdLostError,
+  isTempId,
+  replaceRecordId,
+  resolveId,
+  trackPendingId,
+} from '@/shared/lib/pending-ids'
 
 import type { Pocket, PocketMonthBudget } from '@/shared/types'
 
@@ -28,7 +36,8 @@ export function usePocketMonthBudgets(pocketId: string) {
   return useQuery({
     queryKey: queryKeys.pocketBudgets.byPocket(pocketId),
     queryFn: () => getPocketMonthBudgets(pocketId),
-    enabled: Boolean(pocketId),
+    // A pocket that is still being created has no budgets on the server.
+    enabled: Boolean(pocketId) && !isTempId(pocketId),
   })
 }
 
@@ -36,7 +45,7 @@ export function usePocketMonthBudget(pocketId: string, period: string) {
   return useQuery({
     queryKey: queryKeys.pocketBudgets.byMonth(pocketId, period),
     queryFn: () => initializePocketMonthBudget(pocketId, period),
-    enabled: Boolean(pocketId && period),
+    enabled: Boolean(pocketId && period) && !isTempId(pocketId),
   })
 }
 
@@ -66,7 +75,7 @@ export function useCreatePocket() {
       await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
       const previous = queryClient.getQueryData<Pocket[]>(queryKeys.pockets.all)
       const optimisticPocket: Pocket = {
-        id: `temp-${crypto.randomUUID()}`,
+        id: createTempId(),
         name: name.trim(),
         createdAt: new Date().toISOString(),
       }
@@ -74,10 +83,19 @@ export function useCreatePocket() {
         ...old,
         optimisticPocket,
       ])
-      return { previous }
+      const pending = trackPendingId(optimisticPocket.id)
+      return { previous, tempId: optimisticPocket.id, pending }
+    },
+    onSuccess: (pocket, _variables, context) => {
+      const storedId = pocket?.id ?? context.tempId
+      queryClient.setQueryData<Pocket[]>(queryKeys.pockets.all, (old) =>
+        replaceRecordId(old, context.tempId, storedId)
+      )
+      context.pending.resolve(storedId)
     },
     onError: (error, _variables, context) => {
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
+      context?.pending.reject()
       if (!(error instanceof PocketNameConflictError)) {
         showMutationRollbackToast()
       }
@@ -93,11 +111,11 @@ export function useRenamePocket() {
 
   return useMutation({
     mutationFn: async ({ id, name }: { id: string; name: string }) => {
-      const result = await renamePocketAction(id, name)
+      const result = await renamePocketAction(await resolveId(id), name)
       if (result.status === 'name_conflict') {
         throw new PocketNameConflictError(result.conflictingName)
       }
-      return result.pocket
+      return result.status === 'renamed' ? result.pocket : undefined
     },
     onMutate: async ({ id, name }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
@@ -110,6 +128,7 @@ export function useRenamePocket() {
       return { previous }
     },
     onError: (error, _variables, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
       if (!(error instanceof PocketNameConflictError)) {
         showMutationRollbackToast()
@@ -125,7 +144,8 @@ export function useArchivePocket() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id }: { id: string }) => archivePocketAction(id),
+    mutationFn: async ({ id }: { id: string }) =>
+      archivePocketAction(await resolveId(id)),
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
       const previous = queryClient.getQueryData<Pocket[]>(queryKeys.pockets.all)
@@ -138,7 +158,8 @@ export function useArchivePocket() {
       )
       return { previous }
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
       showMutationRollbackToast()
     },
@@ -156,11 +177,11 @@ export function useRestorePocket() {
 
   return useMutation({
     mutationFn: async ({ id }: { id: string }) => {
-      const result = await restorePocketAction(id)
+      const result = await restorePocketAction(await resolveId(id))
       if (result.status === 'name_conflict') {
         throw new PocketNameConflictError(result.conflictingName)
       }
-      return result.pocket
+      return result.status === 'restored' ? result.pocket : undefined
     },
     onMutate: async ({ id }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.pockets.all })
@@ -173,6 +194,7 @@ export function useRestorePocket() {
       return { previous }
     },
     onError: (error, _variables, context) => {
+      if (isPendingIdLostError(error)) return
       queryClient.setQueryData(queryKeys.pockets.all, context?.previous)
       if (!(error instanceof PocketNameConflictError)) {
         showMutationRollbackToast()
@@ -191,8 +213,8 @@ export function useSetPocketMonthBudget() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ pocketId, period, budget }: PocketMonthBudget) =>
-      setPocketMonthBudgetAction(pocketId, period, budget),
+    mutationFn: async ({ pocketId, period, budget }: PocketMonthBudget) =>
+      setPocketMonthBudgetAction(await resolveId(pocketId), period, budget),
     onMutate: async (nextBudget) => {
       const pocketBudgetKey = queryKeys.pocketBudgets.byPocket(
         nextBudget.pocketId
@@ -221,7 +243,8 @@ export function useSetPocketMonthBudget() {
       )
       return { pocketBudgetKey, monthBudgetKey, previousBudgets, previousMonth }
     },
-    onError: (_error, _variables, context) => {
+    onError: (error, _variables, context) => {
+      if (isPendingIdLostError(error)) return
       if (context) {
         queryClient.setQueryData(
           context.pocketBudgetKey,

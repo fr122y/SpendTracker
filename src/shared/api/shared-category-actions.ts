@@ -11,6 +11,7 @@ import {
 import { assertCategoryNameLength } from '@/shared/lib/text-limits'
 
 import { assertCanUseSharedBudget } from './shared-budget-actions'
+import { isUnsavedRecordId } from './unsaved-record'
 
 import type { SharedBudgetCategory } from '@/shared/types'
 
@@ -118,6 +119,7 @@ export async function getSharedBudgetCategories(
   sharedBudgetId: string
 ): Promise<SharedBudgetCategory[]> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(sharedBudgetId)) return []
   await assertCanUseSharedBudget(sharedBudgetId, userId)
 
   const rows = await db
@@ -184,6 +186,7 @@ export async function updateSharedBudgetCategory(
   data: CategoryUpdate
 ): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(id)) return
   const category = await getCategoryForActiveMember(id, userId)
 
   if (category.archivedAt) {
@@ -231,6 +234,7 @@ export async function updateSharedBudgetCategory(
 
 export async function archiveSharedBudgetCategory(id: string): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(id)) return
   const category = await getCategoryForActiveMember(id, userId)
 
   if (category.archivedAt) return

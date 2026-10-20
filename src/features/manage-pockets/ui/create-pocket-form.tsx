@@ -15,7 +15,14 @@ import {
 } from '@/shared/lib'
 import { Button, Input } from '@/shared/ui'
 
-export function CreatePocketForm({ onCreated }: { onCreated?: () => void }) {
+import type { Pocket } from '@/shared/types'
+
+export function CreatePocketForm({
+  onCreated,
+}: {
+  /** Receives the saved pocket, with its stored id. */
+  onCreated?: (pocket: Pocket | undefined) => void
+}) {
   const [name, setName] = useFormDraft('create-pocket', 'name', '')
   const [submitError, setSubmitError] = useState<
     'name_conflict' | 'failed' | null
@@ -36,9 +43,9 @@ export function CreatePocketForm({ onCreated }: { onCreated?: () => void }) {
     }
 
     try {
-      await createPocket.mutateAsync({ name: normalizedName })
+      const pocket = await createPocket.mutateAsync({ name: normalizedName })
       setName('')
-      onCreated?.()
+      onCreated?.(pocket)
     } catch (error) {
       setSubmitError(
         error instanceof PocketNameConflictError ? 'name_conflict' : 'failed'

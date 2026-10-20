@@ -15,6 +15,8 @@ import {
 import { isValidWeeklyLimitAmount } from '@/shared/lib/finance-selectors'
 import { normalizeMoneyAmount } from '@/shared/lib/money-amount'
 
+import { isUnsavedRecordId } from './unsaved-record'
+
 import type {
   CreateSharedBudgetInput,
   SharedBudget,
@@ -290,6 +292,7 @@ export async function archiveSharedBudget(
   sharedBudgetId: string
 ): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(sharedBudgetId)) return
   await requireOwner(sharedBudgetId, userId)
 
   await db.transaction(async (tx) => {
@@ -309,6 +312,7 @@ export async function setActiveSharedBudget(
   sharedBudgetId: string
 ): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(sharedBudgetId)) return
   await requireActiveMembership(sharedBudgetId, userId)
 
   await db.transaction(async (tx) => {
@@ -335,6 +339,7 @@ export async function setSharedWeeklyLimitForWeek(
   rawAmount: number
 ): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(sharedBudgetId)) return
   const amount = normalizeMoneyAmount(rawAmount)
   requireValidLimit(amount)
   await requireActiveMembership(sharedBudgetId, userId)

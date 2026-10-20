@@ -6,6 +6,8 @@ import { auth } from '@/shared/auth'
 import { categories, db, keywordMappings } from '@/shared/db'
 import { normalizeKeywordPhrase } from '@/shared/lib/keyword-phrase'
 
+import { isUnsavedRecordId } from './unsaved-record'
+
 import type { KeywordMapping, KeywordMatchType } from '@/shared/types'
 
 async function getUserId(): Promise<string> {
@@ -103,6 +105,7 @@ export async function saveKeywordMapping(
 
 export async function deleteKeywordMapping(id: string): Promise<void> {
   const userId = await getUserId()
+  if (isUnsavedRecordId(id)) return
 
   await db
     .delete(keywordMappings)
