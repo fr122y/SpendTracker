@@ -27,9 +27,9 @@ test.describe('Expense Flow', () => {
       await expect(
         row.getByText(expense.description, { exact: true })
       ).toBeVisible()
-      await expect(row.getByRole('button', { name: 'edit amount' })).toHaveText(
-        `${expense.amount} ₽`
-      )
+      await expect(
+        row.getByRole('button', { name: 'Изменить сумму' })
+      ).toHaveText(`${expense.amount} ₽`)
 
       await expenses.remove(expense)
     })

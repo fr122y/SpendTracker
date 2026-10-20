@@ -132,7 +132,7 @@ test.describe('Touch Target Accessibility Tests', () => {
       await expectTouchTarget(
         expenseRow(page, expense.description, expense.amount).getByRole(
           'button',
-          { name: 'delete' }
+          { name: 'Удалить операцию' }
         )
       )
 

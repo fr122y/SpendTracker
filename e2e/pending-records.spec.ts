@@ -75,7 +75,9 @@ function watchServerErrors(page: Page): string[] {
 async function confirmDelete(page: Page, row: Locator): Promise<void> {
   const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
   await expect(async () => {
-    await row.getByRole('button', { name: 'delete' }).click({ timeout: 2000 })
+    await row
+      .getByRole('button', { name: 'Удалить операцию' })
+      .click({ timeout: 2000 })
     await expect(dialog).toBeVisible({ timeout: 2000 })
   }).toPass(TIMEOUT)
   await dialog.getByRole('button', { name: 'Удалить', exact: true }).click()
