@@ -1,6 +1,7 @@
-import { test, expect, type Page } from '@playwright/test'
+import { type Page } from '@playwright/test'
 
 import { journalForm, openJournal, TIMEOUT } from './utils/expenses'
+import { test, expect } from './utils/test'
 import {
   getViewportCategory,
   expectNoHorizontalScroll,

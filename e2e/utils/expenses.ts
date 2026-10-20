@@ -10,7 +10,9 @@
  *   amount together, never by its position in the list.
  */
 
-import { test as base, expect, type Locator, type Page } from '@playwright/test'
+import { type Locator, type Page } from '@playwright/test'
+
+import { test as base, expect } from './test'
 
 export const TIMEOUT = { timeout: 10000 }
 

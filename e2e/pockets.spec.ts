@@ -1,4 +1,4 @@
-import { test, expect, type Locator, type Page } from '@playwright/test'
+import { type Locator, type Page } from '@playwright/test'
 
 import {
   getE2ECredentials,
@@ -12,6 +12,7 @@ import {
   reloadPockets,
   waitForPockets,
 } from './utils/pockets'
+import { blockVercelToolbar, expect, test } from './utils/test'
 import { expectNoHorizontalScroll } from './utils/viewport-helpers'
 
 const TIMEOUT = { timeout: 10000 }
@@ -73,6 +74,7 @@ test.describe('Pockets', () => {
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage()
+    await blockVercelToolbar(page)
     await loginWithCredentials(page, credentials!)
   })
 
