@@ -34,7 +34,8 @@ const DESCRIPTION = 'E2E вкладки'
 /** Tells the page its tab became visible, as a tab switch does. */
 async function returnToTab(page: Page): Promise<void> {
   await page.evaluate(() => {
-    document.dispatchEvent(new Event('visibilitychange'))
+    // A real visibilitychange bubbles to window, where TanStack Query listens.
+    document.dispatchEvent(new Event('visibilitychange', { bubbles: true }))
     window.dispatchEvent(new Event('focus'))
   })
 }
@@ -112,7 +113,7 @@ test.describe('Tabs, session and offline', () => {
     await expenses.remove(expense)
   })
 
-  test('a save after signing out elsewhere returns the draft after sign-in', async ({
+  test('a save after the session ended elsewhere returns the draft after sign-in', async ({
     context,
     page,
   }) => {
@@ -120,11 +121,11 @@ test.describe('Tabs, session and offline', () => {
     if (!credentials) throw new Error(MISSING_E2E_CREDENTIALS_MESSAGE)
     const amount = uniqueAmount()
 
-    const accountTab = await context.newPage()
-    await accountTab.goto('/account')
-    await accountTab.getByRole('button', { name: 'Выйти' }).click()
-    await expect(accountTab).toHaveURL(/\/login/, TIMEOUT)
-    await accountTab.close()
+    // The session ends in another tab: the session cookie is gone for every
+    // tab. Wait for the initial reads first: each response refreshes the
+    // session cookie and would bring it back.
+    await page.waitForLoadState('networkidle')
+    await context.clearCookies({ name: /authjs\.session-token/ })
 
     await fillExpense(page, DESCRIPTION, amount)
     await submitButton(page).click()
