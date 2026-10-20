@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs'
 const mockSignOut = jest.fn()
 const mockAuth = jest.fn()
 const mockUnstableUpdate = jest.fn()
+const mockKeepCurrentSession = jest.fn()
+const NEXT_VERSION = { sql: 'sessionVersion + 1' }
 const mockRevalidatePath = jest.fn()
 const mockLimit = jest.fn()
 const mockUpdateWhere = jest.fn()
@@ -10,6 +12,10 @@ const mockSet = jest.fn(() => ({ where: mockUpdateWhere }))
 
 jest.mock('@/shared/auth', () => ({
   auth: (...args: unknown[]) => mockAuth(...args),
+  authFresh: (...args: unknown[]) => mockAuth(...args),
+  keepCurrentSessionAfterVersionBump: (...args: unknown[]) =>
+    mockKeepCurrentSession(...args),
+  nextSessionVersion: () => NEXT_VERSION,
   signOut: (...args: unknown[]) => mockSignOut(...args),
   unstable_update: (...args: unknown[]) => mockUnstableUpdate(...args),
 }))
@@ -111,6 +117,34 @@ describe('changeAccountPassword', () => {
     await expect(bcrypt.compare(valid.newPassword, saved)).resolves.toBe(true)
     expect(saved.startsWith('$2')).toBe(true)
     expect(saved.split('$')[2]).toBe('12')
+  })
+
+  it('ends other sessions and keeps the current one', async () => {
+    await expect(changeAccountPassword(valid)).resolves.toEqual({
+      success: true,
+    })
+
+    expect(mockSet).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionVersion: NEXT_VERSION })
+    )
+    expect(mockKeepCurrentSession).toHaveBeenCalledWith('user-1')
+    expect(mockUpdateWhere.mock.invocationCallOrder[0]).toBeLessThan(
+      mockKeepCurrentSession.mock.invocationCallOrder[0]
+    )
+  })
+
+  it('reports success when only keeping the current session fails', async () => {
+    mockKeepCurrentSession.mockRejectedValueOnce(new Error('cookie'))
+
+    await expect(changeAccountPassword(valid)).resolves.toEqual({
+      success: true,
+    })
+  })
+
+  it('does not end sessions when the password is not changed', async () => {
+    await changeAccountPassword({ ...valid, currentPassword: 'wrong-pass-1' })
+
+    expect(mockKeepCurrentSession).not.toHaveBeenCalled()
   })
 
   it('rejects a wrong current password', async () => {

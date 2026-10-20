@@ -5,7 +5,14 @@ import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-import { auth, signOut, unstable_update } from '@/shared/auth'
+import {
+  auth,
+  authFresh,
+  keepCurrentSessionAfterVersionBump,
+  nextSessionVersion,
+  signOut,
+  unstable_update,
+} from '@/shared/auth'
 import { db, users } from '@/shared/db'
 import { accountNameSchema, accountPasswordSchema } from '@/shared/lib'
 
@@ -29,6 +36,10 @@ const changePasswordSchema = z
     message: 'Новый пароль должен отличаться от текущего',
   })
 
+/**
+ * Ends this browser's session on the server (Auth.js `events.signOut` revokes
+ * its session id) and clears the cookie. Other devices stay signed in.
+ */
 export async function signOutCurrentUser() {
   await signOut({ redirectTo: '/login' })
 }
@@ -75,7 +86,7 @@ export async function changeAccountPassword(formData: {
   newPassword: string
   confirmPassword: string
 }): Promise<AccountActionResult> {
-  const session = await auth()
+  const session = await authFresh()
   const userId = session?.user?.id
 
   if (!userId) {
@@ -112,13 +123,20 @@ export async function changeAccountPassword(formData: {
 
     const hashedPassword = await bcrypt.hash(newPassword, 12)
 
+    // The version bump ends every other session of the user.
     await db
       .update(users)
-      .set({ password: hashedPassword })
+      .set({ password: hashedPassword, sessionVersion: nextSessionVersion() })
       .where(eq(users.id, userId))
-
-    return { success: true }
   } catch {
     return { success: false, error: GENERIC_ERROR }
   }
+
+  try {
+    await keepCurrentSessionAfterVersionBump(userId)
+  } catch {
+    // The password is changed; this browser will be asked to sign in again.
+  }
+
+  return { success: true }
 }

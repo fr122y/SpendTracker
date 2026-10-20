@@ -1,14 +1,15 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
-import { auth, getAccountProfile } from '@/shared/auth'
+import { authFresh, getAccountProfile } from '@/shared/auth'
 import { Button } from '@/shared/ui'
 
 import { AccountProfileSection, ChangePasswordForm } from './account-forms'
 import { signOutCurrentUser } from './actions'
 
 export default async function AccountPage() {
-  const session = await auth()
+  // Sensitive page: a signed-out or outdated session ends here at once.
+  const session = await authFresh()
   const userId = session?.user?.id
 
   if (!userId) {

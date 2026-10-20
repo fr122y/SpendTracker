@@ -13,7 +13,7 @@ jest.mock('@/features/auth', () => ({
 }))
 
 jest.mock('@/shared/auth', () => ({
-  auth: (...args: unknown[]) => mockAuth(...args),
+  authFresh: (...args: unknown[]) => mockAuth(...args),
   getAccountProfile: (...args: unknown[]) => mockGetAccountProfile(...args),
 }))
 

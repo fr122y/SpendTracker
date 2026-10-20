@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth'
 
 import authConfig from '@/shared/auth/config'
-import { getLoginPath, getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
+import { getLoginPath } from '@/shared/lib/auth-redirect'
 
 const { auth } = NextAuth(authConfig)
 
@@ -19,13 +19,9 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth
   const { pathname } = req.nextUrl
 
-  if (pathname === '/login' && isLoggedIn) {
-    const callbackUrl = getSafeCallbackUrl(
-      req.nextUrl.searchParams.get('callbackUrl')
-    )
-
-    return Response.redirect(new URL(callbackUrl, req.nextUrl))
-  }
+  // A signed-in visit to /login is redirected by the login page itself: only
+  // the Node runtime can tell a revoked session from an active one, and a
+  // redirect here would loop with a page that rejected the session.
 
   if (!isPublicAuthRoute(pathname) && !isLoggedIn) {
     // A Server Action request cannot follow a redirect to an HTML page; a

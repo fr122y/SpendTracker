@@ -7,7 +7,11 @@ import { and, eq, isNull } from 'drizzle-orm'
 import { after } from 'next/server'
 import { z } from 'zod'
 
-import { auth } from '@/shared/auth'
+import {
+  auth,
+  forgetUserSessionChecks,
+  nextSessionVersion,
+} from '@/shared/auth'
 import { seedUserDefaults } from '@/shared/auth/seed-defaults'
 import {
   db,
@@ -595,9 +599,10 @@ export async function resetPassword(formData: {
         return false
       }
 
+      // The version bump ends every session of the user.
       await tx
         .update(users)
-        .set({ password: hashedPassword })
+        .set({ password: hashedPassword, sessionVersion: nextSessionVersion() })
         .where(eq(users.id, record.userId))
 
       return true
@@ -606,6 +611,8 @@ export async function resetPassword(formData: {
     if (!wasUpdated) {
       return { success: false, error: 'Ссылка уже была использована' }
     }
+
+    forgetUserSessionChecks(record.userId)
 
     return { success: true }
   } catch {

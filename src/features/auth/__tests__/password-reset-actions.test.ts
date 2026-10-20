@@ -54,8 +54,14 @@ jest.mock('next/server', () => ({
   after: (callback: () => unknown) => mockAfter(callback),
 }))
 
+const mockForgetUserSessionChecks = jest.fn()
+const NEXT_VERSION = { sql: 'sessionVersion + 1' }
+
 jest.mock('@/shared/auth', () => ({
   auth: () => mockAuth(),
+  forgetUserSessionChecks: (...args: unknown[]) =>
+    mockForgetUserSessionChecks(...args),
+  nextSessionVersion: () => NEXT_VERSION,
 }))
 
 jest.mock('@/shared/auth/seed-defaults', () => ({
@@ -464,8 +470,10 @@ describe('password reset actions', () => {
     })
     expect(mockUpdateSet).toHaveBeenCalledWith({
       password: 'hashed-new-password',
+      sessionVersion: NEXT_VERSION,
     })
     expect(mockReturning).toHaveBeenCalledWith({ id: 'passwordResetTokens.id' })
+    expect(mockForgetUserSessionChecks).toHaveBeenCalledWith('user-1')
   })
 
   it('rejects a reset if the token was claimed concurrently', async () => {
