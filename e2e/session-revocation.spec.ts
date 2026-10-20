@@ -6,8 +6,9 @@
  * - A password change ends the account's sessions on other devices and keeps
  *   the current one. The password is changed back at the end.
  *
- * /account checks the session against the database at once; other pages
- * re-check at most every 5 minutes, so they are not asserted here.
+ * Page loads of / and /account and the client's session probe check the
+ * session against the database at once; Server Actions re-check at most every
+ * 5 minutes, so they are not asserted here.
  */
 
 import { expect, test, type Page } from '@playwright/test'
@@ -99,7 +100,18 @@ test('a session cookie saved before sign-out does not open /account', async ({
   await expect(page).toHaveURL(/\/login/, TIMEOUT)
 
   await context.addCookies(savedCookies)
+  await page.goto('/')
+  await expect(page).toHaveURL(/\/login$/, TIMEOUT)
+  await expect(page.getByPlaceholder('Email')).toBeVisible(TIMEOUT)
+
+  await context.addCookies(savedCookies)
   await expectLoginPage(page)
+
+  await context.addCookies(savedCookies)
+  const session = await page.evaluate(() =>
+    fetch('/api/auth/session').then((response) => response.json())
+  )
+  expect(session?.user ?? null).toBeNull()
 })
 
 test('a password change ends other sessions and keeps the current one', async ({
@@ -123,6 +135,8 @@ test('a password change ends other sessions and keeps the current one', async ({
     submitted = true
     await expect(page.getByText('Пароль изменён')).toBeVisible(TIMEOUT)
 
+    await otherPage.goto('/')
+    await expect(otherPage).toHaveURL(/\/login$/, TIMEOUT)
     await expectLoginPage(otherPage)
     await expectAccountPage(page)
   } finally {

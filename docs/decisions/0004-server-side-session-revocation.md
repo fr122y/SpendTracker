@@ -27,19 +27,24 @@ Keep JWT sessions and add a server-side check in the Node.js `jwt` callback:
 - sign-out records the `sid` in `revoked_session` until the token expires;
 - a password change or reset increments `user.sessionVersion`; the session
   that changed the password adopts the new version;
-- a routine check queries the database at most every 5 minutes per token
-  (token `checkedAt` plus an in-memory cache per server instance); /account,
-  the password change, and /login check at once;
+- page loads of /, /account, and /login, the password change, and the
+  client's session probe `GET /api/auth/session` check at once (one indexed
+  query); Server Actions query at most every 5 minutes per token (token
+  `checkedAt` plus an in-memory cache per server instance), and a session an
+  instance saw rejected is refused there without a query;
 - the edge middleware keeps checking only the signature and expiry, and no
   longer redirects a signed-in visit to /login: the login page does it after
   the database check.
 
 ## Consequences
 
-- A sign-out or password change takes effect on other requests within 5
-  minutes, on /account at once.
-- One extra query per token every 5 minutes per server instance, one at
-  sign-in, and one on each /account, /login, and password-change request.
+- A sign-out or password change takes effect at once on the next page load
+  and session probe, and within 5 minutes for Server Actions of an already
+  open page; the first rejected action makes the client probe and go to the
+  login page.
+- A rejected Server Action still throws `Unauthorized`, logged as a 500.
+- One query per page load of /, /account, /login, per session probe, at
+  sign-in, and per token every 5 minutes per instance for Server Actions.
 - Tokens issued before this change have no `sid` and are rejected: every user
   signs in once more after the release.
 - A database error during the check keeps the session, so an outage does not

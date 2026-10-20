@@ -12,6 +12,7 @@
 - [x] 2.2 `session-revocation.ts`, `session-store.ts`, `jwt` callback и `events.signOut`.
 - [x] 2.3 `authFresh` на /account, в смене пароля и на /login; перенаправление с /login из middleware на страницу.
 - [x] 2.4 Версия сессий при смене и сбросе пароля.
+- [x] 2.6 Немедленная сверка на загрузке `/` и в зонде `/api/auth/session`; кэш отказов на инстансе.
 - [x] 2.5 ADR 0004, README `shared/auth`.
 
 ## 3. Проверка

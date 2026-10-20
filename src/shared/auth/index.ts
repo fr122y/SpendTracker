@@ -167,7 +167,7 @@ export async function keepCurrentSessionAfterVersionBump(
   await withSessionCheck('adopt-version', () => unstable_update({}))
 }
 
-export { forgetUserSessionChecks } from './session-revocation'
+export { forgetUserSessionChecks, withSessionCheck } from './session-revocation'
 export { nextSessionVersion } from './session-store'
 
 export { getAccountProfile, type AccountProfile } from './account-profile'

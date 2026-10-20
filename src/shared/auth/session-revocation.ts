@@ -91,6 +91,47 @@ function isAdoptedVersion(
   )
 }
 
+/**
+ * Sessions this instance saw rejected, until the token would expire: a
+ * revoked session id (`sid`), or a session id with an outdated version
+ * (`sid:sv`; the same id may live on with an adopted version). A known-dead
+ * session is refused without a query.
+ */
+const rejectedSessions = new Map<string, number>()
+
+function rememberRejected(
+  token: JWT,
+  now: number,
+  reason: 'revoked' | 'outdated' = 'revoked'
+) {
+  if (typeof token.sid !== 'string') return
+  rememberedChecks.delete(token.sid)
+  rejectedSessions.set(
+    reason === 'revoked' ? token.sid : `${token.sid}:${token.sv}`,
+    typeof token.exp === 'number'
+      ? token.exp * 1000
+      : now + DEFAULT_SESSION_MAX_AGE_MS
+  )
+  if (rejectedSessions.size <= MAX_REMEMBERED_CHECKS) return
+  for (const [sid, until] of rejectedSessions) {
+    if (until <= now || rejectedSessions.size > MAX_REMEMBERED_CHECKS) {
+      rejectedSessions.delete(sid)
+    }
+  }
+}
+
+function isRejectedKey(key: string, now: number): boolean {
+  const until = rejectedSessions.get(key)
+  if (until === undefined) return false
+  if (until > now) return true
+  rejectedSessions.delete(key)
+  return false
+}
+
+function isKnownRejected(sid: string, sv: number, now: number): boolean {
+  return isRejectedKey(sid, now) || isRejectedKey(`${sid}:${sv}`, now)
+}
+
 /** Drops this instance's remembered checks of one user. */
 export function forgetUserSessionChecks(userId: string) {
   for (const [sid, check] of rememberedChecks) {
@@ -102,6 +143,7 @@ export function forgetUserSessionChecks(userId: string) {
 export function resetSessionChecks() {
   rememberedChecks.clear()
   adoptedVersions.clear()
+  rejectedSessions.clear()
 }
 
 function isFresh(checkedAt: unknown, now: number): boolean {
@@ -149,6 +191,8 @@ export async function validateSessionToken(
     return null
   }
 
+  if (isKnownRejected(sid, sv, now)) return null
+
   const mode = checkMode.getStore()
 
   if (!mode) {
@@ -174,7 +218,7 @@ export async function validateSessionToken(
   }
 
   if (!state || state.revoked) {
-    rememberedChecks.delete(sid)
+    rememberRejected(token, now)
     return null
   }
 
@@ -189,7 +233,7 @@ export async function validateSessionToken(
     token.sv = state.sessionVersion
   } else if (state.sessionVersion !== sv) {
     if (isAdoptedVersion(sid, sv, state.sessionVersion, now)) return token
-    rememberedChecks.delete(sid)
+    rememberRejected(token, now, 'outdated')
     return null
   }
 
@@ -218,7 +262,7 @@ export async function revokeSession(
       : now + DEFAULT_SESSION_MAX_AGE_MS
   )
 
-  rememberedChecks.delete(token.sid)
   adoptedVersions.delete(token.sid)
+  rememberRejected(token, now)
   await insertRevokedSession(token.sid, token.id, expiresAt)
 }

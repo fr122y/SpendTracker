@@ -158,6 +158,52 @@ describe('jwt callback', () => {
   })
 })
 
+describe('re-check window', () => {
+  it('queries again once the remembered check is older than the window', async () => {
+    await jwt({ token: staleToken() })
+    jest.setSystemTime(NOW + SESSION_RECHECK_MS - 1)
+    await jwt({ token: staleToken() })
+    expect(mockReadSessionState).toHaveBeenCalledTimes(1)
+
+    jest.setSystemTime(NOW + SESSION_RECHECK_MS + 1)
+    mockReadSessionState.mockResolvedValue({ sessionVersion: 2, revoked: true })
+
+    await expect(jwt({ token: staleToken() })).resolves.toBeNull()
+    expect(mockReadSessionState).toHaveBeenCalledTimes(2)
+  })
+
+  it('refuses a revoked session again without a query', async () => {
+    mockReadSessionState.mockResolvedValue({ sessionVersion: 2, revoked: true })
+    await jwt({ token: staleToken() })
+
+    await expect(
+      jwt({ token: staleToken({ checkedAt: NOW - 1000 }) })
+    ).resolves.toBeNull()
+    expect(mockReadSessionState).toHaveBeenCalledTimes(1)
+  })
+
+  it('refuses an outdated version again but not the adopted one', async () => {
+    mockReadSessionState.mockResolvedValue({
+      sessionVersion: 3,
+      revoked: false,
+    })
+    await jwt({ token: staleToken() })
+
+    await expect(
+      jwt({ token: staleToken({ checkedAt: NOW - 1000 }) })
+    ).resolves.toBeNull()
+    await expect(jwt({ token: staleToken({ sv: 3 }) })).resolves.not.toBeNull()
+  })
+
+  it('refuses a signed-out session on this instance at once', async () => {
+    const token = staleToken({ checkedAt: NOW - 1000 })
+    await capturedConfig.events.signOut({ token })
+
+    await expect(jwt({ token })).resolves.toBeNull()
+    expect(mockReadSessionState).not.toHaveBeenCalled()
+  })
+})
+
 describe('authFresh', () => {
   it('runs auth() with the immediate check', async () => {
     let modeSeen: unknown
