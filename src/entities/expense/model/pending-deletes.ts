@@ -19,7 +19,8 @@ import {
  * Every waiting delete is also written to `localStorage` until the server
  * confirms it. A page that unloads sends them with a keepalive request, and
  * the next app load sends again any that are past due and unconfirmed: a
- * delete is never lost to a reload or a closed tab.
+ * delete is never lost to a reload or a closed tab. Hiding the page closes
+ * the undo window, so its deletes count as past due from then on.
  */
 interface PendingDelete {
   timer: ReturnType<typeof setTimeout> | null
@@ -96,6 +97,22 @@ function forgetStored(ids: readonly string[]) {
   const items = readStored()
   const kept = items.filter((item) => !forget.has(item.id))
   if (kept.length !== items.length) writeStored(kept)
+}
+
+/**
+ * Moves the due time of stored deletes to `now`. A page that hides commits its
+ * waiting deletes at once, so their undo window has closed: the next load must
+ * resend them and keep them hidden, not leave them to another tab.
+ */
+function markStoredDue(ids: readonly string[], now: number) {
+  const due = new Set(ids)
+  const items = readStored()
+  if (!items.some((item) => due.has(item.id) && item.dueAt > now)) return
+  writeStored(
+    items.map((item) =>
+      due.has(item.id) && item.dueAt > now ? { ...item, dueAt: now } : item
+    )
+  )
 }
 
 /** The id the server knows for a waiting delete, when it is known. */
@@ -198,6 +215,12 @@ export function flushExpenseDeletesOnHide(
     clearTimeout(entry.timer!)
     entry.timer = null
   }
+  // The keepalive request may land after the next load has read the list,
+  // or not at all; that load resends these deletes and hides them meanwhile.
+  markStoredDue(
+    targets.map((item) => item.id),
+    Date.now()
+  )
   // A temporary id has nothing to send yet: its regular commit waits for the
   // create to return.
   for (const { id, entry, sendId } of targets) {

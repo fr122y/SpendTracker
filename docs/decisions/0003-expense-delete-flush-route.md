@@ -29,7 +29,10 @@ as `deleteExpense` (`deleteExpenseForUser`): temporary, malformed, foreign,
 and guarded ids are skipped, and a repeat is safe.
 
 Each waiting delete is also written to `localStorage` until the server
-confirms it; the next app load resends past-due entries.
+confirms it; the next app load resends past-due entries and hides them
+until the server confirms. A page that hides commits its deletes at once, so
+it marks their entries past due: a reload inside the undo window resends them
+too.
 
 The rule «backend uses Server Actions» stays; this route is its documented
 exception.
