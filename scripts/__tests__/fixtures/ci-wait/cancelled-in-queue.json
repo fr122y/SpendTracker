@@ -1,0 +1,15 @@
+{
+  "run": {
+    "conclusion": "cancelled",
+    "created_at": "2026-10-19T10:15:18Z",
+    "event": "deployment_status",
+    "head_sha": "0906802a68a6c54bbc9cc8c8768d4c6ac1f3ecd1",
+    "id": 39236122993,
+    "name": "E2E Preview",
+    "run_attempt": 1,
+    "run_started_at": "2026-10-19T10:15:18Z",
+    "status": "completed",
+    "updated_at": "2026-10-19T10:16:51Z"
+  },
+  "jobs": []
+}

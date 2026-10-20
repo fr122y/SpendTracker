@@ -114,6 +114,46 @@ Final reports must distinguish:
 
 Do not claim checks passed unless they were actually run.
 
+## Waiting For CI
+
+Wait for the `e2e` check of a Pull Request with:
+
+```sh
+node scripts/ci/wait-for-check.mjs <pr-number|sha> --rerun
+```
+
+It polls the latest E2E Preview run of the Pull Request's head commit through
+`gh`, judges it by the job steps rather than the run status, prints one line
+per state change, and stops at a final state or after `--timeout` minutes
+(default 40). Options: `--once` checks once, `--json` prints the final state as
+JSON, `--expected` sets the minutes after which a running test step counts as
+stuck (default 12; a normal job takes 8 to 11), `--interval` sets the poll
+seconds (default 60), `--workflow` names another workflow.
+
+| State                  | Meaning                                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `waiting-deploy`       | No run for the commit yet: the Preview is not deployed.                                                        |
+| `queued`               | The job has not started: it waits for a runner or for the shared `e2e-preview` queue.                          |
+| `running`              | The job is in progress within the expected time.                                                               |
+| `stuck-running`        | The test step runs longer than `--expected`: likely a real hang.                                               |
+| `stuck-after-pass`     | Every step, including the tests, passed at least 3 minutes ago, but GitHub has not completed the job or run.   |
+| `passed`               | The run succeeded.                                                                                             |
+| `failed`               | A step failed; the tool prints the step and the last 40 lines of its log.                                      |
+| `cancelled-in-queue`   | Cancelled before the job started, superseded in the concurrency group.                                         |
+| `cancelled-after-pass` | Cancelled although every step passed: GitHub did not register the completion and the job timeout cancelled it. |
+| `cancelled`            | Cancelled during the tests, usually by the job timeout.                                                        |
+
+Exit codes: `0` passed, `1` failed or cancelled, `2` still `stuck-running` at
+the timeout, `3` timeout in another state (or `--once` on an unfinished run),
+`4` usage or `gh` error.
+
+Never call a run hung from its status alone; check its steps first, or run the
+tool. On `stuck-after-pass` the tests have already passed: continue other work,
+such as the manual Preview check. GitHub refuses to cancel or rerun the run
+until it closes it; with `--rerun` the tool reruns it as soon as it is closed,
+and reruns a `cancelled-in-queue` run that has no newer run for the same
+commit. If it lasts, check <https://www.githubstatus.com/>.
+
 ## Project Memory
 
 Use each durable container for its intended memory:
