@@ -12,7 +12,11 @@ import { usePockets } from '@/entities/pocket'
 import { useSessionStore } from '@/entities/session'
 import { ExpenseForm } from '@/features/add-expense'
 import { ExpenseEditDialog } from '@/features/edit-expense'
-import { getDailyExpenseTotal, getDailyOperations } from '@/shared/lib'
+import {
+  getDailyExpenseTotal,
+  getDailyOperations,
+  formatMoney,
+} from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
 
 import { ExpenseLogSkeleton } from './expense-log-skeleton'
@@ -111,8 +115,9 @@ export function ExpenseLog() {
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      {/* Header */}
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header. On phones the right padding keeps the day total and the
+          filter chips clear of the floating calculator button at any scroll. */}
+      <div className="flex flex-col gap-1 pr-[4.5rem] sm:flex-row sm:items-center sm:justify-between wide:pr-0">
         <h2 className="text-base font-medium text-zinc-100 sm:text-lg">
           Операции за {formattedDate}
         </h2>
@@ -120,14 +125,17 @@ export function ExpenseLog() {
           data-testid="expense-log-total"
           className="whitespace-nowrap text-base font-semibold text-emerald-400 sm:text-lg"
         >
-          {dailyTotal.toLocaleString('ru-RU')} ₽
+          {formatMoney(dailyTotal)}
         </span>
       </div>
 
       {/* Expense Form */}
       <ExpenseForm />
 
-      <div className="flex flex-wrap gap-2" aria-label="Фильтр бюджета">
+      <div
+        className="flex flex-wrap gap-2 pr-[4.5rem] wide:pr-0"
+        aria-label="Фильтр бюджета"
+      >
         {(
           [
             ['all', 'Все'],
@@ -147,7 +155,10 @@ export function ExpenseLog() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2" aria-label="Фильтр операций">
+      <div
+        className="flex flex-wrap gap-2 pr-[4.5rem] wide:pr-0"
+        aria-label="Фильтр операций"
+      >
         {(
           [
             ['all', 'Все'],

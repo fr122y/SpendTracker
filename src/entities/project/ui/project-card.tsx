@@ -1,5 +1,6 @@
 'use client'
 
+import { formatMoney, formatMoneyNumber } from '@/shared/lib'
 import { ProgressBar } from '@/shared/ui'
 
 import type { Project } from '@/shared/types'
@@ -32,8 +33,7 @@ export function ProjectCard({ project, spent, cashOnHand }: ProjectCardProps) {
       <div className="mb-3 flex flex-col gap-1 text-sm">
         <span className="text-xs text-zinc-500 sm:text-sm">Бюджет проекта</span>
         <span className="whitespace-nowrap font-semibold text-zinc-200">
-          {committed.toLocaleString('ru-RU')} /{' '}
-          {project.budget.toLocaleString('ru-RU')} ₽
+          {formatMoneyNumber(committed)} / {formatMoney(project.budget)}
         </span>
       </div>
 
@@ -41,13 +41,13 @@ export function ProjectCard({ project, spent, cashOnHand }: ProjectCardProps) {
         <span className="inline-flex items-center gap-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-400">
           <span className="text-emerald-300/80">Потрачено</span>
           <span className="whitespace-nowrap font-medium">
-            {spent.toLocaleString('ru-RU')} ₽
+            {formatMoney(spent)}
           </span>
         </span>
         <span className="inline-flex items-center gap-1 rounded border border-sky-500/20 bg-sky-500/10 px-2 py-1 text-xs text-sky-400">
           <span className="text-sky-300/80">На руках</span>
           <span className="whitespace-nowrap font-medium">
-            {reserved.toLocaleString('ru-RU')} ₽
+            {formatMoney(reserved)}
           </span>
         </span>
       </div>

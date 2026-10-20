@@ -154,6 +154,11 @@ jest.mock('@/entities/shared-budget', () => ({
 
 // Mock shared lib functions
 jest.mock('@/shared/lib', () => ({
+  formatMoney: jest.requireActual('@/shared/lib/money-amount').formatMoney,
+  formatMoneyNumber: jest.requireActual('@/shared/lib/money-amount')
+    .formatMoneyNumber,
+  formatAmountInput: jest.requireActual('@/shared/lib/money-amount')
+    .formatAmountInput,
   getWeeklyBudgetSummary: jest.requireActual('@/shared/lib/finance-selectors')
     .getWeeklyBudgetSummary,
   isValidWeeklyLimitAmount: jest.requireActual('@/shared/lib/finance-selectors')

@@ -637,7 +637,7 @@ describe('PocketsSection', () => {
     fireEvent.click(screen.getByRole('button', { name: /Переводы/ }))
 
     expect(
-      screen.queryByRole('textbox', { name: /edit amount/i })
+      screen.queryByRole('textbox', { name: 'Изменить сумму' })
     ).not.toBeInTheDocument()
     expect(screen.getByText('На текущие расходы')).toBeInTheDocument()
     expect(screen.getByText('20.01.2026')).toBeInTheDocument()
@@ -651,11 +651,11 @@ describe('PocketsSection', () => {
       screen.queryByRole('button', { name: 'Изменить категорию' })
     ).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: /edit amount/i }))
-    fireEvent.change(screen.getByRole('textbox', { name: /edit amount/i }), {
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить сумму' }))
+    fireEvent.change(screen.getByRole('textbox', { name: 'Изменить сумму' }), {
       target: { value: '150' },
     })
-    fireEvent.blur(screen.getByRole('textbox', { name: /edit amount/i }))
+    fireEvent.blur(screen.getByRole('textbox', { name: 'Изменить сумму' }))
 
     expect(mockUpdateExpense).toHaveBeenCalledWith({
       id: 'transfer-1',
@@ -694,7 +694,7 @@ describe('PocketsSection', () => {
         within(region).getByTestId('pocket-used-pocket-1')
       ).toHaveTextContent('1 500 ₽')
       fireEvent.click(screen.getByRole('button', { name: new RegExp(history) }))
-      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
       fireEvent.click(
         within(screen.getByRole('alertdialog')).getByRole('button', {
           name: 'Отмена',
@@ -707,7 +707,7 @@ describe('PocketsSection', () => {
         within(region).getByTestId('pocket-used-pocket-1')
       ).toHaveTextContent('1 500 ₽')
 
-      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
       fireEvent.click(
         within(screen.getByRole('alertdialog')).getByRole('button', {
           name: 'Удалить',
@@ -757,10 +757,10 @@ describe('PocketsSection', () => {
       )
     ).toBeInTheDocument()
     expect(
-      within(history).queryByRole('button', { name: 'delete' })
+      within(history).queryByRole('button', { name: 'Удалить операцию' })
     ).not.toBeInTheDocument()
     expect(
-      within(history).getByRole('button', { name: 'edit amount' })
+      within(history).getByRole('button', { name: 'Изменить сумму' })
     ).toBeDisabled()
   })
 

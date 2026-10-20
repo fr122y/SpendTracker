@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react'
 
 import { useBucketStore } from '@/entities/bucket'
 import { useSettingsStore } from '@/entities/settings'
-import { cn } from '@/shared/lib'
+import { cn, formatAmountInput } from '@/shared/lib'
 import { Button, ConfirmDialog, Input, MathInput } from '@/shared/ui'
 
 import { BucketEditorSkeleton } from './bucket-editor-skeleton'
@@ -89,7 +89,7 @@ export function BucketEditor() {
   const [bucketPendingDelete, setBucketPendingDelete] =
     useState<AllocationBucket | null>(null)
   const [salaryInputValue, setSalaryInputValue] = useState(
-    salary ? String(salary) : ''
+    salary ? formatAmountInput(salary) : ''
   )
 
   useEffect(() => {
@@ -117,7 +117,7 @@ export function BucketEditor() {
 
   useEffect(() => {
     setLocalSalary(salary)
-    setSalaryInputValue(salary ? String(salary) : '')
+    setSalaryInputValue(salary ? formatAmountInput(salary) : '')
   }, [salary])
 
   if (isBucketsLoading || isSettingsLoading) {
@@ -286,7 +286,7 @@ export function BucketEditor() {
         )
         setLocalSalary(evaluated)
         setSalary(evaluated)
-        setSalaryInputValue(String(evaluated))
+        setSalaryInputValue(formatAmountInput(evaluated))
         setError('')
       } catch (caughtError) {
         setError(getErrorMessage(caughtError))

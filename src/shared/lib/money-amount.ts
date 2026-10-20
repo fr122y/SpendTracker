@@ -25,6 +25,44 @@ function formatThousands(value: number): string {
   return String(value).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
 }
 
+const NBSP = '\u00A0'
+
+function hasKopecks(value: number): boolean {
+  return Math.round(Math.abs(value) * 10 ** MONEY_DECIMAL_PLACES) % 100 !== 0
+}
+
+/**
+ * Formats a ruble amount for display in ru-RU: non-breaking space between
+ * thousands, comma before kopecks, and a `₽` suffix. Kopecks are shown with
+ * two digits only when they are not zero: `1 234 ₽`, `350,50 ₽`.
+ */
+export function formatMoney(value: number): string {
+  return `${formatMoneyNumber(value)}${NBSP}₽`
+}
+
+/** {@link formatMoney} without the currency suffix. */
+export function formatMoneyNumber(value: number): string {
+  const rounded = roundToKopecks(value)
+  const digits = hasKopecks(rounded) ? MONEY_DECIMAL_PLACES : 0
+  return new Intl.NumberFormat('ru-RU', {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })
+    .format(rounded)
+    .replace(/[\s\u202F]/g, NBSP)
+}
+
+/**
+ * Formats an amount for an editable field: comma before kopecks, no thousands
+ * separator, kopecks only when not zero: `1500`, `1500,50`.
+ */
+export function formatAmountInput(value: number): string {
+  const rounded = roundToKopecks(value)
+  return hasKopecks(rounded)
+    ? rounded.toFixed(MONEY_DECIMAL_PLACES).replace('.', ',')
+    : String(Math.round(rounded))
+}
+
 export function getAmountMaxError(max: number = MAX_MONEY_AMOUNT): string {
   return `Не больше ${formatThousands(max)} ₽`
 }
@@ -87,7 +125,7 @@ export function parseAmountInput(
   return {
     ok: true,
     value,
-    display: value.toFixed(MONEY_DECIMAL_PLACES).replace(/\.?0+$/, ''),
+    display: formatAmountInput(value),
   }
 }
 

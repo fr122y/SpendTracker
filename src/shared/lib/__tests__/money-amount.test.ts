@@ -3,6 +3,8 @@ import {
   AMOUNT_NEGATIVE_ERROR,
   AMOUNT_POSITIVE_ERROR,
   MAX_MONEY_AMOUNT,
+  formatAmountInput,
+  formatMoney,
   isValidMoneyAmount,
   normalizeMoneyAmount,
   parseAmountInput,
@@ -15,14 +17,14 @@ describe('parseAmountInput', () => {
     ['1 500', 1500, '1500'],
     ['1 500', 1500, '1500'],
     ['1 500', 1500, '1500'],
-    ['1 500,50', 1500.5, '1500.5'],
-    ['1500.75', 1500.75, '1500.75'],
+    ['1 500,50', 1500.5, '1500,50'],
+    ['1500.75', 1500.75, '1500,75'],
     ['500+50', 550, '550'],
     ['30000+5000*2', 40000, '40000'],
     ['(100+50)*2', 300, '300'],
-    ['100/3', 33.33, '33.33'],
-    ['12.345', 12.35, '12.35'],
-    ['0.1+0.2', 0.3, '0.3'],
+    ['100/3', 33.33, '33,33'],
+    ['12.345', 12.35, '12,35'],
+    ['0.1+0.2', 0.3, '0,30'],
     [' 42 ', 42, '42'],
     ['100000000', 100_000_000, '100000000'],
     ['100000000.004', 100_000_000, '100000000'],
@@ -119,5 +121,43 @@ describe('normalizeMoneyAmount', () => {
 
   it('rounds a sub-kopeck amount to zero, which a positive rule rejects', () => {
     expect(isValidMoneyAmount(normalizeMoneyAmount(0.004))).toBe(false)
+  })
+})
+
+describe('formatMoney', () => {
+  it.each([
+    [0, '0\u00A0₽'],
+    [350, '350\u00A0₽'],
+    [1234, '1\u00A0234\u00A0₽'],
+    [350.5, '350,50\u00A0₽'],
+    [0.5, '0,50\u00A0₽'],
+    [1500.5, '1\u00A0500,50\u00A0₽'],
+    [234.56, '234,56\u00A0₽'],
+    [100_000_000, '100\u00A0000\u00A0000\u00A0₽'],
+    [12.345, '12,35\u00A0₽'],
+    [24691.4, '24\u00A0691,40\u00A0₽'],
+    [-1500.5, '-1\u00A0500,50\u00A0₽'],
+  ])('formats %p as %j', (value, expected) => {
+    expect(formatMoney(value)).toBe(expected)
+  })
+})
+
+describe('formatAmountInput', () => {
+  it.each([
+    [1500, '1500'],
+    [1500.5, '1500,50'],
+    [123.45, '123,45'],
+    [0.1, '0,10'],
+    [33.333, '33,33'],
+  ])('formats %p as %j', (value, expected) => {
+    expect(formatAmountInput(value)).toBe(expected)
+  })
+
+  it('round-trips through parseAmountInput', () => {
+    expect(parseAmountInput(formatAmountInput(1500.5))).toEqual({
+      ok: true,
+      value: 1500.5,
+      display: '1500,50',
+    })
   })
 })
