@@ -43,6 +43,8 @@ function renderController(queryClient = new QueryClient()) {
   return { ...view, invalidateQueries }
 }
 
+const REFRESH_ALL = [{ refetchType: 'active' }, { cancelRefetch: false }]
+
 describe('AppFreshnessController', () => {
   beforeEach(() => {
     jest.useFakeTimers().setSystemTime(new Date(2026, 0, 15, 10))
@@ -57,7 +59,7 @@ describe('AppFreshnessController', () => {
     jest.restoreAllMocks()
   })
 
-  it('refreshes active queries when the tab becomes visible again', () => {
+  it('leaves a short tab return to the focus refetch of stale queries', () => {
     const { invalidateQueries } = renderController()
 
     setVisibilityState('hidden')
@@ -65,17 +67,45 @@ describe('AppFreshnessController', () => {
     setVisibilityState('visible')
     document.dispatchEvent(new Event('visibilitychange'))
 
-    expect(invalidateQueries).toHaveBeenCalledWith({ refetchType: 'active' })
+    expect(invalidateQueries).not.toHaveBeenCalled()
     expect(toast).not.toHaveBeenCalled()
   })
 
-  it('refreshes active queries when the browser reconnects', () => {
+  it('leaves a short reconnect to the reconnect refetch of stale queries', () => {
     const { invalidateQueries } = renderController()
 
     window.dispatchEvent(new Event('offline'))
     window.dispatchEvent(new Event('online'))
 
-    expect(invalidateQueries).toHaveBeenCalledWith({ refetchType: 'active' })
+    expect(invalidateQueries).not.toHaveBeenCalled()
+  })
+
+  it('refreshes active queries after a long offline pause', () => {
+    const { invalidateQueries } = renderController()
+
+    window.dispatchEvent(new Event('offline'))
+    act(() => {
+      jest.advanceTimersByTime(5 * 60 * 1000)
+    })
+    window.dispatchEvent(new Event('online'))
+
+    expect(invalidateQueries).toHaveBeenCalledWith(...REFRESH_ALL)
+  })
+
+  it('does not refresh over a pending mutation after a long pause', () => {
+    const queryClient = new QueryClient()
+    jest.spyOn(queryClient, 'isMutating').mockReturnValue(1)
+    const { invalidateQueries } = renderController(queryClient)
+
+    setVisibilityState('hidden')
+    document.dispatchEvent(new Event('visibilitychange'))
+    act(() => {
+      jest.advanceTimersByTime(5 * 60 * 1000)
+    })
+    setVisibilityState('visible')
+    document.dispatchEvent(new Event('visibilitychange'))
+
+    expect(invalidateQueries).not.toHaveBeenCalled()
   })
 
   it('shows a toast after a long hidden pause', () => {
@@ -89,7 +119,7 @@ describe('AppFreshnessController', () => {
     setVisibilityState('visible')
     document.dispatchEvent(new Event('visibilitychange'))
 
-    expect(invalidateQueries).toHaveBeenCalledWith({ refetchType: 'active' })
+    expect(invalidateQueries).toHaveBeenCalledWith(...REFRESH_ALL)
     expect(toast).toHaveBeenCalledWith('Данные обновлены')
   })
 
@@ -103,7 +133,7 @@ describe('AppFreshnessController', () => {
     })
 
     expect(selectedDateAtom()).toEqual(new Date(2026, 0, 16))
-    expect(invalidateQueries).toHaveBeenCalledWith({ refetchType: 'active' })
+    expect(invalidateQueries).toHaveBeenCalledWith(...REFRESH_ALL)
     expect(toast).toHaveBeenCalledWith('Данные обновлены')
 
     unmount()
@@ -120,6 +150,6 @@ describe('AppFreshnessController', () => {
     })
 
     expect(selectedDateAtom()).toEqual(new Date(2026, 0, 10))
-    expect(invalidateQueries).toHaveBeenCalledWith({ refetchType: 'active' })
+    expect(invalidateQueries).toHaveBeenCalledWith(...REFRESH_ALL)
   })
 })

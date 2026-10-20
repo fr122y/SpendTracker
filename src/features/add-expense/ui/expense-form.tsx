@@ -23,12 +23,13 @@ import {
   EXPENSE_DESCRIPTION_MAX_LENGTH,
   EXPENSE_DESCRIPTION_TOO_LONG_MESSAGE,
   getTextLimitMessage,
+  holdSubmittedDraft,
   useFormDraft,
   useSubmitLock,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
-import type { MoneyOperationType, SharedBudget } from '@/shared/types'
+import type { Expense, MoneyOperationType, SharedBudget } from '@/shared/types'
 
 const DRAFT_KEY = 'expense-form'
 const PROJECT_MONEY_CATEGORY = 'Проектные деньги'
@@ -85,9 +86,12 @@ export function ExpenseForm() {
   const [description, setDescription] = useFormDraft(
     DRAFT_KEY,
     'description',
-    ''
+    '',
+    { input: true }
   )
-  const [amount, setAmount] = useFormDraft(DRAFT_KEY, 'amount', '')
+  const [amount, setAmount] = useFormDraft(DRAFT_KEY, 'amount', '', {
+    input: true,
+  })
   const [suggestedCategoryId, setSuggestedCategoryId] = useFormDraft<
     string | null
   >(DRAFT_KEY, 'suggestedCategoryId', null)
@@ -219,6 +223,15 @@ export function ExpenseForm() {
     parsedAmountInput.ok &&
     parsedAmountValue > projectCashOnHand
 
+  // The form clears at once for the next entry, but keeps what was submitted
+  // until the save succeeds: an expired session brings it back after sign-in.
+  const submitExpense = (expense: Expense) => {
+    const release = holdSubmittedDraft(DRAFT_KEY)
+    void Promise.resolve(addExpense(expense)).then((saved) => {
+      if (saved !== false) release()
+    })
+  }
+
   const resetForm = () => {
     setDescription('')
     setAmount('')
@@ -300,7 +313,7 @@ export function ExpenseForm() {
     setIsSubmitting(true)
 
     if (isMovement) {
-      addExpense({
+      submitExpense({
         id: crypto.randomUUID(),
         description: normalizedDescription,
         amount: parsedAmount,
@@ -372,7 +385,7 @@ export function ExpenseForm() {
         }
       }
 
-      addExpense({
+      submitExpense({
         id: crypto.randomUUID(),
         description: normalizedDescription,
         amount: parsedAmount,
@@ -432,7 +445,7 @@ export function ExpenseForm() {
       }
     }
 
-    addExpense({
+    submitExpense({
       id: crypto.randomUUID(),
       description: normalizedDescription,
       amount: parsedAmount,

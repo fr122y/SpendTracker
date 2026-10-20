@@ -268,7 +268,8 @@ export function useDeleteExpenseWithUndo() {
 interface ExpenseState {
   expenses: Expense[]
   isLoading: boolean
-  addExpense: (expense: Expense) => void
+  /** Resolves to whether the expense was saved; never rejects. */
+  addExpense: (expense: Expense) => Promise<boolean>
   deleteExpense: (id: string) => void
   updateExpense: (id: string, data: Partial<Omit<Expense, 'id'>>) => void
 }
@@ -284,23 +285,28 @@ export function useExpenseStore<T>(selector?: (state: ExpenseState) => T) {
   const state: ExpenseState = {
     expenses,
     isLoading,
-    addExpense: (expense) => {
-      addExpense.mutate({
-        id: expense.id,
-        description: expense.description,
-        amount: expense.amount,
-        date: expense.date,
-        category: expense.category,
-        emoji: expense.emoji,
-        projectId: expense.projectId,
-        pocketId: expense.pocketId,
-        sharedBudgetId: expense.sharedBudgetId,
-        sharedBudgetCategoryId: expense.sharedBudgetCategoryId,
-        sharedBudgetName: expense.sharedBudgetName,
-        authorName: expense.authorName,
-        operationType: expense.operationType,
-      })
-    },
+    addExpense: (expense) =>
+      addExpense
+        .mutateAsync({
+          id: expense.id,
+          description: expense.description,
+          amount: expense.amount,
+          date: expense.date,
+          category: expense.category,
+          emoji: expense.emoji,
+          projectId: expense.projectId,
+          pocketId: expense.pocketId,
+          sharedBudgetId: expense.sharedBudgetId,
+          sharedBudgetCategoryId: expense.sharedBudgetCategoryId,
+          sharedBudgetName: expense.sharedBudgetName,
+          authorName: expense.authorName,
+          operationType: expense.operationType,
+        })
+        .then(
+          () => true,
+          // The mutation itself rolls back and reports the failure.
+          () => false
+        ),
     deleteExpense: (id) => {
       deleteExpense.mutate(id)
     },

@@ -71,9 +71,17 @@ Utility functions and helpers used across the application.
   finite amount in `(0, MAX_MONEY_AMOUNT]` (`[0, …]` with `allowZero`)
 - `MAX_MONEY_AMOUNT`: 100 000 000 ₽ cap for amounts in forms and Server Actions
 - `getSafeCallbackUrl(callbackUrl, fallback?)`: allow only same-app relative
-  auth redirect targets
+  auth redirect targets; `getLoginPath({ pathname, search })` builds
+  `/login?callbackUrl=…` for the middleware
 - `showMutationRollbackToast(message?)`: Unified error toast for optimistic
-  mutation rollback UX
+  mutation rollback UX; an expired session leads to sign-in instead
+- `handleRequestFailure(onOther?)`, `isLeavingForLogin()`
+  (`session-expiry.ts`): a failed request with no session keeps the form
+  drafts in `sessionStorage`, shows «Сессия истекла — войдите снова» and opens
+  `/login?callbackUrl=…&reason=session-expired`
+- `useFormDraft(formKey, field, initial, { input? })`: `input` marks typed text
+  for the leave-page warning (`hasUnsavedFormInput()`); `holdSubmittedDraft`
+  keeps a submitted form's values until its save succeeds
 - `useSubmitLock()`: ref-based lock for form submits; rapid repeated submits
   run the task once until it settles
 - `getPocketNameKey`, `findPocketNameConflict`, `POCKET_NAME_CONFLICT_MESSAGE`

@@ -68,6 +68,8 @@ export {
   useSubmitLock,
   useFormDraft,
   resetFormDrafts,
+  hasUnsavedFormInput,
+  holdSubmittedDraft,
   useBackDismiss,
   type Viewport,
 } from './hooks'
@@ -91,6 +93,12 @@ export {
 } from './money-amount'
 export { getSafeCallbackUrl } from './auth-redirect'
 export { showMutationRollbackToast } from './mutation-toast'
+export {
+  SESSION_EXPIRED_MESSAGE,
+  SESSION_EXPIRED_REASON,
+  handleRequestFailure,
+  isLeavingForLogin,
+} from './session-expiry'
 
 // Layout config helpers
 export {

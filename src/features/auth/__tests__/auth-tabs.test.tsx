@@ -138,4 +138,15 @@ describe('AuthTabs', () => {
       screen.getByText('Пароль обновлён. Войдите с новым паролем.')
     ).toBeInTheDocument()
   })
+  it('explains the redirect after an expired session', () => {
+    mockSearchParamsGet.mockImplementation((key: string) =>
+      key === 'reason' ? 'session-expired' : null
+    )
+
+    render(<AuthTabs />)
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Сессия истекла — войдите снова'
+    )
+  })
 })

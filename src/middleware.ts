@@ -1,7 +1,7 @@
 import NextAuth from 'next-auth'
 
 import authConfig from '@/shared/auth/config'
-import { getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
+import { getLoginPath, getSafeCallbackUrl } from '@/shared/lib/auth-redirect'
 
 const { auth } = NextAuth(authConfig)
 
@@ -28,7 +28,12 @@ export default auth((req) => {
   }
 
   if (!isPublicAuthRoute(pathname) && !isLoggedIn) {
-    return Response.redirect(new URL('/login', req.nextUrl))
+    // A Server Action request cannot follow a redirect to an HTML page; a
+    // plain 401 lets the client classify it as an expired session.
+    if (req.headers.has('next-action')) {
+      return new Response(null, { status: 401 })
+    }
+    return Response.redirect(new URL(getLoginPath(req.nextUrl), req.nextUrl))
   }
 })
 
