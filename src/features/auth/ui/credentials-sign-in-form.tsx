@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { PasswordInput } from './password-input'
 
@@ -21,6 +21,10 @@ export function CredentialsSignInForm({
   const router = useRouter()
   const [error, setError] = useState(defaultError ?? '')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Until React hydrates the form, a click would submit it natively and put
+  // the credentials into a URL; the button waits for hydration instead.
+  const [isHydrated, setIsHydrated] = useState(false)
+  useEffect(() => setIsHydrated(true), [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -51,7 +55,7 @@ export function CredentialsSignInForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form method="post" onSubmit={handleSubmit} className="space-y-4">
       <input
         type="email"
         name="email"
@@ -80,7 +84,7 @@ export function CredentialsSignInForm({
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={!isHydrated || isSubmitting}
         className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isSubmitting ? 'Вход...' : 'Войти'}

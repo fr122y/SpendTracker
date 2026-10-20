@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { renderToString } from 'react-dom/server.node'
 
 const mockSignIn = jest.fn()
 const mockReplace = jest.fn()
@@ -78,6 +79,15 @@ describe('CredentialsSignInForm', () => {
         redirect: false,
       })
     )
+  })
+
+  it('keeps the server-rendered form from submitting natively', () => {
+    const container = document.createElement('div')
+    container.innerHTML = renderToString(<CredentialsSignInForm />)
+
+    // A native submit before hydration must not put credentials in a URL.
+    expect(container.querySelector('form')).toHaveAttribute('method', 'post')
+    expect(container.querySelector('button[type="submit"]')).toBeDisabled()
   })
 
   it('shows error on failed sign-in', async () => {
