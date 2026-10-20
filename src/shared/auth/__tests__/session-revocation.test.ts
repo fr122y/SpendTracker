@@ -195,6 +195,31 @@ describe('keepCurrentSessionAfterVersionBump', () => {
     expect(updated).toMatchObject({ sid: 'sid-1', sv: 3, checkedAt: NOW })
   })
 
+  it('accepts the old cookie of the same token briefly, for the page re-render', async () => {
+    mockReadSessionState.mockResolvedValue({
+      sessionVersion: 3,
+      revoked: false,
+    })
+    mockUnstableUpdate.mockImplementation(async () => {
+      await jwt({ token: staleToken(), trigger: 'update', session: {} })
+    })
+    await keepCurrentSessionAfterVersionBump('user-1')
+
+    await expect(
+      withSessionCheck('force', () => validateSessionToken(staleToken()))
+    ).resolves.not.toBeNull()
+    await expect(
+      withSessionCheck('force', () =>
+        validateSessionToken(staleToken({ sid: 'other-device' }))
+      )
+    ).resolves.toBeNull()
+
+    jest.setSystemTime(NOW + 61_000)
+    await expect(
+      withSessionCheck('force', () => validateSessionToken(staleToken()))
+    ).resolves.toBeNull()
+  })
+
   it('does not revive a signed-out session', async () => {
     mockReadSessionState.mockResolvedValue({ sessionVersion: 3, revoked: true })
     let updated: JWT | null | undefined

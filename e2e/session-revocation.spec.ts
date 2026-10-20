@@ -47,7 +47,7 @@ async function expectLoginPage(page: Page): Promise<void> {
   await expect(page.getByPlaceholder('Email')).toBeVisible(TIMEOUT)
 }
 
-async function changePassword(
+async function submitPasswordChange(
   page: Page,
   currentPassword: string,
   newPassword: string
@@ -57,7 +57,30 @@ async function changePassword(
   await page.getByPlaceholder('Новый пароль', { exact: true }).fill(newPassword)
   await page.getByPlaceholder('Повторите новый пароль').fill(newPassword)
   await page.getByRole('button', { name: 'Сменить пароль' }).click()
+}
+
+async function expectPasswordChanged(page: Page): Promise<void> {
   await expect(page.getByText('Пароль изменён')).toBeVisible(TIMEOUT)
+}
+
+/**
+ * Puts the original password back, from the current session or, if that
+ * session is gone, from a new sign-in with the temporary password.
+ */
+async function restorePassword(
+  page: Page,
+  credentials: E2ECredentials,
+  temporaryPassword: string
+): Promise<void> {
+  await page.goto('/account')
+  if (/\/login/.test(page.url())) {
+    await loginWithCredentials(page, {
+      email: credentials.email,
+      password: temporaryPassword,
+    })
+  }
+  await submitPasswordChange(page, temporaryPassword, credentials.password)
+  await expectPasswordChanged(page)
 }
 
 test('a session cookie saved before sign-out does not open /account', async ({
@@ -93,18 +116,19 @@ test('a password change ends other sessions and keeps the current one', async ({
   await loginWithCredentials(otherPage, credentials)
   await expectAccountPage(otherPage)
 
-  let changed = false
+  let submitted = false
   try {
-    await changePassword(page, credentials.password, temporaryPassword)
-    changed = true
+    await submitPasswordChange(page, credentials.password, temporaryPassword)
+    submitted = true
+    await expectPasswordChanged(page)
 
     await expectLoginPage(otherPage)
     await expectAccountPage(page)
   } finally {
-    if (changed) {
-      await changePassword(page, temporaryPassword, credentials.password)
-    }
     await otherDevice.close()
+    if (submitted) {
+      await restorePassword(page, credentials, temporaryPassword)
+    }
   }
 
   // Each change ended every earlier session of this account, including the

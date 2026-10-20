@@ -63,6 +63,34 @@ function rememberCheck(sid: string, check: RememberedCheck) {
   }
 }
 
+/**
+ * A token that just adopted a new version, by session id. After a Server
+ * Action writes the new cookie, Next.js re-renders the page in the same
+ * request, and `auth()` there still reads the old cookie from the request
+ * headers. For a short time the old version of this one token is accepted on
+ * this instance, so that re-render does not sign the user out.
+ */
+const ADOPT_GRACE_MS = 60 * 1000
+const adoptedVersions = new Map<
+  string,
+  { fromVersion: number; toVersion: number; until: number }
+>()
+
+function isAdoptedVersion(
+  sid: string,
+  tokenVersion: number,
+  storedVersion: number,
+  now: number
+): boolean {
+  const adopted = adoptedVersions.get(sid)
+  return (
+    adopted !== undefined &&
+    adopted.fromVersion === tokenVersion &&
+    adopted.toVersion === storedVersion &&
+    now < adopted.until
+  )
+}
+
 /** Drops this instance's remembered checks of one user. */
 export function forgetUserSessionChecks(userId: string) {
   for (const [sid, check] of rememberedChecks) {
@@ -73,6 +101,7 @@ export function forgetUserSessionChecks(userId: string) {
 /** For tests. */
 export function resetSessionChecks() {
   rememberedChecks.clear()
+  adoptedVersions.clear()
 }
 
 function isFresh(checkedAt: unknown, now: number): boolean {
@@ -150,8 +179,16 @@ export async function validateSessionToken(
   }
 
   if (mode === 'adopt-version') {
+    if (state.sessionVersion !== sv) {
+      adoptedVersions.set(sid, {
+        fromVersion: sv,
+        toVersion: state.sessionVersion,
+        until: now + ADOPT_GRACE_MS,
+      })
+    }
     token.sv = state.sessionVersion
   } else if (state.sessionVersion !== sv) {
+    if (isAdoptedVersion(sid, sv, state.sessionVersion, now)) return token
     rememberedChecks.delete(sid)
     return null
   }
@@ -182,5 +219,6 @@ export async function revokeSession(
   )
 
   rememberedChecks.delete(token.sid)
+  adoptedVersions.delete(token.sid)
   await insertRevokedSession(token.sid, token.id, expiresAt)
 }
