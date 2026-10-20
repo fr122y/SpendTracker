@@ -34,6 +34,12 @@ When a request fails because the session is gone, the app MUST show «Сесси
 - **THEN** tab B opens `/login?callbackUrl=…` with the message «Сессия истекла — войдите снова»
 - **AND** after sign-in the form shows the submitted description and amount, and no expense was saved
 
+#### Scenario: Submit the restored draft while the dashboard loads
+
+- **GIVEN** the user signed in again and the restored expense is in the form
+- **WHEN** the user presses «Добавить» before the categories and keyword rules have loaded
+- **THEN** the button shows it is busy and the expense is saved once they load, exactly once
+
 #### Scenario: Account page without a session
 
 - **WHEN** a signed-out user opens `/account`

@@ -20,6 +20,7 @@ import {
   expenseRows,
   journalForm,
   openJournal,
+  reloadPage,
   test,
   TIMEOUT,
   uniqueAmount,
@@ -150,11 +151,23 @@ test.describe('Tabs, session and offline', () => {
       TIMEOUT
     )
     await expect(form.getByLabel('Сумма расхода')).toHaveValue(String(amount))
-    // Nothing was saved while signed out.
-    await expect(expenseRows(page, DESCRIPTION, amount)).toHaveCount(0)
 
-    await form.getByLabel('Описание расхода').fill('')
-    await form.getByLabel('Сумма расхода').fill('')
+    // Submit at once, while the dashboard is still loading: the save waits
+    // for the categories instead of being dropped.
+    const saved = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        (response.request().postData() ?? '').includes(`"amount":${amount}`)
+    )
+    await submitButton(page).click()
+    expect((await saved).ok()).toBe(true)
+    await expect(form.getByLabel('Описание расхода')).toHaveValue('', TIMEOUT)
+
+    // Saved exactly once: nothing went through while signed out.
+    await reloadPage(page)
+    await openJournal(page)
+    await expect(expenseRows(page, DESCRIPTION, amount)).toHaveCount(1, TIMEOUT)
+    await deleteExpense(page, DESCRIPTION, amount)
   })
 
   test('an offline expense shows «Сохраняется…» and saves on reconnect', async ({
