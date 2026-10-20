@@ -17,6 +17,12 @@ have the required permissions.
 - Treat the Conventional Commits workflow as a required check when branch
   protection settings allow it.
 
+## Vercel
+
+- `vercel.json` pins serverless functions to `dub1` (Dublin), next to the
+  Supabase database in `eu-west-1`; each database query from another region
+  pays a cross-Atlantic round trip. Middleware stays global.
+
 ## Automation Boundaries
 
 Changing repository or platform settings is a protected operation; see
