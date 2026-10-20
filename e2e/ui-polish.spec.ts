@@ -35,9 +35,12 @@ test.describe('Russian money format and labels', () => {
     await expect(dailyTotal(page)).not.toContainText('.')
 
     await amountButton.click()
-    const amountField = row.getByRole('textbox', { name: 'Изменить сумму' })
+    // While editing, the row shows the field instead of the amount button, so
+    // the row locator no longer matches; only one amount field is open.
+    const amountField = page.getByRole('textbox', { name: 'Изменить сумму' })
     await expect(amountField).toHaveValue(`${Math.floor(amount)},50`)
     await amountField.press('Escape')
+    await expect(amountField).toHaveCount(0)
 
     await row.getByRole('button', { name: 'Удалить операцию' }).click()
     const dialog = page.getByRole('alertdialog', { name: 'Удалить операцию?' })
