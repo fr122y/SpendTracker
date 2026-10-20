@@ -2,7 +2,11 @@
 #
 # One repo-relative path per line. Blank lines and lines starting with `#` are
 # ignored. Every listed file must exist, and none of its tests may be skipped.
-# This file is protected: adding or removing a spec needs the owner's bypass.
+# This file is protected, with one exception: a Pull Request that changes no
+# other protected path may only add lines here, each blank, a `#` comment, or a
+# new `e2e/<name>.spec.ts` that exists in the Pull Request head. Such a Pull
+# Request passes `protected-paths`. Removing, reordering, or editing any line
+# still needs the owner's bypass.
 
 e2e/app.spec.ts
 e2e/dashboard.spec.ts

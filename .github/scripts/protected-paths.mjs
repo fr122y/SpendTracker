@@ -10,6 +10,9 @@ import { fileURLToPath } from 'node:url'
 export const PACKAGE_JSON = 'package.json'
 export const PACKAGE_JSON_KEYS = ['scripts', 'lint-staged']
 
+export const E2E_SPECS = '.github/e2e-specs.txt'
+const E2E_SPEC_PATH = /^e2e\/[A-Za-z0-9][A-Za-z0-9._-]*\.spec\.ts$/
+
 const LIST_PATH = new URL('../protected-paths.txt', import.meta.url)
 const PAGE_SIZE = 100
 
@@ -117,6 +120,72 @@ export function comparePackageJson(baseText, headText) {
   return changed.length > 0
     ? `${PACKAGE_JSON} (${changed.join(', ')} changed)`
     : null
+}
+
+function splitLines(text) {
+  const lines = text.split(/\r?\n/)
+  if (lines.at(-1) === '') lines.pop()
+  return lines
+}
+
+function isIgnorableLine(line) {
+  const trimmed = line.trim()
+  return trimmed === '' || trimmed.startsWith('#')
+}
+
+/**
+ * Returns the lines the head adds to the base, or null when the head removes
+ * or modifies any base line (the base lines must stay in order as a
+ * subsequence of the head).
+ */
+export function listAddedLines(baseText, headText) {
+  const base = splitLines(baseText)
+  const head = splitLines(headText)
+  const added = []
+  let next = 0
+  for (const line of head) {
+    if (next < base.length && line === base[next]) next += 1
+    else added.push(line)
+  }
+  return next === base.length ? added : null
+}
+
+/** Returns the added non-comment lines: the candidate spec paths. */
+export function listAddedSpecs(baseText, headText) {
+  const added = listAddedLines(baseText, headText) ?? []
+  return added.filter((line) => !isIgnorableLine(line))
+}
+
+/**
+ * Judges a change of `.github/e2e-specs.txt` that touches no other protected
+ * path. It passes (returns null) only when the head adds lines and changes
+ * nothing else, and every added line is blank, a `#` comment, or a new path
+ * `e2e/<name>.spec.ts` that exists in the head tree (`existing`, a Set) and
+ * is not already listed. Otherwise returns a rule description.
+ */
+export function compareE2eSpecs(baseText, headText, existing) {
+  if (headText === null) return `${E2E_SPECS} (deleted)`
+  if (baseText === null) return `${E2E_SPECS} (missing at base)`
+  const added = listAddedLines(baseText, headText)
+  if (added === null) return `${E2E_SPECS} (lines removed or modified)`
+  const listed = new Set(
+    splitLines(baseText)
+      .filter((line) => !isIgnorableLine(line))
+      .map((line) => line.trim())
+  )
+  for (const line of added) {
+    if (isIgnorableLine(line)) continue
+    const path = line.trim()
+    if (!E2E_SPEC_PATH.test(path)) {
+      return `${E2E_SPECS} (added line is not an e2e/<name>.spec.ts path: ${path})`
+    }
+    if (listed.has(path)) return `${E2E_SPECS} (duplicate entry: ${path})`
+    if (!existing.has(path)) {
+      return `${E2E_SPECS} (added spec does not exist in the head: ${path})`
+    }
+    listed.add(path)
+  }
+  return null
 }
 
 /** Builds the Markdown shown in the workflow run summary on a hit. */
@@ -240,6 +309,42 @@ export async function main(env = process.env) {
     ])
     const rule = comparePackageJson(baseText, headText)
     if (rule !== null) hits.push({ path: PACKAGE_JSON, rule })
+  }
+
+  const onlyE2eSpecs = hits.length === 1 && hits[0].path === E2E_SPECS
+  if (onlyE2eSpecs) {
+    const entry = files.find((file) => file.filename === E2E_SPECS)
+    if (entry?.status !== 'modified' || entry.previous_filename) {
+      hits[0].rule = `${E2E_SPECS} (${entry?.status ?? 'renamed'})`
+    } else {
+      const [baseText, headText] = await Promise.all([
+        getFileText(env, repository, E2E_SPECS, baseSha),
+        getFileText(env, repository, E2E_SPECS, headSha),
+      ])
+      const existing = new Set()
+      if (baseText !== null && headText !== null) {
+        const candidates = listAddedSpecs(baseText, headText).filter((path) =>
+          E2E_SPEC_PATH.test(path.trim())
+        )
+        const texts = await Promise.all(
+          candidates.map((path) =>
+            getFileText(env, repository, path.trim(), headSha)
+          )
+        )
+        candidates.forEach((path, i) => {
+          if (texts[i] !== null) existing.add(path.trim())
+        })
+      }
+      const rule = compareE2eSpecs(baseText, headText, existing)
+      if (rule === null) {
+        console.log(
+          `protected-paths: ${E2E_SPECS} only adds existing specs; allowed.`
+        )
+        hits.length = 0
+      } else {
+        hits[0].rule = rule
+      }
+    }
   }
 
   if (hits.length === 0) {
