@@ -1,0 +1,179 @@
+{
+  "run": {
+    "conclusion": "success",
+    "created_at": "2026-10-19T16:07:06Z",
+    "event": "deployment_status",
+    "head_sha": "5eec09ca4a8e6195a8f5184c9431665defe48e24",
+    "id": 39277150877,
+    "name": "E2E Preview",
+    "run_attempt": 2,
+    "run_started_at": "2026-10-19T16:07:06Z",
+    "status": "completed",
+    "updated_at": "2026-10-19T16:29:32Z"
+  },
+  "jobs": [
+    {
+      "completed_at": "2026-10-19T16:17:56Z",
+      "conclusion": "success",
+      "created_at": "2026-10-19T16:07:07Z",
+      "id": 118160822428,
+      "name": "e2e",
+      "started_at": "2026-10-19T16:07:10Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completed_at": "2026-10-19T16:07:11Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "started_at": "2026-10-19T16:07:10Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:12Z",
+          "conclusion": "success",
+          "name": "Require a Vercel Preview deployment",
+          "number": 2,
+          "started_at": "2026-10-19T16:07:11Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:12Z",
+          "conclusion": "success",
+          "name": "Require e2e secrets",
+          "number": 3,
+          "started_at": "2026-10-19T16:07:12Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:12Z",
+          "conclusion": "success",
+          "name": "Skip a superseded commit",
+          "number": 4,
+          "started_at": "2026-10-19T16:07:12Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:14Z",
+          "conclusion": "success",
+          "name": "Check out deployed commit",
+          "number": 5,
+          "started_at": "2026-10-19T16:07:12Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:14Z",
+          "conclusion": "success",
+          "name": "Read gated spec files",
+          "number": 6,
+          "started_at": "2026-10-19T16:07:14Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:18Z",
+          "conclusion": "success",
+          "name": "Set up Node.js",
+          "number": 7,
+          "started_at": "2026-10-19T16:07:14Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:43Z",
+          "conclusion": "success",
+          "name": "Install dependencies",
+          "number": 8,
+          "started_at": "2026-10-19T16:07:18Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:43Z",
+          "conclusion": "success",
+          "name": "Read Playwright version",
+          "number": 9,
+          "started_at": "2026-10-19T16:07:43Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:07:43Z",
+          "conclusion": "success",
+          "name": "Cache Playwright browsers",
+          "number": 10,
+          "started_at": "2026-10-19T16:07:43Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:08:05Z",
+          "conclusion": "success",
+          "name": "Install Chromium",
+          "number": 11,
+          "started_at": "2026-10-19T16:07:43Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:08:05Z",
+          "conclusion": "skipped",
+          "name": "Install Chromium system dependencies",
+          "number": 12,
+          "started_at": "2026-10-19T16:08:05Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:52Z",
+          "conclusion": "success",
+          "name": "Run e2e tests",
+          "number": 13,
+          "started_at": "2026-10-19T16:08:05Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:52Z",
+          "conclusion": "success",
+          "name": "Fail on skipped tests",
+          "number": 14,
+          "started_at": "2026-10-19T16:17:52Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:52Z",
+          "conclusion": "skipped",
+          "name": "Upload Playwright report",
+          "number": 15,
+          "started_at": "2026-10-19T16:17:52Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:52Z",
+          "conclusion": "success",
+          "name": "Post Cache Playwright browsers",
+          "number": 28,
+          "started_at": "2026-10-19T16:17:52Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:53Z",
+          "conclusion": "success",
+          "name": "Post Set up Node.js",
+          "number": 29,
+          "started_at": "2026-10-19T16:17:52Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:53Z",
+          "conclusion": "success",
+          "name": "Post Check out deployed commit",
+          "number": 30,
+          "started_at": "2026-10-19T16:17:53Z",
+          "status": "completed"
+        },
+        {
+          "completed_at": "2026-10-19T16:17:53Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 31,
+          "started_at": "2026-10-19T16:17:53Z",
+          "status": "completed"
+        }
+      ]
+    }
+  ]
+}
