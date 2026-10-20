@@ -24,7 +24,11 @@ import {
   PocketOperationForm,
   RenamePocketForm,
 } from '@/features/manage-pockets'
-import { getPocketMonthSummary, isTempId } from '@/shared/lib'
+import {
+  getPocketMonthSummary,
+  isTempId,
+  formatAmountInput,
+} from '@/shared/lib'
 import { Button, ConfirmDialog, EmptyState, MathInput } from '@/shared/ui'
 
 import {
@@ -90,7 +94,7 @@ function PocketDetail({
     budgetDraft?.period === period
       ? budgetDraft.value
       : monthBudget
-        ? String(monthBudget.budget)
+        ? formatAmountInput(monthBudget.budget)
         : ''
 
   const stats = useMemo(

@@ -47,7 +47,9 @@ describe('income allocation calculations', () => {
     expect(formatKopecks(1_500_000)).toBe('15 000')
     expect(formatKopecks(1_000_001)).toBe('10 000,01')
     expect(formatKopecks(-500_000)).toBe('−5 000')
-    expect(formatEditableKopecks(1_000_001)).toBe('10000.01')
+    expect(formatKopecks(2_469_140)).toBe('24\u00A0691,40')
+    expect(formatEditableKopecks(1_000_001)).toBe('10000,01')
+    expect(formatEditableKopecks(2_469_140)).toBe('24691,40')
   })
 
   it('calculates percentage plans and reports an exact negative remainder', () => {

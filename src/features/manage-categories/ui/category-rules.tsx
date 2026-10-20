@@ -17,6 +17,8 @@ interface CategoryRulesProps {
   categoryName: string
   rules: CategoryRule[]
   onDelete: (id: string) => void
+  /** The rules are still loading: show a placeholder instead of a zero count. */
+  isLoading?: boolean
 }
 
 const MATCH_TYPE_LABEL: Record<KeywordMatchType, string> = {
@@ -32,10 +34,28 @@ export function CategoryRules({
   categoryName,
   rules,
   onDelete,
+  isLoading = false,
 }: CategoryRulesProps) {
   const [isOpen, setIsOpen] = useState(false)
   const listId = useId()
   const Icon = isOpen ? ChevronDown : ChevronRight
+
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        aria-label={`Правила категории ${categoryName} загружаются`}
+        className="flex min-h-11 items-center gap-1 self-start px-1 text-xs wide:min-h-9 text-zinc-500"
+      >
+        Правила автокатегоризации:
+        <span
+          data-testid="category-rules-count-placeholder"
+          aria-hidden="true"
+          className="inline-block h-3 w-4 animate-pulse rounded bg-zinc-800"
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-2">

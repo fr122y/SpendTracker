@@ -5,6 +5,7 @@ import {
   journalForm,
   parseRubles,
   reloadPage,
+  rubles,
   test,
   TIMEOUT,
 } from './utils/expenses'
@@ -32,7 +33,9 @@ async function analysisEntry(
   const stat = analysisStat(page, category)
   if ((await stat.count()) === 0) return { value: 0, percent: 0 }
   const label = (await stat.getAttribute('aria-label')) ?? ''
-  const [, value = '', percent = ''] = label.split(',')
+  // `Кафе, 1 234,50 ₽, 12%. Открыть расходы`: the amount may hold a comma.
+  const [, value = '', percent = ''] =
+    label.match(/, (-?[\d\s]+(?:,\d+)?\s₽), (\d+)%/) ?? []
   return { value: parseRubles(value), percent: parseRubles(percent) }
 }
 
@@ -131,16 +134,13 @@ test.describe('SpendTracker', () => {
       const dinner = await expenses.add('E2E ужин')
 
       await expect(dailyTotal(page)).toHaveText(
-        `${(before + lunch.amount + dinner.amount).toLocaleString('ru-RU')} ₽`,
+        rubles(before + lunch.amount + dinner.amount),
         TIMEOUT
       )
 
       await expenses.remove(lunch)
       await expenses.remove(dinner)
-      await expect(dailyTotal(page)).toHaveText(
-        `${before.toLocaleString('ru-RU')} ₽`,
-        TIMEOUT
-      )
+      await expect(dailyTotal(page)).toHaveText(rubles(before), TIMEOUT)
     })
   })
 
@@ -185,7 +185,7 @@ test.describe('SpendTracker', () => {
       const expense = await expenses.add(description)
 
       await expect(page.getByTestId('analysis-header-total')).toHaveText(
-        `${(totalBefore + expense.amount).toLocaleString('ru-RU')} ₽`,
+        rubles(totalBefore + expense.amount),
         TIMEOUT
       )
       const categoryAfter = await analysisValue(page, expense.category)

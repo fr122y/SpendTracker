@@ -14,6 +14,7 @@ import {
   getTextLimitMessage,
   useSubmitLock,
   useFormDraft,
+  formatMoney,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
@@ -273,8 +274,7 @@ export function ProjectExpenseForm({ projectId }: ProjectExpenseFormProps) {
       />
       {returnExceedsCash && projectCashOnHand !== null && (
         <p role="alert" className="text-sm text-red-400">
-          Нельзя вернуть больше, чем на руках:{' '}
-          {projectCashOnHand.toLocaleString('ru-RU')} ₽
+          Нельзя вернуть больше, чем на руках: {formatMoney(projectCashOnHand)}
         </p>
       )}
       {suggestedCategoryId && !showCategorySelect && !isMovement && (

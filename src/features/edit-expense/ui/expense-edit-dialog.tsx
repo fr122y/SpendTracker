@@ -17,6 +17,7 @@ import {
   isExpenseDescriptionTooLong,
   parseAmountInput,
   useBackDismiss,
+  formatAmountInput,
 } from '@/shared/lib'
 import { Button, Input, MathInput, Select } from '@/shared/ui'
 
@@ -52,7 +53,7 @@ export function ExpenseEditDialog({
   )
 
   const [description, setDescription] = useState(expense.description)
-  const [amount, setAmount] = useState(String(expense.amount))
+  const [amount, setAmount] = useState(formatAmountInput(expense.amount))
   const [date, setDate] = useState(expense.date)
   const [categoryName, setCategoryName] = useState(expense.category)
 

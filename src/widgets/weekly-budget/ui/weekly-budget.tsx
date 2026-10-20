@@ -27,6 +27,8 @@ import {
   parseAmountInput,
   cn,
   type WeeklyBudgetCoverage,
+  formatMoney,
+  formatAmountInput,
 } from '@/shared/lib'
 import { Button, ConfirmDialog, Input, MathInput, Select } from '@/shared/ui'
 
@@ -37,7 +39,7 @@ import type { Project, SharedBudget } from '@/shared/types'
 const LIMIT_ERROR = 'Лимит должен быть больше 0'
 
 function formatCurrency(value: number): string {
-  return `${value.toLocaleString('ru-RU')} ₽`
+  return formatMoney(value)
 }
 
 function formatWeekDate(dateStr: string) {
@@ -407,7 +409,9 @@ function SharedBudgetSection({
     }
 
     setSharedLimitInput(
-      String(getEffectiveSharedWeeklyLimit(activeBudget, selectedDate))
+      formatAmountInput(
+        getEffectiveSharedWeeklyLimit(activeBudget, selectedDate)
+      )
     )
     setSharedLimitError(null)
     setInviteUrl('')
@@ -530,7 +534,9 @@ function SharedBudgetSection({
             value={initialLimit}
             onValueChange={(value, evaluated) => {
               setCreateLimitError(null)
-              setInitialLimit(evaluated === null ? value : String(evaluated))
+              setInitialLimit(
+                evaluated === null ? value : formatAmountInput(evaluated)
+              )
             }}
             error={createLimitError ?? undefined}
           />
@@ -664,11 +670,11 @@ export function WeeklyBudget() {
   const { data: sharedBudgets = [], isLoading: isSharedBudgetsLoading } =
     useSharedBudgets()
   const { data: pockets = [], isLoading: arePocketsLoading } = usePockets()
-  const [inputValue, setInputValue] = useState(String(weeklyLimit))
+  const [inputValue, setInputValue] = useState(formatAmountInput(weeklyLimit))
   const [limitError, setLimitError] = useState<string | null>(null)
 
   useEffect(() => {
-    setInputValue(String(weeklyLimit))
+    setInputValue(formatAmountInput(weeklyLimit))
     setLimitError(null)
   }, [weeklyLimit])
 

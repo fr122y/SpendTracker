@@ -11,6 +11,7 @@ import { Skeleton } from '@/shared/ui'
 import {
   displayToken,
   evaluateTokens,
+  isDivisionByZero,
   formatResultForCopy,
   formatResultForDisplay,
   insertSavings,
@@ -257,7 +258,11 @@ export function CalculatorPanel({ onClose }: CalculatorPanelProps) {
             data-testid="calculator-result"
             className="min-w-0 truncate font-mono text-2xl text-zinc-100"
           >
-            {result === null ? '—' : formatResultForDisplay(result)}
+            {result !== null
+              ? formatResultForDisplay(result)
+              : isDivisionByZero(state.tokens, amounts)
+                ? 'деление на 0'
+                : '—'}
           </div>
           <button
             type="button"

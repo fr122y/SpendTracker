@@ -105,8 +105,10 @@ describe('ExpenseList', () => {
     expect(
       screen.getByText('Карман в архиве — восстановите, чтобы изменить')
     ).toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: 'delete' })).toHaveLength(1)
-    const amounts = screen.getAllByRole('button', { name: 'edit amount' })
+    expect(
+      screen.getAllByRole('button', { name: 'Удалить операцию' })
+    ).toHaveLength(1)
+    const amounts = screen.getAllByRole('button', { name: 'Изменить сумму' })
     expect(amounts[0]).toHaveTextContent('300')
     expect(amounts[0]).toBeDisabled()
     expect(amounts[1]).toBeEnabled()

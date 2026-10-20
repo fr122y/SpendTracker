@@ -14,6 +14,7 @@ import {
   getCategoryStats,
   type CategoryStat,
   type ExpenseScope,
+  formatMoney,
 } from '@/shared/lib'
 import { cn } from '@/shared/lib'
 import { Button, EmptyState } from '@/shared/ui'
@@ -110,7 +111,7 @@ function CategoryBox({
       <button
         type="button"
         aria-haspopup="dialog"
-        aria-label={`${stat.name}, ${stat.value.toLocaleString('ru-RU')} ₽, ${stat.percent.toFixed(0)}%. Открыть расходы`}
+        aria-label={`${stat.name}, ${formatMoney(stat.value)}, ${stat.percent.toFixed(0)}%. Открыть расходы`}
         onClick={(event) => {
           setShowTooltip(false)
           onSelect(stat, event.currentTarget)
@@ -159,14 +160,14 @@ function CategoryBox({
             className="font-semibold text-zinc-100"
             data-testid={`analysis-tooltip-total-${stat.name}`}
           >
-            Всего: {stat.value.toLocaleString('ru-RU')} ₽
+            Всего: {formatMoney(stat.value)}
           </div>
           {(scope === 'all' || scope === 'personal') && (
             <div
               className="mt-1 text-emerald-400"
               data-testid={`analysis-tooltip-personal-${stat.name}`}
             >
-              Личные: {stat.personalValue.toLocaleString('ru-RU')} ₽
+              Личные: {formatMoney(stat.personalValue)}
             </div>
           )}
           {(scope === 'all' || scope === 'shared') && (
@@ -174,7 +175,7 @@ function CategoryBox({
               className="text-amber-400"
               data-testid={`analysis-tooltip-shared-${stat.name}`}
             >
-              Общие: {stat.sharedValue.toLocaleString('ru-RU')} ₽
+              Общие: {formatMoney(stat.sharedValue)}
             </div>
           )}
           {(scope === 'all' || scope === 'personal') && (
@@ -182,7 +183,7 @@ function CategoryBox({
               className="text-sky-400"
               data-testid={`analysis-tooltip-project-${stat.name}`}
             >
-              Проекты: {stat.projectValue.toLocaleString('ru-RU')} ₽
+              Проекты: {formatMoney(stat.projectValue)}
             </div>
           )}
           <div className="absolute -bottom-1 left-1/2 h-2 w-2 -translate-x-1/2 rotate-45 bg-zinc-800" />
@@ -250,7 +251,7 @@ export function AnalysisDashboard() {
                 className="text-emerald-400"
                 data-testid="analysis-header-personal"
               >
-                Личные: {personalTotal.toLocaleString('ru-RU')} ₽
+                Личные: {formatMoney(personalTotal)}
               </span>
             )}
             {(scope === 'all' || scope === 'shared') && (
@@ -258,7 +259,7 @@ export function AnalysisDashboard() {
                 className="text-amber-400"
                 data-testid="analysis-header-shared"
               >
-                Общие: {sharedTotal.toLocaleString('ru-RU')} ₽
+                Общие: {formatMoney(sharedTotal)}
               </span>
             )}
             {(scope === 'all' || scope === 'personal') && (
@@ -266,7 +267,7 @@ export function AnalysisDashboard() {
                 className="text-sky-400"
                 data-testid="analysis-header-project"
               >
-                Проекты: {projectTotal.toLocaleString('ru-RU')} ₽
+                Проекты: {formatMoney(projectTotal)}
               </span>
             )}
           </div>
@@ -275,7 +276,7 @@ export function AnalysisDashboard() {
           className="whitespace-nowrap text-base font-semibold text-emerald-400 sm:text-lg"
           data-testid="analysis-header-total"
         >
-          {totalSpent.toLocaleString('ru-RU')} ₽
+          {formatMoney(totalSpent)}
         </span>
       </div>
 

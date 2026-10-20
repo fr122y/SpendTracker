@@ -133,8 +133,10 @@ test.describe('No Horizontal Scroll Tests', () => {
           const stray = strayDescriptions.first()
           const strayDescription = (await stray.textContent()) ?? ''
           const strayAmount = await stray
-            .locator('xpath=ancestor::div[.//button[@aria-label="delete"]][1]')
-            .getByRole('button', { name: 'edit amount' })
+            .locator(
+              'xpath=ancestor::div[.//button[@aria-label="Удалить операцию"]][1]'
+            )
+            .getByRole('button', { name: 'Изменить сумму' })
             .textContent()
           await deleteExpense(page, strayDescription, parseRubles(strayAmount))
         }
@@ -268,11 +270,11 @@ test.describe('No Horizontal Scroll Tests', () => {
           await expect(row).toBeVisible(TIMEOUT)
           await expectInsideViewport(
             page,
-            row.getByRole('button', { name: 'edit amount' })
+            row.getByRole('button', { name: 'Изменить сумму' })
           )
           await expectInsideViewport(
             page,
-            row.getByRole('button', { name: 'delete' })
+            row.getByRole('button', { name: 'Удалить операцию' })
           )
           await expectNoPageScroll(page)
           await expectNoHorizontalScroll(page)

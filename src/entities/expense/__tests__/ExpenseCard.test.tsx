@@ -63,7 +63,9 @@ describe('ExpenseCard', () => {
     )
 
     expect(screen.getAllByText('Перевод из кармана')).toHaveLength(2)
-    await userEvent.click(screen.getByRole('button', { name: /edit amount/i }))
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Изменить сумму' })
+    )
     const input = screen.getByRole('textbox')
     await userEvent.clear(input)
     await userEvent.type(input, '150')
@@ -121,7 +123,7 @@ describe('ExpenseCard', () => {
     const card = container.querySelector('[data-operation-type]')
     expect(card).toHaveAttribute('data-operation-type', 'pocket_transfer')
     expect(card).toHaveClass('border-dashed')
-    expect(screen.getByRole('button', { name: /edit amount/i })).toHaveClass(
+    expect(screen.getByRole('button', { name: 'Изменить сумму' })).toHaveClass(
       'text-violet-300'
     )
   })
@@ -195,7 +197,9 @@ describe('ExpenseCard', () => {
     const onDelete = jest.fn()
     render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)
 
-    const deleteButton = screen.getByRole('button', { name: /delete/i })
+    const deleteButton = screen.getByRole('button', {
+      name: 'Удалить операцию',
+    })
     fireEvent.click(deleteButton)
 
     expect(screen.getByRole('alertdialog')).toBeInTheDocument()
@@ -207,7 +211,7 @@ describe('ExpenseCard', () => {
     const onDelete = jest.fn()
     render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
     fireEvent.click(screen.getByRole('button', { name: 'Отмена' }))
 
     expect(onDelete).not.toHaveBeenCalled()
@@ -218,7 +222,7 @@ describe('ExpenseCard', () => {
     const onDelete = jest.fn()
     render(<ExpenseCard expense={mockExpense} onDelete={onDelete} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /delete/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
     fireEvent.click(screen.getByRole('button', { name: 'Удалить' }))
 
     expect(onDelete).toHaveBeenCalledTimes(1)
@@ -228,7 +232,63 @@ describe('ExpenseCard', () => {
 
   it('delete button has accessible label', () => {
     render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
-    expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Удалить операцию' })
+    ).toBeInTheDocument()
+  })
+
+  describe('Russian money format', () => {
+    it('shows the amount with a thousands separator and kopecks after a comma', () => {
+      render(
+        <ExpenseCard
+          expense={{ ...mockExpense, amount: 1500.5 }}
+          onEdit={jest.fn()}
+        />
+      )
+      expect(
+        screen.getByRole('button', { name: 'Изменить сумму' }).textContent
+      ).toBe('1\u00A0500,50\u00A0₽')
+    })
+
+    it('shows a whole amount without kopecks', () => {
+      render(
+        <ExpenseCard
+          expense={{ ...mockExpense, amount: 1234 }}
+          onEdit={jest.fn()}
+        />
+      )
+      expect(
+        screen.getByRole('button', { name: 'Изменить сумму' }).textContent
+      ).toBe('1\u00A0234\u00A0₽')
+    })
+
+    it('names the amount with a comma in the delete confirmation', () => {
+      render(
+        <ExpenseCard
+          expense={{ ...mockExpense, amount: 350.5 }}
+          onDelete={jest.fn()}
+        />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
+      expect(
+        screen.getByText('«Coffee» · 350,50 ₽ · 15.01.2024')
+      ).toBeInTheDocument()
+    })
+
+    it('puts the amount into the edit field with a comma', async () => {
+      render(
+        <ExpenseCard
+          expense={{ ...mockExpense, amount: 123.45 }}
+          onEdit={jest.fn()}
+        />
+      )
+      await userEvent.click(
+        screen.getByRole('button', { name: 'Изменить сумму' })
+      )
+      expect(
+        screen.getByRole('textbox', { name: 'Изменить сумму' })
+      ).toHaveValue('123,45')
+    })
   })
 
   describe('editing amount', () => {
@@ -242,7 +302,9 @@ describe('ExpenseCard', () => {
         />
       )
 
-      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      const amountButton = screen.getByRole('button', {
+        name: 'Изменить сумму',
+      })
       await userEvent.click(amountButton)
 
       expect(screen.getByRole('textbox')).toBeInTheDocument()
@@ -252,7 +314,9 @@ describe('ExpenseCard', () => {
     it('does not enter edit mode when onEdit is not provided', async () => {
       render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
 
-      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      const amountButton = screen.getByRole('button', {
+        name: 'Изменить сумму',
+      })
       expect(amountButton).toBeDisabled()
     })
 
@@ -266,7 +330,9 @@ describe('ExpenseCard', () => {
         />
       )
 
-      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      const amountButton = screen.getByRole('button', {
+        name: 'Изменить сумму',
+      })
       await userEvent.click(amountButton)
 
       const input = screen.getByRole('textbox')
@@ -287,7 +353,9 @@ describe('ExpenseCard', () => {
         />
       )
 
-      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      const amountButton = screen.getByRole('button', {
+        name: 'Изменить сумму',
+      })
       await userEvent.click(amountButton)
 
       const input = screen.getByRole('textbox')
@@ -309,7 +377,7 @@ describe('ExpenseCard', () => {
       )
 
       await userEvent.click(
-        screen.getByRole('button', { name: /edit amount/i })
+        screen.getByRole('button', { name: 'Изменить сумму' })
       )
       const input = screen.getByRole('textbox')
       await userEvent.clear(input)
@@ -332,7 +400,7 @@ describe('ExpenseCard', () => {
       )
 
       await userEvent.click(
-        screen.getByRole('button', { name: /edit amount/i })
+        screen.getByRole('button', { name: 'Изменить сумму' })
       )
       const input = screen.getByRole('textbox')
       await userEvent.clear(input)
@@ -342,7 +410,7 @@ describe('ExpenseCard', () => {
       expect(onEdit).not.toHaveBeenCalled()
       expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
       expect(
-        screen.getByRole('button', { name: /edit amount/i })
+        screen.getByRole('button', { name: 'Изменить сумму' })
       ).toHaveTextContent('250')
     })
 
@@ -356,7 +424,9 @@ describe('ExpenseCard', () => {
         />
       )
 
-      const amountButton = screen.getByRole('button', { name: /edit amount/i })
+      const amountButton = screen.getByRole('button', {
+        name: 'Изменить сумму',
+      })
       await userEvent.click(amountButton)
 
       const input = screen.getByRole('textbox')
@@ -392,7 +462,7 @@ describe('ExpenseCard', () => {
       render(
         <ExpenseCard expense={mockExpense} onDelete={jest.fn()} canUndoDelete />
       )
-      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
 
       const [year, month, day] = mockExpense.date.split('-')
       expect(
@@ -407,7 +477,7 @@ describe('ExpenseCard', () => {
 
     it('keeps the irreversible warning where undo is not offered', () => {
       render(<ExpenseCard expense={mockExpense} onDelete={jest.fn()} />)
-      fireEvent.click(screen.getByRole('button', { name: 'delete' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Удалить операцию' }))
       expect(
         screen.getByText(/без возможности восстановления/)
       ).toBeInTheDocument()

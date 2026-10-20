@@ -144,7 +144,7 @@ describe('MathInput', () => {
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('123.45', 123.45)
+      expect(mockOnValueChange).toHaveBeenCalledWith('123,45', 123.45)
     })
 
     it('normalizes plain decimal number to meaningful decimal places', () => {
@@ -153,7 +153,7 @@ describe('MathInput', () => {
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('123.4', 123.4)
+      expect(mockOnValueChange).toHaveBeenCalledWith('123,40', 123.4)
     })
 
     it('rounds plain decimal number to two decimal places', () => {
@@ -162,7 +162,7 @@ describe('MathInput', () => {
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('123.46', 123.46)
+      expect(mockOnValueChange).toHaveBeenCalledWith('123,46', 123.46)
     })
   })
 
@@ -173,7 +173,7 @@ describe('MathInput', () => {
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('0.3', 0.3)
+      expect(mockOnValueChange).toHaveBeenCalledWith('0,30', 0.3)
     })
 
     it('rounds evaluated fractional results to two decimal places', () => {
@@ -182,7 +182,7 @@ describe('MathInput', () => {
 
       fireEvent.blur(input)
 
-      expect(mockOnValueChange).toHaveBeenCalledWith('33.33', 33.33)
+      expect(mockOnValueChange).toHaveBeenCalledWith('33,33', 33.33)
     })
 
     it('displays whole-number results without decimal separator', () => {
@@ -455,9 +455,9 @@ describe('MathInput', () => {
   describe('Input format', () => {
     it.each([
       ['1 500', '1500', 1500],
-      ['1\u00a0500,50', '1500.5', 1500.5],
+      ['1\u00a0500,50', '1500,50', 1500.5],
       [' 42 ', '42', 42],
-      ['12.345', '12.35', 12.35],
+      ['12.345', '12,35', 12.35],
     ])('accepts %j', (value, display, evaluated) => {
       render(<MathInput value={value} onValueChange={mockOnValueChange} />)
 

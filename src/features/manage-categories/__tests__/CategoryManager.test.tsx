@@ -114,6 +114,7 @@ jest.mock('@/entities/category', () => ({
 
 const mockDeleteRule = jest.fn()
 const mockDeleteSharedRule = jest.fn()
+let mockRulesLoading = false
 let mockRules = [
   {
     id: 'rule-1',
@@ -144,7 +145,10 @@ const mockSharedRules = [
 ]
 
 jest.mock('@/entities/keyword-mapping', () => ({
-  useKeywordMappings: () => ({ data: mockRules }),
+  useKeywordMappings: () => ({
+    data: mockRulesLoading ? undefined : mockRules,
+    isLoading: mockRulesLoading,
+  }),
   useDeleteKeywordMapping: () => ({ mutate: mockDeleteRule }),
   useSharedKeywordMappings: (sharedBudgetId: string | undefined) => ({
     data: sharedBudgetId ? mockSharedRules : [],
@@ -662,6 +666,33 @@ describe('CategoryManager', () => {
       screen.getByRole('button', { name: 'Удалить правило «ресторан»' })
     )
     expect(mockDeleteRule).toHaveBeenCalledWith('rule-1')
+  })
+
+  it('shows a loading placeholder instead of a zero rule count', () => {
+    mockRulesLoading = true
+    try {
+      render(<CategoryManager />)
+
+      expect(
+        screen.queryByRole('button', { name: /^Правила категории Продукты/ })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.getByRole('status', {
+          name: 'Правила категории Продукты загружаются',
+        })
+      ).toBeInTheDocument()
+      expect(screen.queryByText(/Правила автокатегоризации: 0/)).toBeNull()
+    } finally {
+      mockRulesLoading = false
+    }
+  })
+
+  it('marks the form to hide the calculator button only while editing', () => {
+    const { container } = render(<CategoryManager />)
+    expect(container.querySelector('[data-hides-calculator]')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Изменить Продукты' }))
+    expect(container.querySelector('[data-hides-calculator]')).not.toBeNull()
   })
 
   it('shows an empty rules hint for a category without rules', () => {
