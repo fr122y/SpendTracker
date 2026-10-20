@@ -11,6 +11,15 @@ import { accounts, db, sessions, users, verificationTokens } from '@/shared/db'
 
 import authConfig from './config'
 import { seedUserDefaults } from './seed-defaults'
+import {
+  forgetUserSessionChecks,
+  issueSessionClaims,
+  revokeSession,
+  validateSessionToken,
+  withSessionCheck,
+} from './session-revocation'
+
+import type { Session } from 'next-auth'
 
 export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
   ...authConfig,
@@ -93,9 +102,10 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 
       return true
     },
-    jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, trigger, session }) {
+      // Sign-in: a new session id and the user's current session version.
       if (user?.id) {
-        token.id = user.id
+        return issueSessionClaims(token, user.id)
       }
 
       // Account page name change refreshes the JWT through `unstable_update`.
@@ -103,7 +113,9 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
         token.name = session.user.name
       }
 
-      return token
+      // Node runtime only: the edge middleware uses `config.ts` without this
+      // callback. `null` ends the session (signed out or password changed).
+      return validateSessionToken(token)
     },
     session({ session, token }) {
       if (session.user && typeof token.id === 'string') {
@@ -114,6 +126,11 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
     },
   },
   events: {
+    async signOut(message) {
+      if ('token' in message) {
+        await revokeSession(message.token)
+      }
+    },
     async createUser({ user }) {
       const userId = user.id
 
@@ -129,5 +146,28 @@ export const { handlers, auth, signIn, signOut, unstable_update } = NextAuth({
 })
 
 export const { GET, POST } = handlers
+
+/**
+ * `auth()` that checks the session against the database now, without the
+ * re-check window. For sensitive pages and actions.
+ */
+export function authFresh(): Promise<Session | null> {
+  return withSessionCheck('force', () => auth())
+}
+
+/**
+ * After the user's session version was bumped (password change), keeps the
+ * current browser signed in: its token adopts the new version. Every other
+ * token of the user stops working.
+ */
+export async function keepCurrentSessionAfterVersionBump(
+  userId: string
+): Promise<void> {
+  forgetUserSessionChecks(userId)
+  await withSessionCheck('adopt-version', () => unstable_update({}))
+}
+
+export { forgetUserSessionChecks } from './session-revocation'
+export { nextSessionVersion } from './session-store'
 
 export { getAccountProfile, type AccountProfile } from './account-profile'

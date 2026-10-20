@@ -32,7 +32,25 @@ export const users = pgTable('user', {
   emailVerified: timestamp('emailVerified', { mode: 'date' }),
   image: text('image'),
   password: text('password'),
+  /** Bumped on a password change or reset; older tokens stop working. */
+  sessionVersion: integer('sessionVersion').notNull().default(0),
 })
+
+/** JWT session ids ended by sign-out, kept until the token would expire. */
+export const revokedSessions = pgTable(
+  'revoked_session',
+  {
+    sid: text('sid').primaryKey(),
+    userId: text('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    expiresAt: timestamp('expiresAt', {
+      mode: 'date',
+      withTimezone: true,
+    }).notNull(),
+  },
+  (table) => [index('revoked_session_expires_idx').on(table.expiresAt)]
+)
 
 export const accounts = pgTable(
   'account',

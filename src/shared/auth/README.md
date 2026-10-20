@@ -5,6 +5,12 @@ NextAuth v5 authentication with Google OAuth, credentials auth, and Drizzle adap
 ## Public API (`index.ts`)
 
 - `auth`: read the current session in Server Actions and Server Components
+- `authFresh`: `auth()` that checks the session against the database at once;
+  for /account, the password change, and /login
+- `keepCurrentSessionAfterVersionBump`: keep the current browser signed in
+  after a password change ended the user's other sessions
+- `nextSessionVersion`, `forgetUserSessionChecks`: bump the session version in
+  a password update and drop this instance's cached checks of the user
 - `getAccountProfile`: read minimal account profile data for the current user
 - `signIn`: server helper for auth flows
 - `signOut`: server helper for auth flows
@@ -16,7 +22,10 @@ NextAuth v5 authentication with Google OAuth, credentials auth, and Drizzle adap
 - `account-profile.ts`: server-only account profile lookup for the account page
 - `index.ts`: full Node.js auth config with adapter, credentials authorize callback, and callbacks/events
 - `seed-defaults.ts`: shared new-user seeding helper used by Google and credentials registration
-- `types.ts`: module augmentation for `session.user.id`
+- `session-revocation.ts`: session ids, versions, the 5-minute re-check, and
+  revocation on sign-out (ADR 0004)
+- `session-store.ts`: the database queries behind it
+- `types.ts`: module augmentation for `session.user.id` and the JWT claims
 
 ## Account Emails
 
@@ -43,7 +52,15 @@ The `/account` page reads session data through `auth()` and uses
 `getAccountProfile(userId)` to show the current user's name, email, and
 sign-in provider. Credentials users are identified by a stored password hash;
 OAuth users use their linked account provider. Logout is handled by a route
-server action that calls `signOut({ redirectTo: '/login' })`.
+server action that calls `signOut({ redirectTo: '/login' })`; the
+`events.signOut` handler revokes the token's session id on the server.
+
+## Session Revocation
+
+JWT sessions are checked against the database in the Node.js `jwt` callback
+(ADR 0004): a revoked `sid`, an outdated session version, or a missing user
+ends the session. Routine requests re-check at most every 5 minutes per token;
+`authFresh()` checks at once. The edge middleware does not check the database.
 
 ## Dependencies
 
