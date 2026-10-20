@@ -231,3 +231,13 @@ An analysis tile MUST truncate a long category name on one line and keep the ful
 - **WHEN** the user taps a tile with a 90-character name
 - **THEN** its details dialog opens
 - **AND** no tooltip of another tile is shown
+
+### Requirement: Label pocket purchases in category details
+
+In the expense list of a category in «Анализ», a purchase paid from a pocket MUST be labelled «Покупка из кармана», not «Личный расход».
+
+#### Scenario: Pocket purchase in details
+
+- **GIVEN** a category holds a purchase from a pocket
+- **WHEN** the user opens the category details
+- **THEN** the purchase is labelled «Покупка из кармана»

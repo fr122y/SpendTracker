@@ -189,3 +189,18 @@ On a phone viewport every interactive dashboard element MUST have a hit box of a
 - **GIVEN** a 375×667 viewport showing the dashboard
 - **WHEN** the header month picker, filter chips, payday legend, calendar days and journal fields are measured
 - **THEN** each box is at least 44 px wide and 44 px high
+
+### Requirement: Keep the calculator button off controls on phones
+
+On the phone layout the floating calculator button MUST NOT cover the journal filter chips or the day total at any scroll position, and MUST be hidden while a category is being edited.
+
+#### Scenario: Journal on a phone
+
+- **GIVEN** a 375 px wide phone or a phone in landscape
+- **WHEN** the user scrolls the journal so the «Карманы» chip or the day total reaches the bottom of the screen
+- **THEN** the calculator button does not cover it
+
+#### Scenario: Editing a category
+
+- **WHEN** the user opens a category for editing on a 375 px wide phone
+- **THEN** the calculator button is hidden until the editor closes
