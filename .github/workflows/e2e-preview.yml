@@ -17,22 +17,59 @@ permissions:
   contents: read
   pull-requests: read
 
-# The suite writes to the development database under one test account, so only
-# one run executes at a time across all Pull Requests. In-progress runs are
-# never cancelled; a run for a commit that is no longer its Pull Request's head
-# exits early instead.
+# The suite writes to the development database under a test account. Runs are
+# spread over CI slots, one test account each, so Pull Requests in different
+# slots run in parallel. The `slot` job picks slot = Pull Request number mod 3
+# (slot 0 when the commit has no open Pull Request); the `e2e` job then holds
+# the per-slot concurrency group `e2e-preview-slot-<n>`, so only one run uses
+# a test account at a time. In-progress runs are never cancelled, and
+# `queue: max` keeps every pending run in the slot instead of letting a newer
+# run cancel another Pull Request's pending one. A run for a commit that is no
+# longer its Pull Request's head exits early.
 #
-# Limitation: GitHub keeps at most one pending run per concurrency group. When
-# a run is in progress and two more arrive, the newer one cancels the older
-# pending run, even if it belongs to another Pull Request. That Pull Request's
-# `e2e` check then shows as cancelled and needs a re-run.
-concurrency:
-  group: e2e-preview
-  cancel-in-progress: false
-
+# Slot secrets (CI-only test accounts):
+#   slot 0: E2E_USER_EMAIL, E2E_USER_PASSWORD
+#   slot 1: E2E_USER_EMAIL_SLOT1, E2E_USER_PASSWORD_SLOT1
+#   slot 2: E2E_USER_EMAIL_SLOT2, E2E_USER_PASSWORD_SLOT2
 jobs:
+  slot:
+    name: slot
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment != 'Production'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      slot: ${{ steps.pick.outputs.slot }}
+      suffix: ${{ steps.pick.outputs.suffix }}
+    steps:
+      - name: Pick the CI slot
+        id: pick
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
+        run: |
+          # Prefer the open Pull Request whose head is the deployed commit.
+          pr=$(gh api "repos/$GITHUB_REPOSITORY/commits/$DEPLOYMENT_SHA/pulls" \
+            --jq "[.[] | select(.state == \"open\")] | ((map(select(.head.sha == \"$DEPLOYMENT_SHA\")) + .) | first | .number) // empty")
+          if [ -n "$pr" ]; then
+            slot=$((pr % 3))
+          else
+            slot=0
+          fi
+          suffix=""
+          [ "$slot" != 0 ] && suffix="_SLOT$slot"
+          echo "::notice::Pull Request '${pr:-none}' uses CI slot $slot."
+          echo "slot=$slot" >> "$GITHUB_OUTPUT"
+          echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
+
   e2e:
     name: e2e
+    needs: slot
+    concurrency:
+      group: e2e-preview-slot-${{ needs.slot.outputs.slot }}
+      cancel-in-progress: false
+      queue: max
     # Production deployments never reach this job; the guard step below
     # re-checks the environment before anything runs.
     if: >-
@@ -44,6 +81,7 @@ jobs:
       DEPLOYMENT_ENVIRONMENT: ${{ github.event.deployment.environment }}
       DEPLOYMENT_IS_PRODUCTION: ${{ github.event.deployment.production_environment }}
       DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
+      CI_SLOT: ${{ needs.slot.outputs.slot }}
       PLAYWRIGHT_BASE_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
     steps:
       - name: Require a Vercel Preview deployment
@@ -63,14 +101,17 @@ jobs:
 
       - name: Require e2e secrets
         env:
-          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          E2E_USER_EMAIL: ${{ secrets[format('E2E_USER_EMAIL{0}', needs.slot.outputs.suffix)] }}
+          E2E_USER_PASSWORD: ${{ secrets[format('E2E_USER_PASSWORD{0}', needs.slot.outputs.suffix)] }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           missing=0
+          suffix="${{ needs.slot.outputs.suffix }}"
           for name in E2E_USER_EMAIL E2E_USER_PASSWORD VERCEL_AUTOMATION_BYPASS_SECRET; do
             if [ -z "${!name}" ]; then
-              echo "::error::Repository secret $name is not set."
+              secret=$name
+              [ "$name" != VERCEL_AUTOMATION_BYPASS_SECRET ] && secret="$name$suffix"
+              echo "::error::Repository secret $secret for CI slot $CI_SLOT is not set."
               missing=1
             fi
           done
@@ -156,8 +197,8 @@ jobs:
       - name: Run e2e tests
         if: steps.head.outputs.current == 'true'
         env:
-          E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
-          E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+          E2E_USER_EMAIL: ${{ secrets[format('E2E_USER_EMAIL{0}', needs.slot.outputs.suffix)] }}
+          E2E_USER_PASSWORD: ${{ secrets[format('E2E_USER_PASSWORD{0}', needs.slot.outputs.suffix)] }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
           SPEC_FILES: ${{ steps.specs.outputs.files }}

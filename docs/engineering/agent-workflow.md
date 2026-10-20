@@ -135,7 +135,7 @@ seconds (default 60), `--workflow` names another workflow.
 | State                  | Meaning                                                                                                        |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `waiting-deploy`       | No run for the commit yet: the Preview is not deployed.                                                        |
-| `queued`               | The job has not started: it waits for a runner or for the shared `e2e-preview` queue.                          |
+| `queued`               | The job has not started: it waits for a runner or for its CI slot queue `e2e-preview-slot-<n>`.                |
 | `running`              | The job is in progress within the expected time.                                                               |
 | `stuck-running`        | The test step runs longer than `--expected`: likely a real hang.                                               |
 | `stuck-after-pass`     | Every step, including the tests, passed at least 3 minutes ago, but GitHub has not completed the job or run.   |

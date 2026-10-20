@@ -79,6 +79,23 @@ when a listed spec is missing or any of its tests is skipped. Adding a spec to
 that list, or removing one, changes a protected file and goes through the
 owner's bypass.
 
+The `e2e` runs are spread over three CI slots, each with its own test account
+on the development database, so Pull Requests in different slots run in
+parallel. The slot is the Pull Request number mod 3 (slot 0 for a commit
+without an open Pull Request); runs in the same slot queue in the concurrency
+group `e2e-preview-slot-<n>` and are never cancelled by another Pull Request.
+The slot accounts are CI-only: no person or local run uses them. Their
+repository secrets, set by the owner:
+
+| Slot | Secrets                                           |
+| ---- | ------------------------------------------------- |
+| 0    | `E2E_USER_EMAIL`, `E2E_USER_PASSWORD`             |
+| 1    | `E2E_USER_EMAIL_SLOT1`, `E2E_USER_PASSWORD_SLOT1` |
+| 2    | `E2E_USER_EMAIL_SLOT2`, `E2E_USER_PASSWORD_SLOT2` |
+
+`VERCEL_AUTOMATION_BYPASS_SECRET` is shared by all slots. A run whose slot
+secrets are missing fails at the `Require e2e secrets` step and names them.
+
 ## When A Protected Operation Blocks The Task
 
 Stop and report:
