@@ -1,11 +1,4 @@
-import {
-  test,
-  expect,
-  type Locator,
-  type Page,
-  type Request,
-  type Response,
-} from '@playwright/test'
+import { test, expect, type Locator, type Page } from '@playwright/test'
 
 import {
   getE2ECredentials,
@@ -239,35 +232,12 @@ test.describe('Pockets', () => {
     const duplicateName = `  ${pocketName.toUpperCase()} `
     await createForm.getByLabel('Название кармана').fill(duplicateName)
 
-    // A rapid triple click must still send exactly one create request.
-    let createRequests = 0
-    const countCreateRequest = (request: Request) => {
-      if (
-        request.method() === 'POST' &&
-        request.headers()['next-action'] !== undefined &&
-        (request.postData() ?? '').includes(pocketName.toUpperCase())
-      ) {
-        createRequests += 1
-      }
-    }
-    page.on('request', countCreateRequest)
-    const created = page.waitForResponse(
-      (response: Response) =>
-        response.request().method() === 'POST' &&
-        response.request().headers()['next-action'] !== undefined &&
-        (response.request().postData() ?? '').includes(pocketName.toUpperCase())
-    )
-    await createForm
-      .getByRole('button', { name: 'Создать карман' })
-      .click({ clickCount: 3 })
-    expect((await created).ok(), 'create pocket server action').toBe(true)
+    await createForm.getByRole('button', { name: 'Создать карман' }).click()
 
     await expect(createForm.getByRole('alert')).toHaveText(
       'Карман с таким названием уже есть',
       TIMEOUT
     )
-    page.off('request', countCreateRequest)
-    expect(createRequests, 'create pocket requests').toBe(1)
     await expect(
       page
         .getByLabel('Список карманов')
@@ -678,5 +648,12 @@ test.describe('Pockets', () => {
       .getByRole('button', { name: 'Архивировать', exact: true })
       .click()
     await expect(archivedButton).toBeVisible(TIMEOUT)
+    // The list updates optimistically; reload to confirm the server archived
+    // it before the page closes.
+    await page.reload()
+    await expect(archivedButton).toBeVisible(TIMEOUT)
+    await expect(
+      pocketList.getByRole('button', { name: pocketName, exact: true })
+    ).toHaveCount(0)
   })
 })

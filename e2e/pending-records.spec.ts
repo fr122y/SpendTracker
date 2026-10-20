@@ -201,7 +201,10 @@ test.describe('Records that are still being saved', () => {
     async function startCreate(name: string) {
       await page.getByRole('button', { name: 'Создать карман' }).first().click()
       await createForm.getByLabel('Название кармана').fill(name)
-      await createForm.getByRole('button', { name: 'Создать карман' }).click()
+      // A rapid triple click must still send exactly one create request.
+      await createForm
+        .getByRole('button', { name: 'Создать карман' })
+        .click({ clickCount: 3 })
     }
 
     try {
@@ -216,6 +219,15 @@ test.describe('Records that are still being saved', () => {
       const create = await holdServerAction(page, (body) =>
         body.includes(second)
       )
+      let createRequests = 0
+      page.on('request', (request) => {
+        if (
+          isServerAction(request.method(), request.headers()) &&
+          (request.postData() ?? '').includes(second)
+        ) {
+          createRequests += 1
+        }
+      })
       await startCreate(second)
       await create.held
       const savingChip = chip(`${second} · сохраняется…`)
@@ -236,6 +248,7 @@ test.describe('Records that are still being saved', () => {
 
       await page.waitForLoadState('networkidle')
       expect(serverErrors, 'server errors').toEqual([])
+      expect(createRequests, 'create pocket requests').toBe(1)
     } finally {
       await page.unrouteAll({ behavior: 'ignoreErrors' })
       // Pockets cannot be deleted; leave both pockets archived.

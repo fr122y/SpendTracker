@@ -40,6 +40,20 @@ export async function waitForPockets(page: Page): Promise<void> {
   await expect(
     page.getByRole('heading', { name: 'Карманы', level: 2 })
   ).toBeVisible(TIMEOUT)
+  // The heading can render before the pocket list has been fetched; a chip
+  // missing at this point must not lead to a duplicate create or restore.
+  await page.waitForLoadState('networkidle')
+}
+
+/**
+ * Reloads the dashboard. A reload that collides with a navigation the app has
+ * just started is aborted, so it is retried.
+ */
+export async function reloadPockets(page: Page): Promise<void> {
+  await expect(async () => {
+    await page.reload()
+  }).toPass(TIMEOUT)
+  await waitForPockets(page)
 }
 
 /**
@@ -103,6 +117,9 @@ export async function archivePocket(page: Page, name: string): Promise<void> {
   await dialog
     .getByRole('button', { name: 'Архивировать', exact: true })
     .click()
+  await expect(active).toHaveCount(0, TIMEOUT)
+  // The list updates optimistically; reload to confirm the server archived it.
+  await reloadPockets(page)
   await expect(active).toHaveCount(0, TIMEOUT)
   await expect(archivedPocketChips(page, name)).toHaveCount(
     archivedBefore + 1,
