@@ -1,4 +1,6 @@
-import { test, expect, type Locator, type Page } from '@playwright/test'
+import { type Locator, type Page } from '@playwright/test'
+
+import { test, expect } from './utils/test'
 
 /**
  * T-050: header controls must not overlap at tablet widths, at 200% zoom

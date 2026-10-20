@@ -7,8 +7,6 @@
  * fail the run instead of skipping it.
  */
 
-import { test as setup } from '@playwright/test'
-
 import {
   changePasswordOnAccountPage,
   E2E_STORAGE_STATE,
@@ -18,6 +16,7 @@ import {
   MISSING_E2E_CREDENTIALS_MESSAGE,
   tryLoginWithCredentials,
 } from './utils/auth'
+import { test as setup } from './utils/test'
 
 setup('sign in the e2e user', async ({ page }) => {
   const credentials = getE2ECredentials()

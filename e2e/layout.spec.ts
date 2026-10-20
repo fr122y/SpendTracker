@@ -1,11 +1,10 @@
-import { test, expect } from '@playwright/test'
-
 import {
   type DesktopLayout,
   readDesktopLayout,
   restoreDesktopLayout,
   swapFirstTwoWidgets,
 } from './utils/layout'
+import { test, expect } from './utils/test'
 
 // Edit mode marks every desktop widget with a drag handle.
 const DRAG_HANDLE = 'Перетащить виджет'

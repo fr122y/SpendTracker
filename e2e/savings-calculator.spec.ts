@@ -1,11 +1,10 @@
-import { test, expect } from '@playwright/test'
-
 import {
   getE2ECredentials,
   loginWithCredentials,
   MISSING_E2E_CREDENTIALS_MESSAGE,
   SIGNED_OUT_STATE,
 } from './utils/auth'
+import { test, expect } from './utils/test'
 
 const TIMEOUT = { timeout: 10000 }
 

@@ -16,6 +16,8 @@ End-to-end tests using Playwright.
   saved: delete before the create returns, reload inside the undo window,
   and a new pocket after the only active one is archived (no 5xx). See
   [Reused Pockets](#reused-pockets)
+- `utils/test.ts` - The `test` and `expect` every file imports; blocks the
+  Vercel toolbar (vercel.live), whose request can hang the page load
 - `utils/auth.ts` - Credentials and login helper
 - `utils/expenses.ts` - Expense helper and `expenses` fixture
 - `utils/pockets.ts` - Restore-or-create and archive helpers for reused pockets

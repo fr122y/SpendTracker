@@ -54,7 +54,8 @@ async function holdServerAction(
         markHeld()
         await released
       }
-      await route.continue()
+      // Let the context routes, such as the Vercel toolbar block, apply.
+      await route.fallback()
     }
   )
   return { release, held }
