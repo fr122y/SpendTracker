@@ -5,9 +5,13 @@ import { describe, it } from 'node:test'
 import {
   buildSummary,
   collectChangedPaths,
+  compareE2eSpecs,
   comparePackageJson,
   deepEqual,
   findProtectedPaths,
+  listAddedLines,
+  listAddedSpecs,
+  main,
   matchPattern,
   parsePatterns,
 } from './protected-paths.mjs'
@@ -345,5 +349,153 @@ describe('buildSummary', () => {
     assert.match(summary, /only the repository owner/)
     assert.match(summary, /`Protect main`/)
     assert.match(summary, /`verify` is green/)
+  })
+})
+
+describe('compareE2eSpecs', () => {
+  const base = '# header\n\ne2e/app.spec.ts\ne2e/pockets.spec.ts\n'
+  const existing = new Set(['e2e/new.spec.ts', 'e2e/other.spec.ts'])
+
+  it('passes when the head only adds existing new specs', () => {
+    const head = base + 'e2e/new.spec.ts\ne2e/other.spec.ts\n'
+    assert.equal(compareE2eSpecs(base, head, existing), null)
+    const middle = base.replace(
+      'e2e/app.spec.ts\n',
+      'e2e/app.spec.ts\ne2e/new.spec.ts\n'
+    )
+    assert.equal(compareE2eSpecs(base, middle, existing), null)
+  })
+
+  it('passes blank and comment additions', () => {
+    const head = '# more\n' + base + '\n# note\ne2e/new.spec.ts\n'
+    assert.equal(compareE2eSpecs(base, head, existing), null)
+  })
+
+  it('fails an added spec that does not exist in the head', () => {
+    const head = base + 'e2e/missing.spec.ts\n'
+    assert.match(compareE2eSpecs(base, head, existing), /does not exist/)
+  })
+
+  it('fails an added line that is not an e2e spec path', () => {
+    for (const line of ['src/a.spec.ts', 'e2e/sub/a.spec.ts', 'e2e/a.ts']) {
+      const head = base + line + '\n'
+      assert.match(compareE2eSpecs(base, head, new Set([line])), /not an e2e/)
+    }
+  })
+
+  it('fails a duplicate entry', () => {
+    const existingAll = new Set([...existing, 'e2e/app.spec.ts'])
+    assert.match(
+      compareE2eSpecs(base, base + 'e2e/app.spec.ts\n', existingAll),
+      /duplicate/
+    )
+    assert.match(
+      compareE2eSpecs(
+        base,
+        base + 'e2e/new.spec.ts\ne2e/new.spec.ts\n',
+        existing
+      ),
+      /duplicate/
+    )
+  })
+
+  it('fails a removal', () => {
+    const head = base.replace('e2e/pockets.spec.ts\n', '')
+    assert.match(compareE2eSpecs(base, head, existing), /removed or modified/)
+  })
+
+  it('fails a modification, including of a comment', () => {
+    const head = base.replace('e2e/pockets.spec.ts', 'e2e/new.spec.ts')
+    assert.match(compareE2eSpecs(base, head, existing), /removed or modified/)
+    const comment = base.replace('# header', '# changed')
+    assert.match(
+      compareE2eSpecs(base, comment, existing),
+      /removed or modified/
+    )
+  })
+
+  it('fails a deleted or missing file', () => {
+    assert.match(compareE2eSpecs(base, null, existing), /deleted/)
+    assert.match(compareE2eSpecs(null, base, existing), /missing at base/)
+  })
+})
+
+describe('listAddedLines', () => {
+  it('returns additions or null on a removal', () => {
+    assert.deepEqual(listAddedLines('a\nb\n', 'a\nx\nb\n'), ['x'])
+    assert.equal(listAddedLines('a\nb\n', 'b\na\n'), null)
+    assert.deepEqual(listAddedSpecs('a\n', 'a\n# c\n\ne2e/x.spec.ts\n'), [
+      'e2e/x.spec.ts',
+    ])
+  })
+})
+
+describe('main with .github/e2e-specs.txt', () => {
+  const BASE = 'a'.repeat(40)
+  const HEAD = 'b'.repeat(40)
+  const baseList = '# header\ne2e/app.spec.ts\n'
+
+  async function run(files, contents) {
+    const realFetch = globalThis.fetch
+    const realLog = console.log
+    globalThis.fetch = async (url) => {
+      const { pathname, searchParams } = new URL(url)
+      const reply = (status, body) => ({
+        ok: status === 200,
+        status,
+        json: async () => body,
+        text: async () => body,
+      })
+      if (pathname.endsWith('/pulls/7')) {
+        return reply(200, { head: { sha: HEAD }, changed_files: files.length })
+      }
+      if (pathname.endsWith('/pulls/7/files')) return reply(200, files)
+      const match = pathname.match(/\/contents\/(.+)$/)
+      const text = contents[`${searchParams.get('ref')}:${match[1]}`]
+      return text === undefined ? reply(404, '') : reply(200, text)
+    }
+    console.log = () => {}
+    try {
+      return await main({
+        GITHUB_REPOSITORY: 'o/r',
+        GITHUB_TOKEN: 't',
+        PR_NUMBER: '7',
+        BASE_SHA: BASE,
+        HEAD_SHA: HEAD,
+      })
+    } finally {
+      globalThis.fetch = realFetch
+      console.log = realLog
+    }
+  }
+
+  const listFile = { filename: '.github/e2e-specs.txt', status: 'modified' }
+  const contents = {
+    [`${BASE}:.github/e2e-specs.txt`]: baseList,
+    [`${HEAD}:.github/e2e-specs.txt`]: baseList + 'e2e/new.spec.ts\n',
+    [`${HEAD}:e2e/new.spec.ts`]: 'test()',
+  }
+
+  it('passes an additions-only change with the spec in the head', async () => {
+    const files = [listFile, { filename: 'e2e/new.spec.ts', status: 'added' }]
+    assert.equal(await run(files, contents), 0)
+  })
+
+  it('fails when the added spec is absent from the head', async () => {
+    const rest = { ...contents }
+    delete rest[`${HEAD}:e2e/new.spec.ts`]
+    assert.equal(await run([listFile], rest), 1)
+  })
+
+  it('fails when another protected path changes too', async () => {
+    const files = [listFile, { filename: '.github/workflows/ci.yml' }]
+    assert.equal(await run(files, contents), 1)
+  })
+
+  it('fails a rename of the list', async () => {
+    const files = [
+      { ...listFile, status: 'renamed', previous_filename: '.github/x.txt' },
+    ]
+    assert.equal(await run(files, contents), 1)
   })
 })
