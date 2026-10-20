@@ -12,7 +12,11 @@ import {
   TIMEOUT,
   uniqueAmount,
 } from './utils/expenses'
-import { archivePocket, ensureActivePocket } from './utils/pockets'
+import {
+  archivePocket,
+  ensureActivePocket,
+  waitForPockets,
+} from './utils/pockets'
 
 /**
  * Operations on records the server has not saved yet (T-034): they run once
@@ -179,9 +183,7 @@ test.describe('Records that are still being saved', () => {
     await page.setViewportSize({ width: 1280, height: 720 })
     await page.goto('/')
     const serverErrors = watchServerErrors(page)
-    await expect(
-      page.getByRole('heading', { name: 'Карманы', level: 2 })
-    ).toBeVisible(TIMEOUT)
+    await waitForPockets(page)
 
     // Pockets cannot be deleted. The first pocket is reused across runs; the
     // second must be created by every run, so each run leaves exactly one
