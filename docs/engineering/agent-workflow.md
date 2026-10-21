@@ -129,7 +129,7 @@ It polls the latest E2E run of the Pull Request's head commit through
 per state change, and stops at a final state or after `--timeout` minutes
 (default 40). Options: `--once` checks once, `--json` prints the final state as
 JSON, `--expected` sets the minutes after which a running test step counts as
-stuck (default 12; the test step normally takes 8 to 11 minutes, after about 3 to 5 minutes of install and `next build`), `--interval` sets the poll
+stuck (default 15; the test step normally takes 8 to 11 minutes, after about 3 to 5 minutes of install and `next build`), `--interval` sets the poll
 seconds (default 60), `--workflow` names another workflow.
 
 | State                  | Meaning                                                                                                        |

@@ -9,7 +9,7 @@ export const DEFAULTS = {
   workflow: 'E2E',
   job: 'e2e',
   testStep: 'Run e2e tests',
-  expected: 12,
+  expected: 15,
   closeGrace: 3,
   timeout: 40,
   interval: 60,

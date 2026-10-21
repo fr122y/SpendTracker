@@ -1,4 +1,5 @@
 import {
+  DEFAULTS,
   EXIT,
   classify,
   parseArgs,
@@ -122,6 +123,13 @@ describe('classify', () => {
     it('reports running within the expected time', () => {
       const fx = inProgress()
       const state = classify(fx.run, fx.jobs, at('2026-10-19T16:15:00Z'))
+      expect(state.state).toBe('running')
+    })
+
+    it('keeps a 14-minute test step running under the 15-minute default', () => {
+      expect(DEFAULTS.expected).toBe(15)
+      const fx = inProgress()
+      const state = classify(fx.run, fx.jobs, at('2026-10-19T16:22:00Z'))
       expect(state.state).toBe('running')
     })
 
