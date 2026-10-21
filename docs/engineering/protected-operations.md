@@ -73,8 +73,12 @@ tests is normal and passes. A legitimate removal goes in its own Pull Request,
 which the owner merges with the `Protect main` ruleset bypass after confirming
 `verify` is green.
 
-The `e2e` check runs the Playwright specs listed in `.github/e2e-specs.txt`
-against the Pull Request's Vercel Preview, never against production, and fails
+The `e2e` check (workflow `.github/workflows/e2e.yml`) builds the Pull
+Request's head commit with `next build`, serves it with `next start` on
+`localhost:3000` inside the GitHub Actions runner, and runs the Playwright
+specs listed in `.github/e2e-specs.txt` against it. It never calls a Vercel
+deployment, so e2e traffic does not use the Vercel Hobby function quota (see
+[Platform Settings](platform-settings.md#vercel)). It fails
 when a listed spec is missing or any of its tests is skipped. That list is a
 protected file with one exception: `protected-paths` passes a Pull Request
 whose only protected change is additions to `.github/e2e-specs.txt`, where each
@@ -88,7 +92,7 @@ The `e2e` runs are spread over three CI slots, each with its own test account
 on the development database, so Pull Requests in different slots run in
 parallel. The slot is the Pull Request number mod 3 (slot 0 for a commit
 without an open Pull Request); runs in the same slot queue in the concurrency
-group `e2e-preview-slot-<n>` and are never cancelled by another Pull Request.
+group `e2e-slot-<n>` and are never cancelled by another Pull Request.
 The slot accounts are CI-only: no person or local run uses them. Their
 repository secrets, set by the owner:
 
@@ -98,8 +102,22 @@ repository secrets, set by the owner:
 | 1    | `E2E_USER_EMAIL_SLOT1`, `E2E_USER_PASSWORD_SLOT1` |
 | 2    | `E2E_USER_EMAIL_SLOT2`, `E2E_USER_PASSWORD_SLOT2` |
 
-`VERCEL_AUTOMATION_BYPASS_SECRET` is shared by all slots. A run whose slot
-secrets are missing fails at the `Require e2e secrets` step and names them.
+The server under test reads two more repository secrets, shared by all
+slots:
+
+| Secret            | Value                                                                                         |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| `CI_DATABASE_URL` | Pooler URL of the development database, the one the test accounts live in. Never production.  |
+| `CI_AUTH_SECRET`  | A random value used only in CI (`openssl rand -base64 32`), not the production `AUTH_SECRET`. |
+
+`AUTH_TRUST_HOST`, `AUTH_URL`, and `APP_ORIGIN` are constants in the workflow
+(`http://localhost:3000`). Google sign-in, `RESEND_API_KEY`, `CRON_SECRET`, and
+`RESEND_WEBHOOK_SECRET` are not set: the gated specs sign in with email and
+password and do not send email. A run whose secrets are missing fails at the
+`Require e2e secrets` step and names them.
+
+A manual run (`workflow_dispatch`) tests any ref with the same secrets in a
+chosen slot; see [E2E Tests](../../e2e/README.md#proof-runs-in-ci).
 
 ## When A Protected Operation Blocks The Task
 

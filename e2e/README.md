@@ -17,15 +17,35 @@ End-to-end tests using Playwright.
   and a new pocket after the only active one is archived (no 5xx). See
   [Reused Pockets](#reused-pockets)
 - `utils/test.ts` - The `test` and `expect` every file imports; blocks the
-  Vercel toolbar (vercel.live), whose request can hang the page load
+  Vercel toolbar (vercel.live), whose request can hang the page load of a
+  Vercel deployment (a no-op against the CI server)
 - `utils/auth.ts` - Credentials and login helper
 - `utils/expenses.ts` - Expense helper and `expenses` fixture
 - `utils/pockets.ts` - Restore-or-create and archive helpers for reused pockets
 - `utils/layout.ts` - Read, swap, and restore the server-side desktop layout
 - `utils/viewport-helpers.ts` - Responsive assertions
 
-Every file is listed in `.github/e2e-specs.txt` and gated by the `e2e` check
-against the Vercel Preview.
+Every file is listed in `.github/e2e-specs.txt` and gated by the `e2e` check,
+which runs against a `next build` + `next start` server on `localhost:3000`
+inside the GitHub Actions runner (`.github/workflows/e2e.yml`), never against
+a Vercel deployment.
+
+## Proof Runs In CI
+
+To repeat specs on a branch without a new push, start the workflow by hand.
+It uses the CI server, the development database, and the test account of the
+chosen slot:
+
+```bash
+gh workflow run e2e.yml -f ref=<branch-or-sha> -f slot=0 \
+  -f repeat_each=3 -f spec=e2e/<name>.spec.ts
+```
+
+`spec` takes space-separated files and defaults to `.github/e2e-specs.txt`;
+`repeat_each` defaults to 1. Pick the slot of no open Pull Request that is
+running e2e at the same time, or accept waiting in its queue. Watch the run
+with `gh run watch` or `npm run ci:wait -- <sha>`. GitHub offers a manual
+run only for a workflow file that exists on `main`.
 
 ## Shared Sign-In
 

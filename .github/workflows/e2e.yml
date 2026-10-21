@@ -1,0 +1,310 @@
+name: E2E
+
+# Runs the Playwright suite against a production build of the Pull Request's
+# head commit, served inside the runner (`next build` + `next start` on
+# localhost:3000). It never calls a Vercel deployment: e2e traffic against
+# Vercel Previews used most of the Hobby plan's Fluid Active CPU quota, and
+# exceeding it pauses every function, production included.
+#
+# The `pull_request` event reads this workflow and the tests from the Pull
+# Request, and the job holds the e2e secrets. Pull Request code therefore runs
+# with those secrets: keep them limited to the development database, a CI-only
+# auth secret, and disposable test accounts. Never add production credentials
+# here. Pull Requests from forks get no secrets and fail at `Require e2e
+# secrets`.
+#
+# `workflow_dispatch` runs the same job on any ref for proof runs, e.g.
+#   gh workflow run e2e.yml -f ref=<branch> -f repeat_each=3 -f spec=e2e/<name>.spec.ts
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or commit SHA to test
+        required: true
+        type: string
+      slot:
+        description: CI slot (test account) to use
+        required: true
+        default: '0'
+        type: choice
+        options: ['0', '1', '2']
+      spec:
+        description: Space-separated spec files to run instead of .github/e2e-specs.txt
+        required: false
+        default: ''
+        type: string
+      repeat_each:
+        description: Playwright --repeat-each
+        required: false
+        default: '1'
+        type: string
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# The suite writes to the development database under a test account. Runs are
+# spread over CI slots, one test account each, so Pull Requests in different
+# slots run in parallel. The `slot` job picks slot = Pull Request number mod 3
+# (the `slot` input for a manual run); the `e2e` job then holds the per-slot
+# concurrency group `e2e-slot-<n>`, so only one run uses a test account at a
+# time. In-progress runs are never cancelled, and `queue: max` keeps every
+# pending run in the slot instead of letting a newer run cancel another Pull
+# Request's pending one. A run for a commit that is no longer its Pull
+# Request's head exits early.
+#
+# Secrets (see docs/engineering/protected-operations.md):
+#   all slots: CI_DATABASE_URL (development database only), CI_AUTH_SECRET
+#   slot 0: E2E_USER_EMAIL, E2E_USER_PASSWORD
+#   slot 1: E2E_USER_EMAIL_SLOT1, E2E_USER_PASSWORD_SLOT1
+#   slot 2: E2E_USER_EMAIL_SLOT2, E2E_USER_PASSWORD_SLOT2
+jobs:
+  slot:
+    name: slot
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      slot: ${{ steps.pick.outputs.slot }}
+      suffix: ${{ steps.pick.outputs.suffix }}
+    steps:
+      - name: Pick the CI slot
+        id: pick
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          INPUT_SLOT: ${{ inputs.slot }}
+        run: |
+          if [ -n "$PR_NUMBER" ]; then
+            slot=$((PR_NUMBER % 3))
+          else
+            slot="${INPUT_SLOT:-0}"
+          fi
+          case "$slot" in
+            0|1|2) ;;
+            *) echo "::error::Invalid CI slot '$slot'."; exit 1 ;;
+          esac
+          suffix=""
+          [ "$slot" != 0 ] && suffix="_SLOT$slot"
+          echo "::notice::Pull Request '${PR_NUMBER:-none}' uses CI slot $slot."
+          echo "slot=$slot" >> "$GITHUB_OUTPUT"
+          echo "suffix=$suffix" >> "$GITHUB_OUTPUT"
+
+  e2e:
+    name: e2e
+    needs: slot
+    concurrency:
+      group: e2e-slot-${{ needs.slot.outputs.slot }}
+      cancel-in-progress: false
+      queue: max
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI_SLOT: ${{ needs.slot.outputs.slot }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      TEST_REF: ${{ github.event.pull_request.head.sha || inputs.ref }}
+      # The server under test. Setting it also stops playwright.config.ts from
+      # starting its own `next dev` server.
+      PLAYWRIGHT_BASE_URL: http://localhost:3000
+    steps:
+      - name: Require e2e secrets
+        env:
+          E2E_USER_EMAIL: ${{ secrets[format('E2E_USER_EMAIL{0}', needs.slot.outputs.suffix)] }}
+          E2E_USER_PASSWORD: ${{ secrets[format('E2E_USER_PASSWORD{0}', needs.slot.outputs.suffix)] }}
+          CI_DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          CI_AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+          SUFFIX: ${{ needs.slot.outputs.suffix }}
+        run: |
+          missing=0
+          for name in E2E_USER_EMAIL E2E_USER_PASSWORD CI_DATABASE_URL CI_AUTH_SECRET; do
+            if [ -z "${!name}" ]; then
+              secret=$name
+              case "$name" in E2E_*) secret="$name$SUFFIX" ;; esac
+              echo "::error::Repository secret $secret for CI slot $CI_SLOT is not set."
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Skip a superseded commit
+        id: head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current=true
+          if [ -n "$PR_NUMBER" ]; then
+            head=$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.head.sha')
+            if [ "$head" != "$TEST_REF" ]; then
+              current=false
+              echo "::notice::$TEST_REF is no longer the head of Pull Request #$PR_NUMBER; a newer run will test $head."
+            fi
+          fi
+          echo "current=$current" >> "$GITHUB_OUTPUT"
+
+      - name: Check out the commit under test
+        if: steps.head.outputs.current == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TEST_REF }}
+          persist-credentials: false
+
+      - name: Read gated spec files
+        if: steps.head.outputs.current == 'true'
+        id: specs
+        env:
+          INPUT_SPEC: ${{ inputs.spec }}
+        run: |
+          if [ -n "$INPUT_SPEC" ]; then
+            specs="$INPUT_SPEC"
+          else
+            specs=$(grep -Ev '^[[:space:]]*(#|$)' .github/e2e-specs.txt | tr -d '\r' || true)
+          fi
+          if [ -z "$specs" ]; then
+            echo "::error::.github/e2e-specs.txt lists no spec files."
+            exit 1
+          fi
+          missing=0
+          for spec in $specs; do
+            if [ ! -f "$spec" ]; then
+              echo "::error::Spec file $spec does not exist."
+              missing=1
+            fi
+          done
+          [ "$missing" = 0 ] || exit 1
+          echo "files=$(echo $specs)" >> "$GITHUB_OUTPUT"
+
+      - name: Read repeat count
+        if: steps.head.outputs.current == 'true'
+        id: repeat
+        env:
+          INPUT_REPEAT: ${{ inputs.repeat_each }}
+        run: |
+          repeat="${INPUT_REPEAT:-1}"
+          case "$repeat" in
+            ''|*[!0-9]*|0) echo "::error::repeat_each must be a positive integer, got '$repeat'."; exit 1 ;;
+          esac
+          echo "count=$repeat" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Node.js
+        if: steps.head.outputs.current == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.head.outputs.current == 'true'
+        run: npm ci
+
+      - name: Read Playwright version
+        if: steps.head.outputs.current == 'true'
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        if: steps.head.outputs.current == 'true'
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install Chromium
+        if: steps.head.outputs.current == 'true' && steps.browser-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium system dependencies
+        if: steps.head.outputs.current == 'true' && steps.browser-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Cache Next.js build
+        if: steps.head.outputs.current == 'true'
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ env.TEST_REF }}
+          restore-keys: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      # The server env: the development database, a CI-only auth secret, and
+      # localhost origins. Google sign-in, Resend, and the cron and webhook
+      # secrets are left unset: the gated specs use email/password sign-in only.
+      - name: Build the app
+        if: steps.head.outputs.current == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+          AUTH_TRUST_HOST: 'true'
+          AUTH_URL: http://localhost:3000
+          APP_ORIGIN: http://localhost:3000
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build
+
+      - name: Start the server
+        if: steps.head.outputs.current == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.CI_DATABASE_URL }}
+          AUTH_SECRET: ${{ secrets.CI_AUTH_SECRET }}
+          AUTH_TRUST_HOST: 'true'
+          AUTH_URL: http://localhost:3000
+          APP_ORIGIN: http://localhost:3000
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: |
+          nohup node_modules/.bin/next start --port 3000 > "$RUNNER_TEMP/next-server.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/next-server.pid"
+          # Ready when /login answers 200; give up after 90 s or if it exits.
+          for i in $(seq 1 90); do
+            if ! kill -0 "$(cat "$RUNNER_TEMP/next-server.pid")" 2>/dev/null; then
+              echo "::error::next start exited before it was ready."
+              tail -n 50 "$RUNNER_TEMP/next-server.log"
+              exit 1
+            fi
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$PLAYWRIGHT_BASE_URL/login" || true)
+            if [ "$code" = 200 ]; then
+              echo "Server ready after ${i}s."
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::Server did not answer 200 on /login within 90 s (last status '$code')."
+          tail -n 50 "$RUNNER_TEMP/next-server.log"
+          exit 1
+
+      - name: Run e2e tests
+        if: steps.head.outputs.current == 'true'
+        env:
+          E2E_USER_EMAIL: ${{ secrets[format('E2E_USER_EMAIL{0}', needs.slot.outputs.suffix)] }}
+          E2E_USER_PASSWORD: ${{ secrets[format('E2E_USER_PASSWORD{0}', needs.slot.outputs.suffix)] }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: e2e-results.json
+          SPEC_FILES: ${{ steps.specs.outputs.files }}
+          REPEAT_EACH: ${{ steps.repeat.outputs.count }}
+        # SPEC_FILES is split on spaces on purpose: one argument per spec file.
+        run: npx playwright test $SPEC_FILES --project=chromium --repeat-each="$REPEAT_EACH" --reporter=list,html,json
+
+      - name: Fail on skipped tests
+        if: steps.head.outputs.current == 'true'
+        run: |
+          skipped=$(node -p "require('./e2e-results.json').stats.skipped")
+          if [ "$skipped" != "0" ]; then
+            echo "::error::$skipped e2e tests were skipped; every gated test must run."
+            exit 1
+          fi
+
+      - name: Server log tail
+        if: failure() && steps.head.outputs.current == 'true'
+        run: tail -n 100 "$RUNNER_TEMP/next-server.log" 2>/dev/null || true
+
+      - name: Stop the server
+        if: always() && steps.head.outputs.current == 'true'
+        run: |
+          pid_file="$RUNNER_TEMP/next-server.pid"
+          [ -f "$pid_file" ] && kill "$(cat "$pid_file")" 2>/dev/null || true
+
+      - name: Upload Playwright report
+        if: failure() && steps.head.outputs.current == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            e2e-results.json
+          retention-days: 7

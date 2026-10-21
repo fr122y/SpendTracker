@@ -124,18 +124,18 @@ npm run ci:wait -- <pr-number|sha> --rerun
 
 The `--` is required: without it npm takes the flags for itself.
 
-It polls the latest E2E Preview run of the Pull Request's head commit through
+It polls the latest E2E run of the Pull Request's head commit through
 `gh`, judges it by the job steps rather than the run status, prints one line
 per state change, and stops at a final state or after `--timeout` minutes
 (default 40). Options: `--once` checks once, `--json` prints the final state as
 JSON, `--expected` sets the minutes after which a running test step counts as
-stuck (default 12; a normal job takes 8 to 11), `--interval` sets the poll
+stuck (default 12; the test step normally takes 8 to 11 minutes, after about 3 to 5 minutes of install and `next build`), `--interval` sets the poll
 seconds (default 60), `--workflow` names another workflow.
 
 | State                  | Meaning                                                                                                        |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `waiting-deploy`       | No run for the commit yet: the Preview is not deployed.                                                        |
-| `queued`               | The job has not started: it waits for a runner or for its CI slot queue `e2e-preview-slot-<n>`.                |
+| `waiting-run`          | No run for the commit yet: GitHub has not started the E2E workflow for it.                                     |
+| `queued`               | The job has not started: it waits for a runner or for its CI slot queue `e2e-slot-<n>`.                        |
 | `running`              | The job is in progress within the expected time.                                                               |
 | `stuck-running`        | The test step runs longer than `--expected`: likely a real hang.                                               |
 | `stuck-after-pass`     | Every step, including the tests, passed at least 3 minutes ago, but GitHub has not completed the job or run.   |
