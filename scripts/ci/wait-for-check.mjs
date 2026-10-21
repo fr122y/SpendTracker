@@ -4,7 +4,7 @@
 // docs/engineering/agent-workflow.md.
 //
 // Usage: npm run ci:wait -- <pr-number|sha> [--workflow NAME]
-//   [--expected 12] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]
+//   [--expected 15] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]
 //
 // Calls GitHub through the `gh` CLI, so it uses the caller's `gh` login.
 
@@ -135,7 +135,7 @@ async function main() {
   } catch (error) {
     console.error(`ci:wait: ${error.message}`)
     console.error(
-      'usage: npm run ci:wait -- <pr-number|sha> [--workflow NAME] [--expected 12] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]'
+      'usage: npm run ci:wait -- <pr-number|sha> [--workflow NAME] [--expected 15] [--timeout 40] [--interval 60] [--rerun] [--once] [--json]'
     )
     return EXIT.error
   }
