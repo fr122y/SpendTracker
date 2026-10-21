@@ -1,4 +1,4 @@
-// Pure classification of a GitHub Actions run of the E2E Preview workflow.
+// Pure classification of a GitHub Actions run of the E2E workflow.
 // It looks at the job steps, not only at the run status: GitHub can keep a job
 // `in_progress` after every step finished, so the run status alone does not
 // tell a hanging test from a run GitHub has not closed yet.
@@ -6,7 +6,7 @@
 // recorded `gh api` responses.
 
 export const DEFAULTS = {
-  workflow: 'E2E Preview',
+  workflow: 'E2E',
   job: 'e2e',
   testStep: 'Run e2e tests',
   expected: 12,
@@ -69,9 +69,10 @@ export function classify(run, jobs, now, opts = {}) {
   const o = { ...DEFAULTS, ...opts }
   if (!run) {
     return {
-      state: 'waiting-deploy',
+      state: 'waiting-run',
       terminal: false,
-      message: 'no run for this commit yet; Preview is not deployed',
+      message:
+        'no run for this commit yet; GitHub has not started the E2E workflow',
     }
   }
 
@@ -138,7 +139,10 @@ export function classify(run, jobs, now, opts = {}) {
   }
 
   if (!job || !job.started_at || !started || job.status === 'queued') {
-    return result('queued', 'waiting for a runner or for the e2e-preview queue')
+    return result(
+      'queued',
+      'waiting for a runner or for its CI slot queue e2e-slot-<n>'
+    )
   }
 
   if (test && test.status === 'in_progress' && test.started_at) {

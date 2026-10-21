@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Waits for the E2E Preview check of a Pull Request or commit and says what
+// Waits for the E2E check of a Pull Request or commit and says what
 // state it is really in, judging by the job steps. See "Waiting For CI" in
 // docs/engineering/agent-workflow.md.
 //

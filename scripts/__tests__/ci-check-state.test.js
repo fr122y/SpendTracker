@@ -149,8 +149,8 @@ describe('classify', () => {
     expect(state.state).toBe('queued')
   })
 
-  it('reports waiting-deploy without a run', () => {
-    expect(classify(null, [], Date.now()).state).toBe('waiting-deploy')
+  it('reports waiting-run without a run', () => {
+    expect(classify(null, [], Date.now()).state).toBe('waiting-run')
   })
 })
 
@@ -159,13 +159,13 @@ describe('selectRun', () => {
     const runs = [
       {
         id: 1,
-        name: 'E2E Preview',
+        name: 'E2E',
         conclusion: 'success',
         created_at: '2026-10-19T10:00:00Z',
       },
       {
         id: 2,
-        name: 'E2E Preview',
+        name: 'E2E',
         conclusion: 'skipped',
         created_at: '2026-10-19T12:00:00Z',
       },
@@ -177,7 +177,7 @@ describe('selectRun', () => {
       },
       {
         id: 4,
-        name: 'E2E Preview',
+        name: 'E2E',
         conclusion: null,
         created_at: '2026-10-19T11:00:00Z',
       },
